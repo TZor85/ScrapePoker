@@ -34,6 +34,8 @@ namespace OpenScrape.App
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
+        private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
+        private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
 
         public Form1()
         {
@@ -93,7 +95,7 @@ namespace OpenScrape.App
             using (SHA1Managed sha1 = new SHA1Managed())
             {
                 var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(input));
-                return string.Concat(Convert.ToBase64String(hash).ToCharArray().Where(x => char.IsLetterOrDigit(x)).Take(10));
+                return string.Concat(Convert.ToBase64String(hash).ToCharArray().Where(x => char.IsLetterOrDigit(x)).Take(10)).ToLower();
             }
         }
 
@@ -102,20 +104,31 @@ namespace OpenScrape.App
             var sen = (TreeView)sender;
             var name = sen.SelectedNode.Text;
 
+            if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo0")
+            {
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                ckHash.Enabled = true;
+                ckHash.Checked = region.IsHash;
+                pbImageRegion.Image = null;
+                tbResult.Text = string.Empty;
+            }
+
+            if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo1")
+            {
+                ckHash.Enabled = false;
+                pbImageRegion.Image = null;
+                tbResult.Text = _hashes.FirstOrDefault(x => x.Name == name)?.Value;
+            }
+
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
             {
                 pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
-                btnCreateHash.Enabled = true; 
+                btnCreateHash.Enabled = true;
+                ckHash.Enabled = false;
+                tbResult.Text = string.Empty;
             }
 
-            if(twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo0")
-            {
-                ckHash.Enabled = true;
-            }
-            else
-            {
-                ckHash.Enabled = false;
-            }
         }
 
         private void twRegions_DoubleClick(object sender, EventArgs e)
@@ -173,190 +186,26 @@ namespace OpenScrape.App
 
         private void btnSaveMap_Click(object sender, EventArgs e)
         {
-
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "Text|*.txt";
-            saveFileDialog.Title = "Save an Text File";
-
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                
-                if(saveFileDialog.FileName != "")
-                {
-                    using (StreamWriter writer = new StreamWriter(saveFileDialog.OpenFile()))
-                    {
-                        writer.WriteLine();
-                        writer.WriteLine("//");
-                        writer.WriteLine("// Regions");
-                        writer.WriteLine("//");
-                        writer.WriteLine();
-
-                        foreach (var item in _regions)
-                        {
-                            if(!string.IsNullOrEmpty(item.Name))
-                                writer.WriteLine($"r${item.Name} # {item.X} - {item.Y} - {item.Width} - {item.Height}");
-                        }
-
-                        writer.WriteLine();
-                        writer.WriteLine("//");
-                        writer.WriteLine("// Hashes");
-                        writer.WriteLine("//");
-                        writer.WriteLine();
-
-                        foreach (var item in _hashes)
-                        {
-                            if(!string.IsNullOrEmpty(item.Name))
-                                writer.WriteLine($"h${item.Name} - {item.Value}");
-                        }
-
-                        writer.WriteLine();
-                        writer.WriteLine("//");
-                        writer.WriteLine("// Images");
-                        writer.WriteLine("//");
-                        writer.WriteLine();
-
-                        foreach (var item in _images)
-                        {
-                            if (item.Image != null)
-                            {
-                                string imgText = GetImageEncrypted(item.Image);
-
-                                writer.WriteLine($"i${item.Name} - {imgText}");
-                            }
-                        }
-
-                        writer.Flush();
-                        writer.Close();
-                    }
-                }
-                                
-            }
-        }
-
-        private string GetImageEncrypted(Image? imagen)
-        {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                imagen.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
-                byte[] imageBytes = ms.ToArray();
-
-                var base64String = Convert.ToBase64String(imageBytes);
-
-                SHA256 mySHA256 = SHA256Managed.Create();
-                byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(Key));
-
-                byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-                return EncrypterHelper.Encrypt(base64String, key, iv);
-            }
-        }
-
-        private Image GetImageDecrypted(string base64String)
-        {
-
-            SHA256 mySHA256 = SHA256Managed.Create();
-            byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(Key));
-
-
-            byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-            //string encrypted = EncrypterHelper.Encrypt(base64String, key, iv);
-            string decrypted = EncrypterHelper.Decrypt(base64String, key, iv);
-
-            byte[] byteImage = Convert.FromBase64String(decrypted);
-
-            var mss = new MemoryStream(byteImage, 0, byteImage.Length);
-
-            return Image.FromStream(mss, true);
+            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Hashes = _hashes, Images = _images, Key = Key });            
         }
 
         private void btnLoadMap_Click(object sender, EventArgs e)
         {
-            Stream myStream = null;
-            OpenFileDialog theDialog = new OpenFileDialog();
-                       
-            theDialog.Title = "Open Text File";
-            theDialog.Filter = "TXT files|*.txt";
-            if (theDialog.ShowDialog() == DialogResult.OK)
+            var response = _loadUseCase.Execute(Key);
+
+            _regions.AddRange(response.Regions);
+            _images.AddRange(response.Images);
+            _hashes.AddRange(response.Hashes);
+
+            foreach (var item in response.Tree)
             {
-                try
-                {
-                    if ((myStream = theDialog.OpenFile()) != null)
-                    {
-                        var text = string.Empty;                        
-                        using (StreamReader sr = new StreamReader(myStream))
-                        {
-                            int counter = 0;
-                            
-                            while ((text = sr.ReadLine()) != null)
-                            {
-                                var nodo = string.Empty;
-                                var name = string.Empty;
-                                Regions region = new Regions();
-                                ImageRegion imageRegion = new ImageRegion();
-                                HashRegion hashRegion = new HashRegion();
-                                
-                                var type = text.Split('$')[0].Trim();
+                var node = twRegions.Nodes.Find(item.Key, true).FirstOrDefault() as TreeNode;
+                
+                if(node != null)
+                    node.Nodes.Add(item.Value);
 
-                                if (type == "r")
-                                    nodo = "Nodo0";
-                                else if (type == "h")
-                                    nodo = "Nodo1";
-                                else if (type == "i")
-                                    nodo = "Nodo2";
-
-                                if (!string.IsNullOrEmpty(nodo))
-                                {
-                                    var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
-
-                                    if (node.Name == "Nodo0")
-                                    {
-                                        name = text.Split('$')[1].Split("#")[0].Trim();
-                                        var coord = text.Split('#')[1].Trim();
-
-                                        var coordenadas = coord.Split('-');
-
-                                        region.Name = name;
-                                        region.X = int.Parse(coordenadas[0].Trim());
-                                        region.Y = int.Parse(coordenadas[1].Trim());
-                                        region.Width = int.Parse(coordenadas[2].Trim());
-                                        region.Height = int.Parse(coordenadas[3].Trim());
-
-                                        _regions.Add(region);
-                                        node.Nodes.Add(name);
-                                    }         
-                                    else if(node.Name == "Nodo1")
-                                    {
-                                        name = text.Split('$')[1].Split("-")[0].Trim();
-                                        _hashes.Add(new HashRegion { Name = name, Value = text.Split("-")[1].Trim() });
-                                        node.Nodes.Add(name);
-                                    }
-                                    else if(node.Name == "Nodo2")
-                                    {
-                                        name = text.Split('$')[1].Split("-")[0].Trim();
-                                        var hashImage = text.Split("-")[1].Trim();
-                                        var image = GetImageDecrypted(hashImage);
-
-                                        _images.Add(new ImageRegion { Name = name, Image = (Image)image });
-                                        node.Nodes.Add(name);
-                                    }                                    
-                                }
-                                
-                                counter++;
-                                
-                            }
-                        }
-                    }
-
-                    
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Error: Could not read file from disk. Original error: " + ex.Message);
-                }
-            }
+            }    
         }
-
 
         public Image PictureBoxZoom(Image img, Size size)
         {
@@ -386,14 +235,14 @@ namespace OpenScrape.App
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            //if (!string.IsNullOrWhiteSpace(twRegions.SelectedNode.Text))
-            //{
-            //    var node = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+            if (!string.IsNullOrWhiteSpace(twRegions.SelectedNode.Text))
+            {
+                var node = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
 
-            //    twRegions.Nodes.Remove(twRegions.SelectedNode);
-            //    _regions.Remove(node);
+                twRegions.Nodes.Remove(twRegions.SelectedNode);
+                _regions.Remove(node);
 
-            //}
+            }
         }
 
         private void btnCapture_Click(object sender, EventArgs e)
@@ -444,7 +293,7 @@ namespace OpenScrape.App
             {
                 var name = _locImage.Name.Split(" ")[0].Trim();
 
-                _locHash.Value = GetImageHash(GetImageEncrypted(_locImage.Image));
+                _locHash.Value = GetImageHash(EncrypterHelper.GetImageEncrypted(_locImage.Image, Key));
                 _locHash.Name = name;
 
                 _hashes.Add(new HashRegion { Name = _locHash.Name, Value = _locHash.Value });
@@ -465,11 +314,22 @@ namespace OpenScrape.App
         {
             if (ckHash.Checked)
             {
-                _locRegion.IsHash = true;
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                if (region != null)
+                    region.IsHash = true;
+
             }                
             else
             {
-                _locRegion.IsHash = false;
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                if (region != null)
+                    region.IsHash = false;
             } 
         }
 
@@ -554,7 +414,7 @@ namespace OpenScrape.App
 
 
             _locRegion.X += _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -572,7 +432,7 @@ namespace OpenScrape.App
 
 
             _locRegion.X -= _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -590,7 +450,7 @@ namespace OpenScrape.App
 
 
             _locRegion.Y += _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
             _img = _formImage.pbImagen.Image;
@@ -607,7 +467,7 @@ namespace OpenScrape.App
 
 
             _locRegion.Y -= _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -624,7 +484,7 @@ namespace OpenScrape.App
 
             _locRegion.Y -= _speed;
             _locRegion.X -= _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -641,7 +501,7 @@ namespace OpenScrape.App
 
             _locRegion.Y -= _speed;
             _locRegion.X += _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -658,7 +518,7 @@ namespace OpenScrape.App
 
             _locRegion.Y += _speed;
             _locRegion.X -= _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 
@@ -675,7 +535,7 @@ namespace OpenScrape.App
 
             _locRegion.Y += _speed;
             _locRegion.X += _speed;
-            lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
 

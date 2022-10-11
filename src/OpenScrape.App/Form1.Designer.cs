@@ -37,7 +37,6 @@
             this.btnMinusWidth = new System.Windows.Forms.Button();
             this.btnPlusHeight = new System.Windows.Forms.Button();
             this.btnMinusHeight = new System.Windows.Forms.Button();
-            this.btnSave = new System.Windows.Forms.Button();
             this.cbSpeed = new System.Windows.Forms.ComboBox();
             this.btnSaveMap = new System.Windows.Forms.Button();
             this.btnLoadMap = new System.Windows.Forms.Button();
@@ -67,6 +66,9 @@
             this.pbImageRegion = new System.Windows.Forms.PictureBox();
             this.btnCreateHash = new System.Windows.Forms.Button();
             this.ckHash = new System.Windows.Forms.CheckBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.tbResult = new System.Windows.Forms.TextBox();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -132,7 +134,7 @@
             // btnPlusHeight
             // 
             this.btnPlusHeight.Enabled = false;
-            this.btnPlusHeight.Location = new System.Drawing.Point(79, 68);
+            this.btnPlusHeight.Location = new System.Drawing.Point(73, 68);
             this.btnPlusHeight.Name = "btnPlusHeight";
             this.btnPlusHeight.Size = new System.Drawing.Size(25, 25);
             this.btnPlusHeight.TabIndex = 5;
@@ -144,7 +146,7 @@
             // btnMinusHeight
             // 
             this.btnMinusHeight.Enabled = false;
-            this.btnMinusHeight.Location = new System.Drawing.Point(103, 68);
+            this.btnMinusHeight.Location = new System.Drawing.Point(97, 68);
             this.btnMinusHeight.Name = "btnMinusHeight";
             this.btnMinusHeight.Size = new System.Drawing.Size(25, 25);
             this.btnMinusHeight.TabIndex = 6;
@@ -152,16 +154,6 @@
             this.btnMinusHeight.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.btnMinusHeight.UseVisualStyleBackColor = true;
             this.btnMinusHeight.Click += new System.EventHandler(this.btnMinusHeight_Click);
-            // 
-            // btnSave
-            // 
-            this.btnSave.Location = new System.Drawing.Point(12, 460);
-            this.btnSave.Name = "btnSave";
-            this.btnSave.Size = new System.Drawing.Size(50, 23);
-            this.btnSave.TabIndex = 7;
-            this.btnSave.Text = "Save";
-            this.btnSave.UseVisualStyleBackColor = true;
-            this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
             // cbSpeed
             // 
@@ -175,9 +167,9 @@
             "30",
             "40",
             "50"});
-            this.cbSpeed.Location = new System.Drawing.Point(379, 58);
+            this.cbSpeed.Location = new System.Drawing.Point(386, 58);
             this.cbSpeed.Name = "cbSpeed";
-            this.cbSpeed.Size = new System.Drawing.Size(49, 23);
+            this.cbSpeed.Size = new System.Drawing.Size(42, 23);
             this.cbSpeed.TabIndex = 12;
             this.cbSpeed.SelectedIndexChanged += new System.EventHandler(this.cbSpeed_SelectedIndexChanged);
             // 
@@ -214,7 +206,7 @@
             this.groupBox1.Controls.Add(this.btnMinusHeight);
             this.groupBox1.Location = new System.Drawing.Point(177, 48);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(195, 100);
+            this.groupBox1.Size = new System.Drawing.Size(203, 100);
             this.groupBox1.TabIndex = 15;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Rectangle";
@@ -223,14 +215,14 @@
             // 
             this.lbXY.AutoSize = true;
             this.lbXY.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.lbXY.Location = new System.Drawing.Point(138, 77);
+            this.lbXY.Location = new System.Drawing.Point(130, 77);
             this.lbXY.Name = "lbXY";
             this.lbXY.Size = new System.Drawing.Size(0, 13);
             this.lbXY.TabIndex = 8;
             // 
             // tbHeight
             // 
-            this.tbHeight.Location = new System.Drawing.Point(79, 42);
+            this.tbHeight.Location = new System.Drawing.Point(73, 42);
             this.tbHeight.Name = "tbHeight";
             this.tbHeight.Size = new System.Drawing.Size(49, 23);
             this.tbHeight.TabIndex = 7;
@@ -240,7 +232,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(79, 24);
+            this.label2.Location = new System.Drawing.Point(73, 24);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(43, 15);
             this.label2.TabIndex = 6;
@@ -389,16 +381,16 @@
             // 
             // pbZoom
             // 
-            this.pbZoom.Location = new System.Drawing.Point(100, 15);
+            this.pbZoom.Location = new System.Drawing.Point(10, 22);
             this.pbZoom.Name = "pbZoom";
-            this.pbZoom.Size = new System.Drawing.Size(216, 114);
+            this.pbZoom.Size = new System.Drawing.Size(159, 102);
             this.pbZoom.TabIndex = 17;
             this.pbZoom.TabStop = false;
             // 
             // btnZoom
             // 
             this.btnZoom.Enabled = false;
-            this.btnZoom.Location = new System.Drawing.Point(10, 59);
+            this.btnZoom.Location = new System.Drawing.Point(10, 130);
             this.btnZoom.Name = "btnZoom";
             this.btnZoom.Size = new System.Drawing.Size(60, 23);
             this.btnZoom.TabIndex = 18;
@@ -410,9 +402,9 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(177, 303);
+            this.groupBox3.Location = new System.Drawing.Point(369, 279);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(325, 135);
+            this.groupBox3.Size = new System.Drawing.Size(179, 159);
             this.groupBox3.TabIndex = 19;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Zoom";
@@ -460,9 +452,9 @@
             // 
             // pbImageRegion
             // 
-            this.pbImageRegion.Location = new System.Drawing.Point(177, 154);
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 204);
             this.pbImageRegion.Name = "pbImageRegion";
-            this.pbImageRegion.Size = new System.Drawing.Size(65, 85);
+            this.pbImageRegion.Size = new System.Drawing.Size(159, 97);
             this.pbImageRegion.TabIndex = 24;
             this.pbImageRegion.TabStop = false;
             // 
@@ -481,7 +473,7 @@
             // 
             this.ckHash.AutoSize = true;
             this.ckHash.Enabled = false;
-            this.ckHash.Location = new System.Drawing.Point(378, 98);
+            this.ckHash.Location = new System.Drawing.Point(386, 98);
             this.ckHash.Name = "ckHash";
             this.ckHash.Size = new System.Drawing.Size(53, 19);
             this.ckHash.TabIndex = 26;
@@ -489,11 +481,42 @@
             this.ckHash.UseVisualStyleBackColor = true;
             this.ckHash.CheckedChanged += new System.EventHandler(this.ckHash_CheckedChanged);
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(177, 166);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(39, 15);
+            this.label3.TabIndex = 27;
+            this.label3.Text = "Result";
+            // 
+            // tbResult
+            // 
+            this.tbResult.Enabled = false;
+            this.tbResult.Location = new System.Drawing.Point(222, 163);
+            this.tbResult.Name = "tbResult";
+            this.tbResult.Size = new System.Drawing.Size(114, 23);
+            this.tbResult.TabIndex = 28;
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Enabled = false;
+            this.checkBox1.Location = new System.Drawing.Point(386, 119);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(53, 19);
+            this.checkBox1.TabIndex = 29;
+            this.checkBox1.Text = "Hash";
+            this.checkBox1.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 548);
+            this.Controls.Add(this.checkBox1);
+            this.Controls.Add(this.tbResult);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.ckHash);
             this.Controls.Add(this.btnCreateHash);
             this.Controls.Add(this.pbImageRegion);
@@ -507,7 +530,6 @@
             this.Controls.Add(this.btnLoadMap);
             this.Controls.Add(this.btnSaveMap);
             this.Controls.Add(this.cbSpeed);
-            this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnNew);
             this.Controls.Add(this.twRegions);
             this.Name = "Form1";
@@ -533,7 +555,6 @@
         private Button btnMinusWidth;
         private Button btnPlusHeight;
         private Button btnMinusHeight;
-        private Button btnSave;
         private ComboBox cbSpeed;
         private Button btnSaveMap;
         private Button btnLoadMap;
@@ -563,5 +584,8 @@
         private Button btnCreateHash;
         private CheckBox ckHash;
         private Label lbXY;
+        private Label label3;
+        private TextBox tbResult;
+        private CheckBox checkBox1;
     }
 }

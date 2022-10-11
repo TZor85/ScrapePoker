@@ -112,5 +112,42 @@ namespace OpenScrape.App.Helpers
             return plainText;
         }
 
+        public static string GetImageEncrypted(Image? imagen, string secret)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                imagen.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                byte[] imageBytes = ms.ToArray();
+
+                var base64String = Convert.ToBase64String(imageBytes);
+
+                SHA256 mySHA256 = SHA256Managed.Create();
+                byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+
+                byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+                return EncrypterHelper.Encrypt(base64String, key, iv);
+            }
+        }
+
+        public static Image GetImageDecrypted(string base64String, string secret)
+        {
+
+            SHA256 mySHA256 = SHA256Managed.Create();
+            byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+
+
+            byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+
+            //string encrypted = EncrypterHelper.Encrypt(base64String, key, iv);
+            string decrypted = EncrypterHelper.Decrypt(base64String, key, iv);
+
+            byte[] byteImage = Convert.FromBase64String(decrypted);
+
+            var mss = new MemoryStream(byteImage, 0, byteImage.Length);
+
+            return Image.FromStream(mss, true);
+        }
+
     }
 }
