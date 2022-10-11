@@ -1,6 +1,18 @@
-r$p0name # 126 - 432 - 86 - 27
-r$p1name # 563 - 350 - 86 - 27
-r$p0chips # 110 - 465 - 117 - 33
-r$p1chips # 539 - 384 - 127 - 33
-r$p0dealer # 16 - 334 - 1 - 1
-r$p1dealer # 430 - 303 - 1 - 1
+
+//
+// Regions
+//
+
+r$p0name # 100 - 80 - 20 - 20
+
+//
+// Hashes
+//
+
+h$d1 - ZtzMnb5zlL
+
+//
+// Images
+//
+
+i$d1 (20x20) - KEtJZBHUV7V93xHadWvUdC0vCOn0K4RleXAtUITiIIjZQehClMaQj+iHW0jjRSxFpfYjkEebpSfpJIqsv0Hazm+JONly0PAaoEP6eze51E2lptWhHj/I8aU9u9lleJHak34h/C5iDn8NUFi+xuWeAIMF1EU8dplLe5W6MMXdfPOcV+haUhoB+niY5jhtk5PfgsOPZtV/5RbnjkqsCUFraeYlt1VD6ZXdnESLux7Lh4TD+4GL4iXUOnpMPKVaej1ephHjkYTkV1mi3yxyLwfnGxYKmf5oRWTjVnsVfyNfDR7xxzJnnknUYhTmpWPjqsp9iK0U2Az20tvDk5pIVosQrtTjbdKF8eQ+LjI+NZ5CRQW0ofmESd7TPOVIeu7SE1bRoIBrD19W1U25AjByc3veuFNBInrPgvuk1C7bVINGduPfFVE2dgYfwTdGlr7mbSOMDz+q3tG8NU+yPU8ZhRLl9UZ+frZpnio1i68qBdpFCVIc5s83vM2HiC6wKI3aHhzk73u54TU7PfS/Ym+BMN9qk7B1WE38wEKekmIQ/HpKZxb4+hoqlaqTjZvn8+Piq14eusNvPkPgzCD8zisuSpPFdwHQT/oIkzRUTN0nGGHhN/BRJuUAFbDjL/ar6r81soGlSzWshBsWuAaeV1TJ/xJybnhVQByhKcGMGJFpWzv0DnNiUZCv+hzDMo7vTUtHLLOUreGVag4FSo/ox75m9JJ8CDKhRzqP17uH3N96yok4lcbglXqt0eZFrPM64soaTKHAaENRnQqX1QtvhWuQA2geLIengrdMluDKjKxYOJjT/bnRvFLJGrQF+i2zyGFXci2/T3uSXkBixKgx2nygQa037Zl2i9Sn3gHWf0WgPHPKFsKCyQ5fjCMHViq1uNizGSij6SwksimtQ4DAZYfi3NjdQ8cHjKC3LGUdS4+wnZtSrzqlSiIUcNCPscfjk23/CcmaEBkaNSD9TcE58YTN9AJUuWIBedvfpN6hteVupNAaz2KO0yRz57UOwy4TsgTTWucbsgAC487nSkKpM+vgLFweONX2o2/UdpRjXMJul/0ICP8fN08IGVtnhe4z+Q1Tqr2cxTeLVyfwn58jsvgfeNaOFhf3pQ5rinyLdaDsIA7ZklDfAJwajVcpKjuIZPkRoe4Cw9bcy9zMOMcwdAtcwzRgKhft9y0UNZpV4i+dwojmQj5KHT19mqWiWbNv+5Ur8LL/xWFTw0rWxqZ9ogNqZezz2QWFsEnLfdMywYhTYyLYbEm9YGYr3sE+Det5chY1JVNX+M0G01t2tQXP6mvBEIjMsy9VOGL3PJ3PmA6tPMN62u6i3qKxKEg/GeEk2CSkhxEfGMA+Sleey8N2vBYx4aGb14u6CEO1v3+Gey8b2nAyelo7JGoB+NgBVC0q5R7DI30HN5hh6IIemBOu6f8NjGA1kjYRDYK8CcaazrYBHK9qj6+h64PPvxwKxsY7rE7mg0uzmxm9R0yAUdnwQwmiQDkKnu8uRxYQRDAKgg5CpfBnRkW8FL18RDLdxXVIoY7jKjPofJtZLVBl8bAclKUD93TVDw==

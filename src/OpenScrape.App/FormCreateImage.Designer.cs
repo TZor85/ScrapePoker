@@ -38,7 +38,7 @@
             this.btnCreate.Location = new System.Drawing.Point(11, 58);
             this.btnCreate.Name = "btnCreate";
             this.btnCreate.Size = new System.Drawing.Size(75, 23);
-            this.btnCreate.TabIndex = 0;
+            this.btnCreate.TabIndex = 2;
             this.btnCreate.Text = "Create";
             this.btnCreate.UseVisualStyleBackColor = true;
             this.btnCreate.Click += new System.EventHandler(this.btnCreate_Click);
@@ -58,7 +58,7 @@
             this.tbImage.Location = new System.Drawing.Point(12, 25);
             this.tbImage.Name = "tbImage";
             this.tbImage.Size = new System.Drawing.Size(155, 23);
-            this.tbImage.TabIndex = 2;
+            this.tbImage.TabIndex = 1;
             // 
             // FormCreateImage
             // 

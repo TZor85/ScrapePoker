@@ -82,6 +82,8 @@
             this.Controls.Add(this.btnAdd);
             this.Controls.Add(this.cbRegions);
             this.Controls.Add(this.label1);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "FormRegions";
             this.Text = "New Region Record";
             this.Load += new System.EventHandler(this.FormRegions_Load);

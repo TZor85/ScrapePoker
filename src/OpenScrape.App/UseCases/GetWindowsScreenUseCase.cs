@@ -14,12 +14,10 @@ namespace OpenScrape.App.UseCases
 
         public Image Execute()
         {
-            Thread.Sleep(2000);
-            GetWindow();
             return CaptureWindowsHelper.CaptureWindow(_handle);
         }
 
-        private void GetWindow()
+        public void GetWindow()
         {
             _handle = CaptureWindowsHelper.User32.GetForegroundWindow();
         }

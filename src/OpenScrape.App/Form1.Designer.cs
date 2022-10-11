@@ -42,6 +42,7 @@
             this.btnSaveMap = new System.Windows.Forms.Button();
             this.btnLoadMap = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.lbXY = new System.Windows.Forms.Label();
             this.tbHeight = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
@@ -62,10 +63,15 @@
             this.btnCapture = new System.Windows.Forms.Button();
             this.btnDelete = new System.Windows.Forms.Button();
             this.btnCreateImage = new System.Windows.Forms.Button();
+            this.btnWindow = new System.Windows.Forms.Button();
+            this.pbImageRegion = new System.Windows.Forms.PictureBox();
+            this.btnCreateHash = new System.Windows.Forms.Button();
+            this.ckHash = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
             this.groupBox3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).BeginInit();
             this.SuspendLayout();
             // 
             // twRegions
@@ -82,9 +88,9 @@
             treeNode1,
             treeNode2,
             treeNode3});
-            this.twRegions.Size = new System.Drawing.Size(118, 347);
+            this.twRegions.Size = new System.Drawing.Size(159, 390);
             this.twRegions.TabIndex = 0;
-            this.twRegions.Click += new System.EventHandler(this.twRegions_Click_1);
+            this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
             this.twRegions.DoubleClick += new System.EventHandler(this.twRegions_DoubleClick);
             // 
             // btnNew
@@ -169,7 +175,7 @@
             "30",
             "40",
             "50"});
-            this.cbSpeed.Location = new System.Drawing.Point(292, 58);
+            this.cbSpeed.Location = new System.Drawing.Point(379, 58);
             this.cbSpeed.Name = "cbSpeed";
             this.cbSpeed.Size = new System.Drawing.Size(49, 23);
             this.cbSpeed.TabIndex = 12;
@@ -197,6 +203,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.lbXY);
             this.groupBox1.Controls.Add(this.tbHeight);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.Controls.Add(this.label1);
@@ -205,12 +212,21 @@
             this.groupBox1.Controls.Add(this.btnMinusWidth);
             this.groupBox1.Controls.Add(this.btnPlusHeight);
             this.groupBox1.Controls.Add(this.btnMinusHeight);
-            this.groupBox1.Location = new System.Drawing.Point(136, 48);
+            this.groupBox1.Location = new System.Drawing.Point(177, 48);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(141, 100);
+            this.groupBox1.Size = new System.Drawing.Size(195, 100);
             this.groupBox1.TabIndex = 15;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Rectangle";
+            // 
+            // lbXY
+            // 
+            this.lbXY.AutoSize = true;
+            this.lbXY.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lbXY.Location = new System.Drawing.Point(138, 77);
+            this.lbXY.Name = "lbXY";
+            this.lbXY.Size = new System.Drawing.Size(0, 13);
+            this.lbXY.TabIndex = 8;
             // 
             // tbHeight
             // 
@@ -258,7 +274,7 @@
             this.groupBox2.Controls.Add(this.btnDown);
             this.groupBox2.Controls.Add(this.btnLeft);
             this.groupBox2.Controls.Add(this.btnRigth);
-            this.groupBox2.Location = new System.Drawing.Point(354, 48);
+            this.groupBox2.Location = new System.Drawing.Point(441, 48);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(107, 100);
             this.groupBox2.TabIndex = 16;
@@ -375,7 +391,7 @@
             // 
             this.pbZoom.Location = new System.Drawing.Point(100, 15);
             this.pbZoom.Name = "pbZoom";
-            this.pbZoom.Size = new System.Drawing.Size(204, 114);
+            this.pbZoom.Size = new System.Drawing.Size(216, 114);
             this.pbZoom.TabIndex = 17;
             this.pbZoom.TabStop = false;
             // 
@@ -394,16 +410,16 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(146, 260);
+            this.groupBox3.Location = new System.Drawing.Point(177, 303);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(310, 135);
+            this.groupBox3.Size = new System.Drawing.Size(325, 135);
             this.groupBox3.TabIndex = 19;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Zoom";
             // 
             // btnCapture
             // 
-            this.btnCapture.Location = new System.Drawing.Point(348, 460);
+            this.btnCapture.Location = new System.Drawing.Point(435, 460);
             this.btnCapture.Name = "btnCapture";
             this.btnCapture.Size = new System.Drawing.Size(104, 76);
             this.btnCapture.TabIndex = 20;
@@ -413,7 +429,7 @@
             // 
             // btnDelete
             // 
-            this.btnDelete.Location = new System.Drawing.Point(81, 19);
+            this.btnDelete.Location = new System.Drawing.Point(122, 19);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(49, 23);
             this.btnDelete.TabIndex = 21;
@@ -424,7 +440,7 @@
             // btnCreateImage
             // 
             this.btnCreateImage.Enabled = false;
-            this.btnCreateImage.Location = new System.Drawing.Point(354, 166);
+            this.btnCreateImage.Location = new System.Drawing.Point(441, 166);
             this.btnCreateImage.Name = "btnCreateImage";
             this.btnCreateImage.Size = new System.Drawing.Size(91, 23);
             this.btnCreateImage.TabIndex = 22;
@@ -432,11 +448,56 @@
             this.btnCreateImage.UseVisualStyleBackColor = true;
             this.btnCreateImage.Click += new System.EventHandler(this.btnCreateImage_Click);
             // 
+            // btnWindow
+            // 
+            this.btnWindow.Location = new System.Drawing.Point(326, 460);
+            this.btnWindow.Name = "btnWindow";
+            this.btnWindow.Size = new System.Drawing.Size(102, 76);
+            this.btnWindow.TabIndex = 23;
+            this.btnWindow.Text = "Window";
+            this.btnWindow.UseVisualStyleBackColor = true;
+            this.btnWindow.Click += new System.EventHandler(this.btnWindow_Click);
+            // 
+            // pbImageRegion
+            // 
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 154);
+            this.pbImageRegion.Name = "pbImageRegion";
+            this.pbImageRegion.Size = new System.Drawing.Size(65, 85);
+            this.pbImageRegion.TabIndex = 24;
+            this.pbImageRegion.TabStop = false;
+            // 
+            // btnCreateHash
+            // 
+            this.btnCreateHash.Enabled = false;
+            this.btnCreateHash.Location = new System.Drawing.Point(441, 204);
+            this.btnCreateHash.Name = "btnCreateHash";
+            this.btnCreateHash.Size = new System.Drawing.Size(91, 23);
+            this.btnCreateHash.TabIndex = 25;
+            this.btnCreateHash.Text = "Create Hash";
+            this.btnCreateHash.UseVisualStyleBackColor = true;
+            this.btnCreateHash.Click += new System.EventHandler(this.btnCrateHash_Click);
+            // 
+            // ckHash
+            // 
+            this.ckHash.AutoSize = true;
+            this.ckHash.Enabled = false;
+            this.ckHash.Location = new System.Drawing.Point(378, 98);
+            this.ckHash.Name = "ckHash";
+            this.ckHash.Size = new System.Drawing.Size(53, 19);
+            this.ckHash.TabIndex = 26;
+            this.ckHash.Text = "Hash";
+            this.ckHash.UseVisualStyleBackColor = true;
+            this.ckHash.CheckedChanged += new System.EventHandler(this.ckHash_CheckedChanged);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(464, 548);
+            this.ClientSize = new System.Drawing.Size(555, 548);
+            this.Controls.Add(this.ckHash);
+            this.Controls.Add(this.btnCreateHash);
+            this.Controls.Add(this.pbImageRegion);
+            this.Controls.Add(this.btnWindow);
             this.Controls.Add(this.btnCreateImage);
             this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.btnCapture);
@@ -458,7 +519,9 @@
             this.groupBox2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).EndInit();
             this.groupBox3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -495,5 +558,10 @@
         private Button btnCapture;
         private Button btnDelete;
         private Button btnCreateImage;
+        private Button btnWindow;
+        private PictureBox pbImageRegion;
+        private Button btnCreateHash;
+        private CheckBox ckHash;
+        private Label lbXY;
     }
 }
