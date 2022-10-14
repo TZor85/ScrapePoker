@@ -61,10 +61,20 @@ namespace OpenScrape.App.UseCases
                                     region.Width = int.Parse(coordenadas[2].Trim());
                                     region.Height = int.Parse(coordenadas[3].Split("&")[0].Trim());
 
-                                    if(text.Split("&")[1].Trim() == "True")
+                                    var pp = text.Split("&");
+
+                                    if (text.Split("&")[1].Trim() == "True")
                                         region.IsHash = true;
                                     else
                                         region.IsHash = false;
+
+                                    if (text.Split("&")[2].Trim() == "True")
+                                    {
+                                        region.IsColor = true;
+                                        region.Color = text.Split("&")[3].Trim();
+                                    }
+                                    else
+                                        region.IsColor = false;
 
                                     response.Regions.Add(region);
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
@@ -81,7 +91,7 @@ namespace OpenScrape.App.UseCases
                                     var hashImage = text.Split("-")[1].Trim();
                                     var image = EncrypterHelper.GetImageDecrypted(hashImage, secret);
 
-                                    response.Images.Add(new ImageRegion { Name = name, Image = (Image)image });
+                                    response.Images.Add(new ImageRegion { Name = name, Image = (Bitmap)image });
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
                                 }
                             }

@@ -42,7 +42,7 @@ namespace OpenScrape.App
             pbImagen.Image = img;
 
             //pbImagen.Image.Save(@"C:\Code\Poker\OpenScrape\OpenScrape.App\resources\img_" + DateTime.UtcNow.Ticks + ".jpg");
-            pbImagen.Image.Save(@"C:\Code\OpenScrape\OpenScrape.App\resources\1.jpg");
+            //pbImagen.Image.Save(@"C:\Code\OpenScrape\OpenScrape.App\resources\1.jpg");
         }
 
         private void btnLoad_Click(object sender, EventArgs e)
@@ -54,6 +54,9 @@ namespace OpenScrape.App
 
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
+                    this.Width = 461;
+                    this.Height = 327;
+
                     var bitmap = new Bitmap(dlg.FileName);
 
                     this.Width = bitmap.Width + this.Width / 11;

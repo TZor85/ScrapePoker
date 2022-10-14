@@ -8,6 +8,12 @@ using System.Drawing.Drawing2D;
 using OpenScrape.App.UseCases;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net;
+using OpenScrape.App.Entities;
+using System.Globalization;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.Arm;
 
 namespace OpenScrape.App
 {
@@ -27,11 +33,18 @@ namespace OpenScrape.App
         ImageRegion _locImage = new ImageRegion();
         HashRegion _locHash = new HashRegion();
 
+        TableScrapeResult _scrapeResult = new TableScrapeResult();
+
         Image _img = null;
 
         private int _speed = 1;
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
+        private string _p0ColorDealer = "ffd800";
+        private string _p1ColorDealer = "ffe005";
+        private string _p2ColorDealer = "ffcf03";
+        private string _p1ColorActive = "bd2d22";
+        private string _p2ColorActive = "bc2c21";
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
@@ -66,7 +79,7 @@ namespace OpenScrape.App
         {
             var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
             var type = string.Empty;
-            Image img = null;
+            Bitmap img = null;
 
             switch (nodo)
             {                
@@ -95,7 +108,7 @@ namespace OpenScrape.App
             using (SHA1Managed sha1 = new SHA1Managed())
             {
                 var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(input));
-                return string.Concat(Convert.ToBase64String(hash).ToCharArray().Where(x => char.IsLetterOrDigit(x)).Take(10)).ToLower();
+                return string.Concat(Convert.ToBase64String(hash).ToCharArray().Where(x => char.IsLetterOrDigit(x))).ToLower();
             }
         }
 
@@ -108,24 +121,34 @@ namespace OpenScrape.App
             {
                 var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
 
+                _locRegion = region;
+
                 ckHash.Enabled = true;
+                ckColor.Enabled = true;
                 ckHash.Checked = region.IsHash;
+                ckColor.Checked = region.IsColor;
                 pbImageRegion.Image = null;
                 tbResult.Text = string.Empty;
             }
 
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo1")
             {
+                _locHash = _hashes.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
                 ckHash.Enabled = false;
+                ckColor.Enabled = false;
                 pbImageRegion.Image = null;
                 tbResult.Text = _hashes.FirstOrDefault(x => x.Name == name)?.Value;
             }
 
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
             {
+                _locImage = _images.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
                 pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
                 btnCreateHash.Enabled = true;
                 ckHash.Enabled = false;
+                ckColor.Enabled = false;
                 tbResult.Text = string.Empty;
             }
 
@@ -150,35 +173,7 @@ namespace OpenScrape.App
 
         }
 
-        
-
-        private void btnSave_Click(object sender, EventArgs e)
-        {
-            //var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
-
-            //if (region != null)
-            //{
-            //    if (region.Name.Contains("dealer"))
-            //    {
-            //        Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(_locRegion.X, _locRegion.Y);
-            //        var col = color.Name.Substring(2, 6);
-
-            //    }
-            //    else
-            //    {
-
-            //        var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
-                
-            //        var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(@"C:\Code\OpenScrape\OpenScrape.App\resources\1.jpg"), 61));
-    
-            //        Rect area = new Rect(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            //        var res = ocrengine.Process(img, area);
-            //        _locRegion.Value = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
-            //    }
-
-            //}
-        }        
-
+ 
         private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
         {
             int.TryParse(cbSpeed.Text, out _speed);
@@ -247,30 +242,139 @@ namespace OpenScrape.App
 
         private void btnCapture_Click(object sender, EventArgs e)
         {
-            var img = _useCase.Execute();
+            //var img = _useCase.Execute();
 
-            _formImage.Width = img.Width + _formImage.Width / 11;
-            _formImage.Height = img.Height + _formImage.Height / 4;
+            //_formImage.Width = img.Width + _formImage.Width / 11;
+            //_formImage.Height = img.Height + _formImage.Height / 4;
 
-            _formImage.pbImagen.Width = img.Width;
-            _formImage.pbImagen.Height = img.Height;
+            //_formImage.pbImagen.Width = img.Width;
+            //_formImage.pbImagen.Height = img.Height;
 
-            _formImage.pbImagen.Image = img;
+            //_formImage.pbImagen.Image = img;
+
 
             //TODO: hacer las comparaciones de las imagenes / OCR
 
-            //foreach (var item in _regions)
-            //{
-            //    if(item.Type == "i")
-            //    {
-            //        img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));
-            //    }
-            //}
+            foreach (var item in _regions)
+            {
+                if (item.IsHash)
+                {
+
+                    
+                    var img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height));
+
+                    pbZoom.Image = img;
+                    pbZoom.Refresh();
 
 
+                    var locHash = GetImageHash(EncrypterHelper.GetImageEncrypted(img, Key));
+
+                    var hashName = _hashes.Any(x => x.Value == locHash) ? _hashes.FirstOrDefault(x => x.Value == locHash)?.Name : string.Empty;
+
+
+
+                    switch (item.Name)
+                    {
+                        case "u0cardface0":
+                            _scrapeResult.U0CardFace0 = hashName;
+                            break;
+                        case "u0cardface1":
+                            _scrapeResult.U0CardFace1 = hashName;
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                    
+                }
+                else if (item.IsColor)
+                {
+                    Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
+                    var rgbColor = color.Name.Substring(2, 6);
+
+                    if (rgbColor == _p0ColorDealer)
+                        _scrapeResult.P0Dealer = true;
+                    else if (rgbColor == _p1ColorDealer)
+                        _scrapeResult.P1Dealer = true;
+                    else if (rgbColor == _p2ColorDealer)
+                        _scrapeResult.P2Dealer = true;
+
+                    if (rgbColor == _p1ColorActive)
+                        _scrapeResult.P1Active = true;
+
+                    if (rgbColor == _p2ColorActive)
+                        _scrapeResult.P2Active = true;
+
+
+
+                    //if (rgbColor == _p0ColorDealer || rgbColor == _p1ColorDealer || rgbColor == _p2ColorDealer)
+                    //{
+                    //    switch (item.Name)
+                    //    {
+                    //        case "p0dealer":
+                    //            _scrapeResult.P0Dealer = true;
+                    //            break;
+                    //        case "p1dealer":
+                    //            _scrapeResult.P1Dealer = true;
+                    //            break;
+                    //        case "p2dealer":
+                    //            _scrapeResult.P2Dealer = true;
+                    //            break;
+                    //        case "p1active":
+                    //            _scrapeResult.P1Active = true;
+                    //            break;
+                    //        case "p2active":
+                    //            _scrapeResult.P2Active = true;
+                    //            break;
+                    //        default:
+                    //            break;
+                    //    }
+                    //}                    
+                    
+                }
+                else
+                {
+                    var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
+
+                    var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), 100));
+
+                    Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+                    var res = ocrengine.Process(img, area);
+
+                    switch (item.Name)
+                    {
+                        case "p0name":
+                            _scrapeResult.P0Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        case "p1name":
+                            _scrapeResult.P1Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        case "p2name":
+                            _scrapeResult.P2Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        case "p0chips":
+                            _scrapeResult.P0Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        case "p1chips":
+                            _scrapeResult.P1Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        case "p2chips":
+                            _scrapeResult.P2Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            break;
+                        default:
+                            break;
+                    }
+
+                    
+                }
+
+            }
+
+            var ppp = _scrapeResult;
 
         }
 
+        
         private void btnWindow_Click(object sender, EventArgs e)
         {
             Thread.Sleep(2000);
@@ -331,6 +435,53 @@ namespace OpenScrape.App
                 if (region != null)
                     region.IsHash = false;
             } 
+        }
+
+        private void ckColor_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ckColor.Checked)
+            {
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = _formImage.pbImagen.Image,
+                    X = _locRegion.X,
+                    Y = _locRegion.Y
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor;
+                    tbG.Text = rgbResponse.GColor;
+                    tbB.Text = rgbResponse.BColor;
+                }
+
+                if (region != null)
+                {
+                    region.IsColor = true;
+                    _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
+                }
+                    
+
+            }
+            else
+            {
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                tbR.Text = string.Empty;
+                tbG.Text = string.Empty;
+                tbB.Text = string.Empty;
+
+                if (region != null)
+                    region.IsColor = false;
+            }
         }
 
         #region Tamaño Region
@@ -412,11 +563,26 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.X += _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
             _img = _formImage.pbImagen.Image;
 
@@ -430,10 +596,26 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.X -= _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -448,10 +630,26 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y += _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
             _img = _formImage.pbImagen.Image;
 
@@ -465,10 +663,26 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y -= _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -481,11 +695,27 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y -= _speed;
             _locRegion.X -= _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -498,11 +728,27 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y -= _speed;
             _locRegion.X += _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -515,11 +761,27 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y += _speed;
             _locRegion.X -= _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -532,11 +794,27 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = _formImage.pbImagen.Image,
+                X = _locRegion.X,
+                Y = _locRegion.Y
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (ckColor.Checked)
+            {
+                tbR.Text = rgbResponse.RColor;
+                tbG.Text = rgbResponse.GColor;
+                tbB.Text = rgbResponse.BColor;
+            }
 
             _locRegion.Y += _speed;
             _locRegion.X += _speed;
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
 
 
             _img = _formImage.pbImagen.Image;
@@ -565,7 +843,7 @@ namespace OpenScrape.App
             ckHash.Enabled = true;
         }
 
-       
+        
     }
 }
 

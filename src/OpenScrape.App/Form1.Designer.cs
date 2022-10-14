@@ -68,7 +68,17 @@
             this.ckHash = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.tbResult = new System.Windows.Forms.TextBox();
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.ckColor = new System.Windows.Forms.CheckBox();
+            this.lbcarta = new System.Windows.Forms.Label();
+            this.lbTexto = new System.Windows.Forms.Label();
+            this.tbR = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.tbG = new System.Windows.Forms.TextBox();
+            this.label6 = new System.Windows.Forms.Label();
+            this.tbB = new System.Windows.Forms.TextBox();
+            this.lbDealer = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -452,7 +462,7 @@
             // 
             // pbImageRegion
             // 
-            this.pbImageRegion.Location = new System.Drawing.Point(177, 204);
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 301);
             this.pbImageRegion.Name = "pbImageRegion";
             this.pbImageRegion.Size = new System.Drawing.Size(159, 97);
             this.pbImageRegion.TabIndex = 24;
@@ -498,23 +508,121 @@
             this.tbResult.Size = new System.Drawing.Size(114, 23);
             this.tbResult.TabIndex = 28;
             // 
-            // checkBox1
+            // ckColor
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Enabled = false;
-            this.checkBox1.Location = new System.Drawing.Point(386, 119);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(53, 19);
-            this.checkBox1.TabIndex = 29;
-            this.checkBox1.Text = "Hash";
-            this.checkBox1.UseVisualStyleBackColor = true;
+            this.ckColor.AutoSize = true;
+            this.ckColor.Enabled = false;
+            this.ckColor.Location = new System.Drawing.Point(386, 119);
+            this.ckColor.Name = "ckColor";
+            this.ckColor.Size = new System.Drawing.Size(55, 19);
+            this.ckColor.TabIndex = 29;
+            this.ckColor.Text = "Color";
+            this.ckColor.UseVisualStyleBackColor = true;
+            this.ckColor.CheckedChanged += new System.EventHandler(this.ckColor_CheckedChanged);
+            // 
+            // lbcarta
+            // 
+            this.lbcarta.AutoSize = true;
+            this.lbcarta.Location = new System.Drawing.Point(342, 163);
+            this.lbcarta.Name = "lbcarta";
+            this.lbcarta.Size = new System.Drawing.Size(38, 15);
+            this.lbcarta.TabIndex = 30;
+            this.lbcarta.Text = "label4";
+            // 
+            // lbTexto
+            // 
+            this.lbTexto.AutoSize = true;
+            this.lbTexto.Location = new System.Drawing.Point(344, 190);
+            this.lbTexto.Name = "lbTexto";
+            this.lbTexto.Size = new System.Drawing.Size(45, 15);
+            this.lbTexto.TabIndex = 31;
+            this.lbTexto.Text = "lbTexto";
+            // 
+            // tbR
+            // 
+            this.tbR.Enabled = false;
+            this.tbR.Location = new System.Drawing.Point(222, 220);
+            this.tbR.Name = "tbR";
+            this.tbR.Size = new System.Drawing.Size(29, 23);
+            this.tbR.TabIndex = 32;
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(229, 202);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(14, 15);
+            this.label4.TabIndex = 33;
+            this.label4.Text = "R";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(264, 202);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(15, 15);
+            this.label5.TabIndex = 35;
+            this.label5.Text = "G";
+            // 
+            // tbG
+            // 
+            this.tbG.Enabled = false;
+            this.tbG.Location = new System.Drawing.Point(257, 220);
+            this.tbG.Name = "tbG";
+            this.tbG.Size = new System.Drawing.Size(29, 23);
+            this.tbG.TabIndex = 34;
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(299, 202);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(14, 15);
+            this.label6.TabIndex = 37;
+            this.label6.Text = "B";
+            // 
+            // tbB
+            // 
+            this.tbB.Enabled = false;
+            this.tbB.Location = new System.Drawing.Point(292, 220);
+            this.tbB.Name = "tbB";
+            this.tbB.Size = new System.Drawing.Size(29, 23);
+            this.tbB.TabIndex = 36;
+            // 
+            // lbDealer
+            // 
+            this.lbDealer.AutoSize = true;
+            this.lbDealer.Location = new System.Drawing.Point(344, 212);
+            this.lbDealer.Name = "lbDealer";
+            this.lbDealer.Size = new System.Drawing.Size(38, 15);
+            this.lbDealer.TabIndex = 38;
+            this.lbDealer.Text = "label7";
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(177, 223);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(36, 15);
+            this.label8.TabIndex = 39;
+            this.label8.Text = "Color";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 548);
-            this.Controls.Add(this.checkBox1);
+            this.Controls.Add(this.label8);
+            this.Controls.Add(this.lbDealer);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.tbB);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.tbG);
+            this.Controls.Add(this.label4);
+            this.Controls.Add(this.tbR);
+            this.Controls.Add(this.lbTexto);
+            this.Controls.Add(this.lbcarta);
+            this.Controls.Add(this.ckColor);
             this.Controls.Add(this.tbResult);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.ckHash);
@@ -586,6 +694,16 @@
         private Label lbXY;
         private Label label3;
         private TextBox tbResult;
-        private CheckBox checkBox1;
+        private CheckBox ckColor;
+        private Label lbcarta;
+        private Label lbTexto;
+        private TextBox tbR;
+        private Label label4;
+        private Label label5;
+        private TextBox tbG;
+        private Label label6;
+        private TextBox tbB;
+        private Label lbDealer;
+        private Label label8;
     }
 }

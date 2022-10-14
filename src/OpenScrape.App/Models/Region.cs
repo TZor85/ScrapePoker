@@ -25,13 +25,15 @@ namespace OpenScrape.App.Models
         public int Height { get; set; } = 20;
         public string Value { get; set; } = string.Empty;
         public bool IsHash { get; set; }
+        public bool IsColor { get; set; }
+        public string Color { get; set; } = string.Empty;
 
     }
 
     public class ImageRegion
     {
         public string Name { get; set; } = string.Empty;
-        public Image? Image { get; set; }
+        public Bitmap? Image { get; set; }
         //public HashRegion Hash { get; set; } = new HashRegion();
     }
 

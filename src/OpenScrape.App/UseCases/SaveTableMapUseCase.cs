@@ -27,7 +27,7 @@ namespace OpenScrape.App.UseCases
                         foreach (var item in request.Regions)
                         {
                             if (!string.IsNullOrEmpty(item.Name))
-                                writer.WriteLine($"r${item.Name} # {item.X} - {item.Y} - {item.Width} - {item.Height} & {item.IsHash}");
+                                writer.WriteLine($"r${item.Name} # {item.X} - {item.Y} - {item.Width} - {item.Height} & {item.IsHash} & {item.IsColor} & {item.Color}");
                         }
 
                         writer.WriteLine();

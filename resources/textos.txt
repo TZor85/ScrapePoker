@@ -1,0 +1,28 @@
+
+//
+// Regions
+//
+
+r$p0name # 668 - 881 - 160 - 30 & False & False & 
+r$p1name # 109 - 335 - 160 - 25 & False & False & 
+r$p2name # 1225 - 333 - 160 - 30 & False & False & 
+r$p0dealer # 621 - 772 - 1 - 1 & False & True & fbdd01
+r$p1dealer # 279 - 430 - 1 - 1 & False & True & ffd803
+r$p2dealer # 1213 - 428 - 1 - 1 & False & True & ffd00a
+r$p1active # 249 - 312 - 20 - 10 & False & True & bc2c21
+r$p2active # 1365 - 311 - 20 - 10 & False & True & 1c1c1e
+r$p0chips # 667 - 917 - 160 - 30 & False & False & 
+r$p1chips # 105 - 370 - 160 - 30 & False & False & 
+r$p2chips # 1220 - 370 - 160 - 30 & False & False & 
+r$u0cardface0 # 654 - 767 - 25 - 55 & True & False & 
+r$u0cardface1 # 752 - 767 - 25 - 55 & True & False & 
+
+//
+// Hashes
+//
+
+
+//
+// Images
+//
+
