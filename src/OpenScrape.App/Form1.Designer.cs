@@ -79,6 +79,9 @@
             this.tbB = new System.Windows.Forms.TextBox();
             this.lbDealer = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
+            this.tbUmbral = new System.Windows.Forms.TextBox();
+            this.btnPlusUmbral = new System.Windows.Forms.Button();
+            this.btnMinusUmbral = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -412,7 +415,7 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(369, 279);
+            this.groupBox3.Location = new System.Drawing.Point(369, 293);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(179, 159);
             this.groupBox3.TabIndex = 19;
@@ -462,7 +465,7 @@
             // 
             // pbImageRegion
             // 
-            this.pbImageRegion.Location = new System.Drawing.Point(177, 301);
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 315);
             this.pbImageRegion.Name = "pbImageRegion";
             this.pbImageRegion.Size = new System.Drawing.Size(159, 97);
             this.pbImageRegion.TabIndex = 24;
@@ -607,11 +610,47 @@
             this.label8.TabIndex = 39;
             this.label8.Text = "Color";
             // 
+            // tbUmbral
+            // 
+            this.tbUmbral.Location = new System.Drawing.Point(459, 233);
+            this.tbUmbral.Name = "tbUmbral";
+            this.tbUmbral.Size = new System.Drawing.Size(49, 23);
+            this.tbUmbral.TabIndex = 40;
+            this.tbUmbral.Text = "0";
+            this.tbUmbral.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // btnPlusUmbral
+            // 
+            this.btnPlusUmbral.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnPlusUmbral.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btnPlusUmbral.Location = new System.Drawing.Point(459, 262);
+            this.btnPlusUmbral.Name = "btnPlusUmbral";
+            this.btnPlusUmbral.Size = new System.Drawing.Size(25, 25);
+            this.btnPlusUmbral.TabIndex = 41;
+            this.btnPlusUmbral.Text = "+";
+            this.btnPlusUmbral.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.btnPlusUmbral.UseVisualStyleBackColor = true;
+            this.btnPlusUmbral.Click += new System.EventHandler(this.btnPlusUmbral_Click);
+            // 
+            // btnMinusUmbral
+            // 
+            this.btnMinusUmbral.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.btnMinusUmbral.Location = new System.Drawing.Point(483, 262);
+            this.btnMinusUmbral.Name = "btnMinusUmbral";
+            this.btnMinusUmbral.Size = new System.Drawing.Size(25, 25);
+            this.btnMinusUmbral.TabIndex = 42;
+            this.btnMinusUmbral.Text = "-";
+            this.btnMinusUmbral.UseVisualStyleBackColor = true;
+            this.btnMinusUmbral.Click += new System.EventHandler(this.btnMinusUmbral_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 548);
+            this.Controls.Add(this.btnPlusUmbral);
+            this.Controls.Add(this.btnMinusUmbral);
+            this.Controls.Add(this.tbUmbral);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.lbDealer);
             this.Controls.Add(this.label6);
@@ -705,5 +744,8 @@
         private TextBox tbB;
         private Label lbDealer;
         private Label label8;
+        private TextBox tbUmbral;
+        private Button btnPlusUmbral;
+        private Button btnMinusUmbral;
     }
 }

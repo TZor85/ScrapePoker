@@ -46,6 +46,8 @@ namespace OpenScrape.App
         private string _p1ColorActive = "bd2d22";
         private string _p2ColorActive = "bc2c21";
 
+        private int _umbral = 50;
+
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
@@ -59,6 +61,7 @@ namespace OpenScrape.App
         {
             _formImage = new FormImage();
             cbSpeed.SelectedIndex = 0;
+            tbUmbral.Text = _umbral.ToString();
             
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
@@ -89,7 +92,7 @@ namespace OpenScrape.App
                     break;
                 case "Nodo2":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
-                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));
+                    img = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
                     _locImage = new ImageRegion { Name = texto, Image = img };
                     _images.Add(_locImage);
                     break;
@@ -261,7 +264,7 @@ namespace OpenScrape.App
                 {
 
                     
-                    var img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height));
+                    var img = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), _umbral);
 
                     pbZoom.Image = img;
                     pbZoom.Refresh();
@@ -336,7 +339,7 @@ namespace OpenScrape.App
                 {
                     var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
 
-                    var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), 100));
+                    var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
 
                     Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
                     var res = ocrengine.Process(img, area);
@@ -482,6 +485,24 @@ namespace OpenScrape.App
                 if (region != null)
                     region.IsColor = false;
             }
+        }
+
+        private void btnPlusUmbral_Click(object sender, EventArgs e)
+        {
+            _umbral++;
+            pbZoom.Image = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+
+            tbUmbral.Text = _umbral.ToString();
+            pbImageRegion.Refresh();
+        }
+
+        private void btnMinusUmbral_Click(object sender, EventArgs e)
+        {
+            _umbral--;
+            pbZoom.Image = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+
+            tbUmbral.Text = _umbral.ToString();
+            pbImageRegion.Refresh();
         }
 
         #region Tamaño Region
