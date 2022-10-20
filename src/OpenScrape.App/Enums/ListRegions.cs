@@ -11,7 +11,7 @@ namespace OpenScrape.App.Enums
         public static List<string> Regions = new List<string> 
         { 
             "p0name", "p1name", "p2name", "p0chips", "p1chips", "p2chips", "p0dealer", "p1dealer", "p2dealer", 
-            "p0active", "p1active", "p2active", "u0cardface0", "u0cardface1"
+            "p0active", "p1active", "p2active", "p1sit", "p2sit", "u0cardface0", "u0cardface1"
         };
 
     }

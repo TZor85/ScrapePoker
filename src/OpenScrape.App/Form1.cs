@@ -40,13 +40,17 @@ namespace OpenScrape.App
         private int _speed = 1;
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
+
         private string _p0ColorDealer = "ffd800";
         private string _p1ColorDealer = "ffe005";
         private string _p2ColorDealer = "ffcf03";
         private string _p1ColorActive = "bd2d22";
         private string _p2ColorActive = "bc2c21";
+        private string _p1ColorSit = "000000";
+        private string _p2ColorSit = "000000";
 
-        private int _umbral = 50;
+
+        private int _umbral = 100;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
@@ -92,7 +96,7 @@ namespace OpenScrape.App
                     break;
                 case "Nodo2":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
-                    img = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
                     _locImage = new ImageRegion { Name = texto, Image = img };
                     _images.Add(_locImage);
                     break;
@@ -243,6 +247,22 @@ namespace OpenScrape.App
             }
         }
 
+        public static List<bool> GetHash(Bitmap bmpSource)
+        {
+            List<bool> lResult = new List<bool>();
+            //create new image with 16x16 pixel
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(25, 55));
+            for (int j = 0; j < bmpMin.Height; j++)
+            {
+                for (int i = 0; i < bmpMin.Width; i++)
+                {
+                    //reduce colors to true / false                
+                    lResult.Add(bmpMin.GetPixel(i, j).GetBrightness() < 0.5f);
+                }
+            }
+            return lResult;
+        }
+
         private void btnCapture_Click(object sender, EventArgs e)
         {
             //var img = _useCase.Execute();
@@ -258,36 +278,41 @@ namespace OpenScrape.App
 
             //TODO: hacer las comparaciones de las imagenes / OCR
 
+            _scrapeResult = new TableScrapeResult();
+
+            var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
+
             foreach (var item in _regions)
             {
                 if (item.IsHash)
                 {
 
-                    
-                    var img = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), _umbral);
-
-                    pbZoom.Image = img;
-                    pbZoom.Refresh();
-
-
-                    var locHash = GetImageHash(EncrypterHelper.GetImageEncrypted(img, Key));
-
-                    var hashName = _hashes.Any(x => x.Value == locHash) ? _hashes.FirstOrDefault(x => x.Value == locHash)?.Name : string.Empty;
-
-
-
-                    switch (item.Name)
+                    foreach (var immg in _images)
                     {
-                        case "u0cardface0":
-                            _scrapeResult.U0CardFace0 = hashName;
-                            break;
-                        case "u0cardface1":
-                            _scrapeResult.U0CardFace1 = hashName;
-                            break;
-                        default:
-                            break;
+                        List<bool> iHash1 = GetHash(new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height))));
+                        List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
+
+                        //determine the number of equal pixel (x of 256)
+                        int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
+
+                        //var val = (256 * 98) / 100;
+
+                        if (equalElements >= (1375 * 96 / 100))
+                        {
+                            switch (item.Name)
+                            {
+                                case "u0cardface0":
+                                    _scrapeResult.U0CardFace0 = immg.Name.Split(" ")[0];
+                                    break;
+                                case "u0cardface1":
+                                    _scrapeResult.U0CardFace1 = immg.Name.Split(" ")[0];
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
                     }
-                    
                     
                 }
                 else if (item.IsColor)
@@ -295,74 +320,78 @@ namespace OpenScrape.App
                     Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
                     var rgbColor = color.Name.Substring(2, 6);
 
-                    if (rgbColor == _p0ColorDealer)
-                        _scrapeResult.P0Dealer = true;
-                    else if (rgbColor == _p1ColorDealer)
-                        _scrapeResult.P1Dealer = true;
-                    else if (rgbColor == _p2ColorDealer)
-                        _scrapeResult.P2Dealer = true;
+                    switch (item.Name)
+                    {
+                        case "p0dealer":
+                            if(rgbColor == _p0ColorDealer)
+                                _scrapeResult.P0Dealer = true;
+                            break;
+                        case "p1dealer":
+                            if (rgbColor == _p1ColorDealer)
+                                _scrapeResult.P1Dealer = true;
+                            break;
+                        case "p2dealer":
+                            if (rgbColor == _p2ColorDealer)
+                                _scrapeResult.P2Dealer = true;
+                            break;
+                        case "p1active":
+                            if (rgbColor == _p1ColorActive)
+                                _scrapeResult.P1Active = true;
+                            break;
+                        case "p2active":
+                            if (rgbColor == _p2ColorActive)
+                                _scrapeResult.P2Active = true;
+                            break;
+                        case "p1sit":
+                            if (rgbColor == _p1ColorSit)
+                                _scrapeResult.P1Sit = true;
+                            break;
+                        case "p2sit":
+                            if (rgbColor == _p2ColorSit)
+                                _scrapeResult.P2Sit = true;
+                            break;
+                        default:
+                            break;
+                    }
 
-                    if (rgbColor == _p1ColorActive)
-                        _scrapeResult.P1Active = true;
+                    //if (rgbColor == _p0ColorDealer)
+                    //    _scrapeResult.P0Dealer = true;
+                    //else if (rgbColor == _p1ColorDealer)
+                    //    _scrapeResult.P1Dealer = true;
+                    //else if (rgbColor == _p2ColorDealer)
+                    //    _scrapeResult.P2Dealer = true;
 
-                    if (rgbColor == _p2ColorActive)
-                        _scrapeResult.P2Active = true;
+                    //if (rgbColor == _p1ColorActive)
+                    //    _scrapeResult.P1Active = true;
 
+                    //if (rgbColor == _p2ColorActive)
+                    //    _scrapeResult.P2Active = true;
 
+                    //if (rgbColor == _p1ColorSit)
+                    //    _scrapeResult.P1Sit = true;
 
-                    //if (rgbColor == _p0ColorDealer || rgbColor == _p1ColorDealer || rgbColor == _p2ColorDealer)
-                    //{
-                    //    switch (item.Name)
-                    //    {
-                    //        case "p0dealer":
-                    //            _scrapeResult.P0Dealer = true;
-                    //            break;
-                    //        case "p1dealer":
-                    //            _scrapeResult.P1Dealer = true;
-                    //            break;
-                    //        case "p2dealer":
-                    //            _scrapeResult.P2Dealer = true;
-                    //            break;
-                    //        case "p1active":
-                    //            _scrapeResult.P1Active = true;
-                    //            break;
-                    //        case "p2active":
-                    //            _scrapeResult.P2Active = true;
-                    //            break;
-                    //        default:
-                    //            break;
-                    //    }
-                    //}                    
-                    
+                    //if (rgbColor == _p2ColorSit)
+                    //    _scrapeResult.P2Sit = true;
+
                 }
                 else
                 {
                     var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
-
-                    var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
+                    
 
                     Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
                     var res = ocrengine.Process(img, area);
 
                     switch (item.Name)
-                    {
-                        case "p0name":
-                            _scrapeResult.P0Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
-                            break;
-                        case "p1name":
-                            _scrapeResult.P1Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
-                            break;
-                        case "p2name":
-                            _scrapeResult.P2Name = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
-                            break;
+                    {                        
                         case "p0chips":
-                            _scrapeResult.P0Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            _scrapeResult.P0Chips = res.GetText();
                             break;
                         case "p1chips":
-                            _scrapeResult.P1Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            _scrapeResult.P1Chips = res.GetText();
                             break;
                         case "p2chips":
-                            _scrapeResult.P2Chips = string.IsNullOrWhiteSpace(res.GetText()) ? string.Empty : res.GetText();
+                            _scrapeResult.P2Chips = res.GetText();
                             break;
                         default:
                             break;
@@ -373,10 +402,73 @@ namespace OpenScrape.App
 
             }
 
-            var ppp = _scrapeResult;
+            lbDealer0.Text = string.Empty;
+            lbDealer1.Text = string.Empty;
+            lbDealer2.Text = string.Empty;
+
+            lbP0Chips.Text = "Chips: ";
+            lbP1Chips.Text = "Chips: ";
+            lbP2Chips.Text = "Chips: ";
+
+            lbP0Chips.Text += _scrapeResult.P0Chips;
+            lbP1Chips.Text += _scrapeResult.P1Chips;
+            lbP2Chips.Text += _scrapeResult.P2Chips;
+
+            lbEfective.Text = "Effective BB: ";
+            lbEfective.Text += GetEffectiveBB(_scrapeResult.P0Chips, _scrapeResult.P1Chips, _scrapeResult.P2Chips);
+
+            lbCard0.Text = _scrapeResult.U0CardFace0;
+            lbCard1.Text = _scrapeResult.U0CardFace1;
+
+            if (_scrapeResult.P0Dealer)
+                lbDealer0.Text = "Dealer";
+            else
+                lbDealer0.Text = string.Empty;
+
+            if (_scrapeResult.P1Dealer)
+                lbDealer1.Text = "Dealer";
+            else
+                lbDealer1.Text = string.Empty;
+
+            if (_scrapeResult.P2Dealer)
+                lbDealer2.Text = "Dealer";
+            else
+                lbDealer2.Text = string.Empty;
+
 
         }
 
+        private string GetEffectiveBB(string p0BB, string p1BB, string p2BB)
+        {
+            double medio = 0;
+
+            double.TryParse(p0BB.Split(" ")[0].Replace(".", ","), out double p0);
+            double.TryParse(p1BB.Split(" ")[0].Replace(".", ","), out double p1);
+            double.TryParse(p2BB.Split(" ")[0].Replace(".", ","), out double p2);
+
+            if (p0 < p1 && p0 < p2)
+            {
+                medio = p0;
+            }
+            else
+            {
+                if (p0 > p1 && p0 < p2)
+                    medio = p0;
+                else if (p0 > p1 && p0 > p2)
+                {
+                    if (p1 > p2)
+                        medio = p1;
+                    else
+                        medio = p2;
+                }
+                else if (p0 < p1 && p0 > p2)
+                    medio = p0;
+                else
+                    medio = p1;
+            }
+
+            return medio.ToString();
+        }
         
         private void btnWindow_Click(object sender, EventArgs e)
         {
@@ -864,7 +956,17 @@ namespace OpenScrape.App
             ckHash.Enabled = true;
         }
 
-        
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+            Bitmap bmpMin = new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), new Size(16, 16));
+            pbZoom.Image = bmpMin;
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
 
