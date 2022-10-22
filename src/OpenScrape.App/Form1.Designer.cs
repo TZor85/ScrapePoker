@@ -28,9 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Regions");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Hashes");
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Images");
+            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Regions");
+            System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("Hashes");
+            System.Windows.Forms.TreeNode treeNode6 = new System.Windows.Forms.TreeNode("Images");
             this.twRegions = new System.Windows.Forms.TreeView();
             this.btnNew = new System.Windows.Forms.Button();
             this.btnPlusWidth = new System.Windows.Forms.Button();
@@ -64,7 +64,6 @@
             this.btnCreateImage = new System.Windows.Forms.Button();
             this.btnWindow = new System.Windows.Forms.Button();
             this.pbImageRegion = new System.Windows.Forms.PictureBox();
-            this.btnCreateHash = new System.Windows.Forms.Button();
             this.ckHash = new System.Windows.Forms.CheckBox();
             this.label3 = new System.Windows.Forms.Label();
             this.tbResult = new System.Windows.Forms.TextBox();
@@ -76,10 +75,9 @@
             this.label6 = new System.Windows.Forms.Label();
             this.tbB = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
-            this.tbUmbral = new System.Windows.Forms.TextBox();
-            this.btnPlusUmbral = new System.Windows.Forms.Button();
-            this.btnMinusUmbral = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.lbP1Bet = new System.Windows.Forms.Label();
+            this.lbP2Bet = new System.Windows.Forms.Label();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
             this.lbDealer0 = new System.Windows.Forms.Label();
             this.lbP0Chips = new System.Windows.Forms.Label();
@@ -92,6 +90,7 @@
             this.lbDealer1 = new System.Windows.Forms.Label();
             this.lbP1Chips = new System.Windows.Forms.Label();
             this.lbEfective = new System.Windows.Forms.Label();
+            this.lbAction = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -107,17 +106,17 @@
             // 
             this.twRegions.Location = new System.Drawing.Point(12, 48);
             this.twRegions.Name = "twRegions";
-            treeNode1.Name = "Nodo0";
-            treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.Text = "Hashes";
-            treeNode3.Name = "Nodo2";
-            treeNode3.Text = "Images";
+            treeNode4.Name = "Nodo0";
+            treeNode4.Text = "Regions";
+            treeNode5.Name = "Nodo1";
+            treeNode5.Text = "Hashes";
+            treeNode6.Name = "Nodo2";
+            treeNode6.Text = "Images";
             this.twRegions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode1,
-            treeNode2,
-            treeNode3});
-            this.twRegions.Size = new System.Drawing.Size(159, 390);
+            treeNode4,
+            treeNode5,
+            treeNode6});
+            this.twRegions.Size = new System.Drawing.Size(159, 342);
             this.twRegions.TabIndex = 0;
             this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
             this.twRegions.DoubleClick += new System.EventHandler(this.twRegions_DoubleClick);
@@ -202,7 +201,7 @@
             // 
             // btnSaveMap
             // 
-            this.btnSaveMap.Location = new System.Drawing.Point(96, 460);
+            this.btnSaveMap.Location = new System.Drawing.Point(260, 367);
             this.btnSaveMap.Name = "btnSaveMap";
             this.btnSaveMap.Size = new System.Drawing.Size(75, 23);
             this.btnSaveMap.TabIndex = 13;
@@ -212,7 +211,7 @@
             // 
             // btnLoadMap
             // 
-            this.btnLoadMap.Location = new System.Drawing.Point(12, 460);
+            this.btnLoadMap.Location = new System.Drawing.Point(176, 367);
             this.btnLoadMap.Name = "btnLoadMap";
             this.btnLoadMap.Size = new System.Drawing.Size(75, 23);
             this.btnLoadMap.TabIndex = 14;
@@ -429,7 +428,7 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(369, 293);
+            this.groupBox3.Location = new System.Drawing.Point(369, 202);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(179, 159);
             this.groupBox3.TabIndex = 19;
@@ -438,7 +437,7 @@
             // 
             // btnCapture
             // 
-            this.btnCapture.Location = new System.Drawing.Point(435, 460);
+            this.btnCapture.Location = new System.Drawing.Point(446, 748);
             this.btnCapture.Name = "btnCapture";
             this.btnCapture.Size = new System.Drawing.Size(104, 76);
             this.btnCapture.TabIndex = 20;
@@ -469,7 +468,7 @@
             // 
             // btnWindow
             // 
-            this.btnWindow.Location = new System.Drawing.Point(326, 460);
+            this.btnWindow.Location = new System.Drawing.Point(337, 748);
             this.btnWindow.Name = "btnWindow";
             this.btnWindow.Size = new System.Drawing.Size(102, 76);
             this.btnWindow.TabIndex = 23;
@@ -479,22 +478,11 @@
             // 
             // pbImageRegion
             // 
-            this.pbImageRegion.Location = new System.Drawing.Point(177, 315);
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 264);
             this.pbImageRegion.Name = "pbImageRegion";
             this.pbImageRegion.Size = new System.Drawing.Size(159, 97);
             this.pbImageRegion.TabIndex = 24;
             this.pbImageRegion.TabStop = false;
-            // 
-            // btnCreateHash
-            // 
-            this.btnCreateHash.Enabled = false;
-            this.btnCreateHash.Location = new System.Drawing.Point(441, 204);
-            this.btnCreateHash.Name = "btnCreateHash";
-            this.btnCreateHash.Size = new System.Drawing.Size(91, 23);
-            this.btnCreateHash.TabIndex = 25;
-            this.btnCreateHash.Text = "Create Hash";
-            this.btnCreateHash.UseVisualStyleBackColor = true;
-            this.btnCreateHash.Click += new System.EventHandler(this.btnCrateHash_Click);
             // 
             // ckHash
             // 
@@ -597,50 +585,36 @@
             this.label8.TabIndex = 39;
             this.label8.Text = "Color";
             // 
-            // tbUmbral
-            // 
-            this.tbUmbral.Location = new System.Drawing.Point(459, 233);
-            this.tbUmbral.Name = "tbUmbral";
-            this.tbUmbral.Size = new System.Drawing.Size(49, 23);
-            this.tbUmbral.TabIndex = 40;
-            this.tbUmbral.Text = "0";
-            this.tbUmbral.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
-            // 
-            // btnPlusUmbral
-            // 
-            this.btnPlusUmbral.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.btnPlusUmbral.ImageAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnPlusUmbral.Location = new System.Drawing.Point(459, 262);
-            this.btnPlusUmbral.Name = "btnPlusUmbral";
-            this.btnPlusUmbral.Size = new System.Drawing.Size(25, 25);
-            this.btnPlusUmbral.TabIndex = 41;
-            this.btnPlusUmbral.Text = "+";
-            this.btnPlusUmbral.TextAlign = System.Drawing.ContentAlignment.TopCenter;
-            this.btnPlusUmbral.UseVisualStyleBackColor = true;
-            this.btnPlusUmbral.Click += new System.EventHandler(this.btnPlusUmbral_Click);
-            // 
-            // btnMinusUmbral
-            // 
-            this.btnMinusUmbral.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.btnMinusUmbral.Location = new System.Drawing.Point(483, 262);
-            this.btnMinusUmbral.Name = "btnMinusUmbral";
-            this.btnMinusUmbral.Size = new System.Drawing.Size(25, 25);
-            this.btnMinusUmbral.TabIndex = 42;
-            this.btnMinusUmbral.Text = "-";
-            this.btnMinusUmbral.UseVisualStyleBackColor = true;
-            this.btnMinusUmbral.Click += new System.EventHandler(this.btnMinusUmbral_Click);
-            // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.lbAction);
+            this.groupBox4.Controls.Add(this.lbP1Bet);
+            this.groupBox4.Controls.Add(this.lbP2Bet);
             this.groupBox4.Controls.Add(this.groupBox7);
             this.groupBox4.Controls.Add(this.groupBox6);
             this.groupBox4.Controls.Add(this.groupBox5);
             this.groupBox4.Controls.Add(this.lbEfective);
-            this.groupBox4.Location = new System.Drawing.Point(12, 578);
+            this.groupBox4.Location = new System.Drawing.Point(17, 396);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(531, 246);
+            this.groupBox4.Size = new System.Drawing.Size(531, 346);
             this.groupBox4.TabIndex = 43;
             this.groupBox4.TabStop = false;
+            // 
+            // lbP1Bet
+            // 
+            this.lbP1Bet.AutoSize = true;
+            this.lbP1Bet.Location = new System.Drawing.Point(157, 72);
+            this.lbP1Bet.Name = "lbP1Bet";
+            this.lbP1Bet.Size = new System.Drawing.Size(0, 15);
+            this.lbP1Bet.TabIndex = 10;
+            // 
+            // lbP2Bet
+            // 
+            this.lbP2Bet.AutoSize = true;
+            this.lbP2Bet.Location = new System.Drawing.Point(334, 72);
+            this.lbP2Bet.Name = "lbP2Bet";
+            this.lbP2Bet.Size = new System.Drawing.Size(0, 15);
+            this.lbP2Bet.TabIndex = 9;
             // 
             // groupBox7
             // 
@@ -648,7 +622,7 @@
             this.groupBox7.Controls.Add(this.lbP0Chips);
             this.groupBox7.Controls.Add(this.lbCard1);
             this.groupBox7.Controls.Add(this.lbCard0);
-            this.groupBox7.Location = new System.Drawing.Point(179, 121);
+            this.groupBox7.Location = new System.Drawing.Point(174, 220);
             this.groupBox7.Name = "groupBox7";
             this.groupBox7.Size = new System.Drawing.Size(145, 113);
             this.groupBox7.TabIndex = 8;
@@ -753,11 +727,21 @@
             // lbEfective
             // 
             this.lbEfective.AutoSize = true;
-            this.lbEfective.Location = new System.Drawing.Point(6, 219);
+            this.lbEfective.Location = new System.Drawing.Point(6, 318);
             this.lbEfective.Name = "lbEfective";
             this.lbEfective.Size = new System.Drawing.Size(75, 15);
             this.lbEfective.TabIndex = 3;
             this.lbEfective.Text = "Effective BB: ";
+            // 
+            // lbAction
+            // 
+            this.lbAction.AutoSize = true;
+            this.lbAction.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lbAction.Location = new System.Drawing.Point(325, 264);
+            this.lbAction.Name = "lbAction";
+            this.lbAction.Size = new System.Drawing.Size(119, 37);
+            this.lbAction.TabIndex = 11;
+            this.lbAction.Text = "ACTION";
             // 
             // Form1
             // 
@@ -765,10 +749,9 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 836);
             this.Controls.Add(this.groupBox4);
-            this.Controls.Add(this.btnPlusUmbral);
-            this.Controls.Add(this.btnMinusUmbral);
-            this.Controls.Add(this.tbUmbral);
             this.Controls.Add(this.label8);
+            this.Controls.Add(this.btnCapture);
+            this.Controls.Add(this.btnWindow);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.tbB);
             this.Controls.Add(this.label5);
@@ -779,12 +762,9 @@
             this.Controls.Add(this.tbResult);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.ckHash);
-            this.Controls.Add(this.btnCreateHash);
             this.Controls.Add(this.pbImageRegion);
-            this.Controls.Add(this.btnWindow);
             this.Controls.Add(this.btnCreateImage);
             this.Controls.Add(this.btnDelete);
-            this.Controls.Add(this.btnCapture);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
@@ -850,7 +830,6 @@
         private Button btnCreateImage;
         private Button btnWindow;
         private PictureBox pbImageRegion;
-        private Button btnCreateHash;
         private CheckBox ckHash;
         private Label lbXY;
         private Label label3;
@@ -863,9 +842,6 @@
         private Label label6;
         private TextBox tbB;
         private Label label8;
-        private TextBox tbUmbral;
-        private Button btnPlusUmbral;
-        private Button btnMinusUmbral;
         private GroupBox groupBox4;
         private Label lbEfective;
         private Label lbCard1;
@@ -879,5 +855,8 @@
         private Label lbDealer2;
         private Label lbP2Chips;
         private Label lbDealer1;
+        private Label lbP1Bet;
+        private Label lbP2Bet;
+        private Label lbAction;
     }
 }

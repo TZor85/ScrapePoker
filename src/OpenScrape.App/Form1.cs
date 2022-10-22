@@ -14,6 +14,7 @@ using System.Globalization;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
+using OpenScrape.App.UseCases.UseCase;
 
 namespace OpenScrape.App
 {
@@ -49,10 +50,12 @@ namespace OpenScrape.App
         private string _p1ColorSit = "000000";
         private string _p2ColorSit = "000000";
 
+        private string? _effectiveStack = string.Empty;
 
         private int _umbral = 100;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
+        private readonly GetActionsUseCase _buttonActionsUseCase = new GetActionsUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
 
@@ -65,7 +68,6 @@ namespace OpenScrape.App
         {
             _formImage = new FormImage();
             cbSpeed.SelectedIndex = 0;
-            tbUmbral.Text = _umbral.ToString();
             
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
@@ -153,7 +155,6 @@ namespace OpenScrape.App
                 _locImage = _images.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
 
                 pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
-                btnCreateHash.Enabled = true;
                 ckHash.Enabled = false;
                 ckColor.Enabled = false;
                 tbResult.Text = string.Empty;
@@ -313,7 +314,7 @@ namespace OpenScrape.App
                         }
 
                     }
-                    
+
                 }
                 else if (item.IsColor)
                 {
@@ -323,7 +324,7 @@ namespace OpenScrape.App
                     switch (item.Name)
                     {
                         case "p0dealer":
-                            if(rgbColor == _p0ColorDealer)
+                            if (rgbColor == _p0ColorDealer)
                                 _scrapeResult.P0Dealer = true;
                             break;
                         case "p1dealer":
@@ -354,36 +355,17 @@ namespace OpenScrape.App
                             break;
                     }
 
-                    //if (rgbColor == _p0ColorDealer)
-                    //    _scrapeResult.P0Dealer = true;
-                    //else if (rgbColor == _p1ColorDealer)
-                    //    _scrapeResult.P1Dealer = true;
-                    //else if (rgbColor == _p2ColorDealer)
-                    //    _scrapeResult.P2Dealer = true;
-
-                    //if (rgbColor == _p1ColorActive)
-                    //    _scrapeResult.P1Active = true;
-
-                    //if (rgbColor == _p2ColorActive)
-                    //    _scrapeResult.P2Active = true;
-
-                    //if (rgbColor == _p1ColorSit)
-                    //    _scrapeResult.P1Sit = true;
-
-                    //if (rgbColor == _p2ColorSit)
-                    //    _scrapeResult.P2Sit = true;
-
                 }
                 else
                 {
                     var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
-                    
+
 
                     Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
                     var res = ocrengine.Process(img, area);
 
                     switch (item.Name)
-                    {                        
+                    {
                         case "p0chips":
                             _scrapeResult.P0Chips = res.GetText();
                             break;
@@ -393,32 +375,36 @@ namespace OpenScrape.App
                         case "p2chips":
                             _scrapeResult.P2Chips = res.GetText();
                             break;
+                        case "p1bet":
+                            _scrapeResult.P1Bet = res.GetText();
+                            break;
+                        case "p2bet":
+                            _scrapeResult.P2Bet = res.GetText();
+                            break;
                         default:
                             break;
                     }
 
-                    
+
                 }
 
             }
 
-            lbDealer0.Text = string.Empty;
-            lbDealer1.Text = string.Empty;
-            lbDealer2.Text = string.Empty;
-
-            lbP0Chips.Text = "Chips: ";
-            lbP1Chips.Text = "Chips: ";
-            lbP2Chips.Text = "Chips: ";
+            SetEmptyValues();
 
             lbP0Chips.Text += _scrapeResult.P0Chips;
             lbP1Chips.Text += _scrapeResult.P1Chips;
             lbP2Chips.Text += _scrapeResult.P2Chips;
 
             lbEfective.Text = "Effective BB: ";
-            lbEfective.Text += GetEffectiveBB(_scrapeResult.P0Chips, _scrapeResult.P1Chips, _scrapeResult.P2Chips);
+            _effectiveStack = GetEffectiveBB(_scrapeResult.P0Chips, _scrapeResult.P1Chips, _scrapeResult.P2Chips);
+            lbEfective.Text += _effectiveStack;
 
             lbCard0.Text = _scrapeResult.U0CardFace0;
             lbCard1.Text = _scrapeResult.U0CardFace1;
+
+            lbP1Bet.Text = _scrapeResult.P1Bet;
+            lbP2Bet.Text = _scrapeResult.P2Bet;
 
             if (_scrapeResult.P0Dealer)
                 lbDealer0.Text = "Dealer";
@@ -435,7 +421,35 @@ namespace OpenScrape.App
             else
                 lbDealer2.Text = string.Empty;
 
+            lbAction.Text = GetAction();
+        }
 
+        private string GetAction()
+        {
+
+            if(_scrapeResult.P0Dealer)
+                return _buttonActionsUseCase.Execute(new GetActionsRequest { Card0 = _scrapeResult.U0CardFace0, Card1 = _scrapeResult.U0CardFace1, EffectiveStack = double.Parse(_effectiveStack) }).Data;
+
+
+
+
+            return string.Empty;
+        }
+
+        private void SetEmptyValues()
+        {
+            lbDealer0.Text = string.Empty;
+            lbDealer1.Text = string.Empty;
+            lbDealer2.Text = string.Empty;
+
+            lbP1Bet.Text = string.Empty;
+            lbP2Bet.Text = string.Empty;
+
+            lbP0Chips.Text = "Chips: ";
+            lbP1Chips.Text = "Chips: ";
+            lbP2Chips.Text = "Chips: ";
+
+            lbAction.Text = string.Empty;
         }
 
         private string GetEffectiveBB(string p0BB, string p1BB, string p2BB)
@@ -483,26 +497,7 @@ namespace OpenScrape.App
             _formCreateImage.Show();
         }
 
-        private void btnCrateHash_Click(object sender, EventArgs e)
-        {   
-            var node = twRegions.Nodes.Find("Nodo1", true).FirstOrDefault() as TreeNode;
-
-
-            if(node != null)
-            {
-                var name = _locImage.Name.Split(" ")[0].Trim();
-
-                _locHash.Value = GetImageHash(EncrypterHelper.GetImageEncrypted(_locImage.Image, Key));
-                _locHash.Name = name;
-
-                _hashes.Add(new HashRegion { Name = _locHash.Name, Value = _locHash.Value });
-
-                node.Nodes.Add(name);
-                twRegions.ExpandAll();
-            }
-                
-        }
-
+      
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             _formCreateImage.Show();
@@ -579,24 +574,7 @@ namespace OpenScrape.App
             }
         }
 
-        private void btnPlusUmbral_Click(object sender, EventArgs e)
-        {
-            _umbral++;
-            pbZoom.Image = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-
-            tbUmbral.Text = _umbral.ToString();
-            pbImageRegion.Refresh();
-        }
-
-        private void btnMinusUmbral_Click(object sender, EventArgs e)
-        {
-            _umbral--;
-            pbZoom.Image = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-
-            tbUmbral.Text = _umbral.ToString();
-            pbImageRegion.Refresh();
-        }
-
+     
         #region Tamaño Region
 
 

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.UseCases
+namespace OpenScrape.App.UseCases.UseCase
 {
     public class LoadTableMapUseCase : ILoadTableMapUseCase
     {
@@ -23,7 +23,7 @@ namespace OpenScrape.App.UseCases
 
                 if ((myStream = theDialog.OpenFile()) != null)
                 {
-                    
+
                     var text = string.Empty;
                     using (StreamReader sr = new StreamReader(myStream))
                     {
@@ -96,10 +96,10 @@ namespace OpenScrape.App.UseCases
                                 }
                             }
 
-                            counter++;                            
+                            counter++;
                         }
                     }
-                }                
+                }
             }
 
             return response;

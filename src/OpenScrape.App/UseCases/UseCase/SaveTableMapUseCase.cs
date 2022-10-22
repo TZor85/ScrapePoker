@@ -1,6 +1,6 @@
 ﻿using OpenScrape.App.Helpers;
 
-namespace OpenScrape.App.UseCases
+namespace OpenScrape.App.UseCases.UseCase
 {
     public class SaveTableMapUseCase : ISaveTableMapUseCase
     {
@@ -65,7 +65,7 @@ namespace OpenScrape.App.UseCases
             }
         }
 
-        
+
 
 
     }

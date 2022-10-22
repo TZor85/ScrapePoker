@@ -5,10 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.UseCases
+namespace OpenScrape.App.UseCases.UseCase
 {
-    public class GetWindowsScreenUseCase 
-    { 
+    public class GetWindowsScreenUseCase
+    {
 
         private IntPtr _handle = IntPtr.Zero;
 

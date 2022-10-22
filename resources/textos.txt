@@ -15,6 +15,8 @@ r$p2sit # 1283 - 318 - 5 - 5 & False & True & 000000
 r$p1sit # 155 - 318 - 5 - 5 & False & True & 000000
 r$u0cardface0 # 654 - 767 - 25 - 55 & True & False & 
 r$u0cardface1 # 752 - 767 - 25 - 55 & True & False & 
+r$p2bet # 1085 - 414 - 90 - 25 & False & False & 542706
+r$p1bet # 302 - 414 - 90 - 25 & False & False & 100605
 
 //
 // Hashes
