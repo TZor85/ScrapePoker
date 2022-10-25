@@ -47,15 +47,18 @@ namespace OpenScrape.App
         private string _p2ColorDealer = "ffcf03";
         private string _p1ColorActive = "bd2d22";
         private string _p2ColorActive = "bc2c21";
+
         private string _p1ColorSit = "000000";
         private string _p2ColorSit = "000000";
+        private string _p1ColorSit1 = "0b0b0d";
+        private string _p2ColorSit1 = "090909";
 
         private string? _effectiveStack = string.Empty;
 
         private int _umbral = 100;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
-        private readonly GetActionsUseCase _buttonActionsUseCase = new GetActionsUseCase();
+        private readonly GetActions3HandedUseCase _actions3HandedUseCase = new GetActions3HandedUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
 
@@ -266,16 +269,21 @@ namespace OpenScrape.App
 
         private void btnCapture_Click(object sender, EventArgs e)
         {
-            //var img = _useCase.Execute();
+            //var windowImg = _useCase.Execute();
 
-            //_formImage.Width = img.Width + _formImage.Width / 11;
-            //_formImage.Height = img.Height + _formImage.Height / 4;
+            //_formImage.Width = 461;
+            //_formImage.Height = 327;
 
-            //_formImage.pbImagen.Width = img.Width;
-            //_formImage.pbImagen.Height = img.Height;
+            //_formImage.Width = windowImg.Width + _formImage.Width / 11;
+            //_formImage.Height = windowImg.Height + _formImage.Height / 4;
 
-            //_formImage.pbImagen.Image = img;
+            //_formImage.pbImagen.Width = windowImg.Width;
+            //_formImage.pbImagen.Height = windowImg.Height;
 
+            //_formImage.pbImagen.Image = windowImg;
+            //_formImage.pbImagen.Refresh();
+
+            //Thread.Sleep(1000);
 
             //TODO: hacer las comparaciones de las imagenes / OCR
 
@@ -287,6 +295,7 @@ namespace OpenScrape.App
             {
                 if (item.IsHash)
                 {
+                    var maxEqual = 0;
 
                     foreach (var immg in _images)
                     {
@@ -296,17 +305,22 @@ namespace OpenScrape.App
                         //determine the number of equal pixel (x of 256)
                         int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
 
+                        if(equalElements > maxEqual)
+                            maxEqual = equalElements;
+
                         //var val = (256 * 98) / 100;
 
-                        if (equalElements >= (1375 * 96 / 100))
+                        if (maxEqual >= (1375 * 96 / 100))
                         {
                             switch (item.Name)
                             {
                                 case "u0cardface0":
                                     _scrapeResult.U0CardFace0 = immg.Name.Split(" ")[0];
+                                    maxEqual = 0;
                                     break;
                                 case "u0cardface1":
                                     _scrapeResult.U0CardFace1 = immg.Name.Split(" ")[0];
+                                    maxEqual = 0;
                                     break;
                                 default:
                                     break;
@@ -344,11 +358,11 @@ namespace OpenScrape.App
                                 _scrapeResult.P2Active = true;
                             break;
                         case "p1sit":
-                            if (rgbColor == _p1ColorSit)
+                            if (rgbColor == _p1ColorSit || rgbColor == _p1ColorSit1)
                                 _scrapeResult.P1Sit = true;
                             break;
                         case "p2sit":
-                            if (rgbColor == _p2ColorSit)
+                            if (rgbColor == _p2ColorSit || rgbColor == _p2ColorSit1)
                                 _scrapeResult.P2Sit = true;
                             break;
                         default:
@@ -421,15 +435,60 @@ namespace OpenScrape.App
             else
                 lbDealer2.Text = string.Empty;
 
-            lbAction.Text = GetAction();
+            if (_scrapeResult.P1Sit && _scrapeResult.P2Sit)
+                lbAction.Text = GetAction3Handed();
+            else
+                lbAction.Text = GetAction2Handed();
+
+
         }
 
-        private string GetAction()
+        private string GetAction2Handed()
         {
 
-            if(_scrapeResult.P0Dealer)
-                return _buttonActionsUseCase.Execute(new GetActionsRequest { Card0 = _scrapeResult.U0CardFace0, Card1 = _scrapeResult.U0CardFace1, EffectiveStack = double.Parse(_effectiveStack) }).Data;
 
+            return String.Empty;
+        }
+
+        private string GetAction3Handed()
+        {
+
+            if (_scrapeResult.P0Dealer)
+                return _actions3HandedUseCase.ExecuteButtonAction(
+                    new GetActions3HandedRequest
+                    {
+                        Card0 = _scrapeResult.U0CardFace0,
+                        Card1 = _scrapeResult.U0CardFace1,
+                        EffectiveStack = double.Parse(_effectiveStack)
+                    }).Data;
+            else if (_scrapeResult.P1Dealer)
+                return _actions3HandedUseCase.ExecuteBigBlindAction(
+                    new GetActions3HandedRequest
+                    {
+                        Card0 = _scrapeResult.U0CardFace0,
+                        Card1 = _scrapeResult.U0CardFace1,
+                        EffectiveStack = double.Parse(_effectiveStack),
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        P1Active = _scrapeResult.P1Active,
+                        P2Active = _scrapeResult.P2Active
+                    }).Data;
+            else if (_scrapeResult.P2Dealer)
+                return _actions3HandedUseCase.ExecuteSmallBlindAction(
+                    new GetActions3HandedRequest
+                    {
+                        Card0 = _scrapeResult.U0CardFace0,
+                        Card1 = _scrapeResult.U0CardFace1,
+                        EffectiveStack = double.Parse(_effectiveStack),
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        P1Active = _scrapeResult.P1Active,
+                        P2Active = _scrapeResult.P2Active
+                    }).Data;
 
 
 
@@ -456,29 +515,46 @@ namespace OpenScrape.App
         {
             double medio = 0;
 
-            double.TryParse(p0BB.Split(" ")[0].Replace(".", ","), out double p0);
-            double.TryParse(p1BB.Split(" ")[0].Replace(".", ","), out double p1);
-            double.TryParse(p2BB.Split(" ")[0].Replace(".", ","), out double p2);
+            double.TryParse(p0BB.Split(" ")[0].Replace(".", ","), out double p0chips);
+            double.TryParse(p1BB.Split(" ")[0].Replace(".", ","), out double p1chips);
+            double.TryParse(p2BB.Split(" ")[0].Replace(".", ","), out double p2chips);
 
-            if (p0 < p1 && p0 < p2)
+
+            double.TryParse(_scrapeResult.P1Bet.Split(" ")[0].Replace(".", ","), out double p1Bet);
+            double.TryParse(_scrapeResult.P2Bet.Split(" ")[0].Replace(".", ","), out double p2Bet);
+
+            if (!_scrapeResult.P1Active)
+                p1chips = 0;
+            
+            if(!_scrapeResult.P2Active)
+                p2chips = 0;
+
+            if (_scrapeResult.P1Active && p1Bet > 1 && p1chips <= 1)
+                p1chips = p1Bet;
+
+            if (_scrapeResult.P2Active && p2Bet > 1 && p2chips <= 1)
+                p2chips = p2Bet;
+
+
+            if (p0chips < p1chips && p0chips < p2chips)
             {
-                medio = p0;
+                medio = p0chips;
             }
             else
             {
-                if (p0 > p1 && p0 < p2)
-                    medio = p0;
-                else if (p0 > p1 && p0 > p2)
+                if (p0chips > p1chips && p0chips < p2chips)
+                    medio = p0chips;
+                else if (p0chips > p1chips && p0chips > p2chips)
                 {
-                    if (p1 > p2)
-                        medio = p1;
+                    if (p1chips > p2chips)
+                        medio = p1chips;
                     else
-                        medio = p2;
+                        medio = p2chips;
                 }
-                else if (p0 < p1 && p0 > p2)
-                    medio = p0;
+                else if (p0chips < p1chips && p0chips > p2chips)
+                    medio = p0chips;
                 else
-                    medio = p1;
+                    medio = p1chips;
             }
 
             return medio.ToString();
