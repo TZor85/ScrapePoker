@@ -110,32 +110,34 @@ namespace OpenScrape.App.UseCases.UseCase
                     }
                     else if(request.BetP1 == 1)
                     {
-                        if (request.BetP2 == 1)
+                        if(!request.P2Active)
+                            responseList = Actions3Handed.GetBBvsBTNLimpAndFoldSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAndCallSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > 1 && request.ChipsP2 > 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAnd3BetSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > 1 && request.ChipsP2 <= 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAndAllInSuitedAction(request.EffectiveStack);
-                        else
-                            responseList = Actions3Handed.GetBBvsBTNLimpAndFoldSuitedAction(request.EffectiveStack);
+                            
                     }
                     else if(request.BetP1 > 1 && request.ChipsP1 > 1)
                     {
-                        if (request.BetP2 == request.BetP1)
+                        if (!request.P2Active)
+                            responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndFoldSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == request.BetP1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndCallSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > request.BetP1 && request.ChipsP2 > 1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAnd3BetSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > request.BetP1 && request.ChipsP2 <= 1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndAllInSuitedAction(request.EffectiveStack);
-                        else
-                            responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndFoldSuitedAction(request.EffectiveStack);
+                            
                     }
                     else if(request.BetP1 > 1 && request.ChipsP1 <= 1)
                     {
-                        if (request.BetP2 == request.BetP1 || request.BetP2 > request.BetP1)
-                            responseList = Actions3Handed.GetBBvsBTNAllInAndCallSuitedAction(request.EffectiveStack);
-                        else
+                        if(!request.P2Active)
                             responseList = Actions3Handed.GetBBvsBTNAllInAndFoldSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == request.BetP1 || request.BetP2 > request.BetP1)
+                            responseList = Actions3Handed.GetBBvsBTNAllInAndCallSuitedAction(request.EffectiveStack);                            
                     }
 
                 }
@@ -152,32 +154,32 @@ namespace OpenScrape.App.UseCases.UseCase
                     }
                     else if (request.BetP1 == 1)
                     {
-                        if (request.BetP2 == 1)
+                        if (!request.P2Active)
+                            responseList = Actions3Handed.GetBBvsBTNLimpAndFoldOffSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAndCallOffSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > 1 && request.ChipsP2 > 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAnd3BetOffSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > 1 && request.ChipsP2 <= 1)
                             responseList = Actions3Handed.GetBBvsBTNLimpAndAllInOffSuitedAction(request.EffectiveStack);
-                        else
-                            responseList = Actions3Handed.GetBBvsBTNLimpAndFoldOffSuitedAction(request.EffectiveStack);
                     }
                     else if (request.BetP1 > 1 && request.ChipsP1 > 1)
                     {
-                        if (request.BetP2 == request.BetP1)
+                        if (!request.P2Active)
+                            responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndFoldOffSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == request.BetP1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndCallOffSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > request.BetP1 && request.ChipsP2 > 1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAnd3BetOffSuitedAction(request.EffectiveStack);
                         else if (request.BetP2 > request.BetP1 && request.ChipsP2 <= 1)
                             responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndAllInOffSuitedAction(request.EffectiveStack);
-                        else
-                            responseList = Actions3Handed.GetBBvsBTNOpenRaiseAndFoldOffSuitedAction(request.EffectiveStack);
                     }
                     else if (request.BetP1 > 1 && request.ChipsP1 <= 1)
                     {
-                        if (request.BetP2 == request.BetP1 || request.BetP2 > request.BetP1)
-                            responseList = Actions3Handed.GetBBvsBTNAllInAndCallOffSuitedAction(request.EffectiveStack);
-                        else
+                        if (!request.P2Active)
                             responseList = Actions3Handed.GetBBvsBTNAllInAndFoldOffSuitedAction(request.EffectiveStack);
+                        else if (request.BetP2 == request.BetP1 || request.BetP2 > request.BetP1)
+                            responseList = Actions3Handed.GetBBvsBTNAllInAndCallOffSuitedAction(request.EffectiveStack);
                     }
                 }
 

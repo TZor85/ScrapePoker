@@ -45,8 +45,10 @@ namespace OpenScrape.App
         private string _p0ColorDealer = "ffd800";
         private string _p1ColorDealer = "ffe005";
         private string _p2ColorDealer = "ffcf03";
-        private string _p1ColorActive = "bd2d22";
-        private string _p2ColorActive = "bc2c21";
+
+        private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
+        private List<int> _colorActive = new List<int> {33, 34, 35, 36, 37};
+        private string _p2ColorActive = "bf2c24";
 
         private string _p1ColorSit = "000000";
         private string _p2ColorSit = "000000";
@@ -59,6 +61,7 @@ namespace OpenScrape.App
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly GetActions3HandedUseCase _actions3HandedUseCase = new GetActions3HandedUseCase();
+        private readonly GetActions2HandedUseCase _actions2HandedUseCase = new GetActions2HandedUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
 
@@ -269,21 +272,28 @@ namespace OpenScrape.App
 
         private void btnCapture_Click(object sender, EventArgs e)
         {
-            //var windowImg = _useCase.Execute();
+            if (!cbTest.Checked)
+            {
+                var path = @"C:\Code\ScrapePoker\resources\Game\game_" + DateTime.Now.Ticks + ".png";
+                
+                _useCase.ExecuteImage(path);
 
-            //_formImage.Width = 461;
-            //_formImage.Height = 327;
+                var windowImg = Image.FromFile(path);
 
-            //_formImage.Width = windowImg.Width + _formImage.Width / 11;
-            //_formImage.Height = windowImg.Height + _formImage.Height / 4;
+                _formImage.Width = 461;
+                _formImage.Height = 327;
 
-            //_formImage.pbImagen.Width = windowImg.Width;
-            //_formImage.pbImagen.Height = windowImg.Height;
+                _formImage.Width = windowImg.Width + _formImage.Width / 11;
+                _formImage.Height = windowImg.Height + _formImage.Height / 4;
 
-            //_formImage.pbImagen.Image = windowImg;
-            //_formImage.pbImagen.Refresh();
+                _formImage.pbImagen.Width = windowImg.Width;
+                _formImage.pbImagen.Height = windowImg.Height;
 
-            //Thread.Sleep(1000);
+                _formImage.pbImagen.Image = windowImg;
+                _formImage.pbImagen.Refresh();
+
+                Thread.Sleep(1000);
+            }
 
             //TODO: hacer las comparaciones de las imagenes / OCR
 
@@ -296,6 +306,7 @@ namespace OpenScrape.App
                 if (item.IsHash)
                 {
                     var maxEqual = 0;
+                    var max = 0;
 
                     foreach (var immg in _images)
                     {
@@ -310,17 +321,17 @@ namespace OpenScrape.App
 
                         //var val = (256 * 98) / 100;
 
-                        if (maxEqual >= (1375 * 96 / 100))
+                        if (maxEqual > max && maxEqual >= (1375 * 96 / 100))
                         {
                             switch (item.Name)
                             {
                                 case "u0cardface0":
                                     _scrapeResult.U0CardFace0 = immg.Name.Split(" ")[0];
-                                    maxEqual = 0;
+                                    max = maxEqual;
                                     break;
                                 case "u0cardface1":
                                     _scrapeResult.U0CardFace1 = immg.Name.Split(" ")[0];
-                                    maxEqual = 0;
+                                    max = maxEqual;
                                     break;
                                 default:
                                     break;
@@ -338,23 +349,23 @@ namespace OpenScrape.App
                     switch (item.Name)
                     {
                         case "p0dealer":
-                            if (rgbColor == _p0ColorDealer)
+                            if (_colorDealer.Contains(color.R))// rgbColor == _p0ColorDealer)
                                 _scrapeResult.P0Dealer = true;
                             break;
                         case "p1dealer":
-                            if (rgbColor == _p1ColorDealer)
+                            if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P1Dealer = true;
                             break;
                         case "p2dealer":
-                            if (rgbColor == _p2ColorDealer)
+                            if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P2Dealer = true;
                             break;
                         case "p1active":
-                            if (rgbColor == _p1ColorActive)
+                            if (_colorActive.Contains(color.B))
                                 _scrapeResult.P1Active = true;
                             break;
                         case "p2active":
-                            if (rgbColor == _p2ColorActive)
+                            if (_colorActive.Contains(color.B))
                                 _scrapeResult.P2Active = true;
                             break;
                         case "p1sit":
@@ -445,9 +456,36 @@ namespace OpenScrape.App
 
         private string GetAction2Handed()
         {
+            if (_scrapeResult.P0Dealer)
+                return _actions2HandedUseCase.ExecuteOpenRaise(
+                    new GetActions2HandedRequest
+                    {
+                        Card0 = _scrapeResult.U0CardFace0,
+                        Card1 = _scrapeResult.U0CardFace1,
+                        EffectiveStack = double.Parse(_effectiveStack),
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        P1Active = _scrapeResult.P1Active,
+                        P2Active = _scrapeResult.P2Active
+                    }).Data;
+            else
+                return _actions2HandedUseCase.ExecuteVsPlayer(
+                    new GetActions2HandedRequest
+                    {
+                        Card0 = _scrapeResult.U0CardFace0,
+                        Card1 = _scrapeResult.U0CardFace1,
+                        EffectiveStack = double.Parse(_effectiveStack),
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        P1Active = _scrapeResult.P1Active,
+                        P2Active = _scrapeResult.P2Active
+                    }).Data;
 
-
-            return String.Empty;
+            return string.Empty;
         }
 
         private string GetAction3Handed()
@@ -613,7 +651,7 @@ namespace OpenScrape.App
 
                 var rgbRequest = new GetRGBColorRequest
                 {
-                    Image = _formImage.pbImagen.Image,
+                    Image = (Bitmap)_formImage.pbImagen.Image,
                     X = _locRegion.X,
                     Y = _locRegion.Y
                 };
@@ -732,7 +770,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -765,7 +803,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -799,7 +837,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -832,7 +870,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -864,7 +902,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -897,7 +935,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -930,7 +968,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };
@@ -963,7 +1001,7 @@ namespace OpenScrape.App
 
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = _formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
                 Y = _locRegion.Y
             };

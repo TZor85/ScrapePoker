@@ -28,9 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Regions");
-            System.Windows.Forms.TreeNode treeNode5 = new System.Windows.Forms.TreeNode("Hashes");
-            System.Windows.Forms.TreeNode treeNode6 = new System.Windows.Forms.TreeNode("Images");
+            System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Regions");
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Hashes");
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Images");
             this.twRegions = new System.Windows.Forms.TreeView();
             this.btnNew = new System.Windows.Forms.Button();
             this.btnPlusWidth = new System.Windows.Forms.Button();
@@ -76,6 +76,7 @@
             this.tbB = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.lbAction = new System.Windows.Forms.Label();
             this.lbP1Bet = new System.Windows.Forms.Label();
             this.lbP2Bet = new System.Windows.Forms.Label();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
@@ -90,7 +91,7 @@
             this.lbDealer1 = new System.Windows.Forms.Label();
             this.lbP1Chips = new System.Windows.Forms.Label();
             this.lbEfective = new System.Windows.Forms.Label();
-            this.lbAction = new System.Windows.Forms.Label();
+            this.cbTest = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -106,16 +107,16 @@
             // 
             this.twRegions.Location = new System.Drawing.Point(12, 48);
             this.twRegions.Name = "twRegions";
-            treeNode4.Name = "Nodo0";
-            treeNode4.Text = "Regions";
-            treeNode5.Name = "Nodo1";
-            treeNode5.Text = "Hashes";
-            treeNode6.Name = "Nodo2";
-            treeNode6.Text = "Images";
+            treeNode1.Name = "Nodo0";
+            treeNode1.Text = "Regions";
+            treeNode2.Name = "Nodo1";
+            treeNode2.Text = "Hashes";
+            treeNode3.Name = "Nodo2";
+            treeNode3.Text = "Images";
             this.twRegions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
-            treeNode4,
-            treeNode5,
-            treeNode6});
+            treeNode1,
+            treeNode2,
+            treeNode3});
             this.twRegions.Size = new System.Drawing.Size(159, 342);
             this.twRegions.TabIndex = 0;
             this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
@@ -600,6 +601,16 @@
             this.groupBox4.TabIndex = 43;
             this.groupBox4.TabStop = false;
             // 
+            // lbAction
+            // 
+            this.lbAction.AutoSize = true;
+            this.lbAction.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lbAction.Location = new System.Drawing.Point(325, 264);
+            this.lbAction.Name = "lbAction";
+            this.lbAction.Size = new System.Drawing.Size(119, 37);
+            this.lbAction.TabIndex = 11;
+            this.lbAction.Text = "ACTION";
+            // 
             // lbP1Bet
             // 
             this.lbP1Bet.AutoSize = true;
@@ -733,21 +744,22 @@
             this.lbEfective.TabIndex = 3;
             this.lbEfective.Text = "Effective BB: ";
             // 
-            // lbAction
+            // cbTest
             // 
-            this.lbAction.AutoSize = true;
-            this.lbAction.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbAction.Location = new System.Drawing.Point(325, 264);
-            this.lbAction.Name = "lbAction";
-            this.lbAction.Size = new System.Drawing.Size(119, 37);
-            this.lbAction.TabIndex = 11;
-            this.lbAction.Text = "ACTION";
+            this.cbTest.AutoSize = true;
+            this.cbTest.Location = new System.Drawing.Point(375, 371);
+            this.cbTest.Name = "cbTest";
+            this.cbTest.Size = new System.Drawing.Size(46, 19);
+            this.cbTest.TabIndex = 44;
+            this.cbTest.Text = "Test";
+            this.cbTest.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 836);
+            this.Controls.Add(this.cbTest);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.btnCapture);
@@ -858,5 +870,6 @@
         private Label lbP1Bet;
         private Label lbP2Bet;
         private Label lbAction;
+        private CheckBox cbTest;
     }
 }

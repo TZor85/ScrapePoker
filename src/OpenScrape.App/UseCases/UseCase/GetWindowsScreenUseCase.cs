@@ -1,9 +1,5 @@
 ﻿using OpenScrape.App.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing.Imaging;
 
 namespace OpenScrape.App.UseCases.UseCase
 {
@@ -15,6 +11,13 @@ namespace OpenScrape.App.UseCases.UseCase
         public Image Execute()
         {
             return CaptureWindowsHelper.CaptureWindow(_handle);
+        }
+
+        public void ExecuteImage(string path)
+        {
+            Image img = CaptureWindowsHelper.CaptureWindow(_handle);
+
+            img.Save(path, ImageFormat.Png);
         }
 
         public void GetWindow()

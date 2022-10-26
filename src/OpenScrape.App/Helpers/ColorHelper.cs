@@ -16,7 +16,7 @@ namespace OpenScrape.App.Helpers
 
     public class GetRGBColorRequest
     {
-        public Image Image { get; set; }
+        public Bitmap Image { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
     }
@@ -27,7 +27,7 @@ namespace OpenScrape.App.Helpers
         {
             var response = new GetRGBColorResponse();
 
-            Color color = new Bitmap(request.Image).GetPixel(request.X, request.Y);
+            Color color = request.Image.GetPixel(request.X, request.Y);
             var rgbColor = color.Name.Substring(2, 6);
 
             response.RColor = rgbColor.Substring(0, 2);
