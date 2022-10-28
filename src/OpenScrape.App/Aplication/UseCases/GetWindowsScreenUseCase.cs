@@ -1,7 +1,7 @@
 ﻿using OpenScrape.App.Helpers;
 using System.Drawing.Imaging;
 
-namespace OpenScrape.App.UseCases.UseCase
+namespace OpenScrape.App.Aplication.UseCases
 {
     public class GetWindowsScreenUseCase
     {

@@ -1,18 +1,23 @@
-﻿namespace OpenScrape.App.UseCases
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace OpenScrape.App.Aplication
 {
-    public interface IGetActions3HandedUseCase
+    public interface IGetActions2HandedUseCase
     {
-        GetActions3HandedResponse ExecuteButtonAction(GetActions3HandedRequest request);
-        GetActions3HandedResponse ExecuteBigBlindAction(GetActions3HandedRequest request);
-        GetActions3HandedResponse ExecuteSmallBlindAction(GetActions3HandedRequest request);
+        GetActions2HandedResponse ExecuteOpenRaise(GetActions2HandedRequest request);
+        GetActions2HandedResponse ExecuteVsPlayer(GetActions2HandedRequest request);
     }
 
-    public class GetActions3HandedResponse
+    public class GetActions2HandedResponse
     {
         public string Data { get; set; } = "FOLD";
     }
 
-    public class GetActions3HandedRequest
+    public class GetActions2HandedRequest
     {
         public string Card0 { get; set; } = string.Empty;
         public string Card1 { get; set; } = string.Empty;

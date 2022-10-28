@@ -41,22 +41,20 @@ namespace OpenScrape.App
 
             pbImagen.Image = img;
 
-            //pbImagen.Image.Save(@"C:\Code\Poker\OpenScrape\OpenScrape.App\resources\img_" + DateTime.UtcNow.Ticks + ".jpg");
-            //pbImagen.Image.Save(@"C:\Code\OpenScrape\OpenScrape.App\resources\1.jpg");
         }
 
         private void btnLoad_Click(object sender, EventArgs e)
         {
             using (OpenFileDialog dlg = new OpenFileDialog())
             {
-                var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+                ////var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
+                ////if (!Directory.Exists(folderPath))
+                ////{
+                ////    Directory.CreateDirectory(folderPath);
+                ////}
 
-                dlg.InitialDirectory = folderPath;
+                ////dlg.InitialDirectory = folderPath;
                 dlg.Title = "Open Image";
                 dlg.Filter = "Image Files (*.bmp;*.jpg;*.jpeg;*.png)|*.BMP;*.JPG;*.JPEG;*.PNG";
 

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.UseCases.UseCase
+namespace OpenScrape.App.Aplication.UseCases
 {
     public class GetActions2HandedUseCase : IGetActions2HandedUseCase
     {

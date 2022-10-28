@@ -80,10 +80,10 @@
             this.lbP1Bet = new System.Windows.Forms.Label();
             this.lbP2Bet = new System.Windows.Forms.Label();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.pbCard1 = new System.Windows.Forms.PictureBox();
+            this.pbCard0 = new System.Windows.Forms.PictureBox();
             this.lbDealer0 = new System.Windows.Forms.Label();
             this.lbP0Chips = new System.Windows.Forms.Label();
-            this.lbCard1 = new System.Windows.Forms.Label();
-            this.lbCard0 = new System.Windows.Forms.Label();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.lbDealer2 = new System.Windows.Forms.Label();
             this.lbP2Chips = new System.Windows.Forms.Label();
@@ -99,6 +99,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).BeginInit();
             this.groupBox4.SuspendLayout();
             this.groupBox7.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).BeginInit();
             this.groupBox6.SuspendLayout();
             this.groupBox5.SuspendLayout();
             this.SuspendLayout();
@@ -408,16 +410,16 @@
             // 
             // pbZoom
             // 
-            this.pbZoom.Location = new System.Drawing.Point(10, 22);
+            this.pbZoom.Location = new System.Drawing.Point(74, 22);
             this.pbZoom.Name = "pbZoom";
-            this.pbZoom.Size = new System.Drawing.Size(159, 102);
+            this.pbZoom.Size = new System.Drawing.Size(92, 62);
             this.pbZoom.TabIndex = 17;
             this.pbZoom.TabStop = false;
             // 
             // btnZoom
             // 
             this.btnZoom.Enabled = false;
-            this.btnZoom.Location = new System.Drawing.Point(10, 130);
+            this.btnZoom.Location = new System.Drawing.Point(6, 61);
             this.btnZoom.Name = "btnZoom";
             this.btnZoom.Size = new System.Drawing.Size(60, 23);
             this.btnZoom.TabIndex = 18;
@@ -429,9 +431,9 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(369, 202);
+            this.groupBox3.Location = new System.Drawing.Point(376, 264);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(179, 159);
+            this.groupBox3.Size = new System.Drawing.Size(172, 97);
             this.groupBox3.TabIndex = 19;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Zoom";
@@ -448,7 +450,7 @@
             // 
             // btnDelete
             // 
-            this.btnDelete.Location = new System.Drawing.Point(122, 19);
+            this.btnDelete.Location = new System.Drawing.Point(66, 19);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(49, 23);
             this.btnDelete.TabIndex = 21;
@@ -629,16 +631,32 @@
             // 
             // groupBox7
             // 
+            this.groupBox7.Controls.Add(this.pbCard1);
+            this.groupBox7.Controls.Add(this.pbCard0);
             this.groupBox7.Controls.Add(this.lbDealer0);
             this.groupBox7.Controls.Add(this.lbP0Chips);
-            this.groupBox7.Controls.Add(this.lbCard1);
-            this.groupBox7.Controls.Add(this.lbCard0);
             this.groupBox7.Location = new System.Drawing.Point(174, 220);
             this.groupBox7.Name = "groupBox7";
             this.groupBox7.Size = new System.Drawing.Size(145, 113);
             this.groupBox7.TabIndex = 8;
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "Hero";
+            // 
+            // pbCard1
+            // 
+            this.pbCard1.Location = new System.Drawing.Point(41, 26);
+            this.pbCard1.Name = "pbCard1";
+            this.pbCard1.Size = new System.Drawing.Size(25, 55);
+            this.pbCard1.TabIndex = 8;
+            this.pbCard1.TabStop = false;
+            // 
+            // pbCard0
+            // 
+            this.pbCard0.Location = new System.Drawing.Point(10, 26);
+            this.pbCard0.Name = "pbCard0";
+            this.pbCard0.Size = new System.Drawing.Size(25, 55);
+            this.pbCard0.TabIndex = 7;
+            this.pbCard0.TabStop = false;
             // 
             // lbDealer0
             // 
@@ -657,25 +675,6 @@
             this.lbP0Chips.Size = new System.Drawing.Size(43, 15);
             this.lbP0Chips.TabIndex = 3;
             this.lbP0Chips.Text = "Chips: ";
-            // 
-            // lbCard1
-            // 
-            this.lbCard1.AutoSize = true;
-            this.lbCard1.Location = new System.Drawing.Point(27, 62);
-            this.lbCard1.Name = "lbCard1";
-            this.lbCard1.Size = new System.Drawing.Size(22, 15);
-            this.lbCard1.TabIndex = 5;
-            this.lbCard1.Text = "Qc";
-            // 
-            // lbCard0
-            // 
-            this.lbCard0.AutoSize = true;
-            this.lbCard0.Location = new System.Drawing.Point(7, 62);
-            this.lbCard0.Name = "lbCard0";
-            this.lbCard0.Size = new System.Drawing.Size(23, 15);
-            this.lbCard0.TabIndex = 4;
-            this.lbCard0.Text = "Qh";
-            this.lbCard0.Click += new System.EventHandler(this.label7_Click);
             // 
             // groupBox6
             // 
@@ -738,16 +737,17 @@
             // lbEfective
             // 
             this.lbEfective.AutoSize = true;
-            this.lbEfective.Location = new System.Drawing.Point(6, 318);
+            this.lbEfective.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lbEfective.Location = new System.Drawing.Point(6, 306);
             this.lbEfective.Name = "lbEfective";
-            this.lbEfective.Size = new System.Drawing.Size(75, 15);
+            this.lbEfective.Size = new System.Drawing.Size(57, 21);
             this.lbEfective.TabIndex = 3;
-            this.lbEfective.Text = "Effective BB: ";
+            this.lbEfective.Text = "Ef BB: ";
             // 
             // cbTest
             // 
             this.cbTest.AutoSize = true;
-            this.cbTest.Location = new System.Drawing.Point(375, 371);
+            this.cbTest.Location = new System.Drawing.Point(125, 23);
             this.cbTest.Name = "cbTest";
             this.cbTest.Size = new System.Drawing.Size(46, 19);
             this.cbTest.TabIndex = 44;
@@ -799,6 +799,8 @@
             this.groupBox4.PerformLayout();
             this.groupBox7.ResumeLayout(false);
             this.groupBox7.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).EndInit();
             this.groupBox6.ResumeLayout(false);
             this.groupBox6.PerformLayout();
             this.groupBox5.ResumeLayout(false);
@@ -856,8 +858,6 @@
         private Label label8;
         private GroupBox groupBox4;
         private Label lbEfective;
-        private Label lbCard1;
-        private Label lbCard0;
         private GroupBox groupBox5;
         private Label lbP1Chips;
         private GroupBox groupBox7;
@@ -871,5 +871,7 @@
         private Label lbP2Bet;
         private Label lbAction;
         private CheckBox cbTest;
+        private PictureBox pbCard1;
+        private PictureBox pbCard0;
     }
 }

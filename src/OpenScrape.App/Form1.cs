@@ -2,8 +2,8 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
-using OpenScrape.App.UseCases;
-using OpenScrape.App.UseCases.UseCase;
+using OpenScrape.App.Aplication;
+using OpenScrape.App.Aplication.UseCases;
 using System.Drawing.Drawing2D;
 using System.Security.Cryptography;
 using System.Text;
@@ -36,13 +36,9 @@ namespace OpenScrape.App
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
 
-        private string _p0ColorDealer = "ffd800";
-        private string _p1ColorDealer = "ffe005";
-        private string _p2ColorDealer = "ffcf03";
-
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorActive = new List<int> {33, 34, 35, 36, 37};
-        private string _p2ColorActive = "bf2c24";
+
 
         private string _p1ColorSit = "000000";
         private string _p2ColorSit = "000000";
@@ -196,6 +192,10 @@ namespace OpenScrape.App
         {
             var response = _loadUseCase.Execute(Key);
 
+            _regions.Clear();
+            _images.Clear();
+            _hashes.Clear();
+
             _regions.AddRange(response.Regions);
             _images.AddRange(response.Images);
             _hashes.AddRange(response.Hashes);
@@ -315,13 +315,10 @@ namespace OpenScrape.App
                         List<bool> iHash1 = GetHash(new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height))));
                         List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
 
-                        //determine the number of equal pixel (x of 256)
                         int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
 
                         if(equalElements > maxEqual)
                             maxEqual = equalElements;
-
-                        //var val = (256 * 98) / 100;
 
                         if (maxEqual > max && maxEqual >= (1375 * 96 / 100))
                         {
@@ -351,7 +348,7 @@ namespace OpenScrape.App
                     switch (item.Name)
                     {
                         case "p0dealer":
-                            if (_colorDealer.Contains(color.R))// rgbColor == _p0ColorDealer)
+                            if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P0Dealer = true;
                             break;
                         case "p1dealer":
@@ -385,8 +382,6 @@ namespace OpenScrape.App
                 }
                 else
                 {
-
-                    
                     var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
                     Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
                     var res = ocrengine.Process(img, area);
@@ -412,8 +407,6 @@ namespace OpenScrape.App
                         default:
                             break;
                     }
-
-
                 }
 
             }
@@ -424,12 +417,15 @@ namespace OpenScrape.App
             lbP1Chips.Text += _scrapeResult.P1Chips;
             lbP2Chips.Text += _scrapeResult.P2Chips;
 
-            lbEfective.Text = "Effective BB: ";
+            lbEfective.Text = "Ef BB: ";
             _effectiveStack = GetEffectiveBB(_scrapeResult.P0Chips, _scrapeResult.P1Chips, _scrapeResult.P2Chips);
             lbEfective.Text += _effectiveStack;
 
-            lbCard0.Text = _scrapeResult.U0CardFace0;
-            lbCard1.Text = _scrapeResult.U0CardFace1;
+            if(!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
+                pbCard0.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace0))?.Image;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
+                pbCard1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace1))?.Image;
 
             lbP1Bet.Text = _scrapeResult.P1Bet;
             lbP2Bet.Text = _scrapeResult.P2Bet;
@@ -655,13 +651,14 @@ namespace OpenScrape.App
                 {
                     Image = (Bitmap)_formImage.pbImagen.Image,
                     X = _locRegion.X,
-                    Y = _locRegion.Y
+                    Y = _locRegion.Y,
+                    IsColor = ckColor.Checked                    
                 };
 
                 var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
 
                 if (ckColor.Checked)
-                {
+                {                    
                     tbR.Text = rgbResponse.RColor;
                     tbG.Text = rgbResponse.GColor;
                     tbB.Text = rgbResponse.BColor;
@@ -774,7 +771,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -807,7 +805,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -841,7 +840,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -874,7 +874,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -906,7 +907,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -939,7 +941,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -972,7 +975,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
@@ -1005,7 +1009,8 @@ namespace OpenScrape.App
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
                 X = _locRegion.X,
-                Y = _locRegion.Y
+                Y = _locRegion.Y,
+                IsColor = ckColor.Checked
             };
 
             var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);

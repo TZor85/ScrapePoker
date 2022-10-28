@@ -19,6 +19,7 @@ namespace OpenScrape.App.Helpers
         public Bitmap Image { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
+        public bool IsColor { get; set; }   
     }
 
     public static class ColorHelper
@@ -26,14 +27,15 @@ namespace OpenScrape.App.Helpers
         public static GetRGBColorResponse GetRGBColor(GetRGBColorRequest request)
         {
             var response = new GetRGBColorResponse();
+            if (request.IsColor)
+            {
+                Color color = request.Image.GetPixel(request.X, request.Y);
+                var rgbColor = color.Name.Substring(2, 6);
 
-            Color color = request.Image.GetPixel(request.X, request.Y);
-            var rgbColor = color.Name.Substring(2, 6);
-
-            response.RColor = rgbColor.Substring(0, 2);
-            response.GColor = rgbColor.Substring(2, 2);
-            response.BColor = rgbColor.Substring(4, 2);
-
+                response.RColor = rgbColor.Substring(0, 2);
+                response.GColor = rgbColor.Substring(2, 2);
+                response.BColor = rgbColor.Substring(4, 2);
+            }
             return response;
 
         }

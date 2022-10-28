@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.UseCases
+namespace OpenScrape.App.Aplication
 {
     public class SetMovementRegionUseCaseRequest
     {
