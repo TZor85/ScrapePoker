@@ -425,7 +425,7 @@
                     }),
                     new KeyValuePair<string, List<string>>("ALL-IN", new List<string>
                     {
-                        "AK", "AQ", "AJ", "AT", "A9", "A8", "A7", "A6", "A5", "A4", "A3", "A2", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22"
+                        "AK", "AQ", "AJ", "AT", "A9", "A8", "A7", "A6", "A5", "A4", "A3", "A2", "KQ", "KJ", "QJ", "JJ", "TT", "99", "88", "77", "66", "55", "44", "33", "22"
                     }),
                     new KeyValuePair<string, List<string>>("CALL", new List<string>
                     {

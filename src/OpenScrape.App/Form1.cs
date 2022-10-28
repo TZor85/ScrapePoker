@@ -1,20 +1,14 @@
+using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
-using Tesseract;
-using System.Linq;
-using Image = System.Drawing.Image;
-using System.Drawing.Drawing2D;
 using OpenScrape.App.UseCases;
+using OpenScrape.App.UseCases.UseCase;
+using System.Drawing.Drawing2D;
 using System.Security.Cryptography;
 using System.Text;
-using System.Net;
-using OpenScrape.App.Entities;
-using System.Globalization;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics.Arm;
-using OpenScrape.App.UseCases.UseCase;
+using Tesseract;
+using Image = System.Drawing.Image;
 
 namespace OpenScrape.App
 {
@@ -57,7 +51,7 @@ namespace OpenScrape.App
 
         private string? _effectiveStack = string.Empty;
 
-        private int _umbral = 100;
+        private int _umbral = 86;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly GetActions3HandedUseCase _actions3HandedUseCase = new GetActions3HandedUseCase();
@@ -272,9 +266,17 @@ namespace OpenScrape.App
 
         private void btnCapture_Click(object sender, EventArgs e)
         {
+
             if (!cbTest.Checked)
             {
-                var path = @"C:\Code\ScrapePoker\resources\Game\game_" + DateTime.Now.Ticks + ".png";
+                var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/","_");
+
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                var path = folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
                 
                 _useCase.ExecuteImage(path);
 
@@ -383,12 +385,13 @@ namespace OpenScrape.App
                 }
                 else
                 {
+
+                    
                     var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractAndLstm);
-
-
                     Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
                     var res = ocrengine.Process(img, area);
 
+                   
                     switch (item.Name)
                     {
                         case "p0chips":
@@ -465,8 +468,8 @@ namespace OpenScrape.App
                         EffectiveStack = double.Parse(_effectiveStack),
                         BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
                         BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
-                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
                         P1Active = _scrapeResult.P1Active,
                         P2Active = _scrapeResult.P2Active
                     }).Data;
@@ -479,8 +482,8 @@ namespace OpenScrape.App
                         EffectiveStack = double.Parse(_effectiveStack),
                         BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
                         BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
-                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
                         P1Active = _scrapeResult.P1Active,
                         P2Active = _scrapeResult.P2Active
                     }).Data;
@@ -489,8 +492,7 @@ namespace OpenScrape.App
         }
 
         private string GetAction3Handed()
-        {
-
+        {   
             if (_scrapeResult.P0Dealer)
                 return _actions3HandedUseCase.ExecuteButtonAction(
                     new GetActions3HandedRequest
@@ -506,10 +508,10 @@ namespace OpenScrape.App
                         Card0 = _scrapeResult.U0CardFace0,
                         Card1 = _scrapeResult.U0CardFace1,
                         EffectiveStack = double.Parse(_effectiveStack),
-                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
-                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Trim() : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Trim() : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
                         P1Active = _scrapeResult.P1Active,
                         P2Active = _scrapeResult.P2Active
                     }).Data;
@@ -520,10 +522,10 @@ namespace OpenScrape.App
                         Card0 = _scrapeResult.U0CardFace0,
                         Card1 = _scrapeResult.U0CardFace1,
                         EffectiveStack = double.Parse(_effectiveStack),
-                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Split(" ")[0] : "0"),
-                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) ? _scrapeResult.P1Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
-                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) ? _scrapeResult.P2Chips.Replace("BB", " ").Split(" ")[0] : "0") : 0,
+                        BetP1 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Bet) ? _scrapeResult.P1Bet.Replace("BB", " ").Trim() : "0"),
+                        BetP2 = double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Bet) ? _scrapeResult.P2Bet.Replace("BB", " ").Trim() : "0"),
+                        ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
+                        ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".") : "0") : 0,
                         P1Active = _scrapeResult.P1Active,
                         P2Active = _scrapeResult.P2Active
                     }).Data;

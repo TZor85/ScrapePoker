@@ -16,6 +16,7 @@ namespace OpenScrape.App.UseCases.UseCase
             OpenFileDialog theDialog = new OpenFileDialog();
             LoadTableMapUseCaseResponse response = new LoadTableMapUseCaseResponse();
 
+            theDialog.InitialDirectory = @"C:\Code\ScrapePoker\resources\Games";
             theDialog.Title = "Open Text File";
             theDialog.Filter = "TXT files|*.txt";
             if (theDialog.ShowDialog() == DialogResult.OK)

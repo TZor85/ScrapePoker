@@ -49,6 +49,7 @@ namespace OpenScrape.App
         {
             using (OpenFileDialog dlg = new OpenFileDialog())
             {
+                dlg.InitialDirectory = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
                 dlg.Title = "Open Image";
                 dlg.Filter = "Image Files (*.bmp;*.jpg;*.jpeg;*.png)|*.BMP;*.JPG;*.JPEG;*.PNG";
 
