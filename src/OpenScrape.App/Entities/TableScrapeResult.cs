@@ -5,8 +5,8 @@
         public string P0Chips { get; set; } = string.Empty;
         public string P1Chips { get; set; } = string.Empty;
         public string P2Chips { get; set; } = string.Empty;
-        public string P1Bet { get; set;} = string.Empty;
-        public string P2Bet { get; set; } = string.Empty;
+        public double P1Bet { get; set;} = 0;
+        public double P2Bet { get; set; } = 0;
         public bool P0Dealer { get; set; }
         public bool P1Dealer { get; set; }
         public bool P2Dealer { get; set; }

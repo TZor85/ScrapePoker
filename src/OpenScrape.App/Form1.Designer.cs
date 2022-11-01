@@ -607,7 +607,7 @@
             // 
             this.lbAction.AutoSize = true;
             this.lbAction.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbAction.Location = new System.Drawing.Point(325, 264);
+            this.lbAction.Location = new System.Drawing.Point(365, 264);
             this.lbAction.Name = "lbAction";
             this.lbAction.Size = new System.Drawing.Size(119, 37);
             this.lbAction.TabIndex = 11;

@@ -47,14 +47,18 @@ namespace OpenScrape.App
         {
             using (OpenFileDialog dlg = new OpenFileDialog())
             {
-                ////var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+                var folderPath = string.Empty;
 
-                ////if (!Directory.Exists(folderPath))
-                ////{
-                ////    Directory.CreateDirectory(folderPath);
-                ////}
+                if (string.IsNullOrWhiteSpace(lbPath.Text))
+                {   
+                    folderPath = @"C:\Code\ScrapePoker\resources\Games";
+                }
+                else
+                {
+                    folderPath = lbPath.Text.Split("game_")[0];
+                }
 
-                ////dlg.InitialDirectory = folderPath;
+                dlg.InitialDirectory = folderPath;
                 dlg.Title = "Open Image";
                 dlg.Filter = "Image Files (*.bmp;*.jpg;*.jpeg;*.png)|*.BMP;*.JPG;*.JPEG;*.PNG";
 
@@ -62,6 +66,8 @@ namespace OpenScrape.App
                 {
                     this.Width = 461;
                     this.Height = 327;
+
+                    lbPath.Text = dlg.FileName;
 
                     var bitmap = new Bitmap(dlg.FileName);
 

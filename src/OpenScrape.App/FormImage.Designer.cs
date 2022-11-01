@@ -31,6 +31,7 @@
             this.btnNew = new System.Windows.Forms.Button();
             this.pbImagen = new System.Windows.Forms.PictureBox();
             this.btnLoad = new System.Windows.Forms.Button();
+            this.lbPath = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pbImagen)).BeginInit();
             this.SuspendLayout();
             // 
@@ -62,11 +63,20 @@
             this.btnLoad.UseVisualStyleBackColor = true;
             this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
             // 
+            // lbPath
+            // 
+            this.lbPath.AutoSize = true;
+            this.lbPath.Location = new System.Drawing.Point(117, 5);
+            this.lbPath.Name = "lbPath";
+            this.lbPath.Size = new System.Drawing.Size(0, 15);
+            this.lbPath.TabIndex = 3;
+            // 
             // FormImage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(445, 288);
+            this.Controls.Add(this.lbPath);
             this.Controls.Add(this.btnLoad);
             this.Controls.Add(this.pbImagen);
             this.Controls.Add(this.btnNew);
@@ -77,6 +87,7 @@
             this.Load += new System.EventHandler(this.FormImage_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbImagen)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -85,5 +96,6 @@
         private Button btnNew;
         public PictureBox pbImagen;
         private Button btnLoad;
+        private Label lbPath;
     }
 }
