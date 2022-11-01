@@ -33,18 +33,6 @@ namespace OpenScrape.App.Aplication.UseCases
 
                         writer.WriteLine();
                         writer.WriteLine("//");
-                        writer.WriteLine("// Hashes");
-                        writer.WriteLine("//");
-                        writer.WriteLine();
-
-                        foreach (var item in request.Hashes)
-                        {
-                            if (!string.IsNullOrEmpty(item.Name))
-                                writer.WriteLine($"h${item.Name} - {item.Value}");
-                        }
-
-                        writer.WriteLine();
-                        writer.WriteLine("//");
                         writer.WriteLine("// Images");
                         writer.WriteLine("//");
                         writer.WriteLine();

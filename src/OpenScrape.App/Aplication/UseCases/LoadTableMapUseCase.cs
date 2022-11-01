@@ -42,8 +42,6 @@ namespace OpenScrape.App.Aplication.UseCases
 
                             if (type == "r")
                                 nodo = "Nodo0";
-                            else if (type == "h")
-                                nodo = "Nodo1";
                             else if (type == "i")
                                 nodo = "Nodo2";
 
@@ -78,12 +76,6 @@ namespace OpenScrape.App.Aplication.UseCases
                                         region.IsColor = false;
 
                                     response.Regions.Add(region);
-                                    response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
-                                }
-                                else if (nodo == "Nodo1")
-                                {
-                                    name = text.Split('$')[1].Split("-")[0].Trim();
-                                    response.Hashes.Add(new HashRegion { Name = name, Value = text.Split("-")[1].Trim().ToLower() });
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
                                 }
                                 else if (nodo == "Nodo2")

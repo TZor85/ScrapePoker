@@ -11,7 +11,6 @@ namespace OpenScrape.App.Aplication
     {
         public List<Regions> Regions { get; set; } = new List<Regions>();
         public List<ImageRegion> Images { get; set; } = new List<ImageRegion>();
-        public List<HashRegion> Hashes { get; set; } = new List<HashRegion>();
         public List<KeyValuePair<string, string>> Tree { get; set; } = new List<KeyValuePair<string, string>>();
     }
 

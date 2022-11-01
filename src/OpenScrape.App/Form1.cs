@@ -23,11 +23,9 @@ namespace OpenScrape.App
 
         List<Regions> _regions = new List<Regions>();
         List<ImageRegion> _images = new List<ImageRegion>();
-        List<HashRegion> _hashes = new List<HashRegion>();
 
         Regions _locRegion = new Regions();
         ImageRegion _locImage = new ImageRegion();
-        HashRegion _locHash = new HashRegion();
 
         TableScrapeResult _scrapeResult = new TableScrapeResult();
 
@@ -129,22 +127,9 @@ namespace OpenScrape.App
 
                 _locRegion = region;
 
-                ckHash.Enabled = true;
                 ckColor.Enabled = true;
-                ckHash.Checked = region.IsHash;
                 ckColor.Checked = region.IsColor;
                 pbImageRegion.Image = null;
-                tbResult.Text = string.Empty;
-            }
-
-            if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo1")
-            {
-                _locHash = _hashes.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
-
-                ckHash.Enabled = false;
-                ckColor.Enabled = false;
-                pbImageRegion.Image = null;
-                tbResult.Text = _hashes.FirstOrDefault(x => x.Name == name)?.Value;
             }
 
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
@@ -152,9 +137,7 @@ namespace OpenScrape.App
                 _locImage = _images.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
 
                 pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
-                ckHash.Enabled = false;
                 ckColor.Enabled = false;
-                tbResult.Text = string.Empty;
             }
 
         }
@@ -186,7 +169,7 @@ namespace OpenScrape.App
 
         private void btnSaveMap_Click(object sender, EventArgs e)
         {
-            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Hashes = _hashes, Images = _images, Key = Key });            
+            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Images = _images, Key = Key });            
         }
 
         private void btnLoadMap_Click(object sender, EventArgs e)
@@ -195,11 +178,9 @@ namespace OpenScrape.App
 
             _regions.Clear();
             _images.Clear();
-            _hashes.Clear();
 
             _regions.AddRange(response.Regions);
             _images.AddRange(response.Images);
-            _hashes.AddRange(response.Hashes);
 
             foreach (var item in response.Tree)
             {
@@ -390,6 +371,7 @@ namespace OpenScrape.App
                     var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
 
                     var text = string.Empty;
+                    var resultText = string.Empty;
 
                     switch (item.Name)
                     {
@@ -403,10 +385,13 @@ namespace OpenScrape.App
                             _scrapeResult.P2Chips = res.GetText();
                             break;
                         case "p1bet":
-                            if (res.GetText().Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                            resultText = res.GetText();
+                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
                                 text = "2";
+                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                                text = "3";
                             else
-                                text = res.GetText().Replace("BB", "").Trim().Replace(" ", ",");
+                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
 
                             double.TryParse(text, out double p1Bet);
                             if (p1Bet == 50)
@@ -414,10 +399,13 @@ namespace OpenScrape.App
                             _scrapeResult.P1Bet = p1Bet;
                             break;
                         case "p2bet":
-                            if (res.GetText().Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                            resultText = res.GetText();
+                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
                                 text = "2";
+                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                                text = "3";
                             else
-                                text = res.GetText().Replace("BB", "").Trim().Replace(" ", ",");
+                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
                                                         
                             double.TryParse(text, out double p2Bet);
                             if (p2Bet == 50)
@@ -519,7 +507,7 @@ namespace OpenScrape.App
             }
 
         }
-
+        
         private string GetAction3Handed()
         {
             try
@@ -668,29 +656,7 @@ namespace OpenScrape.App
             _formCreateImage.Show();
             twRegions.ExpandAll();
         }
-
-        private void ckHash_CheckedChanged(object sender, EventArgs e)
-        {
-            if (ckHash.Checked)
-            {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
-
-                if (region != null)
-                    region.IsHash = true;
-
-            }                
-            else
-            {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
-
-                if (region != null)
-                    region.IsHash = false;
-            } 
-        }
+               
 
         private void ckColor_CheckedChanged(object sender, EventArgs e)
         {
@@ -1105,7 +1071,6 @@ namespace OpenScrape.App
             btnUpLeft.Enabled = true;
             btnZoom.Enabled = true;
             btnCreateImage.Enabled = true;
-            ckHash.Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)

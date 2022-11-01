@@ -29,8 +29,7 @@
         private void InitializeComponent()
         {
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Regions");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Hashes");
-            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Images");
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Images");
             this.twRegions = new System.Windows.Forms.TreeView();
             this.btnNew = new System.Windows.Forms.Button();
             this.btnPlusWidth = new System.Windows.Forms.Button();
@@ -64,9 +63,6 @@
             this.btnCreateImage = new System.Windows.Forms.Button();
             this.btnWindow = new System.Windows.Forms.Button();
             this.pbImageRegion = new System.Windows.Forms.PictureBox();
-            this.ckHash = new System.Windows.Forms.CheckBox();
-            this.label3 = new System.Windows.Forms.Label();
-            this.tbResult = new System.Windows.Forms.TextBox();
             this.ckColor = new System.Windows.Forms.CheckBox();
             this.tbR = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -111,14 +107,11 @@
             this.twRegions.Name = "twRegions";
             treeNode1.Name = "Nodo0";
             treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.Text = "Hashes";
-            treeNode3.Name = "Nodo2";
-            treeNode3.Text = "Images";
+            treeNode2.Name = "Nodo2";
+            treeNode2.Text = "Images";
             this.twRegions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
             treeNode1,
-            treeNode2,
-            treeNode3});
+            treeNode2});
             this.twRegions.Size = new System.Drawing.Size(159, 342);
             this.twRegions.TabIndex = 0;
             this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
@@ -440,7 +433,7 @@
             // 
             // btnCapture
             // 
-            this.btnCapture.Location = new System.Drawing.Point(446, 748);
+            this.btnCapture.Location = new System.Drawing.Point(17, 748);
             this.btnCapture.Name = "btnCapture";
             this.btnCapture.Size = new System.Drawing.Size(104, 76);
             this.btnCapture.TabIndex = 20;
@@ -471,7 +464,7 @@
             // 
             // btnWindow
             // 
-            this.btnWindow.Location = new System.Drawing.Point(337, 748);
+            this.btnWindow.Location = new System.Drawing.Point(446, 748);
             this.btnWindow.Name = "btnWindow";
             this.btnWindow.Size = new System.Drawing.Size(102, 76);
             this.btnWindow.TabIndex = 23;
@@ -481,40 +474,11 @@
             // 
             // pbImageRegion
             // 
-            this.pbImageRegion.Location = new System.Drawing.Point(177, 264);
+            this.pbImageRegion.Location = new System.Drawing.Point(177, 217);
             this.pbImageRegion.Name = "pbImageRegion";
             this.pbImageRegion.Size = new System.Drawing.Size(159, 97);
             this.pbImageRegion.TabIndex = 24;
             this.pbImageRegion.TabStop = false;
-            // 
-            // ckHash
-            // 
-            this.ckHash.AutoSize = true;
-            this.ckHash.Enabled = false;
-            this.ckHash.Location = new System.Drawing.Point(386, 98);
-            this.ckHash.Name = "ckHash";
-            this.ckHash.Size = new System.Drawing.Size(53, 19);
-            this.ckHash.TabIndex = 26;
-            this.ckHash.Text = "Hash";
-            this.ckHash.UseVisualStyleBackColor = true;
-            this.ckHash.CheckedChanged += new System.EventHandler(this.ckHash_CheckedChanged);
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(177, 166);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(39, 15);
-            this.label3.TabIndex = 27;
-            this.label3.Text = "Result";
-            // 
-            // tbResult
-            // 
-            this.tbResult.Enabled = false;
-            this.tbResult.Location = new System.Drawing.Point(222, 163);
-            this.tbResult.Name = "tbResult";
-            this.tbResult.Size = new System.Drawing.Size(114, 23);
-            this.tbResult.TabIndex = 28;
             // 
             // ckColor
             // 
@@ -531,7 +495,7 @@
             // tbR
             // 
             this.tbR.Enabled = false;
-            this.tbR.Location = new System.Drawing.Point(222, 220);
+            this.tbR.Location = new System.Drawing.Point(222, 173);
             this.tbR.Name = "tbR";
             this.tbR.Size = new System.Drawing.Size(29, 23);
             this.tbR.TabIndex = 32;
@@ -539,7 +503,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(229, 202);
+            this.label4.Location = new System.Drawing.Point(229, 155);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(14, 15);
             this.label4.TabIndex = 33;
@@ -548,7 +512,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(264, 202);
+            this.label5.Location = new System.Drawing.Point(264, 155);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(15, 15);
             this.label5.TabIndex = 35;
@@ -557,7 +521,7 @@
             // tbG
             // 
             this.tbG.Enabled = false;
-            this.tbG.Location = new System.Drawing.Point(257, 220);
+            this.tbG.Location = new System.Drawing.Point(257, 173);
             this.tbG.Name = "tbG";
             this.tbG.Size = new System.Drawing.Size(29, 23);
             this.tbG.TabIndex = 34;
@@ -565,7 +529,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(299, 202);
+            this.label6.Location = new System.Drawing.Point(299, 155);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(14, 15);
             this.label6.TabIndex = 37;
@@ -574,7 +538,7 @@
             // tbB
             // 
             this.tbB.Enabled = false;
-            this.tbB.Location = new System.Drawing.Point(292, 220);
+            this.tbB.Location = new System.Drawing.Point(292, 173);
             this.tbB.Name = "tbB";
             this.tbB.Size = new System.Drawing.Size(29, 23);
             this.tbB.TabIndex = 36;
@@ -582,7 +546,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(177, 223);
+            this.label8.Location = new System.Drawing.Point(177, 176);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(36, 15);
             this.label8.TabIndex = 39;
@@ -682,7 +646,7 @@
             this.groupBox6.Controls.Add(this.lbP2Chips);
             this.groupBox6.Location = new System.Drawing.Point(380, 22);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(145, 113);
+            this.groupBox6.Size = new System.Drawing.Size(145, 88);
             this.groupBox6.TabIndex = 7;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Player 2";
@@ -699,7 +663,7 @@
             // lbP2Chips
             // 
             this.lbP2Chips.AutoSize = true;
-            this.lbP2Chips.Location = new System.Drawing.Point(6, 86);
+            this.lbP2Chips.Location = new System.Drawing.Point(6, 66);
             this.lbP2Chips.Name = "lbP2Chips";
             this.lbP2Chips.Size = new System.Drawing.Size(43, 15);
             this.lbP2Chips.TabIndex = 2;
@@ -711,7 +675,7 @@
             this.groupBox5.Controls.Add(this.lbP1Chips);
             this.groupBox5.Location = new System.Drawing.Point(6, 22);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(145, 113);
+            this.groupBox5.Size = new System.Drawing.Size(145, 88);
             this.groupBox5.TabIndex = 6;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "Player 1";
@@ -728,7 +692,7 @@
             // lbP1Chips
             // 
             this.lbP1Chips.AutoSize = true;
-            this.lbP1Chips.Location = new System.Drawing.Point(6, 86);
+            this.lbP1Chips.Location = new System.Drawing.Point(6, 66);
             this.lbP1Chips.Name = "lbP1Chips";
             this.lbP1Chips.Size = new System.Drawing.Size(43, 15);
             this.lbP1Chips.TabIndex = 1;
@@ -771,9 +735,6 @@
             this.Controls.Add(this.label4);
             this.Controls.Add(this.tbR);
             this.Controls.Add(this.ckColor);
-            this.Controls.Add(this.tbResult);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.ckHash);
             this.Controls.Add(this.pbImageRegion);
             this.Controls.Add(this.btnCreateImage);
             this.Controls.Add(this.btnDelete);
@@ -844,10 +805,7 @@
         private Button btnCreateImage;
         private Button btnWindow;
         private PictureBox pbImageRegion;
-        private CheckBox ckHash;
         private Label lbXY;
-        private Label label3;
-        private TextBox tbResult;
         private CheckBox ckColor;
         private TextBox tbR;
         private Label label4;
