@@ -96,6 +96,9 @@
             this.cbTest = new System.Windows.Forms.CheckBox();
             this.ckBoard = new System.Windows.Forms.CheckBox();
             this.btnBoard = new System.Windows.Forms.Button();
+            this.btnCreateFont = new System.Windows.Forms.Button();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.button1 = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -802,11 +805,42 @@
             this.btnBoard.UseVisualStyleBackColor = true;
             this.btnBoard.Click += new System.EventHandler(this.btnBoard_Click);
             // 
+            // btnCreateFont
+            // 
+            this.btnCreateFont.Location = new System.Drawing.Point(441, 207);
+            this.btnCreateFont.Name = "btnCreateFont";
+            this.btnCreateFont.Size = new System.Drawing.Size(91, 23);
+            this.btnCreateFont.TabIndex = 47;
+            this.btnCreateFont.Text = "Create Font";
+            this.btnCreateFont.UseVisualStyleBackColor = true;
+            this.btnCreateFont.Click += new System.EventHandler(this.btnCreateFont_Click);
+            // 
+            // richTextBox1
+            // 
+            this.richTextBox1.Location = new System.Drawing.Point(124, 830);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.Size = new System.Drawing.Size(280, 250);
+            this.richTextBox1.TabIndex = 48;
+            this.richTextBox1.Text = "";
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(417, 910);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(91, 23);
+            this.button1.TabIndex = 49;
+            this.button1.Text = "Clear";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(555, 836);
+            this.ClientSize = new System.Drawing.Size(555, 1092);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.richTextBox1);
+            this.Controls.Add(this.btnCreateFont);
             this.Controls.Add(this.btnBoard);
             this.Controls.Add(this.ckBoard);
             this.Controls.Add(this.cbTest);
@@ -929,5 +963,8 @@
         private PictureBox pbFlop1;
         private CheckBox ckBoard;
         private Button btnBoard;
+        private Button btnCreateFont;
+        private RichTextBox richTextBox1;
+        private Button button1;
     }
 }

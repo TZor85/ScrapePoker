@@ -846,6 +846,42 @@ namespace OpenScrape.App
             }
         }
 
+        private void btnCreateFont_Click(object sender, EventArgs e)
+        {
+            //CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral)
+            List<bool> iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 110));
+        }
+        public List<bool> GetHashFont(Bitmap bmpSource)
+        {
+            var con = 0;
+            List<bool> lResult = new List<bool>();
+            //create new image with 16x16 pixel
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(_locRegion.Width, _locRegion.Height));
+            for (int j = 0; j < bmpMin.Height; j++)
+            {
+                for (int i = 0; i < bmpMin.Width; i++)
+                {
+                    if (bmpMin.GetPixel(i, j).GetBrightness() < 0.5f)
+                        richTextBox1.Text += " ";
+                    else
+                    {
+                        richTextBox1.Text += "x";
+                        con++;
+                    }
+
+                    //reduce colors to true / false                
+                    lResult.Add(bmpMin.GetPixel(i, j).GetBrightness() < 0.5f);
+                }
+                richTextBox1.Text += "\r\n";
+            }
+            return lResult;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            richTextBox1.Clear();
+        }
+
         #region Tamaño Region
 
 
@@ -1210,18 +1246,6 @@ namespace OpenScrape.App
             btnUpLeft.Enabled = true;
             btnZoom.Enabled = true;
             btnCreateImage.Enabled = true;
-        }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-
-            Bitmap bmpMin = new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), new Size(16, 16));
-            pbZoom.Image = bmpMin;
-        }
-
-        private void label7_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void pictureBox2_Click(object sender, EventArgs e)
