@@ -36,12 +36,13 @@ namespace OpenScrape.App.Aplication.UseCases
                             var name = string.Empty;
                             Regions region = new Regions();
                             ImageRegion imageRegion = new ImageRegion();
-                            HashRegion hashRegion = new HashRegion();
 
                             var type = text.Split('$')[0].Trim();
 
                             if (type == "r")
                                 nodo = "Nodo0";
+                            else if (type == "b")
+                                nodo = "Nodo1";
                             else if (type == "i")
                                 nodo = "Nodo2";
 
@@ -70,12 +71,28 @@ namespace OpenScrape.App.Aplication.UseCases
                                     if (text.Split("&")[2].Trim() == "True")
                                     {
                                         region.IsColor = true;
-                                        region.Color = text.Split("&")[3].Trim();
+                                        region.Color = text.Split("&")[4].Trim();
                                     }
                                     else
                                         region.IsColor = false;
 
+                                    if (text.Split("&")[3].Trim() == "True")
+                                    {
+                                        region.IsBoard = true;
+                                    }
+                                    else
+                                        region.IsBoard = false;
+
                                     response.Regions.Add(region);
+                                    response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
+                                }
+                                else if (nodo == "Nodo1")
+                                {
+                                    name = text.Split('$')[1].Split("-")[0].Trim();
+                                    var hashImage = text.Split("-")[1].Trim();
+                                    var image = EncrypterHelper.GetImageDecrypted(hashImage, secret);
+
+                                    response.Board.Add(new ImageRegion { Name = name, Image = (Bitmap)image });
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
                                 }
                                 else if (nodo == "Nodo2")

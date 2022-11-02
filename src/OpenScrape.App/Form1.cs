@@ -23,6 +23,7 @@ namespace OpenScrape.App
 
         List<Regions> _regions = new List<Regions>();
         List<ImageRegion> _images = new List<ImageRegion>();
+        List<ImageRegion> _imagesBoard = new List<ImageRegion>();
 
         Regions _locRegion = new Regions();
         ImageRegion _locImage = new ImageRegion();
@@ -81,6 +82,9 @@ namespace OpenScrape.App
 
         public void Execute(string texto, string nodo)
         {
+            if (nodo == "Image")
+                nodo = _locRegion.IsBoard ? "Nodo1" : "Nodo2";
+
             var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
             var type = string.Empty;
             Bitmap img = null;
@@ -91,10 +95,16 @@ namespace OpenScrape.App
                     _locRegion = new Regions { Name = texto, Type = "r" };
                     _regions.Add(_locRegion);
                     break;
+                case "Nodo1":
+                    texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
+                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+                    _locImage = new ImageRegion { Name = texto, Image = img, isBoard = true };
+                    _imagesBoard.Add(_locImage);
+                    break;
                 case "Nodo2":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
                     img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img };
+                    _locImage = new ImageRegion { Name = texto, Image = img, isBoard = false };
                     _images.Add(_locImage);
                     break;
 
@@ -129,6 +139,8 @@ namespace OpenScrape.App
 
                 ckColor.Enabled = true;
                 ckColor.Checked = region.IsColor;
+                ckBoard.Enabled = true;
+                ckBoard.Checked = region.IsBoard;
                 pbImageRegion.Image = null;
             }
 
@@ -138,6 +150,8 @@ namespace OpenScrape.App
 
                 pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
                 ckColor.Enabled = false;
+                ckBoard.Enabled = false;
+
             }
 
         }
@@ -169,7 +183,7 @@ namespace OpenScrape.App
 
         private void btnSaveMap_Click(object sender, EventArgs e)
         {
-            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Images = _images, Key = Key });            
+            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Images = _images, Key = Key, Board = _imagesBoard });            
         }
 
         private void btnLoadMap_Click(object sender, EventArgs e)
@@ -234,7 +248,7 @@ namespace OpenScrape.App
         {
             List<bool> lResult = new List<bool>();
             //create new image with 16x16 pixel
-            Bitmap bmpMin = new Bitmap(bmpSource, new Size(25, 55));
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(55, 55));
             for (int j = 0; j < bmpMin.Height; j++)
             {
                 for (int i = 0; i < bmpMin.Width; i++)
@@ -251,32 +265,7 @@ namespace OpenScrape.App
 
             if (!cbTest.Checked)
             {
-                var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/","_");
-
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                var path = folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
-                
-                _useCase.ExecuteImage(path);
-
-                var windowImg = Image.FromFile(path);
-
-                _formImage.Width = 461;
-                _formImage.Height = 327;
-
-                _formImage.Width = windowImg.Width + _formImage.Width / 11;
-                _formImage.Height = windowImg.Height + _formImage.Height / 4;
-
-                _formImage.pbImagen.Width = windowImg.Width;
-                _formImage.pbImagen.Height = windowImg.Height;
-
-                _formImage.pbImagen.Image = windowImg;
-                _formImage.pbImagen.Refresh();
-
-                Thread.Sleep(1000);
+                GetImageWhilePlaying();
             }
 
             //TODO: hacer las comparaciones de las imagenes / OCR
@@ -303,7 +292,7 @@ namespace OpenScrape.App
                         if(equalElements > maxEqual)
                             maxEqual = equalElements;
 
-                        if (maxEqual > max && maxEqual >= (1375 * 96 / 100))
+                        if (maxEqual > max && maxEqual >= (3025 * 0.96))
                         {
                             switch (item.Name)
                             {
@@ -313,6 +302,10 @@ namespace OpenScrape.App
                                     break;
                                 case "u0cardface1":
                                     _scrapeResult.U0CardFace1 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                case "b0card1":
+                                    _scrapeResult.B0Card1 = immg.Name.Split(" ")[0];
                                     max = maxEqual;
                                     break;
                                 default:
@@ -424,11 +417,15 @@ namespace OpenScrape.App
             lbP1Chips.Text += _scrapeResult.P1Chips;
             lbP2Chips.Text += _scrapeResult.P2Chips;
 
-            if(!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
-                pbCard0.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace0))?.Image;
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
+                pbCard0.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace0))!.Image;
+            else
+                pbCard0.Image = null;
 
             if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
-                pbCard1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace1))?.Image;
+                pbCard1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace1))!.Image;
+            else
+                pbCard1.Image = null;            
 
             lbP1Bet.Text = _scrapeResult.P1Bet.ToString();
             lbP2Bet.Text = _scrapeResult.P2Bet.ToString();
@@ -457,6 +454,126 @@ namespace OpenScrape.App
             else
                 lbAction.Text = GetAction2Handed();
         }
+
+        private void btnBoard_Click(object sender, EventArgs e)
+        {
+            if (!cbTest.Checked)
+            {
+                GetImageWhilePlaying();
+            }
+
+            _scrapeResult.B0Card1 = string.Empty;
+            _scrapeResult.B0Card2 = string.Empty;
+            _scrapeResult.B0Card3 = string.Empty;
+            _scrapeResult.B0Card4 = string.Empty;
+            _scrapeResult.B0Card5 = string.Empty;
+
+            foreach (var item in _regions)
+            {
+                if (item.IsBoard)
+                {
+                    var maxEqual = 0;
+                    var max = 0;
+
+                    foreach (var immg in _imagesBoard)
+                    {
+                        List<bool> iHash1 = GetHash(new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height))));
+                        List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
+
+                        int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
+
+                        if (equalElements > maxEqual)
+                            maxEqual = equalElements;
+
+                        if (maxEqual > max && maxEqual >= (3025 * 0.91))
+                        {
+                            switch (item.Name)
+                            {
+                                case "b0card1":
+                                    _scrapeResult.B0Card1 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                case "b0card2":
+                                    _scrapeResult.B0Card2 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                case "b0card3":
+                                    _scrapeResult.B0Card3 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                case "b0card4":
+                                    _scrapeResult.B0Card4 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                case "b0card5":
+                                    _scrapeResult.B0Card5 = immg.Name.Split(" ")[0];
+                                    max = maxEqual;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card1))
+                pbFlop1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.B0Card1))!.Image;
+            else
+                pbFlop1.Image = null;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card2))
+                pbFlop2.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.B0Card2))!.Image;
+            else
+                pbFlop2.Image = null;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card3))
+                pbFlop3.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.B0Card3))!.Image;
+            else
+                pbFlop3.Image = null;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card4))
+                pbTurn.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.B0Card4))!.Image;
+            else
+                pbTurn.Image = null;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card5))
+                pbRiver.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.B0Card5))!.Image;
+            else
+                pbRiver.Image = null;
+        }
+
+        private void GetImageWhilePlaying()
+        {
+            var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            var path = folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
+
+            _useCase.ExecuteImage(path);
+
+            var windowImg = Image.FromFile(path);
+
+            _formImage.Width = 461;
+            _formImage.Height = 327;
+
+            _formImage.Width = windowImg.Width + _formImage.Width / 11;
+            _formImage.Height = windowImg.Height + _formImage.Height / 4;
+
+            _formImage.pbImagen.Width = windowImg.Width;
+            _formImage.pbImagen.Height = windowImg.Height;
+
+            _formImage.pbImagen.Image = windowImg;
+            _formImage.pbImagen.Refresh();
+
+            Thread.Sleep(1000);
+        }
+
+        
 
         private string GetAction2Handed()
         {
@@ -706,7 +823,29 @@ namespace OpenScrape.App
             }
         }
 
-     
+        private void ckBoard_CheckedChanged(object sender, EventArgs e)
+        {
+            if (ckBoard.Checked)
+            {
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                if(region != null)
+                    region.IsBoard = true;
+
+            }
+            else
+            {
+                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+
+                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+
+                if (region != null)
+                    region.IsBoard = false;
+            }
+        }
+
         #region Tamaño Region
 
 
@@ -1084,6 +1223,13 @@ namespace OpenScrape.App
         {
 
         }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        
     }
 }
 

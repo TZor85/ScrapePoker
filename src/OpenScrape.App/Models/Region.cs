@@ -26,6 +26,7 @@ namespace OpenScrape.App.Models
         public string Value { get; set; } = string.Empty;
         public bool IsHash { get; set; }
         public bool IsColor { get; set; }
+        public bool IsBoard { get; set; }
         public string Color { get; set; } = string.Empty;
 
     }
@@ -34,6 +35,7 @@ namespace OpenScrape.App.Models
     {
         public string Name { get; set; } = string.Empty;
         public Bitmap? Image { get; set; }
+        public bool isBoard { get; set; }
         //public HashRegion Hash { get; set; } = new HashRegion();
     }
 

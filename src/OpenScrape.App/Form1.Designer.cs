@@ -29,7 +29,8 @@
         private void InitializeComponent()
         {
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Regions");
-            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Images");
+            System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Board");
+            System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Images");
             this.twRegions = new System.Windows.Forms.TreeView();
             this.btnNew = new System.Windows.Forms.Button();
             this.btnPlusWidth = new System.Windows.Forms.Button();
@@ -72,6 +73,11 @@
             this.tbB = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.pbRiver = new System.Windows.Forms.PictureBox();
+            this.pbTurn = new System.Windows.Forms.PictureBox();
+            this.pbFlop3 = new System.Windows.Forms.PictureBox();
+            this.pbFlop2 = new System.Windows.Forms.PictureBox();
+            this.pbFlop1 = new System.Windows.Forms.PictureBox();
             this.lbAction = new System.Windows.Forms.Label();
             this.lbP1Bet = new System.Windows.Forms.Label();
             this.lbP2Bet = new System.Windows.Forms.Label();
@@ -88,12 +94,19 @@
             this.lbP1Chips = new System.Windows.Forms.Label();
             this.lbEfective = new System.Windows.Forms.Label();
             this.cbTest = new System.Windows.Forms.CheckBox();
+            this.ckBoard = new System.Windows.Forms.CheckBox();
+            this.btnBoard = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).BeginInit();
             this.groupBox4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).BeginInit();
             this.groupBox7.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).BeginInit();
@@ -107,11 +120,14 @@
             this.twRegions.Name = "twRegions";
             treeNode1.Name = "Nodo0";
             treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo2";
-            treeNode2.Text = "Images";
+            treeNode2.Name = "Nodo1";
+            treeNode2.Text = "Board";
+            treeNode3.Name = "Nodo2";
+            treeNode3.Text = "Images";
             this.twRegions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
             treeNode1,
-            treeNode2});
+            treeNode2,
+            treeNode3});
             this.twRegions.Size = new System.Drawing.Size(159, 342);
             this.twRegions.TabIndex = 0;
             this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
@@ -554,6 +570,11 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.pbRiver);
+            this.groupBox4.Controls.Add(this.pbTurn);
+            this.groupBox4.Controls.Add(this.pbFlop3);
+            this.groupBox4.Controls.Add(this.pbFlop2);
+            this.groupBox4.Controls.Add(this.pbFlop1);
             this.groupBox4.Controls.Add(this.lbAction);
             this.groupBox4.Controls.Add(this.lbP1Bet);
             this.groupBox4.Controls.Add(this.lbP2Bet);
@@ -566,6 +587,47 @@
             this.groupBox4.Size = new System.Drawing.Size(531, 346);
             this.groupBox4.TabIndex = 43;
             this.groupBox4.TabStop = false;
+            // 
+            // pbRiver
+            // 
+            this.pbRiver.Location = new System.Drawing.Point(299, 129);
+            this.pbRiver.Name = "pbRiver";
+            this.pbRiver.Size = new System.Drawing.Size(25, 55);
+            this.pbRiver.TabIndex = 16;
+            this.pbRiver.TabStop = false;
+            // 
+            // pbTurn
+            // 
+            this.pbTurn.Location = new System.Drawing.Point(268, 129);
+            this.pbTurn.Name = "pbTurn";
+            this.pbTurn.Size = new System.Drawing.Size(25, 55);
+            this.pbTurn.TabIndex = 15;
+            this.pbTurn.TabStop = false;
+            // 
+            // pbFlop3
+            // 
+            this.pbFlop3.Location = new System.Drawing.Point(237, 129);
+            this.pbFlop3.Name = "pbFlop3";
+            this.pbFlop3.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop3.TabIndex = 14;
+            this.pbFlop3.TabStop = false;
+            // 
+            // pbFlop2
+            // 
+            this.pbFlop2.Location = new System.Drawing.Point(206, 129);
+            this.pbFlop2.Name = "pbFlop2";
+            this.pbFlop2.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop2.TabIndex = 13;
+            this.pbFlop2.TabStop = false;
+            this.pbFlop2.Click += new System.EventHandler(this.pictureBox2_Click);
+            // 
+            // pbFlop1
+            // 
+            this.pbFlop1.Location = new System.Drawing.Point(175, 129);
+            this.pbFlop1.Name = "pbFlop1";
+            this.pbFlop1.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop1.TabIndex = 12;
+            this.pbFlop1.TabStop = false;
             // 
             // lbAction
             // 
@@ -718,11 +780,35 @@
             this.cbTest.Text = "Test";
             this.cbTest.UseVisualStyleBackColor = true;
             // 
+            // ckBoard
+            // 
+            this.ckBoard.AutoSize = true;
+            this.ckBoard.Enabled = false;
+            this.ckBoard.Location = new System.Drawing.Point(386, 94);
+            this.ckBoard.Name = "ckBoard";
+            this.ckBoard.Size = new System.Drawing.Size(57, 19);
+            this.ckBoard.TabIndex = 45;
+            this.ckBoard.Text = "Board";
+            this.ckBoard.UseVisualStyleBackColor = true;
+            this.ckBoard.CheckedChanged += new System.EventHandler(this.ckBoard_CheckedChanged);
+            // 
+            // btnBoard
+            // 
+            this.btnBoard.Location = new System.Drawing.Point(153, 748);
+            this.btnBoard.Name = "btnBoard";
+            this.btnBoard.Size = new System.Drawing.Size(104, 76);
+            this.btnBoard.TabIndex = 46;
+            this.btnBoard.Text = "Board";
+            this.btnBoard.UseVisualStyleBackColor = true;
+            this.btnBoard.Click += new System.EventHandler(this.btnBoard_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 836);
+            this.Controls.Add(this.btnBoard);
+            this.Controls.Add(this.ckBoard);
             this.Controls.Add(this.cbTest);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.label8);
@@ -758,6 +844,11 @@
             ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).EndInit();
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).EndInit();
             this.groupBox7.ResumeLayout(false);
             this.groupBox7.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).EndInit();
@@ -831,5 +922,12 @@
         private CheckBox cbTest;
         private PictureBox pbCard1;
         private PictureBox pbCard0;
+        private PictureBox pbRiver;
+        private PictureBox pbTurn;
+        private PictureBox pbFlop3;
+        private PictureBox pbFlop2;
+        private PictureBox pbFlop1;
+        private CheckBox ckBoard;
+        private Button btnBoard;
     }
 }

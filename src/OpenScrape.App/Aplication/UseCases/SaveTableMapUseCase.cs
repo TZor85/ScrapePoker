@@ -28,7 +28,22 @@ namespace OpenScrape.App.Aplication.UseCases
                         foreach (var item in request.Regions)
                         {
                             if (!string.IsNullOrEmpty(item.Name))
-                                writer.WriteLine($"r${item.Name} # {item.X} - {item.Y} - {item.Width} - {item.Height} & {item.IsHash} & {item.IsColor} & {item.Color}");
+                                writer.WriteLine($"r${item.Name} # {item.X} - {item.Y} - {item.Width} - {item.Height} & {item.IsHash} & {item.IsColor} & {item.IsBoard} & {item.Color}");
+                        }
+
+                        writer.WriteLine();
+                        writer.WriteLine("//");
+                        writer.WriteLine("// Board");
+                        writer.WriteLine("//");
+                        writer.WriteLine();
+
+                        foreach (var item in request.Board)
+                        {
+                            if (item.Image != null)
+                            {
+                                string imgText = EncrypterHelper.GetImageEncrypted(item.Image, request.Key);
+                                writer.WriteLine($"b${item.Name} - {imgText}");
+                            }
                         }
 
                         writer.WriteLine();

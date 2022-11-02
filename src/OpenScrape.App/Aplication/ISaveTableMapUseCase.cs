@@ -7,6 +7,7 @@ namespace OpenScrape.App.Aplication
         public string Key { get; set; } = string.Empty;
         public List<Regions> Regions { get; set; } = new List<Regions>();
         public List<ImageRegion> Images { get; set; } = new List<ImageRegion>();
+        public List<ImageRegion> Board { get; set; } = new List<ImageRegion>();
     }
 
     public interface ISaveTableMapUseCase

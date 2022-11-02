@@ -16,5 +16,10 @@
         public bool P2Sit { get; set; }
         public string U0CardFace0 { get; set; } = string.Empty;
         public string U0CardFace1 { get; set; } = string.Empty;
+        public string B0Card1 { get; set; } = string.Empty;
+        public string B0Card2 { get; set; } = string.Empty;
+        public string B0Card3 { get; set; } = string.Empty;
+        public string B0Card4 { get; set; } = string.Empty;
+        public string B0Card5 { get; set; } = string.Empty;
     }
 }
