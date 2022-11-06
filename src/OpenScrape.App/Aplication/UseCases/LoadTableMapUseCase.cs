@@ -45,6 +45,8 @@ namespace OpenScrape.App.Aplication.UseCases
                                 nodo = "Nodo1";
                             else if (type == "i")
                                 nodo = "Nodo2";
+                            else if (type == "f")
+                                nodo = "Nodo3";
 
                             if (!string.IsNullOrEmpty(nodo))
                             {
@@ -98,10 +100,19 @@ namespace OpenScrape.App.Aplication.UseCases
                                 else if (nodo == "Nodo2")
                                 {
                                     name = text.Split('$')[1].Split("-")[0].Trim();
-                                    var hashImage = text.Split("-")[1].Trim();
+                                    var valueImage = text.Split("-")[1].Trim();
+                                    var hashImage = text.Split("-")[2].Trim();
                                     var image = EncrypterHelper.GetImageDecrypted(hashImage, secret);
 
-                                    response.Images.Add(new ImageRegion { Name = name, Image = (Bitmap)image });
+                                    response.Images.Add(new ImageRegion { Name = name, Image = (Bitmap)image, Value = valueImage });
+                                    response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
+                                }
+                                else if(nodo == "Nodo3")
+                                {
+                                    name = text.Split('$')[1].Split("-")[0].Trim();
+                                    var valueFont = text.Split("-")[1].Trim();
+
+                                    response.Fonts.Add(new FontRegion { Name = name, Value = valueFont });
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
                                 }
                             }

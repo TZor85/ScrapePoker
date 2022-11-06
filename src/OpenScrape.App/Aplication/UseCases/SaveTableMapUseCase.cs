@@ -33,6 +33,18 @@ namespace OpenScrape.App.Aplication.UseCases
 
                         writer.WriteLine();
                         writer.WriteLine("//");
+                        writer.WriteLine("// Fonts");
+                        writer.WriteLine("//");
+                        writer.WriteLine();
+
+                        foreach (var item in request.Fonts)
+                        {
+                            if (!string.IsNullOrEmpty(item.Name))
+                                writer.WriteLine($"f${item.Name} - {item.Value}");
+                        }
+
+                        writer.WriteLine();
+                        writer.WriteLine("//");
                         writer.WriteLine("// Board");
                         writer.WriteLine("//");
                         writer.WriteLine();
@@ -57,7 +69,7 @@ namespace OpenScrape.App.Aplication.UseCases
                             if (item.Image != null)
                             {
                                 string imgText = EncrypterHelper.GetImageEncrypted(item.Image, request.Key);
-                                writer.WriteLine($"i${item.Name} - {imgText}");
+                                writer.WriteLine($"i${item.Name} - {item.Value} - {imgText}");
                             }
                         }
 

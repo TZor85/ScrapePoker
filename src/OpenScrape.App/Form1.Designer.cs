@@ -31,6 +31,7 @@
             System.Windows.Forms.TreeNode treeNode1 = new System.Windows.Forms.TreeNode("Regions");
             System.Windows.Forms.TreeNode treeNode2 = new System.Windows.Forms.TreeNode("Board");
             System.Windows.Forms.TreeNode treeNode3 = new System.Windows.Forms.TreeNode("Images");
+            System.Windows.Forms.TreeNode treeNode4 = new System.Windows.Forms.TreeNode("Fonts");
             this.twRegions = new System.Windows.Forms.TreeView();
             this.btnNew = new System.Windows.Forms.Button();
             this.btnPlusWidth = new System.Windows.Forms.Button();
@@ -97,8 +98,6 @@
             this.ckBoard = new System.Windows.Forms.CheckBox();
             this.btnBoard = new System.Windows.Forms.Button();
             this.btnCreateFont = new System.Windows.Forms.Button();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -122,15 +121,22 @@
             this.twRegions.Location = new System.Drawing.Point(12, 48);
             this.twRegions.Name = "twRegions";
             treeNode1.Name = "Nodo0";
+            treeNode1.NodeFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             treeNode1.Text = "Regions";
             treeNode2.Name = "Nodo1";
+            treeNode2.NodeFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             treeNode2.Text = "Board";
             treeNode3.Name = "Nodo2";
+            treeNode3.NodeFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             treeNode3.Text = "Images";
+            treeNode4.Name = "Nodo3";
+            treeNode4.NodeFont = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            treeNode4.Text = "Fonts";
             this.twRegions.Nodes.AddRange(new System.Windows.Forms.TreeNode[] {
             treeNode1,
             treeNode2,
-            treeNode3});
+            treeNode3,
+            treeNode4});
             this.twRegions.Size = new System.Drawing.Size(159, 342);
             this.twRegions.TabIndex = 0;
             this.twRegions.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.twRegions_AfterSelect);
@@ -269,6 +275,7 @@
             this.tbHeight.TabIndex = 7;
             this.tbHeight.Text = "0";
             this.tbHeight.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbHeight.Leave += new System.EventHandler(this.tbHeight_Leave);
             // 
             // label2
             // 
@@ -296,6 +303,7 @@
             this.tbWidth.TabIndex = 0;
             this.tbWidth.Text = "0";
             this.tbWidth.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbWidth.Leave += new System.EventHandler(this.tbWidth_Leave);
             // 
             // groupBox2
             // 
@@ -815,31 +823,11 @@
             this.btnCreateFont.UseVisualStyleBackColor = true;
             this.btnCreateFont.Click += new System.EventHandler(this.btnCreateFont_Click);
             // 
-            // richTextBox1
-            // 
-            this.richTextBox1.Location = new System.Drawing.Point(124, 830);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(280, 250);
-            this.richTextBox1.TabIndex = 48;
-            this.richTextBox1.Text = "";
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(417, 910);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(91, 23);
-            this.button1.TabIndex = 49;
-            this.button1.Text = "Clear";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(555, 1092);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.richTextBox1);
+            this.ClientSize = new System.Drawing.Size(555, 830);
             this.Controls.Add(this.btnCreateFont);
             this.Controls.Add(this.btnBoard);
             this.Controls.Add(this.ckBoard);
@@ -964,7 +952,5 @@
         private CheckBox ckBoard;
         private Button btnBoard;
         private Button btnCreateFont;
-        private RichTextBox richTextBox1;
-        private Button button1;
     }
 }

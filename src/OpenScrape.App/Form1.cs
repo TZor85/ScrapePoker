@@ -17,6 +17,7 @@ namespace OpenScrape.App
     {
         FormRegions _formRegions;
         FormCreateImage _formCreateImage;
+        FormCreateFont _formCreateFont;
         FormImage _formImage;
         Graphics _papel;
         
@@ -24,6 +25,7 @@ namespace OpenScrape.App
         List<Regions> _regions = new List<Regions>();
         List<ImageRegion> _images = new List<ImageRegion>();
         List<ImageRegion> _imagesBoard = new List<ImageRegion>();
+        List<FontRegion> _fonts = new List<FontRegion>();
 
         Regions _locRegion = new Regions();
         ImageRegion _locImage = new ImageRegion();
@@ -79,6 +81,17 @@ namespace OpenScrape.App
 
         }
 
+        public void Execute(List<FontRegion> fonts)
+        {
+            var node = twRegions.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
+
+            _fonts.AddRange(fonts);
+
+            foreach (var item in _fonts)
+            {
+                node.Nodes.Add(item.Name);
+            }
+        }
 
         public void Execute(string texto, string nodo)
         {
@@ -98,14 +111,17 @@ namespace OpenScrape.App
                 case "Nodo1":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
                     img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img, isBoard = true };
+                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = true };
                     _imagesBoard.Add(_locImage);
                     break;
                 case "Nodo2":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
                     img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img, isBoard = false };
+                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = false, Value = PruebaValueImagen()};
                     _images.Add(_locImage);
+                    break;
+                case "Nodo3":
+                    _fonts.Add(new FontRegion { Name = texto, Value = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130), true) });
                     break;
 
                 default:
@@ -115,6 +131,11 @@ namespace OpenScrape.App
             node.Nodes.Add(texto);
             twRegions.ExpandAll();
 
+        }
+
+        private string PruebaValueImagen()
+        {
+            return GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130));
         }
 
         private string GetImageHash(string input)
@@ -183,7 +204,7 @@ namespace OpenScrape.App
 
         private void btnSaveMap_Click(object sender, EventArgs e)
         {
-            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Images = _images, Key = Key, Board = _imagesBoard });            
+            _saveUseCase.Execute(new SaveTableMapUseCaseRequest { Regions = _regions, Images = _images, Key = Key, Board = _imagesBoard, Fonts = _fonts });            
         }
 
         private void btnLoadMap_Click(object sender, EventArgs e)
@@ -192,9 +213,13 @@ namespace OpenScrape.App
 
             _regions.Clear();
             _images.Clear();
-
+            _fonts.Clear();
+            _imagesBoard.Clear();
+            
             _regions.AddRange(response.Regions);
             _images.AddRange(response.Images);
+            _imagesBoard.AddRange(response.Board);
+            _fonts.AddRange(response.Fonts);
 
             foreach (var item in response.Tree)
             {
@@ -277,22 +302,23 @@ namespace OpenScrape.App
 
             foreach (var item in _regions)
             {
+                var maxEqual = 0;
+                var max = 0;
+
                 if (item.IsHash)
-                {
-                    var maxEqual = 0;
-                    var max = 0;
+                {                  
 
                     foreach (var immg in _images)
                     {
-                        List<bool> iHash1 = GetHash(new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height))));
-                        List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
+                        string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+                        //List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
 
-                        int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
+                        int equalElements = iHash1.Zip(immg.Value, (i, j) => i == j).Count(eq => eq);
 
                         if(equalElements > maxEqual)
                             maxEqual = equalElements;
 
-                        if (maxEqual > max && maxEqual >= (3025 * 0.96))
+                        if (maxEqual > max && maxEqual >= (1375 * 0.96))
                         {
                             switch (item.Name)
                             {
@@ -359,55 +385,159 @@ namespace OpenScrape.App
                 }
                 else
                 {
-                    var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
-                    Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
-                    var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
 
-                    var text = string.Empty;
-                    var resultText = string.Empty;
+                    string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+                    var hashCount = iHash1.Length;
+                    var hash = string.Empty;
+                    var texto = string.Empty;
+                    bool firstBigBlind = false;
+                    bool firstOne = false;
+
+                    for (int i = 0; i < hashCount / 21; i++)
+                    {
+                        if (!iHash1.Substring(0, 21).Contains('1'))
+                        {
+                            iHash1 = iHash1.Substring(21);
+                            
+                            if(firstOne)
+                            {
+                                maxEqual = 0;
+                                max = 0;
+
+                                if (hash.Length > 130)
+                                {
+                                    foreach (var font in _fonts)
+                                    {
+                                        int equalElements = hash.Zip(font.Value, (i, j) => i == j).Count(eq => eq);
+
+                                        if (equalElements > maxEqual)
+                                            maxEqual = equalElements;
+
+                                        if (maxEqual > max && maxEqual >= (hash.Length * 0.9))
+                                        {
+                                            if (font.Name.Contains('B') && !firstBigBlind)
+                                            {
+                                                texto += $" {font.Name}";
+                                                firstBigBlind = true;
+                                            }
+                                            else
+                                            {
+                                                texto += font.Name;
+                                            }
+                                            max = maxEqual;
+                                        }
+                                    }
+                                }
+
+                                hash = string.Empty;
+                                firstOne = false;
+
+                            }
+                        }
+                        else
+                        {
+                            hash += iHash1.Substring(0, 21);
+                            iHash1 = iHash1.Substring(21);
+                            firstOne = true;
+                        }
+
+                        
+                        
+                    }
 
                     switch (item.Name)
                     {
                         case "p0chips":
-                            _scrapeResult.P0Chips = res.GetText();
+                            _scrapeResult.P0Chips = texto;
                             break;
                         case "p1chips":
-                            _scrapeResult.P1Chips = res.GetText();
+                            _scrapeResult.P1Chips = texto;
                             break;
                         case "p2chips":
-                            _scrapeResult.P2Chips = res.GetText();
-                            break;
-                        case "p1bet":
-                            resultText = res.GetText();
-                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                                text = "2";
-                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                                text = "3";
-                            else
-                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-                            double.TryParse(text, out double p1Bet);
-                            if (p1Bet == 50)
-                                p1Bet = 0.5f;
-                            _scrapeResult.P1Bet = p1Bet;
-                            break;
-                        case "p2bet":
-                            resultText = res.GetText();
-                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                                text = "2";
-                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                                text = "3";
-                            else
-                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-                                                        
-                            double.TryParse(text, out double p2Bet);
-                            if (p2Bet == 50)
-                                p2Bet = 0.5f;
-                            _scrapeResult.P2Bet = p2Bet;
+                            _scrapeResult.P2Chips = texto;
                             break;
                         default:
                             break;
                     }
+
+                    texto = string.Empty;
+                    hash = string.Empty;
+
+                    //foreach (var font in _fonts)
+                    //{
+                    //    int first = iHash1.IndexOf(font.Value);
+
+                    //    if (first > 0)
+                    //    {
+                    //        iHash1 = iHash1.Replace(font.Value, "0");
+
+                    //        if (font.Name.Contains('B') && !firstBigBlind)
+                    //        {
+                    //            texto += $" {font.Name}";
+                    //            firstBigBlind = true;
+                    //        }
+                    //        else
+                    //        {
+                    //            texto += font.Name;
+                    //        }
+
+                    //    }
+
+                    //    //int equalElements = img.Value.Zip(iHash1, (i, j) => i == j).Count(eq => eq);
+
+                    //}
+
+
+
+                    //var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
+                    //Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+                    //var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
+
+                    //var text = string.Empty;
+                    //var resultText = string.Empty;
+
+                    //switch (item.Name)
+                    //{
+                    //    case "p0chips":
+                    //        _scrapeResult.P0Chips = res.GetText();
+                    //        break;
+                    //    case "p1chips":
+                    //        _scrapeResult.P1Chips = res.GetText();
+                    //        break;
+                    //    case "p2chips":
+                    //        _scrapeResult.P2Chips = res.GetText();
+                    //        break;
+                    //    case "p1bet":
+                    //        resultText = res.GetText();
+                    //        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                    //            text = "2";
+                    //        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                    //            text = "3";
+                    //        else
+                    //            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+                    //        double.TryParse(text, out double p1Bet);
+                    //        if (p1Bet == 50)
+                    //            p1Bet = 0.5f;
+                    //        _scrapeResult.P1Bet = p1Bet;
+                    //        break;
+                    //    case "p2bet":
+                    //        resultText = res.GetText();
+                    //        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                    //            text = "2";
+                    //        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                    //            text = "3";
+                    //        else
+                    //            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+                    //        double.TryParse(text, out double p2Bet);
+                    //        if (p2Bet == 50)
+                    //            p2Bet = 0.5f;
+                    //        _scrapeResult.P2Bet = p2Bet;
+                    //        break;
+                    //    default:
+                    //        break;
+                    //}
                 }
             }
 
@@ -475,17 +605,17 @@ namespace OpenScrape.App
                     var maxEqual = 0;
                     var max = 0;
 
-                    foreach (var immg in _imagesBoard)
+                    foreach (var immg in _images)
                     {
-                        List<bool> iHash1 = GetHash(new Bitmap(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height))));
-                        List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
+                        string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+                        //List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
 
-                        int equalElements = iHash1.Zip(iHash2, (i, j) => i == j).Count(eq => eq);
+                        int equalElements = iHash1.Zip(immg.Value, (i, j) => i == j).Count(eq => eq);
 
                         if (equalElements > maxEqual)
                             maxEqual = equalElements;
 
-                        if (maxEqual > max && maxEqual >= (3025 * 0.91))
+                        if (maxEqual > max && maxEqual >= (1375 * 0.96))
                         {
                             switch (item.Name)
                             {
@@ -846,41 +976,273 @@ namespace OpenScrape.App
             }
         }
 
+
+
         private void btnCreateFont_Click(object sender, EventArgs e)
         {
-            //CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral)
-            List<bool> iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 110));
+            string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 200));
+            //pbImageRegion.Image = CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 100);
+            var hashCount = iHash1.Length;
+            var hash = string.Empty;
+            var texto = string.Empty;
+           
+            bool firstOne = false;
+            List<KeyValuePair<string, string>> locFonts = new List<KeyValuePair<string, string>>();
+            List<KeyValuePair<string, string>> fonts = new List<KeyValuePair<string, string>>();
+
+            List<FontRegion> locFontsRegion = new List<FontRegion>();
+
+            for (int i = 0; i < hashCount / 24; i++)
+            {
+                if (!iHash1.Substring(0, 24).Contains('1'))
+                {
+                    iHash1 = iHash1.Substring(24);
+
+                    if (firstOne)
+                    {
+                        var maxEqual = 0;
+                        var max = 0;
+                        bool exist = false;
+
+                        if(_fonts.Count <= 0)
+                        {
+                            locFontsRegion.Add(new FontRegion { Name = "?", Value = hash });
+                            //locFonts.Add(new KeyValuePair<string, string>("?", hash));
+                        }
+                        else
+                        {
+                            foreach (var item in _fonts)
+                            {
+                                int equalElements = item.Value.Zip(hash, (i, j) => i == j).Count(eq => eq);
+
+                                if (equalElements > maxEqual)
+                                    maxEqual = equalElements;
+
+                                if (equalElements >= (item.Value.Length * 0.8))
+                                {
+                                    exist = true;
+                                    break;                                   
+                                    
+                                }
+                            }
+
+                            if(!exist)
+                                locFontsRegion.Add(new FontRegion { Name = "?", Value = hash });
+                        }
+
+                        hash = string.Empty;
+                        firstOne = false;
+
+                    }
+                }
+                else
+                {
+                    hash += iHash1.Substring(0, 24);
+                    iHash1 = iHash1.Substring(24);
+                    firstOne = true;
+                }
+            }
+
+            //var fontIndefinedCount = _fonts.Count(x => x.Name == "?");
+
+            //if(fontIndefinedCount <= 0)
+            //{
+            //    foreach (var item in locFonts)
+            //    {
+            //        locFontsRegion.Add(new FontRegion { Name = item.Key, Value = item.Value });
+            //    }
+            //}
+            //else
+            //{
+            //    //TODO: Mostrar texto recto (con x) en nueva ventana y luego almacenar en "doblado"
+            //    //TODO: Estás añadiendo a la misma lista que buscas, monta otra lista y añade el resultado
+            //    foreach (var font in _fonts.Where(x => x.Name == "?"))
+            //    {
+            //        var maxEqual = 0;
+            //        var max = 0;
+
+            //        foreach (var item in locFonts)
+            //        {
+            //            int equalElements = font.Value.Zip(item.Value, (i, j) => i == j).Count(eq => eq);
+
+            //            if (equalElements > maxEqual)
+            //                maxEqual = equalElements;
+
+            //            if (maxEqual < (item.Value.Length * 0.9))
+            //            {
+            //                locFontsRegion.Add(new FontRegion { Name = item.Key, Value = item.Value });
+            //            }
+            //        }
+            //    }
+            //}
+
+            //_fonts.AddRange(locFontsRegion);
+
+            //foreach (var font in locFonts)
+            //{
+            //    var maxEqual = 0;
+            //    var max = 0;
+
+            //    foreach (var item in locFonts)
+            //    {
+            //        int equalElements = font.Zip(item, (i, j) => i == j).Count(eq => eq);
+
+            //        if (equalElements > maxEqual)
+            //            maxEqual = equalElements;
+
+            //        if (maxEqual < (font.Length * 0.9))
+            //        {
+            //            fonts.Add(item);
+            //            //max = maxEqual;
+            //        }
+
+            //    }
+
+
+            //}
+
+            if (locFontsRegion.Count > 0)
+            {
+                _formCreateFont = new FormCreateFont();
+                _formCreateFont._fonts = locFontsRegion;
+                _formCreateFont.region = this;
+                _formCreateFont.Show();
+            }
+
+
+            //string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130));
+
+
+
+
+            //foreach (var region in _regions)
+            //{
+            //    if (region.IsHash)
+            //    {
+            //        foreach (var img in _images)
+            //        {
+            //            int first = iHash1.IndexOf(img.Value);
+
+            //            int equalElements = img.Value.Zip(iHash1, (i, j) => i == j).Count(eq => eq);
+
+
+            //        }
+            //    }
+
+            //}
         }
-        public List<bool> GetHashFont(Bitmap bmpSource)
+
+        public string GetHashFontTest(Bitmap bmpSource)
         {
-            var con = 0;
             List<bool> lResult = new List<bool>();
+            var textHash = string.Empty;
             //create new image with 16x16 pixel
             Bitmap bmpMin = new Bitmap(bmpSource, new Size(_locRegion.Width, _locRegion.Height));
-            for (int j = 0; j < bmpMin.Height; j++)
+            for (int j = 0; j < bmpMin.Width; j++)
             {
-                for (int i = 0; i < bmpMin.Width; i++)
+                for (int i = 0; i < bmpMin.Height; i++)
                 {
-                    if (bmpMin.GetPixel(i, j).GetBrightness() < 0.5f)
-                        richTextBox1.Text += " ";
+                    var brillo = bmpMin.GetPixel(j, i).GetBrightness();
+                    if (bmpMin.GetPixel(j, i).GetBrightness() < 0.99f)
+                    {
+                        //bmpMin.SetPixel(j, i, bl)
+                        textHash += "0";
+                    }
                     else
                     {
-                        richTextBox1.Text += "x";
-                        con++;
+                        textHash += "1";
                     }
-
                     //reduce colors to true / false                
-                    lResult.Add(bmpMin.GetPixel(i, j).GetBrightness() < 0.5f);
+                    lResult.Add(bmpMin.GetPixel(j, i).GetBrightness() < 0.5f);
                 }
-                richTextBox1.Text += "\r\n";
+                textHash += "\r\n";
             }
-            return lResult;
+
+            //foreach (var item in lResult)
+            //{
+            //    if (item)
+            //        textHash += " ";
+            //    else
+            //        textHash += "x";
+            //}
+
+            return textHash;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        public string GetHashFont(Bitmap bmpSource, bool substring = false)
         {
-            richTextBox1.Clear();
+            List<bool> lResult = new List<bool>();
+            var textHash = string.Empty;
+            var texto = string.Empty;
+            
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(_locRegion.Width, _locRegion.Height));
+            for (int j = 0; j < bmpMin.Width; j++)
+            {
+                for (int i = 0; i < bmpMin.Height; i++)
+                {
+                    //reduce colors to true / false                
+                    lResult.Add(bmpMin.GetPixel(j, i).GetBrightness() < 0.99f);
+                }
+            }
+                      
+            foreach (var item in lResult)
+            {
+                if (item)
+                    textHash += "0";
+                else
+                    textHash += "1";
+            }
+
+            if (substring)
+            {
+                for (int i = 0; i < lResult.Count / 24; i++)
+                {
+                    if (!textHash.Substring(0, 24).Contains('1'))
+                    {
+                        textHash = textHash.Substring(21);
+                    }
+                    else
+                    {
+                        texto += textHash.Substring(0, 24);
+                        textHash = textHash.Substring(24);
+                    }
+                }
+            }
+            else
+            {
+                texto = textHash;
+            }
+
+            return texto;
         }
+
+
+        public string GetHashImage(Bitmap bmpSource)
+        {
+            List<bool> lResult = new List<bool>();
+            var textHash = string.Empty;
+            //create new image with 16x16 pixel
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(_locRegion.Width, _locRegion.Height));
+            for (int j = 0; j < bmpMin.Width; j++)
+            {
+                for (int i = 0; i < bmpMin.Height; i++)
+                {
+                    //reduce colors to true / false                
+                    lResult.Add(bmpMin.GetPixel(j, i).GetBrightness() < 0.5f);
+                }
+            }
+
+            foreach (var item in lResult)
+            {
+                if (item)
+                    textHash += "0";
+                else
+                    textHash += "1";
+            }
+
+            return textHash;
+        }
+                
 
         #region Tamaño Region
 
@@ -1253,7 +1615,32 @@ namespace OpenScrape.App
 
         }
 
-        
+        private void tbWidth_Leave(object sender, EventArgs e)
+        {            
+            _formImage.pbImagen.Refresh();
+
+            _papel = _formImage.pbImagen.CreateGraphics();
+            Pen lapiz = new Pen(Color.Red);
+
+            _locRegion.Width = int.Parse(tbWidth.Text);
+            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+
+            _img = _formImage.pbImagen.Image;
+        }
+
+        private void tbHeight_Leave(object sender, EventArgs e)
+        {   
+            _formImage.pbImagen.Refresh();
+
+            _papel = _formImage.pbImagen.CreateGraphics();
+            Pen lapiz = new Pen(Color.Red);
+
+            _locRegion.Width = int.Parse(tbWidth.Text);
+            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+
+            _img = _formImage.pbImagen.Image;
+            
+        }
     }
 }
 

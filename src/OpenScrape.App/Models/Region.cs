@@ -35,7 +35,8 @@ namespace OpenScrape.App.Models
     {
         public string Name { get; set; } = string.Empty;
         public Bitmap? Image { get; set; }
-        public bool isBoard { get; set; }
+        public bool IsBoard { get; set; }
+        public string Value { get; set; } = string.Empty;
         //public HashRegion Hash { get; set; } = new HashRegion();
     }
 
@@ -44,4 +45,12 @@ namespace OpenScrape.App.Models
         public string Name { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
     }
+
+    public class FontRegion
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString().Substring(0, 6);
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+
 }
