@@ -48,6 +48,10 @@
             this.label1 = new System.Windows.Forms.Label();
             this.tbWidth = new System.Windows.Forms.TextBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.tbY = new System.Windows.Forms.TextBox();
+            this.tbX = new System.Windows.Forms.TextBox();
             this.btnUpRight = new System.Windows.Forms.Button();
             this.btnDownRight = new System.Windows.Forms.Button();
             this.btnDownLeft = new System.Windows.Forms.Button();
@@ -98,6 +102,9 @@
             this.ckBoard = new System.Windows.Forms.CheckBox();
             this.btnBoard = new System.Windows.Forms.Button();
             this.btnCreateFont = new System.Windows.Forms.Button();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -307,6 +314,10 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.label7);
+            this.groupBox2.Controls.Add(this.label3);
+            this.groupBox2.Controls.Add(this.tbY);
+            this.groupBox2.Controls.Add(this.tbX);
             this.groupBox2.Controls.Add(this.btnUpRight);
             this.groupBox2.Controls.Add(this.btnDownRight);
             this.groupBox2.Controls.Add(this.btnDownLeft);
@@ -317,10 +328,48 @@
             this.groupBox2.Controls.Add(this.btnRigth);
             this.groupBox2.Location = new System.Drawing.Point(441, 48);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(107, 100);
+            this.groupBox2.Size = new System.Drawing.Size(107, 143);
             this.groupBox2.TabIndex = 16;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Nudge";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(57, 96);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(14, 15);
+            this.label7.TabIndex = 32;
+            this.label7.Text = "Y";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(5, 96);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(14, 15);
+            this.label3.TabIndex = 31;
+            this.label3.Text = "X";
+            // 
+            // tbY
+            // 
+            this.tbY.Location = new System.Drawing.Point(58, 114);
+            this.tbY.Name = "tbY";
+            this.tbY.Size = new System.Drawing.Size(43, 23);
+            this.tbY.TabIndex = 30;
+            this.tbY.Text = "0";
+            this.tbY.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbY.Leave += new System.EventHandler(this.tbY_Leave);
+            // 
+            // tbX
+            // 
+            this.tbX.Location = new System.Drawing.Point(6, 114);
+            this.tbX.Name = "tbX";
+            this.tbX.Size = new System.Drawing.Size(43, 23);
+            this.tbX.TabIndex = 29;
+            this.tbX.Text = "0";
+            this.tbX.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.tbX.Leave += new System.EventHandler(this.tbX_Leave);
             // 
             // btnUpRight
             // 
@@ -338,7 +387,7 @@
             // btnDownRight
             // 
             this.btnDownRight.Enabled = false;
-            this.btnDownRight.Location = new System.Drawing.Point(66, 69);
+            this.btnDownRight.Location = new System.Drawing.Point(66, 68);
             this.btnDownRight.Name = "btnDownRight";
             this.btnDownRight.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.btnDownRight.Size = new System.Drawing.Size(25, 25);
@@ -390,7 +439,7 @@
             // btnDown
             // 
             this.btnDown.Enabled = false;
-            this.btnDown.Location = new System.Drawing.Point(42, 69);
+            this.btnDown.Location = new System.Drawing.Point(42, 68);
             this.btnDown.Name = "btnDown";
             this.btnDown.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.btnDown.Size = new System.Drawing.Size(25, 25);
@@ -481,7 +530,7 @@
             // btnCreateImage
             // 
             this.btnCreateImage.Enabled = false;
-            this.btnCreateImage.Location = new System.Drawing.Point(441, 166);
+            this.btnCreateImage.Location = new System.Drawing.Point(441, 206);
             this.btnCreateImage.Name = "btnCreateImage";
             this.btnCreateImage.Size = new System.Drawing.Size(91, 23);
             this.btnCreateImage.TabIndex = 22;
@@ -815,7 +864,7 @@
             // 
             // btnCreateFont
             // 
-            this.btnCreateFont.Location = new System.Drawing.Point(441, 207);
+            this.btnCreateFont.Location = new System.Drawing.Point(441, 235);
             this.btnCreateFont.Name = "btnCreateFont";
             this.btnCreateFont.Size = new System.Drawing.Size(91, 23);
             this.btnCreateFont.TabIndex = 47;
@@ -823,11 +872,41 @@
             this.btnCreateFont.UseVisualStyleBackColor = true;
             this.btnCreateFont.Click += new System.EventHandler(this.btnCreateFont_Click);
             // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(352, 157);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(73, 15);
+            this.label9.TabIndex = 48;
+            this.label9.Text = "P0: 649 - 920";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(352, 181);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(67, 15);
+            this.label10.TabIndex = 49;
+            this.label10.Text = "P1: 92 - 374";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(352, 206);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(79, 15);
+            this.label11.TabIndex = 50;
+            this.label11.Text = "P2: 1206 - 374";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(555, 830);
+            this.Controls.Add(this.label11);
+            this.Controls.Add(this.label10);
+            this.Controls.Add(this.label9);
             this.Controls.Add(this.btnCreateFont);
             this.Controls.Add(this.btnBoard);
             this.Controls.Add(this.ckBoard);
@@ -861,6 +940,7 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).EndInit();
             this.groupBox3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pbImageRegion)).EndInit();
@@ -952,5 +1032,12 @@
         private CheckBox ckBoard;
         private Button btnBoard;
         private Button btnCreateFont;
+        private Label label7;
+        private Label label3;
+        private TextBox tbY;
+        private TextBox tbX;
+        private Label label9;
+        private Label label10;
+        private Label label11;
     }
 }

@@ -87,7 +87,7 @@ namespace OpenScrape.App
 
             _fonts.AddRange(fonts);
 
-            foreach (var item in _fonts)
+            foreach (var item in fonts)
             {
                 node.Nodes.Add(item.Name);
             }
@@ -191,6 +191,8 @@ namespace OpenScrape.App
                 _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
                 tbWidth.Text = _locRegion.Width.ToString();
                 tbHeight.Text = _locRegion.Height.ToString();
+                tbX.Text = _locRegion.X.ToString();
+                tbY.Text = _locRegion.Y.ToString();
                 lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
             }
 
@@ -386,26 +388,26 @@ namespace OpenScrape.App
                 else
                 {
 
-                    string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+                    string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 200));
                     var hashCount = iHash1.Length;
                     var hash = string.Empty;
                     var texto = string.Empty;
                     bool firstBigBlind = false;
                     bool firstOne = false;
 
-                    for (int i = 0; i < hashCount / 21; i++)
+                    for (int i = 0; i < hashCount / 24; i++)
                     {
-                        if (!iHash1.Substring(0, 21).Contains('1'))
+                        if (!iHash1.Substring(0, 24).Contains('1'))
                         {
-                            iHash1 = iHash1.Substring(21);
+                            iHash1 = iHash1.Substring(24);
                             
                             if(firstOne)
                             {
                                 maxEqual = 0;
                                 max = 0;
 
-                                if (hash.Length > 130)
-                                {
+                                //if (hash.Length > 130)
+                                //{
                                     foreach (var font in _fonts)
                                     {
                                         int equalElements = hash.Zip(font.Value, (i, j) => i == j).Count(eq => eq);
@@ -427,7 +429,7 @@ namespace OpenScrape.App
                                             max = maxEqual;
                                         }
                                     }
-                                }
+                                //}
 
                                 hash = string.Empty;
                                 firstOne = false;
@@ -436,8 +438,8 @@ namespace OpenScrape.App
                         }
                         else
                         {
-                            hash += iHash1.Substring(0, 21);
-                            iHash1 = iHash1.Substring(21);
+                            hash += iHash1.Substring(0, 24);
+                            iHash1 = iHash1.Substring(24);
                             firstOne = true;
                         }
 
@@ -1018,7 +1020,7 @@ namespace OpenScrape.App
                                 if (equalElements > maxEqual)
                                     maxEqual = equalElements;
 
-                                if (equalElements >= (item.Value.Length * 0.8))
+                                if (equalElements >= (hash.Length * 0.9))
                                 {
                                     exist = true;
                                     break;                                   
@@ -1341,6 +1343,8 @@ namespace OpenScrape.App
             }
 
             _locRegion.X += _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1375,6 +1379,8 @@ namespace OpenScrape.App
             }
 
             _locRegion.X -= _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1410,6 +1416,8 @@ namespace OpenScrape.App
             }
 
             _locRegion.Y += _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1444,6 +1452,8 @@ namespace OpenScrape.App
             }
 
             _locRegion.Y -= _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1478,6 +1488,8 @@ namespace OpenScrape.App
 
             _locRegion.Y -= _speed;
             _locRegion.X -= _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1512,6 +1524,8 @@ namespace OpenScrape.App
 
             _locRegion.Y -= _speed;
             _locRegion.X += _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1546,6 +1560,8 @@ namespace OpenScrape.App
 
             _locRegion.Y += _speed;
             _locRegion.X -= _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1580,6 +1596,8 @@ namespace OpenScrape.App
 
             _locRegion.Y += _speed;
             _locRegion.X += _speed;
+            tbY.Text = _locRegion.Y.ToString();
+            tbX.Text = _locRegion.X.ToString();
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
             _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
@@ -1640,6 +1658,34 @@ namespace OpenScrape.App
 
             _img = _formImage.pbImagen.Image;
             
+        }
+
+        private void tbX_Leave(object sender, EventArgs e)
+        {
+            _formImage.pbImagen.Refresh();
+
+            _papel = _formImage.pbImagen.CreateGraphics();
+            Pen lapiz = new Pen(Color.Red);
+
+            _locRegion.X = int.Parse(tbX.Text);
+            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+
+            _img = _formImage.pbImagen.Image;
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
+        }
+
+        private void tbY_Leave(object sender, EventArgs e)
+        {
+            _formImage.pbImagen.Refresh();
+
+            _papel = _formImage.pbImagen.CreateGraphics();
+            Pen lapiz = new Pen(Color.Red);
+
+            _locRegion.Y = int.Parse(tbY.Text);
+            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+
+            _img = _formImage.pbImagen.Image;
+            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
         }
     }
 }
