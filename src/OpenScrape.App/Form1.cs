@@ -121,7 +121,7 @@ namespace OpenScrape.App
                     _images.Add(_locImage);
                     break;
                 case "Nodo3":
-                    _fonts.Add(new FontRegion { Name = texto, Value = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130), true) });
+                    _fonts.Add(new FontRegion { Name = texto, Value = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 200), true) });
                     break;
 
                 default:
@@ -320,7 +320,7 @@ namespace OpenScrape.App
                         if(equalElements > maxEqual)
                             maxEqual = equalElements;
 
-                        if (maxEqual > max && maxEqual >= (1375 * 0.96))
+                        if (maxEqual > max && maxEqual >= (1375 * 0.9))
                         {
                             switch (item.Name)
                             {
@@ -330,10 +330,6 @@ namespace OpenScrape.App
                                     break;
                                 case "u0cardface1":
                                     _scrapeResult.U0CardFace1 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                case "b0card1":
-                                    _scrapeResult.B0Card1 = immg.Name.Split(" ")[0];
                                     max = maxEqual;
                                     break;
                                 default:
@@ -388,158 +384,55 @@ namespace OpenScrape.App
                 else
                 {
 
-                    string iHash1 = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 200));
-                    var hashCount = iHash1.Length;
-                    var hash = string.Empty;
-                    var texto = string.Empty;
-                    bool firstBigBlind = false;
-                    bool firstOne = false;
+                    var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
+                    Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+                    var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
 
-                    for (int i = 0; i < hashCount / 24; i++)
-                    {
-                        if (!iHash1.Substring(0, 24).Contains('1'))
-                        {
-                            iHash1 = iHash1.Substring(24);
-                            
-                            if(firstOne)
-                            {
-                                maxEqual = 0;
-                                max = 0;
-
-                                //if (hash.Length > 130)
-                                //{
-                                    foreach (var font in _fonts)
-                                    {
-                                        int equalElements = hash.Zip(font.Value, (i, j) => i == j).Count(eq => eq);
-
-                                        if (equalElements > maxEqual)
-                                            maxEqual = equalElements;
-
-                                        if (maxEqual > max && maxEqual >= (hash.Length * 0.9))
-                                        {
-                                            if (font.Name.Contains('B') && !firstBigBlind)
-                                            {
-                                                texto += $" {font.Name}";
-                                                firstBigBlind = true;
-                                            }
-                                            else
-                                            {
-                                                texto += font.Name;
-                                            }
-                                            max = maxEqual;
-                                        }
-                                    }
-                                //}
-
-                                hash = string.Empty;
-                                firstOne = false;
-
-                            }
-                        }
-                        else
-                        {
-                            hash += iHash1.Substring(0, 24);
-                            iHash1 = iHash1.Substring(24);
-                            firstOne = true;
-                        }
-
-                        
-                        
-                    }
+                    var text = string.Empty;
+                    var resultText = string.Empty;
 
                     switch (item.Name)
                     {
                         case "p0chips":
-                            _scrapeResult.P0Chips = texto;
+                            _scrapeResult.P0Chips = res.GetText();
                             break;
                         case "p1chips":
-                            _scrapeResult.P1Chips = texto;
+                            _scrapeResult.P1Chips = res.GetText();
                             break;
                         case "p2chips":
-                            _scrapeResult.P2Chips = texto;
+                            _scrapeResult.P2Chips = res.GetText();
+                            break;
+                        case "p1bet":
+                            resultText = res.GetText();
+                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                                text = "2";
+                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                                text = "3";
+                            else
+                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+                            double.TryParse(text, out double p1Bet);
+                            if (p1Bet == 50)
+                                p1Bet = 0.5f;
+                            _scrapeResult.P1Bet = p1Bet;
+                            break;
+                        case "p2bet":
+                            resultText = res.GetText();
+                            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+                                text = "2";
+                            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+                                text = "3";
+                            else
+                                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+                            double.TryParse(text, out double p2Bet);
+                            if (p2Bet == 50)
+                                p2Bet = 0.5f;
+                            _scrapeResult.P2Bet = p2Bet;
                             break;
                         default:
                             break;
                     }
-
-                    texto = string.Empty;
-                    hash = string.Empty;
-
-                    //foreach (var font in _fonts)
-                    //{
-                    //    int first = iHash1.IndexOf(font.Value);
-
-                    //    if (first > 0)
-                    //    {
-                    //        iHash1 = iHash1.Replace(font.Value, "0");
-
-                    //        if (font.Name.Contains('B') && !firstBigBlind)
-                    //        {
-                    //            texto += $" {font.Name}";
-                    //            firstBigBlind = true;
-                    //        }
-                    //        else
-                    //        {
-                    //            texto += font.Name;
-                    //        }
-
-                    //    }
-
-                    //    //int equalElements = img.Value.Zip(iHash1, (i, j) => i == j).Count(eq => eq);
-
-                    //}
-
-
-
-                    //var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
-                    //Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
-                    //var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
-
-                    //var text = string.Empty;
-                    //var resultText = string.Empty;
-
-                    //switch (item.Name)
-                    //{
-                    //    case "p0chips":
-                    //        _scrapeResult.P0Chips = res.GetText();
-                    //        break;
-                    //    case "p1chips":
-                    //        _scrapeResult.P1Chips = res.GetText();
-                    //        break;
-                    //    case "p2chips":
-                    //        _scrapeResult.P2Chips = res.GetText();
-                    //        break;
-                    //    case "p1bet":
-                    //        resultText = res.GetText();
-                    //        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                    //            text = "2";
-                    //        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                    //            text = "3";
-                    //        else
-                    //            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-                    //        double.TryParse(text, out double p1Bet);
-                    //        if (p1Bet == 50)
-                    //            p1Bet = 0.5f;
-                    //        _scrapeResult.P1Bet = p1Bet;
-                    //        break;
-                    //    case "p2bet":
-                    //        resultText = res.GetText();
-                    //        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                    //            text = "2";
-                    //        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                    //            text = "3";
-                    //        else
-                    //            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-                    //        double.TryParse(text, out double p2Bet);
-                    //        if (p2Bet == 50)
-                    //            p2Bet = 0.5f;
-                    //        _scrapeResult.P2Bet = p2Bet;
-                    //        break;
-                    //    default:
-                    //        break;
-                    //}
                 }
             }
 
@@ -557,7 +450,7 @@ namespace OpenScrape.App
             if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
                 pbCard1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace1))!.Image;
             else
-                pbCard1.Image = null;            
+                pbCard1.Image = null;
 
             lbP1Bet.Text = _scrapeResult.P1Bet.ToString();
             lbP2Bet.Text = _scrapeResult.P2Bet.ToString();
@@ -600,53 +493,50 @@ namespace OpenScrape.App
             _scrapeResult.B0Card4 = string.Empty;
             _scrapeResult.B0Card5 = string.Empty;
 
-            foreach (var item in _regions)
+            foreach (var item in _regions.Where(x => x.IsBoard))
             {
-                if (item.IsBoard)
+                var maxEqual = 0;
+                var max = 0;
+
+                foreach (var immg in _images)
                 {
-                    var maxEqual = 0;
-                    var max = 0;
+                    string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+                    //List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
 
-                    foreach (var immg in _images)
+                    int equalElements = iHash1.Zip(immg.Value, (i, j) => i == j).Count(eq => eq);
+
+                    if (equalElements > maxEqual)
+                        maxEqual = equalElements;
+
+                    if (maxEqual > max && maxEqual >= (1375 * 0.9))
                     {
-                        string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
-                        //List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
-
-                        int equalElements = iHash1.Zip(immg.Value, (i, j) => i == j).Count(eq => eq);
-
-                        if (equalElements > maxEqual)
-                            maxEqual = equalElements;
-
-                        if (maxEqual > max && maxEqual >= (1375 * 0.96))
+                        switch (item.Name)
                         {
-                            switch (item.Name)
-                            {
-                                case "b0card1":
-                                    _scrapeResult.B0Card1 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                case "b0card2":
-                                    _scrapeResult.B0Card2 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                case "b0card3":
-                                    _scrapeResult.B0Card3 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                case "b0card4":
-                                    _scrapeResult.B0Card4 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                case "b0card5":
-                                    _scrapeResult.B0Card5 = immg.Name.Split(" ")[0];
-                                    max = maxEqual;
-                                    break;
-                                default:
-                                    break;
-                            }
+                            case "b0card1":
+                                _scrapeResult.B0Card1 = immg.Name.Split(" ")[0];
+                                max = maxEqual;
+                                break;
+                            case "b0card2":
+                                _scrapeResult.B0Card2 = immg.Name.Split(" ")[0];
+                                max = maxEqual;
+                                break;
+                            case "b0card3":
+                                _scrapeResult.B0Card3 = immg.Name.Split(" ")[0];
+                                max = maxEqual;
+                                break;
+                            case "b0card4":
+                                max = maxEqual;
+                                break;
+                            case "b0card5":
+                                _scrapeResult.B0Card5 = immg.Name.Split(" ")[0];
+                                max = maxEqual;
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
+
             }
 
             if (!string.IsNullOrWhiteSpace(_scrapeResult.B0Card1))
@@ -1015,16 +905,22 @@ namespace OpenScrape.App
                         {
                             foreach (var item in _fonts)
                             {
-                                int equalElements = item.Value.Zip(hash, (i, j) => i == j).Count(eq => eq);
+                                //int equalElements = item.Value.Zip(hash, (i, j) => i == j).Count(eq => eq);
 
-                                if (equalElements > maxEqual)
-                                    maxEqual = equalElements;
+                                //if (equalElements > maxEqual)
+                                //    maxEqual = equalElements;
 
-                                if (equalElements >= (hash.Length * 0.9))
+                                //if (equalElements >= (hash.Length * 0.9))
+                                //{
+                                //    exist = true;
+                                //    break;                                   
+
+                                //}
+
+                                if (hash.IndexOf(item.Value) == 0)
                                 {
                                     exist = true;
-                                    break;                                   
-                                    
+                                    break;
                                 }
                             }
 
@@ -1201,7 +1097,7 @@ namespace OpenScrape.App
                 {
                     if (!textHash.Substring(0, 24).Contains('1'))
                     {
-                        textHash = textHash.Substring(21);
+                        textHash = textHash.Substring(24);
                     }
                     else
                     {
@@ -1224,22 +1120,22 @@ namespace OpenScrape.App
             List<bool> lResult = new List<bool>();
             var textHash = string.Empty;
             //create new image with 16x16 pixel
-            Bitmap bmpMin = new Bitmap(bmpSource, new Size(_locRegion.Width, _locRegion.Height));
-            for (int j = 0; j < bmpMin.Width; j++)
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(25, 55));
+            for (int j = 0; j < bmpMin.Height; j++)
             {
-                for (int i = 0; i < bmpMin.Height; i++)
+                for (int i = 0; i < bmpMin.Width; i++)
                 {
                     //reduce colors to true / false                
-                    lResult.Add(bmpMin.GetPixel(j, i).GetBrightness() < 0.5f);
+                    lResult.Add(bmpMin.GetPixel(i, j).GetBrightness() < 0.5f);
                 }
             }
 
             foreach (var item in lResult)
             {
                 if (item)
-                    textHash += "0";
-                else
                     textHash += "1";
+                else
+                    textHash += "0";
             }
 
             return textHash;

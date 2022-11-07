@@ -52,19 +52,26 @@ namespace OpenScrape.App
 
         private void lbFonts_DoubleClick(object sender, EventArgs e)
         {
-            var region = _fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim());
-            var locRegion = region.Value;
-            var count = region.Value.Count();
-
-            string text = string.Empty;
-
-            for (int i = 0; i < count / 24; i++)
+            try
             {
-                text += locRegion.Substring(0, 24).Replace("0", "-") + "\r\n";
-                locRegion = locRegion.Substring(24);
-            }
+                var region = _fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim());
+                var locRegion = region.Value;
+                var count = region.Value.Count();
 
-            rtDraw.Text = text;
+                string text = string.Empty;
+
+                for (int i = 0; i < count / 24; i++)
+                {
+                    text += locRegion.Substring(0, 24).Replace("0", "-") + "\r\n";
+                    locRegion = locRegion.Substring(24);
+                }
+
+                rtDraw.Text = text;
+            }
+            catch
+            {
+                rtDraw.Text = string.Empty; 
+            }
         }
     }
 }
