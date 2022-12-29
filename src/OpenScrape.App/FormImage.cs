@@ -50,12 +50,13 @@ namespace OpenScrape.App
                 var folderPath = string.Empty;
 
                 if (string.IsNullOrWhiteSpace(lbPath.Text))
-                {   
+                {
                     folderPath = @"C:\Code\ScrapePoker\resources\Games";
                 }
                 else
                 {
                     folderPath = lbPath.Text.Split("game_")[0];
+                    dlg.FileName = $"game_{lbPath.Text.Split("game_")[1]}";
                 }
 
                 dlg.InitialDirectory = folderPath;

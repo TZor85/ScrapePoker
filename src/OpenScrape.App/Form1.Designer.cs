@@ -78,6 +78,9 @@
             this.tbB = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.lbBoard = new System.Windows.Forms.Label();
+            this.lbPosition = new System.Windows.Forms.Label();
+            this.lbPair = new System.Windows.Forms.Label();
             this.pbRiver = new System.Windows.Forms.PictureBox();
             this.pbTurn = new System.Windows.Forms.PictureBox();
             this.pbFlop3 = new System.Windows.Forms.PictureBox();
@@ -100,11 +103,13 @@
             this.lbEfective = new System.Windows.Forms.Label();
             this.cbTest = new System.Windows.Forms.CheckBox();
             this.ckBoard = new System.Windows.Forms.CheckBox();
-            this.btnBoard = new System.Windows.Forms.Button();
+            this.btnFlop = new System.Windows.Forms.Button();
             this.btnCreateFont = new System.Windows.Forms.Button();
             this.label9 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
+            this.btnTurn = new System.Windows.Forms.Button();
+            this.btnRiver = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbZoom)).BeginInit();
@@ -326,7 +331,7 @@
             this.groupBox2.Controls.Add(this.btnDown);
             this.groupBox2.Controls.Add(this.btnLeft);
             this.groupBox2.Controls.Add(this.btnRigth);
-            this.groupBox2.Location = new System.Drawing.Point(441, 48);
+            this.groupBox2.Location = new System.Drawing.Point(464, 48);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(107, 143);
             this.groupBox2.TabIndex = 16;
@@ -500,7 +505,7 @@
             // 
             this.groupBox3.Controls.Add(this.pbZoom);
             this.groupBox3.Controls.Add(this.btnZoom);
-            this.groupBox3.Location = new System.Drawing.Point(376, 264);
+            this.groupBox3.Location = new System.Drawing.Point(399, 264);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(172, 97);
             this.groupBox3.TabIndex = 19;
@@ -530,7 +535,7 @@
             // btnCreateImage
             // 
             this.btnCreateImage.Enabled = false;
-            this.btnCreateImage.Location = new System.Drawing.Point(441, 206);
+            this.btnCreateImage.Location = new System.Drawing.Point(464, 206);
             this.btnCreateImage.Name = "btnCreateImage";
             this.btnCreateImage.Size = new System.Drawing.Size(91, 23);
             this.btnCreateImage.TabIndex = 22;
@@ -540,7 +545,7 @@
             // 
             // btnWindow
             // 
-            this.btnWindow.Location = new System.Drawing.Point(446, 748);
+            this.btnWindow.Location = new System.Drawing.Point(489, 748);
             this.btnWindow.Name = "btnWindow";
             this.btnWindow.Size = new System.Drawing.Size(102, 76);
             this.btnWindow.TabIndex = 23;
@@ -630,6 +635,9 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.lbBoard);
+            this.groupBox4.Controls.Add(this.lbPosition);
+            this.groupBox4.Controls.Add(this.lbPair);
             this.groupBox4.Controls.Add(this.pbRiver);
             this.groupBox4.Controls.Add(this.pbTurn);
             this.groupBox4.Controls.Add(this.pbFlop3);
@@ -644,13 +652,40 @@
             this.groupBox4.Controls.Add(this.lbEfective);
             this.groupBox4.Location = new System.Drawing.Point(17, 396);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(531, 346);
+            this.groupBox4.Size = new System.Drawing.Size(574, 346);
             this.groupBox4.TabIndex = 43;
             this.groupBox4.TabStop = false;
             // 
+            // lbBoard
+            // 
+            this.lbBoard.AutoSize = true;
+            this.lbBoard.Location = new System.Drawing.Point(411, 169);
+            this.lbBoard.Name = "lbBoard";
+            this.lbBoard.Size = new System.Drawing.Size(38, 15);
+            this.lbBoard.TabIndex = 19;
+            this.lbBoard.Text = "Board";
+            // 
+            // lbPosition
+            // 
+            this.lbPosition.AutoSize = true;
+            this.lbPosition.Location = new System.Drawing.Point(411, 196);
+            this.lbPosition.Name = "lbPosition";
+            this.lbPosition.Size = new System.Drawing.Size(50, 15);
+            this.lbPosition.TabIndex = 18;
+            this.lbPosition.Text = "Position";
+            // 
+            // lbPair
+            // 
+            this.lbPair.AutoSize = true;
+            this.lbPair.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            this.lbPair.Location = new System.Drawing.Point(6, 246);
+            this.lbPair.Name = "lbPair";
+            this.lbPair.Size = new System.Drawing.Size(0, 21);
+            this.lbPair.TabIndex = 17;
+            // 
             // pbRiver
             // 
-            this.pbRiver.Location = new System.Drawing.Point(299, 129);
+            this.pbRiver.Location = new System.Drawing.Point(324, 129);
             this.pbRiver.Name = "pbRiver";
             this.pbRiver.Size = new System.Drawing.Size(25, 55);
             this.pbRiver.TabIndex = 16;
@@ -658,7 +693,7 @@
             // 
             // pbTurn
             // 
-            this.pbTurn.Location = new System.Drawing.Point(268, 129);
+            this.pbTurn.Location = new System.Drawing.Point(293, 129);
             this.pbTurn.Name = "pbTurn";
             this.pbTurn.Size = new System.Drawing.Size(25, 55);
             this.pbTurn.TabIndex = 15;
@@ -666,7 +701,7 @@
             // 
             // pbFlop3
             // 
-            this.pbFlop3.Location = new System.Drawing.Point(237, 129);
+            this.pbFlop3.Location = new System.Drawing.Point(262, 129);
             this.pbFlop3.Name = "pbFlop3";
             this.pbFlop3.Size = new System.Drawing.Size(25, 55);
             this.pbFlop3.TabIndex = 14;
@@ -674,7 +709,7 @@
             // 
             // pbFlop2
             // 
-            this.pbFlop2.Location = new System.Drawing.Point(206, 129);
+            this.pbFlop2.Location = new System.Drawing.Point(231, 129);
             this.pbFlop2.Name = "pbFlop2";
             this.pbFlop2.Size = new System.Drawing.Size(25, 55);
             this.pbFlop2.TabIndex = 13;
@@ -683,7 +718,7 @@
             // 
             // pbFlop1
             // 
-            this.pbFlop1.Location = new System.Drawing.Point(175, 129);
+            this.pbFlop1.Location = new System.Drawing.Point(200, 129);
             this.pbFlop1.Name = "pbFlop1";
             this.pbFlop1.Size = new System.Drawing.Size(25, 55);
             this.pbFlop1.TabIndex = 12;
@@ -693,7 +728,7 @@
             // 
             this.lbAction.AutoSize = true;
             this.lbAction.Font = new System.Drawing.Font("Segoe UI", 20F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbAction.Location = new System.Drawing.Point(365, 264);
+            this.lbAction.Location = new System.Drawing.Point(371, 264);
             this.lbAction.Name = "lbAction";
             this.lbAction.Size = new System.Drawing.Size(119, 37);
             this.lbAction.TabIndex = 11;
@@ -710,7 +745,7 @@
             // lbP2Bet
             // 
             this.lbP2Bet.AutoSize = true;
-            this.lbP2Bet.Location = new System.Drawing.Point(334, 72);
+            this.lbP2Bet.Location = new System.Drawing.Point(371, 72);
             this.lbP2Bet.Name = "lbP2Bet";
             this.lbP2Bet.Size = new System.Drawing.Size(0, 15);
             this.lbP2Bet.TabIndex = 9;
@@ -721,7 +756,7 @@
             this.groupBox7.Controls.Add(this.pbCard0);
             this.groupBox7.Controls.Add(this.lbDealer0);
             this.groupBox7.Controls.Add(this.lbP0Chips);
-            this.groupBox7.Location = new System.Drawing.Point(174, 220);
+            this.groupBox7.Location = new System.Drawing.Point(203, 220);
             this.groupBox7.Name = "groupBox7";
             this.groupBox7.Size = new System.Drawing.Size(145, 113);
             this.groupBox7.TabIndex = 8;
@@ -766,7 +801,7 @@
             // 
             this.groupBox6.Controls.Add(this.lbDealer2);
             this.groupBox6.Controls.Add(this.lbP2Chips);
-            this.groupBox6.Location = new System.Drawing.Point(380, 22);
+            this.groupBox6.Location = new System.Drawing.Point(417, 22);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(145, 88);
             this.groupBox6.TabIndex = 7;
@@ -852,19 +887,19 @@
             this.ckBoard.UseVisualStyleBackColor = true;
             this.ckBoard.CheckedChanged += new System.EventHandler(this.ckBoard_CheckedChanged);
             // 
-            // btnBoard
+            // btnFlop
             // 
-            this.btnBoard.Location = new System.Drawing.Point(153, 748);
-            this.btnBoard.Name = "btnBoard";
-            this.btnBoard.Size = new System.Drawing.Size(104, 76);
-            this.btnBoard.TabIndex = 46;
-            this.btnBoard.Text = "Board";
-            this.btnBoard.UseVisualStyleBackColor = true;
-            this.btnBoard.Click += new System.EventHandler(this.btnBoard_Click);
+            this.btnFlop.Location = new System.Drawing.Point(167, 778);
+            this.btnFlop.Name = "btnFlop";
+            this.btnFlop.Size = new System.Drawing.Size(74, 46);
+            this.btnFlop.TabIndex = 46;
+            this.btnFlop.Text = "Flop";
+            this.btnFlop.UseVisualStyleBackColor = true;
+            this.btnFlop.Click += new System.EventHandler(this.btnFlop_Click);
             // 
             // btnCreateFont
             // 
-            this.btnCreateFont.Location = new System.Drawing.Point(441, 235);
+            this.btnCreateFont.Location = new System.Drawing.Point(464, 235);
             this.btnCreateFont.Name = "btnCreateFont";
             this.btnCreateFont.Size = new System.Drawing.Size(91, 23);
             this.btnCreateFont.TabIndex = 47;
@@ -899,16 +934,38 @@
             this.label11.TabIndex = 50;
             this.label11.Text = "P2: 1206 - 374";
             // 
+            // btnTurn
+            // 
+            this.btnTurn.Location = new System.Drawing.Point(247, 778);
+            this.btnTurn.Name = "btnTurn";
+            this.btnTurn.Size = new System.Drawing.Size(74, 46);
+            this.btnTurn.TabIndex = 51;
+            this.btnTurn.Text = "Turn";
+            this.btnTurn.UseVisualStyleBackColor = true;
+            this.btnTurn.Click += new System.EventHandler(this.btnTurn_Click);
+            // 
+            // btnRiver
+            // 
+            this.btnRiver.Location = new System.Drawing.Point(327, 778);
+            this.btnRiver.Name = "btnRiver";
+            this.btnRiver.Size = new System.Drawing.Size(74, 46);
+            this.btnRiver.TabIndex = 52;
+            this.btnRiver.Text = "River";
+            this.btnRiver.UseVisualStyleBackColor = true;
+            this.btnRiver.Click += new System.EventHandler(this.btnRiver_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(554, 831);
+            this.ClientSize = new System.Drawing.Size(593, 831);
+            this.Controls.Add(this.btnRiver);
+            this.Controls.Add(this.btnTurn);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.label10);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.btnCreateFont);
-            this.Controls.Add(this.btnBoard);
+            this.Controls.Add(this.btnFlop);
             this.Controls.Add(this.ckBoard);
             this.Controls.Add(this.cbTest);
             this.Controls.Add(this.groupBox4);
@@ -1030,7 +1087,7 @@
         private PictureBox pbFlop2;
         private PictureBox pbFlop1;
         private CheckBox ckBoard;
-        private Button btnBoard;
+        private Button btnFlop;
         private Button btnCreateFont;
         private Label label7;
         private Label label3;
@@ -1039,5 +1096,10 @@
         private Label label9;
         private Label label10;
         private Label label11;
+        private Label lbPair;
+        private Button btnTurn;
+        private Button btnRiver;
+        private Label lbPosition;
+        private Label lbBoard;
     }
 }

@@ -37,6 +37,8 @@ namespace OpenScrape.App.Models
         public Bitmap? Image { get; set; }
         public bool IsBoard { get; set; }
         public string Value { get; set; } = string.Empty;
+        public int Force { get; set; } = 0;
+        public int Suit { get; set; } = 0;
         //public HashRegion Hash { get; set; } = new HashRegion();
     }
 

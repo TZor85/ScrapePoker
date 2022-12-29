@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace OpenScrape.App.Aplication
 {
     public interface IGetActions2HandedUseCase
@@ -14,7 +9,7 @@ namespace OpenScrape.App.Aplication
 
     public class GetActions2HandedResponse
     {
-        public string Data { get; set; } = "FOLD";
+        public GetActionsResponse Data { get; set; } = new GetActionsResponse();
     }
 
     public class GetActions2HandedRequest
@@ -28,5 +23,8 @@ namespace OpenScrape.App.Aplication
         public bool P1Active { get; set; }
         public bool P2Active { get; set; }
         public double EffectiveStack { get; set; }
+        
     }
+
+    
 }

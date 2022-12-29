@@ -1,9 +1,4 @@
 ﻿using OpenScrape.App.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
@@ -13,7 +8,7 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             try
             {
-                var responseList = new List<KeyValuePair<string, List<string>>>();
+                var responseList = new List<ActionsResponse>();
                 var response = new GetActions3HandedResponse();
 
                 //Suited
@@ -24,10 +19,15 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 foreach (var list in responseList)
                 {
-                    foreach (var item in list.Value)
+                    foreach (var item in list.Hands)
                     {
                         if (item.Contains(string.Concat(request.Card0[0], request.Card1[0])) || item.Contains(string.Concat(request.Card1[0], request.Card0[0])))
-                            response.Data = list.Key;
+                        {
+                            response.Data.Action = list.Action;
+                            response.Data.Style = list.Style;
+                            response.Data.Position = list.Position;
+                            response.Data.PreflopAction = list.PreflopAction;
+                        }
                     }
                 }
                 
@@ -43,7 +43,7 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             try
             {
-                var responseList = new List<KeyValuePair<string, List<string>>>();
+                var responseList = new List<ActionsResponse>();
                 var response = new GetActions3HandedResponse();
 
                 //Suited
@@ -73,10 +73,16 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 foreach (var list in responseList)
                 {
-                    foreach (var item in list.Value)
+                    foreach (var item in list.Hands)
                     {
                         if (item.Contains(string.Concat(request.Card0[0], request.Card1[0])) || item.Contains(string.Concat(request.Card1[0], request.Card0[0])))
-                            response.Data = list.Key;
+                        {
+                            response.Data.Action = list.Action;
+                            response.Data.Style = list.Style;
+                            response.Data.Position = list.Position;
+                            response.Data.PreflopAction = list.PreflopAction;
+                        }
+                            
                     }
                 }
 
@@ -93,7 +99,7 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             try
             {
-                var responseList = new List<KeyValuePair<string, List<string>>>();
+                var responseList = new List<ActionsResponse>();
                 var response = new GetActions3HandedResponse();
 
                 //Suited
@@ -185,10 +191,15 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 foreach (var list in responseList)
                 {
-                    foreach (var item in list.Value)
+                    foreach (var item in list.Hands)
                     {
                         if (item.Contains(string.Concat(request.Card0[0], request.Card1[0])) || item.Contains(string.Concat(request.Card1[0], request.Card0[0])))
-                            response.Data = list.Key;
+                        {
+                            response.Data.Action = list.Action;
+                            response.Data.Style = list.Style;
+                            response.Data.Position = list.Position;
+                            response.Data.PreflopAction = list.PreflopAction;
+                        }
                     }
                 }
 

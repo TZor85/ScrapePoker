@@ -1,4 +1,6 @@
-﻿namespace OpenScrape.App.Aplication
+﻿using OpenScrape.App.Enums;
+
+namespace OpenScrape.App.Aplication
 {
     public interface IGetActions3HandedUseCase
     {
@@ -9,7 +11,7 @@
 
     public class GetActions3HandedResponse
     {
-        public string Data { get; set; } = "FOLD";
+        public GetActionsResponse Data { get; set; } = new GetActionsResponse();        
     }
 
     public class GetActions3HandedRequest
@@ -23,5 +25,13 @@
         public bool P1Active { get; set; }
         public bool P2Active { get; set; }
         public double EffectiveStack { get; set; }
+    }
+
+    public class GetActionsResponse
+    {
+        public string Action { get; set; } = "FOLD";
+        public Styles Style { get; set; } = default!;
+        public Positions Position { get; set; } = default!;
+        public PreflopAction PreflopAction { get; set; } = default!;
     }
 }
