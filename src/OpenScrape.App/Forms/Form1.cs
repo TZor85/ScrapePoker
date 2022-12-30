@@ -11,6 +11,7 @@ using Tesseract;
 using Image = System.Drawing.Image;
 using IronOcr;
 using AutoItX3Lib;
+using OpenScrape.App.Forms;
 
 namespace OpenScrape.App
 {
@@ -20,6 +21,7 @@ namespace OpenScrape.App
         FormCreateImage _formCreateImage;
         FormCreateFont _formCreateFont;
         FormImage _formImage;
+        FormPlaying _formPlaying;
         Graphics _papel;
         
 
@@ -27,6 +29,7 @@ namespace OpenScrape.App
         List<ImageRegion> _images = new List<ImageRegion>();
         List<ImageRegion> _imagesBoard = new List<ImageRegion>();
         List<FontRegion> _fonts = new List<FontRegion>();
+
 
         List<KeyValuePair<string, string>> _imageList = new List<KeyValuePair<string, string>>();
 
@@ -79,6 +82,24 @@ namespace OpenScrape.App
             _formRegions.Show();
 
         }
+
+        private void btnPlay_Click(object sender, EventArgs e)
+        {
+            _formPlaying = new FormPlaying();
+
+            _formPlaying.Checked = cbTest.Checked;
+            _formPlaying.FormImage = _formImage;
+            _formPlaying.Regions = _regions;
+            _formPlaying.Images = _images;
+            _formPlaying.Fonts = _fonts;
+            _formPlaying.ImagesBoard= _imagesBoard;
+
+
+            _formPlaying.Show();
+            this.WindowState = FormWindowState.Minimized;
+        }
+
+       
 
         public void Execute(List<FontRegion> fonts)
         {
