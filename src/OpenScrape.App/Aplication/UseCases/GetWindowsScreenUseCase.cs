@@ -1,5 +1,6 @@
 ﻿using OpenScrape.App.Helpers;
 using System.Drawing.Imaging;
+using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
@@ -13,16 +14,19 @@ namespace OpenScrape.App.Aplication.UseCases
             return CaptureWindowsHelper.CaptureWindow(_handle);
         }
 
-        public void ExecuteImage(string path)
+        public Bitmap ExecuteImage(string path)
         {
             Image img = CaptureWindowsHelper.CaptureWindow(_handle);
 
-            img.Save(path, ImageFormat.Png);
+            return (Bitmap)img;
+            //img.Save(path, ImageFormat.Png);
         }
 
-        public void GetWindow()
+        public void GetWindow(IntPtr handle)
         {
-            _handle = CaptureWindowsHelper.User32.GetForegroundWindow();
+            //_handle = CaptureWindowsHelper.User32.GetForegroundWindow();
+            _handle = handle;
+            
         }
     }
 }

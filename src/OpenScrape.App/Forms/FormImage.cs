@@ -56,7 +56,6 @@ namespace OpenScrape.App
                 else
                 {
                     folderPath = lbPath.Text.Split("game_")[0];
-                    dlg.FileName = $"game_{lbPath.Text.Split("game_")[1]}";
                 }
 
                 dlg.InitialDirectory = folderPath;

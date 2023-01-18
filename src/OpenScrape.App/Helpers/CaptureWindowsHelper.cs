@@ -9,6 +9,7 @@ namespace OpenScrape.App.Helpers
 {
     public static class CaptureWindowsHelper
     {
+
         public static Image CaptureWindow(IntPtr handle)
         {
             // obtener hDC de la ventana deseada
@@ -140,5 +141,7 @@ namespace OpenScrape.App.Helpers
 
             return target;
         }
+
+        
     }
 }

@@ -9,6 +9,7 @@ namespace OpenScrape.App
         public IntPtr windowsValue;
         public IAddImage addImage { get; set; }
 
+        public IntPtr handle;
         
         public FormListApps()
         {
@@ -24,7 +25,11 @@ namespace OpenScrape.App
 
             foreach (var item in _windows)
             {
-                lbApps.Items.Add(item.Key);
+                if (item.Key.Contains("Sit"))
+                {
+                    lbApps.Items.Add(item.Key);
+                }
+                
             }
 
         }
@@ -42,7 +47,9 @@ namespace OpenScrape.App
         private void btnAceptar_Click(object sender, EventArgs e)
         {
             var selectItem = lbApps.SelectedItem.ToString();
-            addImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
+            //addImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
+
+            handle = _windows.FirstOrDefault(x => x.Key == selectItem).Value;
 
             this.Close();
 

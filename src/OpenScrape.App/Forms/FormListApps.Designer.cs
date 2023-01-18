@@ -35,7 +35,7 @@
             // 
             // btnCancelar
             // 
-            this.btnCancelar.Location = new System.Drawing.Point(222, 157);
+            this.btnCancelar.Location = new System.Drawing.Point(222, 112);
             this.btnCancelar.Name = "btnCancelar";
             this.btnCancelar.Size = new System.Drawing.Size(80, 31);
             this.btnCancelar.TabIndex = 0;
@@ -46,7 +46,7 @@
             // btnAceptar
             // 
             this.btnAceptar.Enabled = false;
-            this.btnAceptar.Location = new System.Drawing.Point(136, 157);
+            this.btnAceptar.Location = new System.Drawing.Point(136, 112);
             this.btnAceptar.Name = "btnAceptar";
             this.btnAceptar.Size = new System.Drawing.Size(80, 31);
             this.btnAceptar.TabIndex = 1;
@@ -60,7 +60,7 @@
             this.lbApps.ItemHeight = 15;
             this.lbApps.Location = new System.Drawing.Point(12, 12);
             this.lbApps.Name = "lbApps";
-            this.lbApps.Size = new System.Drawing.Size(412, 139);
+            this.lbApps.Size = new System.Drawing.Size(412, 94);
             this.lbApps.TabIndex = 2;
             this.lbApps.SelectedIndexChanged += new System.EventHandler(this.lbApps_SelectedIndexChanged);
             // 
@@ -68,7 +68,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(436, 200);
+            this.ClientSize = new System.Drawing.Size(436, 152);
             this.Controls.Add(this.lbApps);
             this.Controls.Add(this.btnAceptar);
             this.Controls.Add(this.btnCancelar);

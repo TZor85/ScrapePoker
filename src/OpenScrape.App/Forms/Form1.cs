@@ -1509,7 +1509,7 @@ namespace OpenScrape.App
         private void btnWindow_Click(object sender, EventArgs e)
         {
             Thread.Sleep(2000);
-            _useCase.GetWindow();
+            //_useCase.GetWindow();
         }
 
         private void btnCreateImage_Click(object sender, EventArgs e)
