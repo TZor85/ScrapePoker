@@ -32,14 +32,7 @@
             this.btnTurn = new System.Windows.Forms.Button();
             this.btnFlop = new System.Windows.Forms.Button();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.lbBoard = new System.Windows.Forms.Label();
-            this.lbPosition = new System.Windows.Forms.Label();
             this.lbPair = new System.Windows.Forms.Label();
-            this.pbRiver = new System.Windows.Forms.PictureBox();
-            this.pbTurn = new System.Windows.Forms.PictureBox();
-            this.pbFlop3 = new System.Windows.Forms.PictureBox();
-            this.pbFlop2 = new System.Windows.Forms.PictureBox();
-            this.pbFlop1 = new System.Windows.Forms.PictureBox();
             this.lbAction = new System.Windows.Forms.Label();
             this.lbP1Bet = new System.Windows.Forms.Label();
             this.lbP2Bet = new System.Windows.Forms.Label();
@@ -55,26 +48,39 @@
             this.lbDealer1 = new System.Windows.Forms.Label();
             this.lbP1Chips = new System.Windows.Forms.Label();
             this.lbEfective = new System.Windows.Forms.Label();
+            this.lbBoard = new System.Windows.Forms.Label();
+            this.lbPosition = new System.Windows.Forms.Label();
+            this.pbRiver = new System.Windows.Forms.PictureBox();
+            this.pbTurn = new System.Windows.Forms.PictureBox();
+            this.pbFlop3 = new System.Windows.Forms.PictureBox();
+            this.pbFlop2 = new System.Windows.Forms.PictureBox();
+            this.pbFlop1 = new System.Windows.Forms.PictureBox();
             this.btnCapture = new System.Windows.Forms.Button();
             this.btnWindow = new System.Windows.Forms.Button();
             this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             this.btnNew = new System.Windows.Forms.Button();
+            this.btnStart = new System.Windows.Forms.Button();
+            this.btnStop = new System.Windows.Forms.Button();
+            this.lbFold = new System.Windows.Forms.Label();
+            this.lbCheck = new System.Windows.Forms.Label();
+            this.lbCartas = new System.Windows.Forms.Label();
+            this.lbFlop = new System.Windows.Forms.Label();
             this.groupBox4.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).BeginInit();
             this.groupBox7.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).BeginInit();
             this.groupBox6.SuspendLayout();
             this.groupBox5.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).BeginInit();
             this.SuspendLayout();
             // 
             // btnRiver
             // 
-            this.btnRiver.Location = new System.Drawing.Point(875, 375);
+            this.btnRiver.Location = new System.Drawing.Point(1587, 698);
             this.btnRiver.Name = "btnRiver";
             this.btnRiver.Size = new System.Drawing.Size(74, 46);
             this.btnRiver.TabIndex = 58;
@@ -84,7 +90,7 @@
             // 
             // btnTurn
             // 
-            this.btnTurn.Location = new System.Drawing.Point(795, 375);
+            this.btnTurn.Location = new System.Drawing.Point(1507, 698);
             this.btnTurn.Name = "btnTurn";
             this.btnTurn.Size = new System.Drawing.Size(74, 46);
             this.btnTurn.TabIndex = 57;
@@ -95,7 +101,7 @@
             // 
             // btnFlop
             // 
-            this.btnFlop.Location = new System.Drawing.Point(715, 375);
+            this.btnFlop.Location = new System.Drawing.Point(1427, 698);
             this.btnFlop.Name = "btnFlop";
             this.btnFlop.Size = new System.Drawing.Size(74, 46);
             this.btnFlop.TabIndex = 56;
@@ -114,29 +120,11 @@
             this.groupBox4.Controls.Add(this.groupBox6);
             this.groupBox4.Controls.Add(this.groupBox5);
             this.groupBox4.Controls.Add(this.lbEfective);
-            this.groupBox4.Location = new System.Drawing.Point(10, 8);
+            this.groupBox4.Location = new System.Drawing.Point(10, 2);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(385, 173);
+            this.groupBox4.Size = new System.Drawing.Size(385, 169);
             this.groupBox4.TabIndex = 55;
             this.groupBox4.TabStop = false;
-            // 
-            // lbBoard
-            // 
-            this.lbBoard.AutoSize = true;
-            this.lbBoard.Location = new System.Drawing.Point(751, 215);
-            this.lbBoard.Name = "lbBoard";
-            this.lbBoard.Size = new System.Drawing.Size(38, 15);
-            this.lbBoard.TabIndex = 19;
-            this.lbBoard.Text = "Board";
-            // 
-            // lbPosition
-            // 
-            this.lbPosition.AutoSize = true;
-            this.lbPosition.Location = new System.Drawing.Point(751, 242);
-            this.lbPosition.Name = "lbPosition";
-            this.lbPosition.Size = new System.Drawing.Size(50, 15);
-            this.lbPosition.TabIndex = 18;
-            this.lbPosition.Text = "Position";
             // 
             // lbPair
             // 
@@ -147,51 +135,11 @@
             this.lbPair.Size = new System.Drawing.Size(0, 21);
             this.lbPair.TabIndex = 17;
             // 
-            // pbRiver
-            // 
-            this.pbRiver.Location = new System.Drawing.Point(875, 122);
-            this.pbRiver.Name = "pbRiver";
-            this.pbRiver.Size = new System.Drawing.Size(25, 55);
-            this.pbRiver.TabIndex = 16;
-            this.pbRiver.TabStop = false;
-            // 
-            // pbTurn
-            // 
-            this.pbTurn.Location = new System.Drawing.Point(844, 122);
-            this.pbTurn.Name = "pbTurn";
-            this.pbTurn.Size = new System.Drawing.Size(25, 55);
-            this.pbTurn.TabIndex = 15;
-            this.pbTurn.TabStop = false;
-            // 
-            // pbFlop3
-            // 
-            this.pbFlop3.Location = new System.Drawing.Point(813, 122);
-            this.pbFlop3.Name = "pbFlop3";
-            this.pbFlop3.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop3.TabIndex = 14;
-            this.pbFlop3.TabStop = false;
-            // 
-            // pbFlop2
-            // 
-            this.pbFlop2.Location = new System.Drawing.Point(782, 122);
-            this.pbFlop2.Name = "pbFlop2";
-            this.pbFlop2.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop2.TabIndex = 13;
-            this.pbFlop2.TabStop = false;
-            // 
-            // pbFlop1
-            // 
-            this.pbFlop1.Location = new System.Drawing.Point(751, 122);
-            this.pbFlop1.Name = "pbFlop1";
-            this.pbFlop1.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop1.TabIndex = 12;
-            this.pbFlop1.TabStop = false;
-            // 
             // lbAction
             // 
             this.lbAction.AutoSize = true;
             this.lbAction.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbAction.Location = new System.Drawing.Point(129, 15);
+            this.lbAction.Location = new System.Drawing.Point(129, 11);
             this.lbAction.Name = "lbAction";
             this.lbAction.Size = new System.Drawing.Size(131, 30);
             this.lbAction.TabIndex = 11;
@@ -200,7 +148,7 @@
             // lbP1Bet
             // 
             this.lbP1Bet.AutoSize = true;
-            this.lbP1Bet.Location = new System.Drawing.Point(11, 114);
+            this.lbP1Bet.Location = new System.Drawing.Point(11, 110);
             this.lbP1Bet.Name = "lbP1Bet";
             this.lbP1Bet.Size = new System.Drawing.Size(0, 15);
             this.lbP1Bet.TabIndex = 10;
@@ -208,7 +156,7 @@
             // lbP2Bet
             // 
             this.lbP2Bet.AutoSize = true;
-            this.lbP2Bet.Location = new System.Drawing.Point(277, 114);
+            this.lbP2Bet.Location = new System.Drawing.Point(277, 110);
             this.lbP2Bet.Name = "lbP2Bet";
             this.lbP2Bet.Size = new System.Drawing.Size(0, 15);
             this.lbP2Bet.TabIndex = 9;
@@ -219,7 +167,7 @@
             this.groupBox7.Controls.Add(this.pbCard0);
             this.groupBox7.Controls.Add(this.lbDealer0);
             this.groupBox7.Controls.Add(this.lbP0Chips);
-            this.groupBox7.Location = new System.Drawing.Point(123, 48);
+            this.groupBox7.Location = new System.Drawing.Point(123, 44);
             this.groupBox7.Name = "groupBox7";
             this.groupBox7.Size = new System.Drawing.Size(129, 113);
             this.groupBox7.TabIndex = 8;
@@ -264,7 +212,7 @@
             // 
             this.groupBox6.Controls.Add(this.lbDealer2);
             this.groupBox6.Controls.Add(this.lbP2Chips);
-            this.groupBox6.Location = new System.Drawing.Point(272, 48);
+            this.groupBox6.Location = new System.Drawing.Point(272, 44);
             this.groupBox6.Name = "groupBox6";
             this.groupBox6.Size = new System.Drawing.Size(99, 63);
             this.groupBox6.TabIndex = 7;
@@ -293,7 +241,7 @@
             // 
             this.groupBox5.Controls.Add(this.lbDealer1);
             this.groupBox5.Controls.Add(this.lbP1Chips);
-            this.groupBox5.Location = new System.Drawing.Point(2, 48);
+            this.groupBox5.Location = new System.Drawing.Point(2, 44);
             this.groupBox5.Name = "groupBox5";
             this.groupBox5.Size = new System.Drawing.Size(101, 63);
             this.groupBox5.TabIndex = 6;
@@ -322,17 +270,75 @@
             // 
             this.lbEfective.AutoSize = true;
             this.lbEfective.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbEfective.Location = new System.Drawing.Point(0, 147);
+            this.lbEfective.Location = new System.Drawing.Point(0, 143);
             this.lbEfective.Name = "lbEfective";
             this.lbEfective.Size = new System.Drawing.Size(48, 17);
             this.lbEfective.TabIndex = 3;
             this.lbEfective.Text = "Ef BB: ";
             // 
+            // lbBoard
+            // 
+            this.lbBoard.AutoSize = true;
+            this.lbBoard.Location = new System.Drawing.Point(1463, 538);
+            this.lbBoard.Name = "lbBoard";
+            this.lbBoard.Size = new System.Drawing.Size(38, 15);
+            this.lbBoard.TabIndex = 19;
+            this.lbBoard.Text = "Board";
+            // 
+            // lbPosition
+            // 
+            this.lbPosition.AutoSize = true;
+            this.lbPosition.Location = new System.Drawing.Point(1463, 565);
+            this.lbPosition.Name = "lbPosition";
+            this.lbPosition.Size = new System.Drawing.Size(50, 15);
+            this.lbPosition.TabIndex = 18;
+            this.lbPosition.Text = "Position";
+            // 
+            // pbRiver
+            // 
+            this.pbRiver.Location = new System.Drawing.Point(1587, 445);
+            this.pbRiver.Name = "pbRiver";
+            this.pbRiver.Size = new System.Drawing.Size(25, 55);
+            this.pbRiver.TabIndex = 16;
+            this.pbRiver.TabStop = false;
+            // 
+            // pbTurn
+            // 
+            this.pbTurn.Location = new System.Drawing.Point(1556, 445);
+            this.pbTurn.Name = "pbTurn";
+            this.pbTurn.Size = new System.Drawing.Size(25, 55);
+            this.pbTurn.TabIndex = 15;
+            this.pbTurn.TabStop = false;
+            // 
+            // pbFlop3
+            // 
+            this.pbFlop3.Location = new System.Drawing.Point(1525, 445);
+            this.pbFlop3.Name = "pbFlop3";
+            this.pbFlop3.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop3.TabIndex = 14;
+            this.pbFlop3.TabStop = false;
+            // 
+            // pbFlop2
+            // 
+            this.pbFlop2.Location = new System.Drawing.Point(1494, 445);
+            this.pbFlop2.Name = "pbFlop2";
+            this.pbFlop2.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop2.TabIndex = 13;
+            this.pbFlop2.TabStop = false;
+            // 
+            // pbFlop1
+            // 
+            this.pbFlop1.Location = new System.Drawing.Point(1463, 445);
+            this.pbFlop1.Name = "pbFlop1";
+            this.pbFlop1.Size = new System.Drawing.Size(25, 55);
+            this.pbFlop1.TabIndex = 12;
+            this.pbFlop1.TabStop = false;
+            // 
             // btnCapture
             // 
-            this.btnCapture.Location = new System.Drawing.Point(19, 187);
+            this.btnCapture.Location = new System.Drawing.Point(11, 175);
             this.btnCapture.Name = "btnCapture";
-            this.btnCapture.Size = new System.Drawing.Size(81, 46);
+            this.btnCapture.Size = new System.Drawing.Size(81, 33);
             this.btnCapture.TabIndex = 53;
             this.btnCapture.Text = "Capture";
             this.btnCapture.UseVisualStyleBackColor = true;
@@ -340,9 +346,9 @@
             // 
             // btnWindow
             // 
-            this.btnWindow.Location = new System.Drawing.Point(296, 187);
+            this.btnWindow.Location = new System.Drawing.Point(296, 175);
             this.btnWindow.Name = "btnWindow";
-            this.btnWindow.Size = new System.Drawing.Size(85, 46);
+            this.btnWindow.Size = new System.Drawing.Size(85, 32);
             this.btnWindow.TabIndex = 54;
             this.btnWindow.Text = "Window";
             this.btnWindow.UseVisualStyleBackColor = true;
@@ -356,7 +362,7 @@
             // 
             // btnNew
             // 
-            this.btnNew.Location = new System.Drawing.Point(242, 209);
+            this.btnNew.Location = new System.Drawing.Point(242, 184);
             this.btnNew.Name = "btnNew";
             this.btnNew.Size = new System.Drawing.Size(49, 24);
             this.btnNew.TabIndex = 59;
@@ -364,11 +370,73 @@
             this.btnNew.UseVisualStyleBackColor = true;
             this.btnNew.Click += new System.EventHandler(this.btnNew_Click);
             // 
+            // btnStart
+            // 
+            this.btnStart.Location = new System.Drawing.Point(100, 184);
+            this.btnStart.Name = "btnStart";
+            this.btnStart.Size = new System.Drawing.Size(56, 23);
+            this.btnStart.TabIndex = 60;
+            this.btnStart.Text = "START";
+            this.btnStart.UseVisualStyleBackColor = true;
+            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
+            // 
+            // btnStop
+            // 
+            this.btnStop.Location = new System.Drawing.Point(162, 185);
+            this.btnStop.Name = "btnStop";
+            this.btnStop.Size = new System.Drawing.Size(56, 23);
+            this.btnStop.TabIndex = 61;
+            this.btnStop.Text = "STOP";
+            this.btnStop.UseVisualStyleBackColor = true;
+            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+            // 
+            // lbFold
+            // 
+            this.lbFold.AutoSize = true;
+            this.lbFold.Location = new System.Drawing.Point(418, 28);
+            this.lbFold.Name = "lbFold";
+            this.lbFold.Size = new System.Drawing.Size(40, 15);
+            this.lbFold.TabIndex = 62;
+            this.lbFold.Text = "Dealer";
+            // 
+            // lbCheck
+            // 
+            this.lbCheck.AutoSize = true;
+            this.lbCheck.Location = new System.Drawing.Point(418, 55);
+            this.lbCheck.Name = "lbCheck";
+            this.lbCheck.Size = new System.Drawing.Size(40, 15);
+            this.lbCheck.TabIndex = 63;
+            this.lbCheck.Text = "Dealer";
+            // 
+            // lbCartas
+            // 
+            this.lbCartas.AutoSize = true;
+            this.lbCartas.Location = new System.Drawing.Point(418, 89);
+            this.lbCartas.Name = "lbCartas";
+            this.lbCartas.Size = new System.Drawing.Size(40, 15);
+            this.lbCartas.TabIndex = 64;
+            this.lbCartas.Text = "Dealer";
+            // 
+            // lbFlop
+            // 
+            this.lbFlop.AutoSize = true;
+            this.lbFlop.Location = new System.Drawing.Point(418, 122);
+            this.lbFlop.Name = "lbFlop";
+            this.lbFlop.Size = new System.Drawing.Size(40, 15);
+            this.lbFlop.TabIndex = 65;
+            this.lbFlop.Text = "Dealer";
+            // 
             // FormPlaying
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(404, 242);
+            this.ClientSize = new System.Drawing.Size(400, 214);
+            this.Controls.Add(this.lbFlop);
+            this.Controls.Add(this.lbCartas);
+            this.Controls.Add(this.lbCheck);
+            this.Controls.Add(this.lbFold);
+            this.Controls.Add(this.btnStop);
+            this.Controls.Add(this.btnStart);
             this.Controls.Add(this.lbBoard);
             this.Controls.Add(this.lbPosition);
             this.Controls.Add(this.btnNew);
@@ -389,11 +457,6 @@
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormPlaying_FormClosed);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).EndInit();
             this.groupBox7.ResumeLayout(false);
             this.groupBox7.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).EndInit();
@@ -402,6 +465,11 @@
             this.groupBox6.PerformLayout();
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -440,5 +508,11 @@
         private Button btnWindow;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private Button btnNew;
+        private Button btnStart;
+        private Button btnStop;
+        private Label lbFold;
+        private Label lbCheck;
+        private Label lbCartas;
+        private Label lbFlop;
     }
 }

@@ -36,4 +36,12 @@
         public int B0CardForce5 { get; set; } = 0;
         public int B0CardSuit5 { get; set; } = 0;
     }
+
+    public class BackgroundTableScrap
+    {
+        public bool IsFlop { get; set; }
+        public bool UserAction { get; set; }
+        public bool UserAction1 { get; set; }
+        public bool UserPlay { get; set; }
+    }
 }

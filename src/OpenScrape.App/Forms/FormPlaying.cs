@@ -17,9 +17,13 @@ namespace OpenScrape.App.Forms
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorActive = new List<int> { 33, 34, 35, 36, 37 };
         private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
+        private List<int> _colorAction = new List<int> {19, 20, 21, 22, 23 };
+        private List<int> _colorIsFlop = new List<int> { 254, 255 };
+
 
         TableScrapeResult _scrapeResult = new TableScrapeResult();
         BoardPlayerData _boardPlayerData = new BoardPlayerData();
+        BackgroundTableScrap _backgroundScrap = new BackgroundTableScrap();
 
         public List<Regions> Regions = new List<Regions>();
         public List<ImageRegion> Images = new List<ImageRegion>();
@@ -34,6 +38,7 @@ namespace OpenScrape.App.Forms
         private readonly GetActions2HandedUseCase _actions2HandedUseCase = new GetActions2HandedUseCase();
 
         private FormListApps _formListApps;
+        bool _captureJet = false;
 
         public FormPlaying()
         {
@@ -398,6 +403,8 @@ namespace OpenScrape.App.Forms
             _boardPlayerData.Aggressor = getAction.Style == Enums.Styles.Agresive;
             _boardPlayerData.InPosition = getAction.Position == Enums.Positions.InPosition;
             _boardPlayerData.PreflopAction = getAction.PreflopAction;
+
+            _captureJet = true;
 
             //lbPosition.Text = _boardPlayerData.InPosition ? "IP" : "OOP";
         }
@@ -846,9 +853,87 @@ namespace OpenScrape.App.Forms
 
         }
 
+        private bool SetValuesBackGroud()
+        {
+            var calcular = false;
+
+            AutoItX3 au3 = new AutoItX3();
+
+
+
+            var btnFold = au3.PixelSearch(985, 1035, 995, 1045, 533036);
+            var btnCheck = au3.PixelSearch(1155, 1035, 1165, 1045, 533036);
+            var flop = au3.PixelSearch(765, 435, 775, 445, 16777215);
+            var cartas = au3.PixelSearch(825, 770, 835, 780, 16777215);
+
+
+            if ((btnFold is not int || btnCheck is not int) && cartas is not int && flop is int)
+                return true;
+            else
+                return false;
+
+
+            //if (lbFold.InvokeRequired)
+            //    lbFold.Invoke(new MethodInvoker(SetValuesBackGroud));
+            //else
+            //{
+            //    if (btnFold is not int)
+            //    {
+            //        lbFold.Text = "SI";
+            //    }
+            //    else
+            //    {
+            //        lbFold.Text = "NO";
+            //    }
+            //}
+
+            //if (lbCheck.InvokeRequired)
+            //    lbCheck.Invoke(new MethodInvoker(SetValuesBackGroud));
+            //else
+            //{
+            //    if (btnCheck is not int)
+            //    {
+            //        lbCheck.Text = "SI";
+            //    }
+            //    else
+            //    {
+            //        lbCheck.Text = "NO";
+            //    }
+            //}
+
+            //if (lbFlop.InvokeRequired)
+            //    lbFlop.Invoke(new MethodInvoker(SetValuesBackGroud));
+            //else
+            //{
+            //    if (flop is not int)
+            //    {
+            //        lbFlop.Text = "SI";
+            //    }
+            //    else
+            //    {
+            //        lbFlop.Text = "NO";
+            //    }
+            //}
+
+            //if (lbCartas.InvokeRequired)
+            //    lbCartas.Invoke(new MethodInvoker(SetValuesBackGroud));
+            //else
+            //{
+            //    if (cartas is not int)
+            //    {
+            //        lbCartas.Text = "SI";
+            //    }
+            //    else
+            //    {
+            //        lbCartas.Text = "NO";
+            //    }
+            //}
+        }
+
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             AutoItX3 au3 = new AutoItX3();
+            bool captureJet = false;
 
             while (true)
             {
@@ -858,16 +943,82 @@ namespace OpenScrape.App.Forms
                     return;
                 }
 
-                //var color = au3.PixelSearch(1945, 1100, 1960, 1090, 533036);
-
-                //if (color is not int)
-                //{
-                    
+                if (SetValuesBackGroud() && !captureJet)
+                {
                     Capture();
-                //}
+                    captureJet = true;
+                }
+                else if (!SetValuesBackGroud())
+                {
+                    captureJet = false;
+                }
+
                     
 
-                //Thread.Sleep(2000);
+                //if (SetValuesBackGroud())
+                //    Capture();
+
+
+                //16777215
+
+                //GetImageWhilePlaying();
+
+                //foreach (var item in Regions.Where(x => x.IsColor))
+                //{
+                //    if (FormImage.pbImagen.Image != null)
+                //    {
+                //        Color color = new Bitmap(FormImage.pbImagen.Image).GetPixel(item.X, item.Y);
+                //        var rgbColor = color.Name.Substring(2, 6);
+
+                //        if (item.Name == "uPlay")
+                //        {
+                //            if (_colorIsFlop.Contains(color.R))
+                //                _backgroundScrap.UserPlay = true;
+                //            else
+                //            {
+                //                _backgroundScrap.UserPlay = false;
+                //                capture = false;
+                //            }
+
+                //        }
+
+                //        if (item.Name == "isFlop")
+                //        {
+                //            if (_colorIsFlop.Contains(color.R))
+                //                _backgroundScrap.IsFlop = true;
+                //            else
+                //                _backgroundScrap.IsFlop = false;
+                //        }
+
+                //        if (item.Name == "uAction")
+                //        {
+                //            if (_colorAction.Contains(color.R))
+                //                _backgroundScrap.UserAction = true;
+                //            else
+                //                _backgroundScrap.UserAction = false;
+                //        }
+
+                //        if (item.Name == "uAction1")
+                //        {
+                //            if (_colorAction.Contains(color.R))
+                //                _backgroundScrap.UserAction1 = true;
+                //            else
+                //                _backgroundScrap.UserAction1 = false;
+                //        }
+                //    }
+                //}
+
+                //if (!capture)
+                //{
+                //    if (_backgroundScrap.UserPlay && !_backgroundScrap.IsFlop && (_backgroundScrap.UserAction || _backgroundScrap.UserAction1))
+                //    {
+                //        Capture();
+                //        capture = true;
+                //    }
+                //}
+
+
+                //Thread.Sleep(5000);
             }
         }
 
@@ -880,8 +1031,18 @@ namespace OpenScrape.App.Forms
         {
             _formListApps = new FormListApps();
 
-            _formListApps.Location = new Point(this.Location.X, this.Location.Y + 100);
+            _formListApps.Location = new Point(this.Location.X, this.Location.Y);
             _formListApps.Show();
+        }
+
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            backgroundWorker1.RunWorkerAsync();
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            backgroundWorker1.CancelAsync();
         }
     }
 
