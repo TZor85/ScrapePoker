@@ -227,12 +227,35 @@ namespace OpenScrape.App.Forms
 
         }
 
+        private double ConvertBetValue(string bet)
+        {
+            var text = bet.Replace("BB", "").Trim().Replace(" ", ",");
+            if (text.Contains("Z"))
+                text = "2";
+            else if (text.Contains("S"))
+                text = "3";
+            text = text.Replace('.', ',');
+            double.TryParse(text, out double result);
+            if (result == 50)
+                result = 0.5f;
+            return result;
+        }
+
         private void Capture()
         {
             if (!Checked)
             {
                 GetImageWhilePlaying();
             }
+
+            var actions = new Dictionary<string, Action<string>>
+            {
+                {"p0chips", s => _scrapeResult.P0Chips = s},
+                {"p1chips", s => _scrapeResult.P1Chips = s},
+                {"p2chips", s => _scrapeResult.P2Chips = s},
+                {"p1bet", s => _scrapeResult.P1Bet = ConvertBetValue(s)},
+                {"p2bet", s => _scrapeResult.P2Bet = ConvertBetValue(s)}
+            };
 
             //AutoItX3 au3 = new AutoItX3();
             //au3.MouseMove(0, 0, 10);
@@ -328,62 +351,88 @@ namespace OpenScrape.App.Forms
 
             }
 
+            
+
             foreach (var item in Regions.Where(x => !x.IsColor && !x.IsHash))
             {
-
-                var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
                 Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+                var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
                 var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
-
-                var text = string.Empty;
-                var resultText = string.Empty;
-
-                switch (item.Name)
+                var text = res.GetText();
+                double convertedBet = 0;
+                if (item.Name == "p1bet" || item.Name == "p2bet")
                 {
-                    case "p0chips":
-                        _scrapeResult.P0Chips = res.GetText();
-                        break;
-                    case "p1chips":
-                        _scrapeResult.P1Chips = res.GetText();
-                        break;
-                    case "p2chips":
-                        _scrapeResult.P2Chips = res.GetText();
-                        break;
-                    case "p1bet":
-                        resultText = res.GetText();
-                        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                            text = "2";
-                        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                            text = "3";
-                        else
-                            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-                        double.TryParse(text, out double p1Bet);
-                        if (p1Bet == 50)
-                            p1Bet = 0.5f;
-                        _scrapeResult.P1Bet = p1Bet;
-                        break;
-                    case "p2bet":
-                        resultText = res.GetText();
-                        if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-                            text = "2";
-                        else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-                            text = "3";
-                        else
-                            text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-                        text = text.Replace('.', ',');
-
-                        double.TryParse(text, out double p2Bet);
-                        if (p2Bet == 50)
-                            p2Bet = 0.5f;
-                        _scrapeResult.P2Bet = p2Bet;
-                        break;
-                    default:
-                        break;
+                    convertedBet = ConvertBetValue(text);
                 }
-
+                if (actions.TryGetValue(item.Name, out Action<string> action))
+                {
+                    if (item.Name == "p1bet" || item.Name == "p2bet")
+                    {
+                        action(convertedBet.ToString());
+                    }
+                    else
+                    {
+                        action(text);
+                    }
+                }
             }
+
+            //foreach (var item in Regions.Where(x => !x.IsColor && !x.IsHash))
+            //{
+
+            //    var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
+            //    Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+            //    var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
+
+            //    var text = string.Empty;
+            //    var resultText = string.Empty;
+
+            //    switch (item.Name)
+            //    {
+            //        case "p0chips":
+            //            _scrapeResult.P0Chips = res.GetText();
+            //            break;
+            //        case "p1chips":
+            //            _scrapeResult.P1Chips = res.GetText();
+            //            break;
+            //        case "p2chips":
+            //            _scrapeResult.P2Chips = res.GetText();
+            //            break;
+            //        case "p1bet":
+            //            resultText = res.GetText();
+            //            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+            //                text = "2";
+            //            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+            //                text = "3";
+            //            else
+            //                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+            //            double.TryParse(text, out double p1Bet);
+            //            if (p1Bet == 50)
+            //                p1Bet = 0.5f;
+            //            _scrapeResult.P1Bet = p1Bet;
+            //            break;
+            //        case "p2bet":
+            //            resultText = res.GetText();
+            //            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
+            //                text = "2";
+            //            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
+            //                text = "3";
+            //            else
+            //                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
+
+            //            text = text.Replace('.', ',');
+
+            //            double.TryParse(text, out double p2Bet);
+            //            if (p2Bet == 50)
+            //                p2Bet = 0.5f;
+            //            _scrapeResult.P2Bet = p2Bet;
+            //            break;
+            //        default:
+            //            break;
+            //    }
+
+            //}
 
             SetEmptyValues();
             SetBoardValues();
@@ -866,6 +915,7 @@ namespace OpenScrape.App.Forms
             var flop = au3.PixelSearch(765, 435, 775, 445, 16777215);
             var cartas = au3.PixelSearch(825, 770, 835, 780, 16777215);
 
+            //return true;
 
             if ((btnFold is not int || btnCheck is not int) && cartas is not int && flop is int)
                 return true;
@@ -943,6 +993,9 @@ namespace OpenScrape.App.Forms
                     return;
                 }
 
+                //if (SetValuesBackGroud())
+                //    Capture();
+
                 if (SetValuesBackGroud() && !captureJet)
                 {
                     Capture();
@@ -953,7 +1006,7 @@ namespace OpenScrape.App.Forms
                     captureJet = false;
                 }
 
-                    
+
 
                 //if (SetValuesBackGroud())
                 //    Capture();
