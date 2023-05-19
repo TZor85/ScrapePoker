@@ -28,467 +28,158 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.btnRiver = new System.Windows.Forms.Button();
-            this.btnTurn = new System.Windows.Forms.Button();
-            this.btnFlop = new System.Windows.Forms.Button();
-            this.groupBox4 = new System.Windows.Forms.GroupBox();
-            this.lbPair = new System.Windows.Forms.Label();
-            this.lbAction = new System.Windows.Forms.Label();
-            this.lbP1Bet = new System.Windows.Forms.Label();
-            this.lbP2Bet = new System.Windows.Forms.Label();
-            this.groupBox7 = new System.Windows.Forms.GroupBox();
-            this.pbCard1 = new System.Windows.Forms.PictureBox();
-            this.pbCard0 = new System.Windows.Forms.PictureBox();
-            this.lbDealer0 = new System.Windows.Forms.Label();
-            this.lbP0Chips = new System.Windows.Forms.Label();
-            this.groupBox6 = new System.Windows.Forms.GroupBox();
-            this.lbDealer2 = new System.Windows.Forms.Label();
-            this.lbP2Chips = new System.Windows.Forms.Label();
-            this.groupBox5 = new System.Windows.Forms.GroupBox();
-            this.lbDealer1 = new System.Windows.Forms.Label();
-            this.lbP1Chips = new System.Windows.Forms.Label();
-            this.lbEfective = new System.Windows.Forms.Label();
-            this.lbBoard = new System.Windows.Forms.Label();
-            this.lbPosition = new System.Windows.Forms.Label();
-            this.pbRiver = new System.Windows.Forms.PictureBox();
-            this.pbTurn = new System.Windows.Forms.PictureBox();
-            this.pbFlop3 = new System.Windows.Forms.PictureBox();
-            this.pbFlop2 = new System.Windows.Forms.PictureBox();
-            this.pbFlop1 = new System.Windows.Forms.PictureBox();
-            this.btnCapture = new System.Windows.Forms.Button();
-            this.btnWindow = new System.Windows.Forms.Button();
-            this.backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            this.btnNew = new System.Windows.Forms.Button();
-            this.btnStart = new System.Windows.Forms.Button();
-            this.btnStop = new System.Windows.Forms.Button();
-            this.lbFold = new System.Windows.Forms.Label();
-            this.lbCheck = new System.Windows.Forms.Label();
-            this.lbCartas = new System.Windows.Forms.Label();
-            this.lbFlop = new System.Windows.Forms.Label();
-            this.groupBox4.SuspendLayout();
-            this.groupBox7.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).BeginInit();
-            this.groupBox6.SuspendLayout();
-            this.groupBox5.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // btnRiver
-            // 
-            this.btnRiver.Location = new System.Drawing.Point(1587, 698);
-            this.btnRiver.Name = "btnRiver";
-            this.btnRiver.Size = new System.Drawing.Size(74, 46);
-            this.btnRiver.TabIndex = 58;
-            this.btnRiver.Text = "River";
-            this.btnRiver.UseVisualStyleBackColor = true;
-            this.btnRiver.Visible = false;
-            // 
-            // btnTurn
-            // 
-            this.btnTurn.Location = new System.Drawing.Point(1507, 698);
-            this.btnTurn.Name = "btnTurn";
-            this.btnTurn.Size = new System.Drawing.Size(74, 46);
-            this.btnTurn.TabIndex = 57;
-            this.btnTurn.Text = "Turn";
-            this.btnTurn.UseVisualStyleBackColor = true;
-            this.btnTurn.Visible = false;
-            this.btnTurn.Click += new System.EventHandler(this.btnTurn_Click);
-            // 
-            // btnFlop
-            // 
-            this.btnFlop.Location = new System.Drawing.Point(1427, 698);
-            this.btnFlop.Name = "btnFlop";
-            this.btnFlop.Size = new System.Drawing.Size(74, 46);
-            this.btnFlop.TabIndex = 56;
-            this.btnFlop.Text = "Flop";
-            this.btnFlop.UseVisualStyleBackColor = true;
-            this.btnFlop.Visible = false;
-            this.btnFlop.Click += new System.EventHandler(this.btnFlop_Click);
+            groupBox4 = new GroupBox();
+            lbAction = new Label();
+            lbP1Bet = new Label();
+            lbP2Bet = new Label();
+            groupBox7 = new GroupBox();
+            pbCard1 = new PictureBox();
+            pbCard0 = new PictureBox();
+            lbDealer0 = new Label();
+            lbP0Chips = new Label();
+            btnCapture = new Button();
+            btnWindow = new Button();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            groupBox4.SuspendLayout();
+            groupBox7.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
+            SuspendLayout();
             // 
             // groupBox4
             // 
-            this.groupBox4.Controls.Add(this.lbPair);
-            this.groupBox4.Controls.Add(this.lbAction);
-            this.groupBox4.Controls.Add(this.lbP1Bet);
-            this.groupBox4.Controls.Add(this.lbP2Bet);
-            this.groupBox4.Controls.Add(this.groupBox7);
-            this.groupBox4.Controls.Add(this.groupBox6);
-            this.groupBox4.Controls.Add(this.groupBox5);
-            this.groupBox4.Controls.Add(this.lbEfective);
-            this.groupBox4.Location = new System.Drawing.Point(10, 2);
-            this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(385, 169);
-            this.groupBox4.TabIndex = 55;
-            this.groupBox4.TabStop = false;
-            // 
-            // lbPair
-            // 
-            this.lbPair.AutoSize = true;
-            this.lbPair.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbPair.Location = new System.Drawing.Point(6, 246);
-            this.lbPair.Name = "lbPair";
-            this.lbPair.Size = new System.Drawing.Size(0, 21);
-            this.lbPair.TabIndex = 17;
+            groupBox4.Controls.Add(lbAction);
+            groupBox4.Controls.Add(lbP1Bet);
+            groupBox4.Controls.Add(lbP2Bet);
+            groupBox4.Controls.Add(groupBox7);
+            groupBox4.Location = new Point(10, 7);
+            groupBox4.Name = "groupBox4";
+            groupBox4.Size = new Size(285, 131);
+            groupBox4.TabIndex = 55;
+            groupBox4.TabStop = false;
             // 
             // lbAction
             // 
-            this.lbAction.AutoSize = true;
-            this.lbAction.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbAction.Location = new System.Drawing.Point(129, 11);
-            this.lbAction.Name = "lbAction";
-            this.lbAction.Size = new System.Drawing.Size(131, 30);
-            this.lbAction.TabIndex = 11;
-            this.lbAction.Text = "3BB / 4B / C";
+            lbAction.AutoSize = true;
+            lbAction.Font = new Font("Segoe UI", 15.75F, FontStyle.Bold, GraphicsUnit.Point);
+            lbAction.Location = new Point(141, 63);
+            lbAction.Name = "lbAction";
+            lbAction.Size = new Size(131, 30);
+            lbAction.TabIndex = 11;
+            lbAction.Text = "3BB / 4B / C";
             // 
             // lbP1Bet
             // 
-            this.lbP1Bet.AutoSize = true;
-            this.lbP1Bet.Location = new System.Drawing.Point(11, 110);
-            this.lbP1Bet.Name = "lbP1Bet";
-            this.lbP1Bet.Size = new System.Drawing.Size(0, 15);
-            this.lbP1Bet.TabIndex = 10;
+            lbP1Bet.AutoSize = true;
+            lbP1Bet.Location = new Point(11, 110);
+            lbP1Bet.Name = "lbP1Bet";
+            lbP1Bet.Size = new Size(0, 15);
+            lbP1Bet.TabIndex = 10;
             // 
             // lbP2Bet
             // 
-            this.lbP2Bet.AutoSize = true;
-            this.lbP2Bet.Location = new System.Drawing.Point(277, 110);
-            this.lbP2Bet.Name = "lbP2Bet";
-            this.lbP2Bet.Size = new System.Drawing.Size(0, 15);
-            this.lbP2Bet.TabIndex = 9;
+            lbP2Bet.AutoSize = true;
+            lbP2Bet.Location = new Point(277, 110);
+            lbP2Bet.Name = "lbP2Bet";
+            lbP2Bet.Size = new Size(0, 15);
+            lbP2Bet.TabIndex = 9;
             // 
             // groupBox7
             // 
-            this.groupBox7.Controls.Add(this.pbCard1);
-            this.groupBox7.Controls.Add(this.pbCard0);
-            this.groupBox7.Controls.Add(this.lbDealer0);
-            this.groupBox7.Controls.Add(this.lbP0Chips);
-            this.groupBox7.Location = new System.Drawing.Point(123, 44);
-            this.groupBox7.Name = "groupBox7";
-            this.groupBox7.Size = new System.Drawing.Size(129, 113);
-            this.groupBox7.TabIndex = 8;
-            this.groupBox7.TabStop = false;
-            this.groupBox7.Text = "Hero";
+            groupBox7.Controls.Add(pbCard1);
+            groupBox7.Controls.Add(pbCard0);
+            groupBox7.Controls.Add(lbDealer0);
+            groupBox7.Controls.Add(lbP0Chips);
+            groupBox7.Location = new Point(6, 12);
+            groupBox7.Name = "groupBox7";
+            groupBox7.Size = new Size(129, 113);
+            groupBox7.TabIndex = 8;
+            groupBox7.TabStop = false;
+            groupBox7.Text = "Hero";
             // 
             // pbCard1
             // 
-            this.pbCard1.Location = new System.Drawing.Point(41, 26);
-            this.pbCard1.Name = "pbCard1";
-            this.pbCard1.Size = new System.Drawing.Size(25, 55);
-            this.pbCard1.TabIndex = 8;
-            this.pbCard1.TabStop = false;
+            pbCard1.Location = new Point(41, 26);
+            pbCard1.Name = "pbCard1";
+            pbCard1.Size = new Size(25, 55);
+            pbCard1.TabIndex = 8;
+            pbCard1.TabStop = false;
             // 
             // pbCard0
             // 
-            this.pbCard0.Location = new System.Drawing.Point(10, 26);
-            this.pbCard0.Name = "pbCard0";
-            this.pbCard0.Size = new System.Drawing.Size(25, 55);
-            this.pbCard0.TabIndex = 7;
-            this.pbCard0.TabStop = false;
+            pbCard0.Location = new Point(10, 26);
+            pbCard0.Name = "pbCard0";
+            pbCard0.Size = new Size(25, 55);
+            pbCard0.TabIndex = 7;
+            pbCard0.TabStop = false;
             // 
             // lbDealer0
             // 
-            this.lbDealer0.AutoSize = true;
-            this.lbDealer0.Location = new System.Drawing.Point(83, 19);
-            this.lbDealer0.Name = "lbDealer0";
-            this.lbDealer0.Size = new System.Drawing.Size(40, 15);
-            this.lbDealer0.TabIndex = 6;
-            this.lbDealer0.Text = "Dealer";
+            lbDealer0.AutoSize = true;
+            lbDealer0.Location = new Point(83, 19);
+            lbDealer0.Name = "lbDealer0";
+            lbDealer0.Size = new Size(40, 15);
+            lbDealer0.TabIndex = 6;
+            lbDealer0.Text = "Dealer";
             // 
             // lbP0Chips
             // 
-            this.lbP0Chips.AutoSize = true;
-            this.lbP0Chips.Location = new System.Drawing.Point(6, 86);
-            this.lbP0Chips.Name = "lbP0Chips";
-            this.lbP0Chips.Size = new System.Drawing.Size(43, 15);
-            this.lbP0Chips.TabIndex = 3;
-            this.lbP0Chips.Text = "Chips: ";
-            // 
-            // groupBox6
-            // 
-            this.groupBox6.Controls.Add(this.lbDealer2);
-            this.groupBox6.Controls.Add(this.lbP2Chips);
-            this.groupBox6.Location = new System.Drawing.Point(272, 44);
-            this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(99, 63);
-            this.groupBox6.TabIndex = 7;
-            this.groupBox6.TabStop = false;
-            this.groupBox6.Text = "Player 2";
-            // 
-            // lbDealer2
-            // 
-            this.lbDealer2.AutoSize = true;
-            this.lbDealer2.Location = new System.Drawing.Point(9, 20);
-            this.lbDealer2.Name = "lbDealer2";
-            this.lbDealer2.Size = new System.Drawing.Size(40, 15);
-            this.lbDealer2.TabIndex = 7;
-            this.lbDealer2.Text = "Dealer";
-            // 
-            // lbP2Chips
-            // 
-            this.lbP2Chips.AutoSize = true;
-            this.lbP2Chips.Location = new System.Drawing.Point(6, 44);
-            this.lbP2Chips.Name = "lbP2Chips";
-            this.lbP2Chips.Size = new System.Drawing.Size(43, 15);
-            this.lbP2Chips.TabIndex = 2;
-            this.lbP2Chips.Text = "Chips: ";
-            // 
-            // groupBox5
-            // 
-            this.groupBox5.Controls.Add(this.lbDealer1);
-            this.groupBox5.Controls.Add(this.lbP1Chips);
-            this.groupBox5.Location = new System.Drawing.Point(2, 44);
-            this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(101, 63);
-            this.groupBox5.TabIndex = 6;
-            this.groupBox5.TabStop = false;
-            this.groupBox5.Text = "Player 1";
-            // 
-            // lbDealer1
-            // 
-            this.lbDealer1.AutoSize = true;
-            this.lbDealer1.Location = new System.Drawing.Point(9, 19);
-            this.lbDealer1.Name = "lbDealer1";
-            this.lbDealer1.Size = new System.Drawing.Size(40, 15);
-            this.lbDealer1.TabIndex = 2;
-            this.lbDealer1.Text = "Dealer";
-            // 
-            // lbP1Chips
-            // 
-            this.lbP1Chips.AutoSize = true;
-            this.lbP1Chips.Location = new System.Drawing.Point(6, 43);
-            this.lbP1Chips.Name = "lbP1Chips";
-            this.lbP1Chips.Size = new System.Drawing.Size(43, 15);
-            this.lbP1Chips.TabIndex = 1;
-            this.lbP1Chips.Text = "Chips: ";
-            // 
-            // lbEfective
-            // 
-            this.lbEfective.AutoSize = true;
-            this.lbEfective.Font = new System.Drawing.Font("Segoe UI", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.lbEfective.Location = new System.Drawing.Point(0, 143);
-            this.lbEfective.Name = "lbEfective";
-            this.lbEfective.Size = new System.Drawing.Size(48, 17);
-            this.lbEfective.TabIndex = 3;
-            this.lbEfective.Text = "Ef BB: ";
-            // 
-            // lbBoard
-            // 
-            this.lbBoard.AutoSize = true;
-            this.lbBoard.Location = new System.Drawing.Point(1463, 538);
-            this.lbBoard.Name = "lbBoard";
-            this.lbBoard.Size = new System.Drawing.Size(38, 15);
-            this.lbBoard.TabIndex = 19;
-            this.lbBoard.Text = "Board";
-            // 
-            // lbPosition
-            // 
-            this.lbPosition.AutoSize = true;
-            this.lbPosition.Location = new System.Drawing.Point(1463, 565);
-            this.lbPosition.Name = "lbPosition";
-            this.lbPosition.Size = new System.Drawing.Size(50, 15);
-            this.lbPosition.TabIndex = 18;
-            this.lbPosition.Text = "Position";
-            // 
-            // pbRiver
-            // 
-            this.pbRiver.Location = new System.Drawing.Point(1587, 445);
-            this.pbRiver.Name = "pbRiver";
-            this.pbRiver.Size = new System.Drawing.Size(25, 55);
-            this.pbRiver.TabIndex = 16;
-            this.pbRiver.TabStop = false;
-            // 
-            // pbTurn
-            // 
-            this.pbTurn.Location = new System.Drawing.Point(1556, 445);
-            this.pbTurn.Name = "pbTurn";
-            this.pbTurn.Size = new System.Drawing.Size(25, 55);
-            this.pbTurn.TabIndex = 15;
-            this.pbTurn.TabStop = false;
-            // 
-            // pbFlop3
-            // 
-            this.pbFlop3.Location = new System.Drawing.Point(1525, 445);
-            this.pbFlop3.Name = "pbFlop3";
-            this.pbFlop3.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop3.TabIndex = 14;
-            this.pbFlop3.TabStop = false;
-            // 
-            // pbFlop2
-            // 
-            this.pbFlop2.Location = new System.Drawing.Point(1494, 445);
-            this.pbFlop2.Name = "pbFlop2";
-            this.pbFlop2.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop2.TabIndex = 13;
-            this.pbFlop2.TabStop = false;
-            // 
-            // pbFlop1
-            // 
-            this.pbFlop1.Location = new System.Drawing.Point(1463, 445);
-            this.pbFlop1.Name = "pbFlop1";
-            this.pbFlop1.Size = new System.Drawing.Size(25, 55);
-            this.pbFlop1.TabIndex = 12;
-            this.pbFlop1.TabStop = false;
+            lbP0Chips.AutoSize = true;
+            lbP0Chips.Location = new Point(6, 86);
+            lbP0Chips.Name = "lbP0Chips";
+            lbP0Chips.Size = new Size(43, 15);
+            lbP0Chips.TabIndex = 3;
+            lbP0Chips.Text = "Chips: ";
             // 
             // btnCapture
             // 
-            this.btnCapture.Location = new System.Drawing.Point(11, 175);
-            this.btnCapture.Name = "btnCapture";
-            this.btnCapture.Size = new System.Drawing.Size(81, 33);
-            this.btnCapture.TabIndex = 53;
-            this.btnCapture.Text = "Capture";
-            this.btnCapture.UseVisualStyleBackColor = true;
-            this.btnCapture.Click += new System.EventHandler(this.btnCapture_Click);
+            btnCapture.Location = new Point(11, 142);
+            btnCapture.Name = "btnCapture";
+            btnCapture.Size = new Size(81, 33);
+            btnCapture.TabIndex = 53;
+            btnCapture.Text = "Capture";
+            btnCapture.UseVisualStyleBackColor = true;
+            btnCapture.Click += btnCapture_Click;
             // 
             // btnWindow
             // 
-            this.btnWindow.Location = new System.Drawing.Point(296, 175);
-            this.btnWindow.Name = "btnWindow";
-            this.btnWindow.Size = new System.Drawing.Size(85, 32);
-            this.btnWindow.TabIndex = 54;
-            this.btnWindow.Text = "Window";
-            this.btnWindow.UseVisualStyleBackColor = true;
-            this.btnWindow.Click += new System.EventHandler(this.btnWindow_Click);
+            btnWindow.Location = new Point(202, 144);
+            btnWindow.Name = "btnWindow";
+            btnWindow.Size = new Size(85, 32);
+            btnWindow.TabIndex = 54;
+            btnWindow.Text = "Window";
+            btnWindow.UseVisualStyleBackColor = true;
+            btnWindow.Click += btnWindow_Click;
             // 
             // backgroundWorker1
             // 
-            this.backgroundWorker1.WorkerReportsProgress = true;
-            this.backgroundWorker1.WorkerSupportsCancellation = true;
-            this.backgroundWorker1.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker1_DoWork);
-            // 
-            // btnNew
-            // 
-            this.btnNew.Location = new System.Drawing.Point(242, 184);
-            this.btnNew.Name = "btnNew";
-            this.btnNew.Size = new System.Drawing.Size(49, 24);
-            this.btnNew.TabIndex = 59;
-            this.btnNew.Text = "New";
-            this.btnNew.UseVisualStyleBackColor = true;
-            this.btnNew.Click += new System.EventHandler(this.btnNew_Click);
-            // 
-            // btnStart
-            // 
-            this.btnStart.Location = new System.Drawing.Point(100, 184);
-            this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(56, 23);
-            this.btnStart.TabIndex = 60;
-            this.btnStart.Text = "START";
-            this.btnStart.UseVisualStyleBackColor = true;
-            this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
-            // 
-            // btnStop
-            // 
-            this.btnStop.Location = new System.Drawing.Point(162, 185);
-            this.btnStop.Name = "btnStop";
-            this.btnStop.Size = new System.Drawing.Size(56, 23);
-            this.btnStop.TabIndex = 61;
-            this.btnStop.Text = "STOP";
-            this.btnStop.UseVisualStyleBackColor = true;
-            this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
-            // 
-            // lbFold
-            // 
-            this.lbFold.AutoSize = true;
-            this.lbFold.Location = new System.Drawing.Point(418, 28);
-            this.lbFold.Name = "lbFold";
-            this.lbFold.Size = new System.Drawing.Size(40, 15);
-            this.lbFold.TabIndex = 62;
-            this.lbFold.Text = "Dealer";
-            // 
-            // lbCheck
-            // 
-            this.lbCheck.AutoSize = true;
-            this.lbCheck.Location = new System.Drawing.Point(418, 55);
-            this.lbCheck.Name = "lbCheck";
-            this.lbCheck.Size = new System.Drawing.Size(40, 15);
-            this.lbCheck.TabIndex = 63;
-            this.lbCheck.Text = "Dealer";
-            // 
-            // lbCartas
-            // 
-            this.lbCartas.AutoSize = true;
-            this.lbCartas.Location = new System.Drawing.Point(418, 89);
-            this.lbCartas.Name = "lbCartas";
-            this.lbCartas.Size = new System.Drawing.Size(40, 15);
-            this.lbCartas.TabIndex = 64;
-            this.lbCartas.Text = "Dealer";
-            // 
-            // lbFlop
-            // 
-            this.lbFlop.AutoSize = true;
-            this.lbFlop.Location = new System.Drawing.Point(418, 122);
-            this.lbFlop.Name = "lbFlop";
-            this.lbFlop.Size = new System.Drawing.Size(40, 15);
-            this.lbFlop.TabIndex = 65;
-            this.lbFlop.Text = "Dealer";
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
             // 
             // FormPlaying
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(400, 214);
-            this.Controls.Add(this.lbFlop);
-            this.Controls.Add(this.lbCartas);
-            this.Controls.Add(this.lbCheck);
-            this.Controls.Add(this.lbFold);
-            this.Controls.Add(this.btnStop);
-            this.Controls.Add(this.btnStart);
-            this.Controls.Add(this.lbBoard);
-            this.Controls.Add(this.lbPosition);
-            this.Controls.Add(this.btnNew);
-            this.Controls.Add(this.btnRiver);
-            this.Controls.Add(this.btnTurn);
-            this.Controls.Add(this.pbRiver);
-            this.Controls.Add(this.btnFlop);
-            this.Controls.Add(this.pbTurn);
-            this.Controls.Add(this.groupBox4);
-            this.Controls.Add(this.pbFlop3);
-            this.Controls.Add(this.pbFlop2);
-            this.Controls.Add(this.btnCapture);
-            this.Controls.Add(this.pbFlop1);
-            this.Controls.Add(this.btnWindow);
-            this.Name = "FormPlaying";
-            this.Text = "FormPlaying";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormPlaying_FormClosing);
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.FormPlaying_FormClosed);
-            this.groupBox4.ResumeLayout(false);
-            this.groupBox4.PerformLayout();
-            this.groupBox7.ResumeLayout(false);
-            this.groupBox7.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCard1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbCard0)).EndInit();
-            this.groupBox6.ResumeLayout(false);
-            this.groupBox6.PerformLayout();
-            this.groupBox5.ResumeLayout(false);
-            this.groupBox5.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbRiver)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbTurn)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop3)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbFlop1)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(304, 181);
+            Controls.Add(groupBox4);
+            Controls.Add(btnCapture);
+            Controls.Add(btnWindow);
+            Name = "FormPlaying";
+            Text = "FormPlaying";
+            FormClosing += FormPlaying_FormClosing;
+            FormClosed += FormPlaying_FormClosed;
+            groupBox4.ResumeLayout(false);
+            groupBox4.PerformLayout();
+            groupBox7.ResumeLayout(false);
+            groupBox7.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
+            ResumeLayout(false);
         }
 
         #endregion
-
-        private Button btnRiver;
-        private Button btnTurn;
-        private Button btnFlop;
         private GroupBox groupBox4;
-        private Label lbBoard;
-        private Label lbPosition;
-        private Label lbPair;
-        private PictureBox pbRiver;
-        private PictureBox pbTurn;
-        private PictureBox pbFlop3;
-        private PictureBox pbFlop2;
-        private PictureBox pbFlop1;
         private Label lbAction;
         private Label lbP1Bet;
         private Label lbP2Bet;
@@ -497,22 +188,8 @@
         private PictureBox pbCard0;
         private Label lbDealer0;
         private Label lbP0Chips;
-        private GroupBox groupBox6;
-        private Label lbDealer2;
-        private Label lbP2Chips;
-        private GroupBox groupBox5;
-        private Label lbDealer1;
-        private Label lbP1Chips;
-        private Label lbEfective;
         private Button btnCapture;
         private Button btnWindow;
         private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private Button btnNew;
-        private Button btnStart;
-        private Button btnStop;
-        private Label lbFold;
-        private Label lbCheck;
-        private Label lbCartas;
-        private Label lbFlop;
     }
 }

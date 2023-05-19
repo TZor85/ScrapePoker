@@ -24,6 +24,7 @@
   <ItemGroup>
     <PackageReference Include="AutoItX.Dotnet" Version="3.3.14.5" />
     <PackageReference Include="IronOcr" Version="2022.11.10109" />
+    <PackageReference Include="MediatR" Version="12.0.1" />
     <PackageReference Include="Nancy" Version="2.0.0" />
     <PackageReference Include="Rijndael256" Version="3.2.0" />
     <PackageReference Include="Tesseract" Version="4.1.1" />

@@ -17,7 +17,7 @@ namespace OpenScrape.App.Forms
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorActive = new List<int> { 33, 34, 35, 36, 37 };
         private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
-        private List<int> _colorAction = new List<int> {19, 20, 21, 22, 23 };
+        private List<int> _colorAction = new List<int> { 19, 20, 21, 22, 23 };
         private List<int> _colorIsFlop = new List<int> { 254, 255 };
 
 
@@ -53,12 +53,6 @@ namespace OpenScrape.App.Forms
                 GetImageWhilePlaying();
             }
 
-            //AutoItX3 au3 = new AutoItX3();
-            //au3.MouseMove(0, 0, 10);
-
-
-            //TODO: hacer las comparaciones de las imagenes / OCR
-
             _scrapeResult = new TableScrapeResult();
 
             var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(FormImage.pbImagen.Image), _umbral));
@@ -72,7 +66,6 @@ namespace OpenScrape.App.Forms
 
                 foreach (var immg in Images)
                 {
-                    //List<bool> iHash2 = GetHash(new Bitmap(immg.Image));
 
                     int equalElements = iHash1.Zip(immg.Value, (i, j) => i == j).Count(eq => eq);
 
@@ -221,10 +214,6 @@ namespace OpenScrape.App.Forms
             _boardPlayerData.InPosition = getAction.Position == Enums.Positions.InPosition;
             _boardPlayerData.PreflopAction = getAction.PreflopAction;
 
-            lbPosition.Text = _boardPlayerData.InPosition ? "IP" : "OOP";
-
-
-
         }
 
         private double ConvertBetValue(string bet)
@@ -351,7 +340,7 @@ namespace OpenScrape.App.Forms
 
             }
 
-            
+
 
             foreach (var item in Regions.Where(x => !x.IsColor && !x.IsHash))
             {
@@ -377,63 +366,7 @@ namespace OpenScrape.App.Forms
                 }
             }
 
-            //foreach (var item in Regions.Where(x => !x.IsColor && !x.IsHash))
-            //{
-
-            //    var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.TesseractOnly);
-            //    Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
-            //    var res = ocrengine.Process(img, area, PageSegMode.SingleLine);
-
-            //    var text = string.Empty;
-            //    var resultText = string.Empty;
-
-            //    switch (item.Name)
-            //    {
-            //        case "p0chips":
-            //            _scrapeResult.P0Chips = res.GetText();
-            //            break;
-            //        case "p1chips":
-            //            _scrapeResult.P1Chips = res.GetText();
-            //            break;
-            //        case "p2chips":
-            //            _scrapeResult.P2Chips = res.GetText();
-            //            break;
-            //        case "p1bet":
-            //            resultText = res.GetText();
-            //            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-            //                text = "2";
-            //            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-            //                text = "3";
-            //            else
-            //                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-            //            double.TryParse(text, out double p1Bet);
-            //            if (p1Bet == 50)
-            //                p1Bet = 0.5f;
-            //            _scrapeResult.P1Bet = p1Bet;
-            //            break;
-            //        case "p2bet":
-            //            resultText = res.GetText();
-            //            if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
-            //                text = "2";
-            //            else if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("S"))
-            //                text = "3";
-            //            else
-            //                text = resultText.Replace("BB", "").Trim().Replace(" ", ",");
-
-            //            text = text.Replace('.', ',');
-
-            //            double.TryParse(text, out double p2Bet);
-            //            if (p2Bet == 50)
-            //                p2Bet = 0.5f;
-            //            _scrapeResult.P2Bet = p2Bet;
-            //            break;
-            //        default:
-            //            break;
-            //    }
-
-            //}
-
+           
             SetEmptyValues();
             SetBoardValues();
 
@@ -465,7 +398,7 @@ namespace OpenScrape.App.Forms
 
 
             _useCase.GetWindow(_formListApps.handle);
-           
+
         }
 
         #region ActionHands
@@ -713,16 +646,13 @@ namespace OpenScrape.App.Forms
                 lbDealer0.Invoke(new MethodInvoker(SetEmptyValues));
             else
                 lbDealer0.Text = string.Empty;
-            
-            lbDealer1.Text = string.Empty;
-            lbDealer2.Text = string.Empty;
+
 
             lbP1Bet.Text = string.Empty;
             lbP2Bet.Text = string.Empty;
 
             lbP0Chips.Text = "Chips: ";
-            lbP1Chips.Text = "Chips: ";
-            lbP2Chips.Text = "Chips: ";
+
 
             lbAction.Text = string.Empty;
 
@@ -737,14 +667,7 @@ namespace OpenScrape.App.Forms
             _scrapeResult.B0CardForce4 = 0;
             _scrapeResult.B0CardForce5 = 0;
 
-            pbFlop1.Image = null;
-            pbFlop2.Image = null;
-            pbFlop3.Image = null;
-            pbTurn.Image = null;
-            pbRiver.Image = null;
 
-            lbPair.Text = string.Empty;
-            lbBoard.Text = "Board ";
         }
 
         private void SetBoardValues()
@@ -753,16 +676,6 @@ namespace OpenScrape.App.Forms
                 lbP0Chips.Invoke(new MethodInvoker(SetBoardValues));
             else
                 lbP0Chips.Text = $"Chips: {_scrapeResult.P0Chips}";
-
-            if (lbP1Chips.InvokeRequired)
-                lbP1Chips.Invoke(new MethodInvoker(SetBoardValues));
-            else
-                lbP1Chips.Text = $"Chips: {_scrapeResult.P1Chips}";
-
-            if (lbP2Chips.InvokeRequired)
-                lbP2Chips.Invoke(new MethodInvoker(SetBoardValues));
-            else
-                lbP2Chips.Text = $"Chips: {_scrapeResult.P2Chips}";
 
 
             if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
@@ -791,78 +704,9 @@ namespace OpenScrape.App.Forms
                 lbDealer0.Text = "Dealer";
             else
                 lbDealer0.Text = string.Empty;
-
-            if (_scrapeResult.P1Dealer)
-                lbDealer1.Text = "Dealer";
-            else
-                lbDealer1.Text = string.Empty;
-
-            if (_scrapeResult.P2Dealer)
-                lbDealer2.Text = "Dealer";
-            else
-                lbDealer2.Text = string.Empty;
-
-            if (lbEfective.InvokeRequired)
-                lbEfective.Invoke(new MethodInvoker(SetBoardValues));
-            else
-                lbEfective.Text = "Ef BB: ";
-
-
-            _effectiveStack = GetEffectiveBB(_scrapeResult.P0Chips, _scrapeResult.P1Chips, _scrapeResult.P2Chips);
-
-            if (lbEfective.InvokeRequired)
-                lbEfective.Invoke(new MethodInvoker(SetBoardValues));
-            else
-                lbEfective.Text += _effectiveStack;
+            
+                        
         }
-
-        private string GetEffectiveBB(string p0BB, string p1BB, string p2BB)
-        {
-            double medio = 0;
-
-            double.TryParse(p0BB.Split(" ")[0].Replace(".", ",").Replace("O", "0"), out double p0chips);
-            double.TryParse(p1BB.Split(" ")[0].Replace(".", ",").Replace("O", "0"), out double p1chips);
-            double.TryParse(p2BB.Split(" ")[0].Replace(".", ",").Replace("O", "0"), out double p2chips);
-
-
-            if (!_scrapeResult.P1Active)
-                p1chips = 0;
-
-            if (!_scrapeResult.P2Active)
-                p2chips = 0;
-
-            if (_scrapeResult.P1Active && _scrapeResult.P1Bet > 1 && p1chips <= 1)
-                p1chips = _scrapeResult.P1Bet;
-
-            if (_scrapeResult.P2Active && _scrapeResult.P2Bet > 1 && p2chips <= 1)
-                p2chips = _scrapeResult.P2Bet;
-
-
-            if (p0chips < p1chips && p0chips < p2chips)
-            {
-                medio = p0chips;
-            }
-            else
-            {
-                if (p0chips > p1chips && p0chips < p2chips)
-                    medio = p0chips;
-                else if (p0chips > p1chips && p0chips > p2chips)
-                {
-                    if (p1chips > p2chips)
-                        medio = p1chips;
-                    else
-                        medio = p2chips;
-                }
-                else if (p0chips < p1chips && p0chips > p2chips)
-                    medio = p0chips;
-                else
-                    medio = p1chips;
-            }
-
-            return medio.ToString();
-        }
-
-
 
         #endregion
 
@@ -875,7 +719,7 @@ namespace OpenScrape.App.Forms
                 padre.WindowState = FormWindowState.Normal;
                 padre.Show();
             }
-                
+
         }
 
         private void FormPlaying_FormClosed(object sender, FormClosedEventArgs e)
@@ -891,15 +735,8 @@ namespace OpenScrape.App.Forms
 
         private void btnFlop_Click(object sender, EventArgs e)
         {
-            //533036
 
             backgroundWorker1.RunWorkerAsync();
-
-            
-
-            //if (pp[0] != 0)
-                
-
         }
 
         private bool SetValuesBackGroud()
@@ -923,61 +760,6 @@ namespace OpenScrape.App.Forms
                 return false;
 
 
-            //if (lbFold.InvokeRequired)
-            //    lbFold.Invoke(new MethodInvoker(SetValuesBackGroud));
-            //else
-            //{
-            //    if (btnFold is not int)
-            //    {
-            //        lbFold.Text = "SI";
-            //    }
-            //    else
-            //    {
-            //        lbFold.Text = "NO";
-            //    }
-            //}
-
-            //if (lbCheck.InvokeRequired)
-            //    lbCheck.Invoke(new MethodInvoker(SetValuesBackGroud));
-            //else
-            //{
-            //    if (btnCheck is not int)
-            //    {
-            //        lbCheck.Text = "SI";
-            //    }
-            //    else
-            //    {
-            //        lbCheck.Text = "NO";
-            //    }
-            //}
-
-            //if (lbFlop.InvokeRequired)
-            //    lbFlop.Invoke(new MethodInvoker(SetValuesBackGroud));
-            //else
-            //{
-            //    if (flop is not int)
-            //    {
-            //        lbFlop.Text = "SI";
-            //    }
-            //    else
-            //    {
-            //        lbFlop.Text = "NO";
-            //    }
-            //}
-
-            //if (lbCartas.InvokeRequired)
-            //    lbCartas.Invoke(new MethodInvoker(SetValuesBackGroud));
-            //else
-            //{
-            //    if (cartas is not int)
-            //    {
-            //        lbCartas.Text = "SI";
-            //    }
-            //    else
-            //    {
-            //        lbCartas.Text = "NO";
-            //    }
-            //}
         }
 
         private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
@@ -993,9 +775,6 @@ namespace OpenScrape.App.Forms
                     return;
                 }
 
-                //if (SetValuesBackGroud())
-                //    Capture();
-
                 if (SetValuesBackGroud() && !captureJet)
                 {
                     Capture();
@@ -1008,70 +787,7 @@ namespace OpenScrape.App.Forms
 
 
 
-                //if (SetValuesBackGroud())
-                //    Capture();
 
-
-                //16777215
-
-                //GetImageWhilePlaying();
-
-                //foreach (var item in Regions.Where(x => x.IsColor))
-                //{
-                //    if (FormImage.pbImagen.Image != null)
-                //    {
-                //        Color color = new Bitmap(FormImage.pbImagen.Image).GetPixel(item.X, item.Y);
-                //        var rgbColor = color.Name.Substring(2, 6);
-
-                //        if (item.Name == "uPlay")
-                //        {
-                //            if (_colorIsFlop.Contains(color.R))
-                //                _backgroundScrap.UserPlay = true;
-                //            else
-                //            {
-                //                _backgroundScrap.UserPlay = false;
-                //                capture = false;
-                //            }
-
-                //        }
-
-                //        if (item.Name == "isFlop")
-                //        {
-                //            if (_colorIsFlop.Contains(color.R))
-                //                _backgroundScrap.IsFlop = true;
-                //            else
-                //                _backgroundScrap.IsFlop = false;
-                //        }
-
-                //        if (item.Name == "uAction")
-                //        {
-                //            if (_colorAction.Contains(color.R))
-                //                _backgroundScrap.UserAction = true;
-                //            else
-                //                _backgroundScrap.UserAction = false;
-                //        }
-
-                //        if (item.Name == "uAction1")
-                //        {
-                //            if (_colorAction.Contains(color.R))
-                //                _backgroundScrap.UserAction1 = true;
-                //            else
-                //                _backgroundScrap.UserAction1 = false;
-                //        }
-                //    }
-                //}
-
-                //if (!capture)
-                //{
-                //    if (_backgroundScrap.UserPlay && !_backgroundScrap.IsFlop && (_backgroundScrap.UserAction || _backgroundScrap.UserAction1))
-                //    {
-                //        Capture();
-                //        capture = true;
-                //    }
-                //}
-
-
-                //Thread.Sleep(5000);
             }
         }
 

@@ -12,4 +12,13 @@ namespace OpenScrape.App.Enums
         OutOfPosition,
         InPosition
     }
+
+    public enum HeroPosition
+    {
+        SmallBlind,
+        Button,
+        CutOff,
+        MiddlePosition,
+        EarlyPosition
+    }
 }
