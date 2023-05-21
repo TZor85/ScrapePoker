@@ -69,7 +69,7 @@ namespace OpenScrape.App.Aplication.UseCases
                             if (item.Image != null)
                             {
                                 string imgText = EncrypterHelper.GetImageEncrypted(item.Image, request.Key);
-                                writer.WriteLine($"i${item.Name} - {item.Force} - {item.Value} - {imgText}");
+                                writer.WriteLine($"i${item.Name} - {item.Force} - {item.Suit} - {item.Value} - {imgText}");
                             }
                         }
 

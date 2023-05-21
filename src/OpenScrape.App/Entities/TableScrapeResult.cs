@@ -10,6 +10,9 @@
         public bool P0Dealer { get; set; }
         public bool P1Dealer { get; set; }
         public bool P2Dealer { get; set; }
+        public bool P3Dealer { get; set; }
+        public bool P4Dealer { get; set; }
+        public bool P5Dealer { get; set; }
         public bool P1Active { get; set; }
         public bool P2Active { get; set; }
         public bool P1Sit { get; set; }

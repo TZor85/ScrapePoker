@@ -84,7 +84,6 @@
             return smallBlindHands.Contains(hand) ? "Open Raise" : "Fold";
         }
 
-
         public static string GetButtonAction(string hand)
         {
             return buttonHands.Contains(hand) ? "Open Raise" : "Fold";

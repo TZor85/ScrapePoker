@@ -24,9 +24,7 @@ namespace OpenScrape.App
         {
             if (!string.IsNullOrEmpty(tbImage.Text))
             {
-
                 region.Execute(tbImage.Text, "Image");
-
                 this.Close();
             }
         }

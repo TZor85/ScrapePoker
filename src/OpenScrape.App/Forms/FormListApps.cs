@@ -25,7 +25,7 @@ namespace OpenScrape.App
 
             foreach (var item in _windows)
             {
-                if (item.Key.Contains("Sit"))
+                if (item.Key.Contains("NL H"))
                 {
                     lbApps.Items.Add(item.Key);
                 }
@@ -47,7 +47,7 @@ namespace OpenScrape.App
         private void btnAceptar_Click(object sender, EventArgs e)
         {
             var selectItem = lbApps.SelectedItem.ToString();
-            //addImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
+            addImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
 
             handle = _windows.FirstOrDefault(x => x.Key == selectItem).Value;
 

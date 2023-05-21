@@ -135,7 +135,7 @@ namespace OpenScrape.App
                 case "Nodo2":
                     texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
                     img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = false, Value = GetValueImage() };
+                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = false, Value = GetValueImage(), Force = GetForceHand(texto), Suit = GetSuitHand(texto) };
                     _images.Add(_locImage);
                     break;
                 case "Nodo3":
@@ -149,6 +149,43 @@ namespace OpenScrape.App
             node.Nodes.Add(texto);
             twRegions.ExpandAll();
 
+        }
+
+        private static int GetSuitHand(string texto)
+        {
+            var suit = texto[1] switch
+            {
+                'c' => 1,
+                'h' => 2,
+                'd' => 3,
+                's' => 4,
+                _ => 0
+            };
+
+            return suit;
+        }
+
+        private static int GetForceHand(string texto)
+        {
+            var force = texto[0] switch
+            {
+                'A' => 14,
+                'K' => 13,
+                'Q' => 12,
+                'J' => 11,
+                'T' => 10,
+                '9' => 9,
+                '8' => 8,
+                '7' => 7,
+                '6' => 6,
+                '5' => 5,
+                '4' => 4,
+                '3' => 3,
+                '2' => 2,
+                _ => 0
+            };
+
+            return force;
         }
 
         private string GetValueImage()
@@ -345,6 +382,18 @@ namespace OpenScrape.App
                             if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P2Dealer = true;
                             break;
+                        case "p3dealer":
+                            if (_colorDealer.Contains(color.R))
+                                _scrapeResult.P3Dealer = true;
+                            break;
+                        case "p4dealer":
+                            if (_colorDealer.Contains(color.R))
+                                _scrapeResult.P4Dealer = true;
+                            break;
+                        case "p5dealer":
+                            if (_colorDealer.Contains(color.R))
+                                _scrapeResult.P5Dealer = true;
+                            break;
                         case "p1active":
                             if (_colorActive.Contains(color.B))
                                 _scrapeResult.P1Active = true;
@@ -426,6 +475,8 @@ namespace OpenScrape.App
             }
 
 
+
+
             SetEmptyValues();
 
 
@@ -440,6 +491,21 @@ namespace OpenScrape.App
             _boardPlayerData.Aggressor = getAction.Style == Enums.Styles.Agresive;
             _boardPlayerData.InPosition = getAction.Position == Enums.Positions.InPosition;
             _boardPlayerData.PreflopAction = getAction.PreflopAction;
+
+            if (_scrapeResult.P0Dealer)
+                lbdealer.Text = "Dealer P0";
+            else if (_scrapeResult.P1Dealer)
+                lbdealer.Text = "Dealer P1";
+            else if (_scrapeResult.P2Dealer)
+                lbdealer.Text = "Dealer P2";
+            else if (_scrapeResult.P3Dealer)
+                lbdealer.Text = "Dealer P3";
+            else if (_scrapeResult.P4Dealer)
+                lbdealer.Text = "Dealer P4";
+            else if (_scrapeResult.P5Dealer)
+                lbdealer.Text = "Dealer P5";
+            else
+                lbdealer.Text = "No hay Dealer";
 
 
 
@@ -457,7 +523,7 @@ namespace OpenScrape.App
 
             var path = folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
 
-            _useCase.ExecuteImage(path);
+            var imagen = _useCase.ExecuteImage(path);
 
             var windowImg = Image.FromFile(path);
 
@@ -626,7 +692,7 @@ namespace OpenScrape.App
         private void btnWindow_Click(object sender, EventArgs e)
         {
             Thread.Sleep(2000);
-            //_useCase.GetWindow();
+            _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
         }
 
         private void btnCreateImage_Click(object sender, EventArgs e)

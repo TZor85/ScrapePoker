@@ -78,6 +78,7 @@
             ckBoard = new CheckBox();
             btnCreateFont = new Button();
             btnPlay = new Button();
+            lbdealer = new Label();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbImageRegion).BeginInit();
@@ -588,11 +589,21 @@
             btnPlay.UseVisualStyleBackColor = true;
             btnPlay.Click += btnPlay_Click;
             // 
+            // lbdealer
+            // 
+            lbdealer.AutoSize = true;
+            lbdealer.Location = new Point(373, 300);
+            lbdealer.Name = "lbdealer";
+            lbdealer.Size = new Size(38, 15);
+            lbdealer.TabIndex = 54;
+            lbdealer.Text = "label9";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 515);
+            Controls.Add(lbdealer);
             Controls.Add(btnPlay);
             Controls.Add(btnCreateFont);
             Controls.Add(ckBoard);
@@ -678,5 +689,6 @@
         private TextBox tbY;
         private TextBox tbX;
         private Button btnPlay;
+        private Label lbdealer;
     }
 }
