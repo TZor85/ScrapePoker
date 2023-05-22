@@ -116,23 +116,7 @@ namespace OpenScrape.App.Forms
                         case "p2dealer":
                             if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P2Dealer = true;
-                            break;
-                        case "p1active":
-                            if (_colorActive.Contains(color.B))
-                                _scrapeResult.P1Active = true;
-                            break;
-                        case "p2active":
-                            if (_colorActive.Contains(color.B))
-                                _scrapeResult.P2Active = true;
-                            break;
-                        case "p1sit":
-                            if (_colorSit.Contains(color.B))
-                                _scrapeResult.P1Sit = true;
-                            break;
-                        case "p2sit":
-                            if (_colorSit.Contains(color.B))
-                                _scrapeResult.P2Sit = true;
-                            break;
+                            break;                        
                         default:
                             break;
                     }
@@ -152,15 +136,7 @@ namespace OpenScrape.App.Forms
 
                 switch (item.Name)
                 {
-                    case "p0chips":
-                        _scrapeResult.P0Chips = res.GetText();
-                        break;
-                    case "p1chips":
-                        _scrapeResult.P1Chips = res.GetText();
-                        break;
-                    case "p2chips":
-                        _scrapeResult.P2Chips = res.GetText();
-                        break;
+                   
                     case "p1bet":
                         resultText = res.GetText();
                         if (resultText.Replace("BB", "").Trim().Replace(" ", ",").Contains("Z"))
@@ -203,16 +179,15 @@ namespace OpenScrape.App.Forms
 
             GetActionsResponse getAction = new GetActionsResponse();
 
-            if (_scrapeResult.P1Sit && _scrapeResult.P2Sit)
-                getAction = GetAction3Handed().Data;
-            else
-                getAction = GetAction2Handed().Data;
+            
+            //getAction = GetAction3Handed().Data;            
+            //getAction = GetAction2Handed().Data;
 
 
             lbAction.Text = getAction.Action;
             _boardPlayerData.Aggressor = getAction.Style == Enums.Styles.Agresive;
             _boardPlayerData.InPosition = getAction.Position == Enums.Positions.InPosition;
-            _boardPlayerData.PreflopAction = getAction.PreflopAction;
+            
 
         }
 
@@ -238,10 +213,7 @@ namespace OpenScrape.App.Forms
             }
 
             var actions = new Dictionary<string, Action<string>>
-            {
-                {"p0chips", s => _scrapeResult.P0Chips = s},
-                {"p1chips", s => _scrapeResult.P1Chips = s},
-                {"p2chips", s => _scrapeResult.P2Chips = s},
+            {                
                 {"p1bet", s => _scrapeResult.P1Bet = ConvertBetValue(s)},
                 {"p2bet", s => _scrapeResult.P2Bet = ConvertBetValue(s)}
             };
@@ -317,22 +289,6 @@ namespace OpenScrape.App.Forms
                             if (_colorDealer.Contains(color.R))
                                 _scrapeResult.P2Dealer = true;
                             break;
-                        case "p1active":
-                            if (_colorActive.Contains(color.B))
-                                _scrapeResult.P1Active = true;
-                            break;
-                        case "p2active":
-                            if (_colorActive.Contains(color.B))
-                                _scrapeResult.P2Active = true;
-                            break;
-                        case "p1sit":
-                            if (_colorSit.Contains(color.B))
-                                _scrapeResult.P1Sit = true;
-                            break;
-                        case "p2sit":
-                            if (_colorSit.Contains(color.B))
-                                _scrapeResult.P2Sit = true;
-                            break;
                         default:
                             break;
                     }
@@ -372,10 +328,9 @@ namespace OpenScrape.App.Forms
 
             GetActionsResponse getAction = new GetActionsResponse();
 
-            if (_scrapeResult.P1Sit && _scrapeResult.P2Sit)
-                getAction = GetAction3Handed().Data;
-            else
-                getAction = GetAction2Handed().Data;
+            
+            //getAction = GetAction3Handed().Data;
+            //getAction = GetAction2Handed().Data;
 
             if (lbAction.InvokeRequired)
                 lbAction.Invoke(new MethodInvoker(Capture));
@@ -384,8 +339,7 @@ namespace OpenScrape.App.Forms
 
             _boardPlayerData.Aggressor = getAction.Style == Enums.Styles.Agresive;
             _boardPlayerData.InPosition = getAction.Position == Enums.Positions.InPosition;
-            _boardPlayerData.PreflopAction = getAction.PreflopAction;
-
+            
             _captureJet = true;
 
             //lbPosition.Text = _boardPlayerData.InPosition ? "IP" : "OOP";
@@ -429,11 +383,7 @@ namespace OpenScrape.App.Forms
                             Card1 = _scrapeResult.U0CardFace1,
                             EffectiveStack = double.Parse(_effectiveStack),
                             BetP1 = _scrapeResult.P1Bet,
-                            BetP2 = _scrapeResult.P2Bet,
-                            ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9").Replace(".", ",") : "0") : 0,
-                            ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9").Replace(".", ",") : "0") : 0,
-                            P1Active = _scrapeResult.P1Active,
-                            P2Active = _scrapeResult.P2Active
+                            BetP2 = _scrapeResult.P2Bet
                         });
 
                     return response;
@@ -447,11 +397,7 @@ namespace OpenScrape.App.Forms
                             Card1 = _scrapeResult.U0CardFace1,
                             EffectiveStack = double.Parse(_effectiveStack),
                             BetP1 = _scrapeResult.P1Bet,
-                            BetP2 = _scrapeResult.P2Bet,
-                            ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            P1Active = _scrapeResult.P1Active,
-                            P2Active = _scrapeResult.P2Active
+                            BetP2 = _scrapeResult.P2Bet
                         });
 
                     return response;
@@ -465,11 +411,7 @@ namespace OpenScrape.App.Forms
                             Card1 = _scrapeResult.U0CardFace1,
                             EffectiveStack = double.Parse(_effectiveStack),
                             BetP1 = _scrapeResult.P1Bet,
-                            BetP2 = _scrapeResult.P2Bet,
-                            ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            P1Active = _scrapeResult.P1Active,
-                            P2Active = _scrapeResult.P2Active
+                            BetP2 = _scrapeResult.P2Bet
                         });
 
                     return response;
@@ -505,11 +447,7 @@ namespace OpenScrape.App.Forms
                             Card1 = _scrapeResult.U0CardFace1,
                             EffectiveStack = double.Parse(_effectiveStack),
                             BetP1 = _scrapeResult.P1Bet,
-                            BetP2 = _scrapeResult.P2Bet,
-                            ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            P1Active = _scrapeResult.P1Active,
-                            P2Active = _scrapeResult.P2Active
+                            BetP2 = _scrapeResult.P2Bet
                         });
                 else
                     return _actions2HandedUseCase.ExecuteVsPlayer(
@@ -519,11 +457,7 @@ namespace OpenScrape.App.Forms
                             Card1 = _scrapeResult.U0CardFace1,
                             EffectiveStack = double.Parse(_effectiveStack),
                             BetP1 = _scrapeResult.P1Bet,
-                            BetP2 = _scrapeResult.P2Bet,
-                            ChipsP1 = _scrapeResult.P1Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P1Chips) && _scrapeResult.P1Chips.Contains("BB") ? _scrapeResult.P1Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            ChipsP2 = _scrapeResult.P2Active ? double.Parse(!string.IsNullOrWhiteSpace(_scrapeResult.P2Chips) && _scrapeResult.P2Chips.Contains("BB") ? _scrapeResult.P2Chips.Replace("BB", " ").Trim().Replace(" ", ".").Replace("O", "0").Replace("B", "9") : "0") : 0,
-                            P1Active = _scrapeResult.P1Active,
-                            P2Active = _scrapeResult.P2Active
+                            BetP2 = _scrapeResult.P2Bet
                         });
             }
             catch
@@ -656,17 +590,6 @@ namespace OpenScrape.App.Forms
 
             lbAction.Text = string.Empty;
 
-            _scrapeResult.B0Card1 = string.Empty;
-            _scrapeResult.B0Card2 = string.Empty;
-            _scrapeResult.B0Card3 = string.Empty;
-            _scrapeResult.B0Card4 = string.Empty;
-            _scrapeResult.B0Card5 = string.Empty;
-            _scrapeResult.B0CardForce1 = 0;
-            _scrapeResult.B0CardForce2 = 0;
-            _scrapeResult.B0CardForce3 = 0;
-            _scrapeResult.B0CardForce4 = 0;
-            _scrapeResult.B0CardForce5 = 0;
-
 
         }
 
@@ -674,9 +597,7 @@ namespace OpenScrape.App.Forms
         {
             if (lbP0Chips.InvokeRequired)
                 lbP0Chips.Invoke(new MethodInvoker(SetBoardValues));
-            else
-                lbP0Chips.Text = $"Chips: {_scrapeResult.P0Chips}";
-
+            
 
             if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
                 pbCard0.Image = Images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace0))!.Image;

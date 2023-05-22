@@ -26,7 +26,6 @@ namespace OpenScrape.App.Aplication.UseCases
                             response.Data.Action = list.Action;
                             response.Data.Style = list.Style;
                             response.Data.Position = list.Position;
-                            response.Data.PreflopAction = list.PreflopAction;
                         }
                     }
                 }
@@ -80,7 +79,6 @@ namespace OpenScrape.App.Aplication.UseCases
                             response.Data.Action = list.Action;
                             response.Data.Style = list.Style;
                             response.Data.Position = list.Position;
-                            response.Data.PreflopAction = list.PreflopAction;
                         }
                             
                     }
@@ -198,7 +196,6 @@ namespace OpenScrape.App.Aplication.UseCases
                             response.Data.Action = list.Action;
                             response.Data.Style = list.Style;
                             response.Data.Position = list.Position;
-                            response.Data.PreflopAction = list.PreflopAction;
                         }
                     }
                 }

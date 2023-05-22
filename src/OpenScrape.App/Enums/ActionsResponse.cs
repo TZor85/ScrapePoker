@@ -12,6 +12,16 @@ namespace OpenScrape.App.Enums
         public List<string> Hands { get; set; } = default!;
         public Styles Style { get; set; } = default!;
         public Positions Position { get; set; } = default!;
-        public PreflopAction PreflopAction { get; set; } = default!;
+        
     }
+
+    public enum HeroActions3Bet
+    {
+        AllIn,
+        FourBet,
+        Call,
+        MarginalCall,
+        Fold
+    }
+
 }

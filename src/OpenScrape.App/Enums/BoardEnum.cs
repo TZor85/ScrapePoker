@@ -5,10 +5,5 @@
         Coordinado,
         NoCoordinado
     }
-
-    public enum PreflopAction
-    {
-        LimpedPot,
-        RaisedPot
-    }
+        
 }

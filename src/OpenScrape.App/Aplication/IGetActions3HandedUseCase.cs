@@ -32,6 +32,5 @@ namespace OpenScrape.App.Aplication
         public string Action { get; set; } = "FOLD";
         public Styles Style { get; set; } = default!;
         public Positions Position { get; set; } = default!;
-        public PreflopAction PreflopAction { get; set; } = default!;
     }
 }

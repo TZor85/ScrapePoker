@@ -79,6 +79,7 @@
             btnCreateFont = new Button();
             btnPlay = new Button();
             lbdealer = new Label();
+            label9 = new Label();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbImageRegion).BeginInit();
@@ -598,11 +599,21 @@
             lbdealer.TabIndex = 54;
             lbdealer.Text = "label9";
             // 
+            // label9
+            // 
+            label9.AutoSize = true;
+            label9.Location = new Point(373, 329);
+            label9.Name = "label9";
+            label9.Size = new Size(38, 15);
+            label9.TabIndex = 55;
+            label9.Text = "label9";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 515);
+            Controls.Add(label9);
             Controls.Add(lbdealer);
             Controls.Add(btnPlay);
             Controls.Add(btnCreateFont);
@@ -690,5 +701,6 @@
         private TextBox tbX;
         private Button btnPlay;
         private Label lbdealer;
+        private Label label9;
     }
 }
