@@ -1,3 +1,4 @@
+using MediatR;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
@@ -53,8 +54,11 @@ namespace OpenScrape.App
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
         private readonly GetActions3HandedUseCase _actions3HandedUseCase = new GetActions3HandedUseCase();
         private readonly GetActions2HandedUseCase _actions2HandedUseCase = new GetActions2HandedUseCase();
+
+        private readonly IGetOpenRaiseUseCase _openRaiseUseCase = new GetOpenRaiseUseCase();
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
+        private readonly IMediator _mediator;
 
         public Form1()
         {
@@ -65,7 +69,7 @@ namespace OpenScrape.App
         {
             _formImage = new FormImage();
             cbSpeed.SelectedIndex = 0;
-
+            
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
         }
@@ -427,8 +431,15 @@ namespace OpenScrape.App
 
             }
 
+            //Comprobar si llega la mano sin subir
 
-            GetActionsResponse getAction = new GetActionsResponse();
+            var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+            {
+                Hand = "",
+                Position = _scrapeResult.P0Position
+            };
+
+            var response = _openRaiseUseCase.Execute(openRaiseCommand);
 
 
                         

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.Features
+namespace OpenScrape.App.Aplication.UseCases
 {
     public class BaseResponse
     {

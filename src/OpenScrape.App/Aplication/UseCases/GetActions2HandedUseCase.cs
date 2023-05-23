@@ -18,9 +18,8 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 //Suited
                 if (request.Card0[1] == request.Card1[1])
-                    responseList = Actions2Handed.GetOpenRaiseSuitedAction(request.EffectiveStack);
-                else
-                    responseList = Actions2Handed.GetOpenRaiseOffSuitedAction(request.EffectiveStack);
+                { }
+                    
 
                 foreach (var list in responseList)
                 {
@@ -31,7 +30,6 @@ namespace OpenScrape.App.Aplication.UseCases
                             response.Data.Action = list.Action;
                             response.Data.Style = list.Style;
                             response.Data.Position = list.Position;
-                            response.Data.PreflopAction = list.PreflopAction;
                         }
 
                     }
@@ -56,21 +54,11 @@ namespace OpenScrape.App.Aplication.UseCases
                 //Suited
                 if (request.Card0[1] == request.Card1[1])
                 {
-                    if (request.BetP1 == 1 || request.BetP2 == 1)
-                        responseList = Actions2Handed.GetVsLimpSuitedAction(request.EffectiveStack);
-                    else if ((request.BetP1 > 1 && request.ChipsP1 > 1) || (request.BetP2 > 1 && request.ChipsP2 > 1))
-                        responseList = Actions2Handed.GetVsOpenRaiseSuitedAction(request.EffectiveStack);
-                    else if ((request.BetP1 > 1 && request.ChipsP1 <= 1) || (request.BetP2 > 1 && request.ChipsP2 <= 1))
-                        responseList = Actions2Handed.GetVsAllInSuitedAction(request.EffectiveStack);
+                    
                 }
                 else
                 {
-                    if (request.BetP1 == 1 || request.BetP2 == 1)
-                        responseList = Actions2Handed.GetVsLimpOffSuitedAction(request.EffectiveStack);
-                    else if ((request.BetP1 > 1 && request.ChipsP1 > 1) || (request.BetP2 > 1 && request.ChipsP2 > 1))
-                        responseList = Actions2Handed.GetVsOpenRaiseOffSuitedAction(request.EffectiveStack);
-                    else if ((request.BetP1 > 1 && request.ChipsP1 <= 1) || (request.BetP2 > 1 && request.ChipsP2 <= 1))
-                        responseList = Actions2Handed.GetVsAllInOffSuitedAction(request.EffectiveStack);
+                   
                 }
 
                 foreach (var list in responseList)
@@ -82,7 +70,6 @@ namespace OpenScrape.App.Aplication.UseCases
                             response.Data.Action = list.Action;
                             response.Data.Style = list.Style;
                             response.Data.Position = list.Position;
-                            response.Data.PreflopAction = list.PreflopAction;
                         }
                     }
                 }
