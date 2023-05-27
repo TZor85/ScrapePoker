@@ -15,13 +15,4 @@ namespace OpenScrape.App.Enums
         
     }
 
-    public enum HeroActions3Bet
-    {
-        AllIn,
-        FourBet,
-        Call,
-        MarginalCall,
-        Fold
-    }
-
 }

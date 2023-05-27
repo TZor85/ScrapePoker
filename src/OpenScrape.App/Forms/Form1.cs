@@ -56,6 +56,9 @@ namespace OpenScrape.App
         private readonly GetActions2HandedUseCase _actions2HandedUseCase = new GetActions2HandedUseCase();
 
         private readonly IGetOpenRaiseUseCase _openRaiseUseCase = new GetOpenRaiseUseCase();
+        private readonly IGet3BetUseCase _threeBetUseCase = new Get3BetUseCase();
+
+
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
         private readonly IMediator _mediator;
@@ -433,16 +436,17 @@ namespace OpenScrape.App
 
             //Comprobar si llega la mano sin subir
 
-            var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+            var openRaiseCommand = new Get3BetUseCaseRequest
             {
-                Hand = "",
-                Position = _scrapeResult.P0Position
+                Hand = "K8s",
+                Position = HeroPosition.SmallBlind
             };
 
-            var response = _openRaiseUseCase.Execute(openRaiseCommand);
+            //var response = _openRaiseUseCase.Execute(openRaiseCommand);
+            var response = _threeBetUseCase.Execute(openRaiseCommand);
 
 
-                        
+
 
         }
 

@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Nancy;
+using OpenScrape.App.Enums;
+using OpenScrape.App.Tables;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,25 +13,20 @@ namespace OpenScrape.App.Aplication.UseCases
     {
         public Get3BetUseCaseResponse Execute(Get3BetUseCaseRequest request)
         {
-            throw new NotImplementedException();
-        }
+            var response = new Get3BetUseCaseResponse();
 
-        private static string GetRandomValue(Dictionary<string, double> values)
-        {
-            double totalPercentage = values.Sum(x => x.Value);
-            double randomValue = new Random().NextDouble() * totalPercentage;
-
-            double accumulatedPercentage = 0;
-            foreach (var kvp in values)
+            var action = request.Position switch
             {
-                accumulatedPercentage += kvp.Value;
-                if (randomValue < accumulatedPercentage)
-                {
-                    return kvp.Key;
-                }
-            }
+                HeroPosition.SmallBlind => Vs3Bet.GetSBvs3BetBB(request.Hand),
+                
+                _ => string.Empty
+            };
 
-            return string.Empty;
+            response.Action = action;
+
+
+            return response;
         }
+
     }
 }

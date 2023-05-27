@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Enums;
 
 namespace OpenScrape.App.Aplication
 {
     public class Get3BetUseCaseRequest
     {
-
+        public string Hand { get; set; } = default!;
+        public HeroPosition Position { get; set; }
+        public HeroPosition VillainPosition { get; set; }
     }
 
-    public class Get3BetUseCaseResponse
+    public class Get3BetUseCaseResponse : BaseResponse
     {
 
     }
