@@ -339,7 +339,7 @@ namespace OpenScrape.App
                     if (equalElements > maxEqual)
                         maxEqual = equalElements;
 
-                    if (maxEqual > max && maxEqual >= (1375 * 0.9))
+                    if (maxEqual > max && maxEqual >= (700 * 0.9))
                     {
                         switch (item.Name)
                         {
@@ -435,6 +435,15 @@ namespace OpenScrape.App
             }
 
             //Comprobar si llega la mano sin subir
+            if(_scrapeResult.P0Position == HeroPosition.SmallBlind)
+            {
+                if(_scrapeResult.P2Bet <= 1 || _scrapeResult.P3Bet <= 1 || _scrapeResult.P4Bet <= 1 || _scrapeResult.P5Bet <= 1)
+                {
+
+                }
+            }
+
+
 
             var openRaiseCommand = new Get3BetUseCaseRequest
             {
@@ -727,7 +736,7 @@ namespace OpenScrape.App
             List<bool> lResult = new List<bool>();
             var textHash = string.Empty;
             //create new image with 16x16 pixel
-            Bitmap bmpMin = new Bitmap(bmpSource, new Size(25, 55));
+            Bitmap bmpMin = new Bitmap(bmpSource, new Size(20, 35));
             for (int j = 0; j < bmpMin.Height; j++)
             {
                 for (int i = 0; i < bmpMin.Width; i++)

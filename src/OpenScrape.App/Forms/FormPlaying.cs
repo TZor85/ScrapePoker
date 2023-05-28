@@ -72,7 +72,7 @@ namespace OpenScrape.App.Forms
                     if (equalElements > maxEqual)
                         maxEqual = equalElements;
 
-                    if (maxEqual > max && maxEqual >= (1375 * 0.9))
+                    if (maxEqual > max && maxEqual >= (700 * 0.9))
                     {
                         switch (item.Name)
                         {
@@ -244,7 +244,7 @@ namespace OpenScrape.App.Forms
                     if (equalElements > maxEqual)
                         maxEqual = equalElements;
 
-                    if (maxEqual > max && maxEqual >= (1375 * 0.9))
+                    if (maxEqual > max && maxEqual >= (700 * 0.9))
                     {
                         switch (item.Name)
                         {
