@@ -80,9 +80,13 @@
             btnPlay = new Button();
             lbdealer = new Label();
             label9 = new Label();
+            pbCard1 = new PictureBox();
+            pbCard0 = new PictureBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbImageRegion).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
             SuspendLayout();
             // 
             // twRegions
@@ -608,11 +612,29 @@
             label9.TabIndex = 55;
             label9.Text = "label9";
             // 
+            // pbCard1
+            // 
+            pbCard1.Location = new Point(288, 433);
+            pbCard1.Name = "pbCard1";
+            pbCard1.Size = new Size(20, 35);
+            pbCard1.TabIndex = 57;
+            pbCard1.TabStop = false;
+            // 
+            // pbCard0
+            // 
+            pbCard0.Location = new Point(257, 433);
+            pbCard0.Name = "pbCard0";
+            pbCard0.Size = new Size(20, 35);
+            pbCard0.TabIndex = 56;
+            pbCard0.TabStop = false;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 515);
+            Controls.Add(pbCard1);
+            Controls.Add(pbCard0);
             Controls.Add(label9);
             Controls.Add(lbdealer);
             Controls.Add(btnPlay);
@@ -648,6 +670,8 @@
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pbImageRegion).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -702,5 +726,7 @@
         private Button btnPlay;
         private Label lbdealer;
         private Label label9;
+        private PictureBox pbCard1;
+        private PictureBox pbCard0;
     }
 }

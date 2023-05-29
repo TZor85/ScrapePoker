@@ -348,7 +348,7 @@ namespace OpenScrape.App.Forms
 
         private void btnWindow_Click(object sender, EventArgs e)
         {
-            //Thread.Sleep(2000);
+            Thread.Sleep(2000);
 
 
             _useCase.GetWindow(_formListApps.handle);

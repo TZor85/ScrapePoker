@@ -39,7 +39,7 @@ namespace OpenScrape.App
         List<KeyValuePair<string, string>> _imageList = new List<KeyValuePair<string, string>>();
 
         TableScrapeResult _scrapeResult = new TableScrapeResult();
-        
+
 
         private int _speed = 1;
         public string _newRegion = string.Empty;
@@ -72,7 +72,7 @@ namespace OpenScrape.App
         {
             _formImage = new FormImage();
             cbSpeed.SelectedIndex = 0;
-            
+
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
         }
@@ -323,7 +323,7 @@ namespace OpenScrape.App
                 GetImageWhilePlaying();
             }
 
-            _scrapeResult = new TableScrapeResult();            
+            _scrapeResult = new TableScrapeResult();
 
             foreach (var item in _regions.Where(x => x.IsHash))
             {
@@ -333,7 +333,7 @@ namespace OpenScrape.App
                 string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
 
                 foreach (var image in _images)
-                {                    
+                {
                     int equalElements = iHash1.Zip(image.Value, (i, j) => i == j).Count(eq => eq);
 
                     if (equalElements > maxEqual)
@@ -410,7 +410,7 @@ namespace OpenScrape.App
                 Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
 
                 var res = ocrengine.Process(img, area, PageSegMode.Auto);
-                
+
                 switch (item.Name)
                 {
                     case "p1bet":
@@ -419,7 +419,7 @@ namespace OpenScrape.App
                     case "p2bet":
                         _scrapeResult.P2Bet = SetBetValue(res);
                         break;
-                    case "p3bet":                        
+                    case "p3bet":
                         _scrapeResult.P3Bet = SetBetValue(res);
                         break;
                     case "p4bet":
@@ -461,16 +461,16 @@ namespace OpenScrape.App
                 // ...
             }
 
+            SetBoardValues();
 
+            //var openRaiseCommand = new Get3BetUseCaseRequest
+            //{
+            //    Hand = "K8s",
+            //    Position = HeroPosition.SmallBlind
+            //};
 
-            var openRaiseCommand = new Get3BetUseCaseRequest
-            {
-                Hand = "K8s",
-                Position = HeroPosition.SmallBlind
-            };
-
-            //var response = _openRaiseUseCase.Execute(openRaiseCommand);
-            var response = _threeBetUseCase.Execute(openRaiseCommand);
+            ////var response = _openRaiseUseCase.Execute(openRaiseCommand);
+            //var response = _threeBetUseCase.Execute(openRaiseCommand);
 
 
 
@@ -748,6 +748,18 @@ namespace OpenScrape.App
             return texto;
         }
 
+        private void SetBoardValues()
+        {
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
+                pbCard0.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace0))!.Image;
+            else
+                pbCard0.Image = null;
+
+            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
+                pbCard1.Image = _images.FirstOrDefault(x => x.Name.Contains(_scrapeResult.U0CardFace1))!.Image;
+            else
+                pbCard1.Image = null;
+        }
 
         public string GetHashImage(Bitmap bmpSource)
         {
