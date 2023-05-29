@@ -435,12 +435,30 @@ namespace OpenScrape.App
             }
 
             //Comprobar si llega la mano sin subir
-            if(_scrapeResult.P0Position == HeroPosition.SmallBlind)
+            Dictionary<HeroPosition, List<double>> positionBets = new Dictionary<HeroPosition, List<double>>()
             {
-                if(_scrapeResult.P2Bet <= 1 || _scrapeResult.P3Bet <= 1 || _scrapeResult.P4Bet <= 1 || _scrapeResult.P5Bet <= 1)
-                {
+                { HeroPosition.BigBlind, new List<double> { _scrapeResult.P1Bet, _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
+                { HeroPosition.SmallBlind, new List<double> { _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
+                { HeroPosition.Button, new List<double> { _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
+                { HeroPosition.CutOff, new List<double> { _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
+                { HeroPosition.MiddlePosition, new List<double> { _scrapeResult.P5Bet } }
+            };
 
+            if (positionBets.ContainsKey(_scrapeResult.P0Position))
+            {
+                List<double> bets = positionBets[_scrapeResult.P0Position];
+                bool anyBetBelowThreshold = bets.Any(b => b <= 1);
+
+                if (anyBetBelowThreshold)
+                {
+                    // Realiza las acciones necesarias si alguna apuesta es menor o igual a 1
+                    // ...
                 }
+            }
+            else if (_scrapeResult.P0Position == HeroPosition.EarlyPosition)
+            {
+                // Realiza las acciones necesarias para EarlyPosition
+                // ...
             }
 
 
