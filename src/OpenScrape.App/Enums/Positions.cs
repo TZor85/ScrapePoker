@@ -23,5 +23,13 @@ namespace OpenScrape.App.Enums
         EarlyPosition
     }
 
+    public enum TypePreflop
+    {
+        HandClean,
+        LimpedPot,
+        RaisedPot,
+        ThreeBetPot,
+        FourBetPot
+    }
     
 }

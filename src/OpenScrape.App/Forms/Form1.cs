@@ -434,8 +434,9 @@ namespace OpenScrape.App
 
             }
 
+
             //Comprobar si llega la mano sin subir
-            Dictionary<HeroPosition, List<double>> positionBets = new Dictionary<HeroPosition, List<double>>()
+            Dictionary<HeroPosition, List<double>> preflopHeroPosition = new Dictionary<HeroPosition, List<double>>()
             {
                 { HeroPosition.BigBlind, new List<double> { _scrapeResult.P1Bet, _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
                 { HeroPosition.SmallBlind, new List<double> { _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
@@ -444,37 +445,67 @@ namespace OpenScrape.App
                 { HeroPosition.MiddlePosition, new List<double> { _scrapeResult.P5Bet } }
             };
 
-            if (positionBets.ContainsKey(_scrapeResult.P0Position))
-            {
-                List<double> bets = positionBets[_scrapeResult.P0Position];
-                bool anyBetBelowThreshold = bets.Any(b => b <= 1);
+            var responseAction = new GetOpenRaiseUseCaseResponse();
 
-                if (anyBetBelowThreshold)
+            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            {
+                List<double> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                bool noneBet = bets.Any(b => b > 0);
+
+                if (!noneBet)
                 {
-                    // Realiza las acciones necesarias si alguna apuesta es menor o igual a 1
-                    // ...
+                    var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                    {
+                        Hand = SetHandValue(),
+                        Position = _scrapeResult.P0Position
+                    };
+
+                    responseAction = _openRaiseUseCase.Execute(openRaiseCommand);
                 }
             }
-            else if (_scrapeResult.P0Position == HeroPosition.EarlyPosition)
+
+
+            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition)
             {
-                // Realiza las acciones necesarias para EarlyPosition
-                // ...
+
+                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                {
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
+
+                var response = _openRaiseUseCase.Execute(openRaiseCommand);
+
             }
 
             SetBoardValues();
+            lbAction.Text = responseAction.Action;
 
-            //var openRaiseCommand = new Get3BetUseCaseRequest
-            //{
-            //    Hand = "K8s",
-            //    Position = HeroPosition.SmallBlind
-            //};
+
 
             ////var response = _openRaiseUseCase.Execute(openRaiseCommand);
             //var response = _threeBetUseCase.Execute(openRaiseCommand);
 
+        }
 
 
+        private string SetHandValue()
+        {
+            string hand = string.Empty;
 
+            if (_scrapeResult.U0CardForce0 >= _scrapeResult.U0CardForce1)
+                hand = $"{_scrapeResult.U0CardFace0[0]}{_scrapeResult.U0CardFace1[0]}";
+            else
+                hand = $"{_scrapeResult.U0CardFace1[0]}{_scrapeResult.U0CardFace0[0]}";
+
+
+            if (_scrapeResult.U0CardSuit0 == _scrapeResult.U0CardSuit1)
+                hand += "s";
+            else
+                hand += "o";
+
+
+            return hand;
         }
 
         private double SetBetValue(Page res)

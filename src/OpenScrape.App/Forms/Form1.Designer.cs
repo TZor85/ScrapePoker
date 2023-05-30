@@ -28,10 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            TreeNode treeNode1 = new TreeNode("Regions");
-            TreeNode treeNode2 = new TreeNode("Board");
-            TreeNode treeNode3 = new TreeNode("Images");
-            TreeNode treeNode4 = new TreeNode("Fonts");
+            TreeNode treeNode5 = new TreeNode("Regions");
+            TreeNode treeNode6 = new TreeNode("Board");
+            TreeNode treeNode7 = new TreeNode("Images");
+            TreeNode treeNode8 = new TreeNode("Fonts");
             twRegions = new TreeView();
             btnNew = new Button();
             btnPlusWidth = new Button();
@@ -79,7 +79,7 @@
             btnCreateFont = new Button();
             btnPlay = new Button();
             lbdealer = new Label();
-            label9 = new Label();
+            lbAction = new Label();
             pbCard1 = new PictureBox();
             pbCard0 = new PictureBox();
             groupBox1.SuspendLayout();
@@ -93,19 +93,19 @@
             // 
             twRegions.Location = new Point(12, 48);
             twRegions.Name = "twRegions";
-            treeNode1.Name = "Nodo0";
-            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode2.Text = "Board";
-            treeNode3.Name = "Nodo2";
-            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode3.Text = "Images";
-            treeNode4.Name = "Nodo3";
-            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode4.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
+            treeNode5.Name = "Nodo0";
+            treeNode5.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode5.Text = "Regions";
+            treeNode6.Name = "Nodo1";
+            treeNode6.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode6.Text = "Board";
+            treeNode7.Name = "Nodo2";
+            treeNode7.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode7.Text = "Images";
+            treeNode8.Name = "Nodo3";
+            treeNode8.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode8.Text = "Fonts";
+            twRegions.Nodes.AddRange(new TreeNode[] { treeNode5, treeNode6, treeNode7, treeNode8 });
             twRegions.Size = new Size(159, 342);
             twRegions.TabIndex = 0;
             twRegions.AfterSelect += twRegions_AfterSelect;
@@ -603,18 +603,19 @@
             lbdealer.TabIndex = 54;
             lbdealer.Text = "label9";
             // 
-            // label9
+            // lbAction
             // 
-            label9.AutoSize = true;
-            label9.Location = new Point(373, 329);
-            label9.Name = "label9";
-            label9.Size = new Size(38, 15);
-            label9.TabIndex = 55;
-            label9.Text = "label9";
+            lbAction.AutoSize = true;
+            lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            lbAction.Location = new Point(222, 467);
+            lbAction.Name = "lbAction";
+            lbAction.Size = new Size(57, 21);
+            lbAction.TabIndex = 55;
+            lbAction.Text = "label9";
             // 
             // pbCard1
             // 
-            pbCard1.Location = new Point(288, 433);
+            pbCard1.Location = new Point(288, 410);
             pbCard1.Name = "pbCard1";
             pbCard1.Size = new Size(20, 35);
             pbCard1.TabIndex = 57;
@@ -622,7 +623,7 @@
             // 
             // pbCard0
             // 
-            pbCard0.Location = new Point(257, 433);
+            pbCard0.Location = new Point(257, 410);
             pbCard0.Name = "pbCard0";
             pbCard0.Size = new Size(20, 35);
             pbCard0.TabIndex = 56;
@@ -635,7 +636,7 @@
             ClientSize = new Size(593, 515);
             Controls.Add(pbCard1);
             Controls.Add(pbCard0);
-            Controls.Add(label9);
+            Controls.Add(lbAction);
             Controls.Add(lbdealer);
             Controls.Add(btnPlay);
             Controls.Add(btnCreateFont);
@@ -725,7 +726,7 @@
         private TextBox tbX;
         private Button btnPlay;
         private Label lbdealer;
-        private Label label9;
+        private Label lbAction;
         private PictureBox pbCard1;
         private PictureBox pbCard0;
     }
