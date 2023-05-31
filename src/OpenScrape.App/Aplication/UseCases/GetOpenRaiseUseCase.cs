@@ -16,7 +16,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 HeroPosition.CutOff => OpenRaises.GetCutOffAction(request.Hand),
                 HeroPosition.MiddlePosition => OpenRaises.GetMiddleAction(request.Hand),
                 HeroPosition.EarlyPosition => OpenRaises.GetEarlyAction(request.Hand),
-                _ => "Fold"
+                _ => string.Empty
             };
 
             return response;

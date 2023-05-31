@@ -52,11 +52,12 @@ namespace OpenScrape.App
         private int _umbral = 100;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
-        private readonly GetActions3HandedUseCase _actions3HandedUseCase = new GetActions3HandedUseCase();
-        private readonly GetActions2HandedUseCase _actions2HandedUseCase = new GetActions2HandedUseCase();
+
 
         private readonly IGetOpenRaiseUseCase _openRaiseUseCase = new GetOpenRaiseUseCase();
+        private readonly IGetRaiseOverLimperUseCase _raiseOverLimperUseCase = new GetRaiseOverLimperUseCase();
         private readonly IGet3BetUseCase _threeBetUseCase = new Get3BetUseCase();
+
 
 
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
@@ -445,6 +446,67 @@ namespace OpenScrape.App
                 { HeroPosition.MiddlePosition, new List<double> { _scrapeResult.P5Bet } }
             };
 
+            var responseAction = string.Empty;
+                
+            responseAction = GetOpenRaiseAction(preflopHeroPosition);
+
+            if(responseAction is null)
+            {
+                responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
+            }
+
+            
+
+
+            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
+            {
+
+                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                {
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
+
+                var response = _openRaiseUseCase.Execute(openRaiseCommand);
+
+            }
+
+            SetBoardValues();
+            lbAction.Text = responseAction;
+            responseAction = string.Empty;
+
+
+            ////var response = _openRaiseUseCase.Execute(openRaiseCommand);
+            //var response = _threeBetUseCase.Execute(openRaiseCommand);
+
+        }
+
+        private string GetRaiseOverLimperAction(Dictionary<HeroPosition, List<double>> preflopHeroPosition)
+        {
+            var responseAction = new GetRaiseOverLimperUseCaseResponse();
+
+            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            {
+                List<double> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                bool noneBet = bets.Any(b => b == 1 && b <= 1);
+
+                if (noneBet)
+                {
+                    var openRaiseCommand = new GetRaiseOverLimperUseCaseRequest
+                    {
+                        Hand = SetHandValue(),
+                        Position = _scrapeResult.P0Position
+                    };
+
+                    responseAction = _raiseOverLimperUseCase.Execute(openRaiseCommand);
+                }
+            }
+
+            return responseAction.Action;
+        }
+
+        private string GetOpenRaiseAction(Dictionary<HeroPosition, List<double>> preflopHeroPosition)
+        {
             var responseAction = new GetOpenRaiseUseCaseResponse();
 
             if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
@@ -464,30 +526,8 @@ namespace OpenScrape.App
                 }
             }
 
-
-            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition)
-            {
-
-                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
-                {
-                    Hand = SetHandValue(),
-                    Position = _scrapeResult.P0Position
-                };
-
-                var response = _openRaiseUseCase.Execute(openRaiseCommand);
-
-            }
-
-            SetBoardValues();
-            lbAction.Text = responseAction.Action;
-
-
-
-            ////var response = _openRaiseUseCase.Execute(openRaiseCommand);
-            //var response = _threeBetUseCase.Execute(openRaiseCommand);
-
+            return responseAction.Action;
         }
-
 
         private string SetHandValue()
         {

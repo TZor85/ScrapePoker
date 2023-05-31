@@ -4,10 +4,9 @@ using OpenScrape.App.Enums;
 
 namespace OpenScrape.App.Aplication
 {
-    public class GetOpenRaiseUseCaseRequest
+    public class GetOpenRaiseUseCaseRequest : BaseRequest
     {
-        public string Hand { get; set; } = default!;
-        public HeroPosition Position { get; set; }
+        
     }
 
     public class GetOpenRaiseUseCaseResponse : BaseResponse { }
