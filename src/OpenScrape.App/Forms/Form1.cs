@@ -363,46 +363,6 @@ namespace OpenScrape.App
                 }
             }
 
-            foreach (var item in _regions.Where(x => x.IsColor))
-            {
-                if (_formImage.pbImagen.Image == null)
-                    continue;
-
-                Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
-                var rgbColor = color.Name.Substring(2, 6);
-
-                if (_colorDealer.Contains(color.R))
-                {
-                    switch (item.Name)
-                    {
-                        case "p0dealer":
-                            _scrapeResult.P0Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.Button;
-                            break;
-                        case "p1dealer":
-                            _scrapeResult.P1Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.CutOff;
-                            break;
-                        case "p2dealer":
-                            _scrapeResult.P2Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.MiddlePosition;
-                            break;
-                        case "p3dealer":
-                            _scrapeResult.P3Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-                            break;
-                        case "p4dealer":
-                            _scrapeResult.P4Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.BigBlind;
-                            break;
-                        case "p5dealer":
-                            _scrapeResult.P5Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.SmallBlind;
-                            break;
-                    }
-                }
-            }
-
             var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
 
             foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash))
@@ -434,6 +394,64 @@ namespace OpenScrape.App
                 }
 
             }
+
+            foreach (var item in _regions.Where(x => x.IsColor))
+            {
+                if (_formImage.pbImagen.Image == null)
+                    continue;
+
+                Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
+                var rgbColor = color.Name.Substring(2, 6);
+
+                if (_colorDealer.Contains(color.R))
+                {
+                    switch (item.Name)
+                    {
+                        case "p0dealer":
+                            _scrapeResult.P0Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.Button;
+                            break;
+                        case "p1dealer":
+                            _scrapeResult.P1Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.CutOff;
+
+                            if (_scrapeResult.P3Bet != 1)
+                                _scrapeResult.P0Position = HeroPosition.MiddlePosition;
+                            
+                            break;
+                        case "p2dealer":
+                            _scrapeResult.P2Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.MiddlePosition;
+
+                            if (_scrapeResult.P4Bet != 1)
+                                _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+
+                            break;
+                        case "p3dealer":
+                            _scrapeResult.P3Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+
+                            if (_scrapeResult.P5Bet != 1)
+                                _scrapeResult.P0Position = HeroPosition.BigBlind;
+
+                            break;
+                        case "p4dealer":
+                            _scrapeResult.P4Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.BigBlind;
+
+                            if(_scrapeResult.P5Bet != 1)
+                                _scrapeResult.P0Position = HeroPosition.SmallBlind;
+
+                            break;
+                        case "p5dealer":
+                            _scrapeResult.P5Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                            break;
+                    }
+                }
+            }
+
+            
 
 
             //Comprobar si llega la mano sin subir
