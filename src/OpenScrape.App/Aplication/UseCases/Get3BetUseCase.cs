@@ -11,7 +11,7 @@ namespace OpenScrape.App.Aplication.UseCases
 
             var action = request.Position switch
             {
-                HeroPosition.SmallBlind => Vs3Bet.GetSBvs3BetBB(request.Hand),
+                HeroPosition.SmallBlind => VsOpenRaise.GetOpenRaiseSBvsBB(request.Hand),
                 
                 _ => string.Empty
             };
