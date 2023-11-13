@@ -34,7 +34,7 @@ namespace OpenScrape.App
 
         #endregion
 
-        Image _img = null;
+        Image? _img = null;
 
         List<KeyValuePair<string, string>> _imageList = new List<KeyValuePair<string, string>>();
 
@@ -46,8 +46,16 @@ namespace OpenScrape.App
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
-        private List<int> _colorActive = new List<int> { 33, 34, 35, 36, 37 };
+        private List<int> _colorEmpty = new List<int> { 16, 19, 59, 61, 63 };
+        private List<int> _colorSitOut = new List<int> { 5, 17, 18 };
+        private List<int> _colorActive = new List<int> { 32, 33, 34, 35, 36, 37 };
         private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
+
+        private bool p1IsSitOut = false;
+        private bool p2IsSitOut = false;
+        private bool p3IsSitOut = false;
+        private bool p4IsSitOut = false;
+        private bool p5IsSitOut = false;
 
         private int _umbral = 100;
 
@@ -221,9 +229,9 @@ namespace OpenScrape.App
 
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
             {
-                _locImage = _images.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                _locImage = _images?.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text) ?? new ImageRegion();
 
-                pbImageRegion.Image = _images.FirstOrDefault(x => x.Name == name).Image;
+                pbImageRegion.Image = _images?.FirstOrDefault(x => x.Name == name)?.Image;
                 ckColor.Enabled = false;
                 ckBoard.Enabled = false;
 
@@ -403,16 +411,105 @@ namespace OpenScrape.App
                 Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
                 var rgbColor = color.Name.Substring(2, 6);
 
+                if (!item.Name.Contains("dealer"))
+                {
+                    if (_colorEmpty.Contains(color.B))
+                    {
+                        switch (item.Name)
+                        {
+                            case "p1sitout":
+                                if(!_scrapeResult.P1Dealer)
+                                    _scrapeResult.P1Empty = true;
+                                break;
+                            case "p2sitout":
+                                if (!_scrapeResult.P2Dealer)
+                                    _scrapeResult.P2Empty = true;
+                                break;
+                            case "p3sitout":
+                                if (!_scrapeResult.P3Dealer)
+                                    _scrapeResult.P3Empty = true;
+                                break;
+                            case "p4sitout":
+                                if (!_scrapeResult.P4Dealer)
+                                    _scrapeResult.P4Empty = true;
+                                break;
+                            case "p5sitout":
+                                if (!_scrapeResult.P5Dealer)
+                                    _scrapeResult.P5Empty = true;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (_colorSitOut.Contains(color.B))
+                    {
+                        switch (item.Name)
+                        {
+                            case "p1sitout":
+                                if(!_scrapeResult.P1Empty)
+                                    p1IsSitOut = true;
+                                break;
+                            case "p2sitout":
+                                if (!_scrapeResult.P2Empty)
+                                    p2IsSitOut = true;
+                                break;
+                            case "p3sitout":
+                                if (!_scrapeResult.P3Empty)
+                                    p3IsSitOut = true;
+                                break;
+                            case "p4sitout":
+                                if (!_scrapeResult.P4Empty)
+                                    p4IsSitOut = true;
+                                break;
+                            case "p5sitout":
+                                if (!_scrapeResult.P5Empty)
+                                    p5IsSitOut = true;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    if (!_colorSitOut.Contains(color.B) && (p1IsSitOut || p2IsSitOut || p3IsSitOut || p4IsSitOut || p5IsSitOut))
+                    {
+                        switch (item.Name)
+                        {
+                            case "p1sitout2":
+                                if(p1IsSitOut && !_scrapeResult.P1Empty)
+                                    _scrapeResult.P1SitOut = true;
+                                break;
+                            case "p2sitout2":
+                                if (p2IsSitOut && !_scrapeResult.P2Empty)
+                                    _scrapeResult.P2SitOut = true;
+                                break;
+                            case "p3sitout2":
+                                if (p3IsSitOut && !_scrapeResult.P3Empty)
+                                    _scrapeResult.P3SitOut = true;
+                                break;
+                            case "p4sitout2":
+                                if (p4IsSitOut && !_scrapeResult.P4Empty)
+                                    _scrapeResult.P4SitOut = true;
+                                break;
+                            case "p5sitout2":
+                                if (p5IsSitOut && !_scrapeResult.P5Empty)
+                                    _scrapeResult.P5SitOut = true;
+                                break;
+                        }
+                    }
+                }
+
                 if (_colorDealer.Contains(color.R))
                 {
                     switch (item.Name)
                     {
                         case "p0dealer":
-                            _scrapeResult.P0Dealer = true;
+                            _scrapeResult.P0Dealer = true;                            
                             _scrapeResult.P0Position = HeroPosition.Button;
                             break;
                         case "p1dealer":
                             _scrapeResult.P1Dealer = true;
+                            _scrapeResult.P1Empty = false;
                             _scrapeResult.P0Position = HeroPosition.CutOff;
 
                             if (_scrapeResult.P3Bet != 1)
@@ -421,6 +518,7 @@ namespace OpenScrape.App
                             break;
                         case "p2dealer":
                             _scrapeResult.P2Dealer = true;
+                            _scrapeResult.P2Empty = false;
                             _scrapeResult.P0Position = HeroPosition.MiddlePosition;
 
                             if (_scrapeResult.P4Bet != 1)
@@ -429,6 +527,7 @@ namespace OpenScrape.App
                             break;
                         case "p3dealer":
                             _scrapeResult.P3Dealer = true;
+                            _scrapeResult.P3Empty = false;
                             _scrapeResult.P0Position = HeroPosition.EarlyPosition;
 
                             if (_scrapeResult.P5Bet != 1)
@@ -437,6 +536,7 @@ namespace OpenScrape.App
                             break;
                         case "p4dealer":
                             _scrapeResult.P4Dealer = true;
+                            _scrapeResult.P4Empty = false;
                             _scrapeResult.P0Position = HeroPosition.BigBlind;
 
                             if(_scrapeResult.P5Bet != 1)
@@ -445,13 +545,12 @@ namespace OpenScrape.App
                             break;
                         case "p5dealer":
                             _scrapeResult.P5Dealer = true;
+                            _scrapeResult.P5Empty = false;
                             _scrapeResult.P0Position = HeroPosition.SmallBlind;
                             break;
                     }
                 }
             }
-
-            
 
 
             //Comprobar si llega la mano sin subir
@@ -474,8 +573,6 @@ namespace OpenScrape.App
             }
 
             
-
-
             if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
             {
 

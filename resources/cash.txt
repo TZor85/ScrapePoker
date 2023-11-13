@@ -16,6 +16,16 @@ r$p4bet # 720 - 268 - 90 - 15 & False & False & False &
 r$p5bet # 653 - 453 - 90 - 15 & False & False & False & 
 r$u0cardface0 # 446 - 496 - 20 - 35 & True & False & False & 
 r$u0cardface1 # 513 - 496 - 20 - 35 & True & False & False & 
+r$p1sitout # 175 - 510 - 1 - 1 & False & True & False & 051813
+r$p1sitout2 # 213 - 483 - 1 - 1 & False & True & False & 1f1f1f
+r$p2sitout # 95 - 210 - 1 - 1 & False & True & False & 114a3b
+r$p2sitout2 # 130 - 182 - 1 - 1 & False & True & False & 104838
+r$p3sitout # 476 - 131 - 1 - 1 & False & True & False & 12503f
+r$p3sitout2 # 511 - 104 - 1 - 1 & False & True & False & 104839
+r$p4sitout # 859 - 210 - 1 - 1 & False & True & False & 114e3d
+r$p4sitout2 # 893 - 184 - 1 - 1 & False & True & False & 104839
+r$p5sitout # 777 - 511 - 1 - 1 & False & True & False & 121010
+r$p5sitout2 # 810 - 484 - 1 - 1 & False & True & False & 121010
 
 //
 // Fonts

@@ -15,6 +15,16 @@ namespace OpenScrape.App.Entities
         public bool P3Dealer { get; set; }
         public bool P4Dealer { get; set; }
         public bool P5Dealer { get; set; }
+        public bool P1SitOut { get; set; }
+        public bool P2SitOut { get; set; }
+        public bool P3SitOut { get; set; }
+        public bool P4SitOut { get; set; }
+        public bool P5SitOut { get; set; }
+        public bool P1Empty { get; set; }
+        public bool P2Empty { get; set; }
+        public bool P3Empty { get; set; }
+        public bool P4Empty { get; set; }
+        public bool P5Empty { get; set; }
         public string U0CardFace0 { get; set; } = string.Empty;
         public string U0CardFace1 { get; set; } = string.Empty;
         public int U0CardForce0 { get; set; } = 0;
