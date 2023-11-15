@@ -46,8 +46,8 @@ namespace OpenScrape.App
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
-        private List<int> _colorEmpty = new List<int> { 16, 19, 59, 61, 63 };
-        private List<int> _colorSitOut = new List<int> { 5, 17, 18 };
+        private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 68, 69 };
+        private List<int> _colorSitOut = new List<int> { 5, 17, 18, 19, 20 };
         private List<int> _colorActive = new List<int> { 32, 33, 34, 35, 36, 37 };
         private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
 
@@ -57,7 +57,7 @@ namespace OpenScrape.App
         private bool p4IsSitOut = false;
         private bool p5IsSitOut = false;
 
-        private int _umbral = 100;
+        private int _umbral = 0;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
 
@@ -224,14 +224,12 @@ namespace OpenScrape.App
                 ckColor.Checked = region.IsColor;
                 ckBoard.Enabled = true;
                 ckBoard.Checked = region.IsBoard;
-                pbImageRegion.Image = null;
             }
 
             if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
             {
                 _locImage = _images?.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text) ?? new ImageRegion();
 
-                pbImageRegion.Image = _images?.FirstOrDefault(x => x.Name == name)?.Image;
                 ckColor.Enabled = false;
                 ckBoard.Enabled = false;
 
@@ -418,7 +416,7 @@ namespace OpenScrape.App
                         switch (item.Name)
                         {
                             case "p1sitout":
-                                if(!_scrapeResult.P1Dealer)
+                                if (!_scrapeResult.P1Dealer)
                                     _scrapeResult.P1Empty = true;
                                 break;
                             case "p2sitout":
@@ -447,7 +445,7 @@ namespace OpenScrape.App
                         switch (item.Name)
                         {
                             case "p1sitout":
-                                if(!_scrapeResult.P1Empty)
+                                if (!_scrapeResult.P1Empty)
                                     p1IsSitOut = true;
                                 break;
                             case "p2sitout":
@@ -476,7 +474,7 @@ namespace OpenScrape.App
                         switch (item.Name)
                         {
                             case "p1sitout2":
-                                if(p1IsSitOut && !_scrapeResult.P1Empty)
+                                if (p1IsSitOut && !_scrapeResult.P1Empty)
                                     _scrapeResult.P1SitOut = true;
                                 break;
                             case "p2sitout2":
@@ -504,7 +502,7 @@ namespace OpenScrape.App
                     switch (item.Name)
                     {
                         case "p0dealer":
-                            _scrapeResult.P0Dealer = true;                            
+                            _scrapeResult.P0Dealer = true;
                             _scrapeResult.P0Position = HeroPosition.Button;
                             break;
                         case "p1dealer":
@@ -514,7 +512,7 @@ namespace OpenScrape.App
 
                             if (_scrapeResult.P3Bet != 1)
                                 _scrapeResult.P0Position = HeroPosition.MiddlePosition;
-                            
+
                             break;
                         case "p2dealer":
                             _scrapeResult.P2Dealer = true;
@@ -539,7 +537,7 @@ namespace OpenScrape.App
                             _scrapeResult.P4Empty = false;
                             _scrapeResult.P0Position = HeroPosition.BigBlind;
 
-                            if(_scrapeResult.P5Bet != 1)
+                            if (_scrapeResult.P5Bet != 1)
                                 _scrapeResult.P0Position = HeroPosition.SmallBlind;
 
                             break;
@@ -552,6 +550,19 @@ namespace OpenScrape.App
                 }
             }
 
+            var enMesa = 1;
+            if (!_scrapeResult.P1Empty)
+                enMesa++;
+            if (!_scrapeResult.P2Empty)
+                enMesa++;
+            if (!_scrapeResult.P3Empty)
+                enMesa++;
+            if (!_scrapeResult.P4Empty)
+                enMesa++;
+            if (!_scrapeResult.P5Empty)
+                enMesa++;
+
+            label5.Text = enMesa.ToString();
 
             //Comprobar si llega la mano sin subir
             Dictionary<HeroPosition, List<double>> preflopHeroPosition = new Dictionary<HeroPosition, List<double>>()
@@ -564,15 +575,15 @@ namespace OpenScrape.App
             };
 
             var responseAction = string.Empty;
-                
+
             responseAction = GetOpenRaiseAction(preflopHeroPosition);
 
-            if(responseAction is null)
+            if (responseAction is null)
             {
                 responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
             }
 
-            
+
             if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
             {
 
@@ -752,9 +763,7 @@ namespace OpenScrape.App
 
                 if (ckColor.Checked)
                 {
-                    tbR.Text = rgbResponse.RColor;
-                    tbG.Text = rgbResponse.GColor;
-                    tbB.Text = rgbResponse.BColor;
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
                 }
 
                 if (region != null)
@@ -772,8 +781,6 @@ namespace OpenScrape.App
                 var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
 
                 tbR.Text = string.Empty;
-                tbG.Text = string.Empty;
-                tbB.Text = string.Empty;
 
                 if (region != null)
                     region.IsColor = false;
@@ -1063,9 +1070,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.X += _speed;
@@ -1099,9 +1104,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.X -= _speed;
@@ -1136,9 +1139,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y += _speed;
@@ -1172,9 +1173,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y -= _speed;
@@ -1207,9 +1206,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y -= _speed;
@@ -1243,9 +1240,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y -= _speed;
@@ -1279,9 +1274,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y += _speed;
@@ -1315,9 +1308,7 @@ namespace OpenScrape.App
 
             if (ckColor.Checked)
             {
-                tbR.Text = rgbResponse.RColor;
-                tbG.Text = rgbResponse.GColor;
-                tbB.Text = rgbResponse.BColor;
+                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
             }
 
             _locRegion.Y += _speed;

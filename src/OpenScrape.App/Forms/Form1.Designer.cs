@@ -28,10 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            TreeNode treeNode5 = new TreeNode("Regions");
-            TreeNode treeNode6 = new TreeNode("Board");
-            TreeNode treeNode7 = new TreeNode("Images");
-            TreeNode treeNode8 = new TreeNode("Fonts");
+            TreeNode treeNode1 = new TreeNode("Regions");
+            TreeNode treeNode2 = new TreeNode("Board");
+            TreeNode treeNode3 = new TreeNode("Images");
+            TreeNode treeNode4 = new TreeNode("Fonts");
             twRegions = new TreeView();
             btnNew = new Button();
             btnPlusWidth = new Button();
@@ -65,26 +65,20 @@
             btnDelete = new Button();
             btnCreateImage = new Button();
             btnWindow = new Button();
-            pbImageRegion = new PictureBox();
             ckColor = new CheckBox();
             tbR = new TextBox();
-            label4 = new Label();
-            label5 = new Label();
-            tbG = new TextBox();
-            label6 = new Label();
-            tbB = new TextBox();
             label8 = new Label();
             cbTest = new CheckBox();
             ckBoard = new CheckBox();
             btnCreateFont = new Button();
             btnPlay = new Button();
-            lbdealer = new Label();
             lbAction = new Label();
             pbCard1 = new PictureBox();
             pbCard0 = new PictureBox();
+            label4 = new Label();
+            label5 = new Label();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pbImageRegion).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
             SuspendLayout();
@@ -93,19 +87,19 @@
             // 
             twRegions.Location = new Point(12, 48);
             twRegions.Name = "twRegions";
-            treeNode5.Name = "Nodo0";
-            treeNode5.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode5.Text = "Regions";
-            treeNode6.Name = "Nodo1";
-            treeNode6.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode6.Text = "Board";
-            treeNode7.Name = "Nodo2";
-            treeNode7.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode7.Text = "Images";
-            treeNode8.Name = "Nodo3";
-            treeNode8.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode8.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode5, treeNode6, treeNode7, treeNode8 });
+            treeNode1.Name = "Nodo0";
+            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode1.Text = "Regions";
+            treeNode2.Name = "Nodo1";
+            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode2.Text = "Board";
+            treeNode3.Name = "Nodo2";
+            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode3.Text = "Images";
+            treeNode4.Name = "Nodo3";
+            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode4.Text = "Fonts";
+            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
             twRegions.Size = new Size(159, 342);
             twRegions.TabIndex = 0;
             twRegions.AfterSelect += twRegions_AfterSelect;
@@ -472,14 +466,6 @@
             btnWindow.UseVisualStyleBackColor = true;
             btnWindow.Click += btnWindow_Click;
             // 
-            // pbImageRegion
-            // 
-            pbImageRegion.Location = new Point(177, 217);
-            pbImageRegion.Name = "pbImageRegion";
-            pbImageRegion.Size = new Size(159, 97);
-            pbImageRegion.TabIndex = 24;
-            pbImageRegion.TabStop = false;
-            // 
             // ckColor
             // 
             ckColor.AutoSize = true;
@@ -495,58 +481,15 @@
             // tbR
             // 
             tbR.Enabled = false;
-            tbR.Location = new Point(222, 173);
+            tbR.Location = new Point(222, 154);
             tbR.Name = "tbR";
-            tbR.Size = new Size(29, 23);
+            tbR.Size = new Size(85, 23);
             tbR.TabIndex = 32;
-            // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new Point(229, 155);
-            label4.Name = "label4";
-            label4.Size = new Size(14, 15);
-            label4.TabIndex = 33;
-            label4.Text = "R";
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.Location = new Point(264, 155);
-            label5.Name = "label5";
-            label5.Size = new Size(15, 15);
-            label5.TabIndex = 35;
-            label5.Text = "G";
-            // 
-            // tbG
-            // 
-            tbG.Enabled = false;
-            tbG.Location = new Point(257, 173);
-            tbG.Name = "tbG";
-            tbG.Size = new Size(29, 23);
-            tbG.TabIndex = 34;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Location = new Point(299, 155);
-            label6.Name = "label6";
-            label6.Size = new Size(14, 15);
-            label6.TabIndex = 37;
-            label6.Text = "B";
-            // 
-            // tbB
-            // 
-            tbB.Enabled = false;
-            tbB.Location = new Point(292, 173);
-            tbB.Name = "tbB";
-            tbB.Size = new Size(29, 23);
-            tbB.TabIndex = 36;
             // 
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(177, 176);
+            label8.Location = new Point(177, 157);
             label8.Name = "label8";
             label8.Size = new Size(36, 15);
             label8.TabIndex = 39;
@@ -594,15 +537,6 @@
             btnPlay.UseVisualStyleBackColor = true;
             btnPlay.Click += btnPlay_Click;
             // 
-            // lbdealer
-            // 
-            lbdealer.AutoSize = true;
-            lbdealer.Location = new Point(373, 300);
-            lbdealer.Name = "lbdealer";
-            lbdealer.Size = new Size(38, 15);
-            lbdealer.TabIndex = 54;
-            lbdealer.Text = "label9";
-            // 
             // lbAction
             // 
             lbAction.AutoSize = true;
@@ -629,15 +563,34 @@
             pbCard0.TabIndex = 56;
             pbCard0.TabStop = false;
             // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(187, 214);
+            label4.Name = "label4";
+            label4.Size = new Size(125, 15);
+            label4.TabIndex = 58;
+            label4.Text = "Jugadores en la mesa: ";
+            // 
+            // label5
+            // 
+            label5.AutoSize = true;
+            label5.Location = new Point(317, 214);
+            label5.Name = "label5";
+            label5.Size = new Size(38, 15);
+            label5.TabIndex = 59;
+            label5.Text = "label5";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 515);
+            Controls.Add(label5);
+            Controls.Add(label4);
             Controls.Add(pbCard1);
             Controls.Add(pbCard0);
             Controls.Add(lbAction);
-            Controls.Add(lbdealer);
             Controls.Add(btnPlay);
             Controls.Add(btnCreateFont);
             Controls.Add(ckBoard);
@@ -645,14 +598,8 @@
             Controls.Add(label8);
             Controls.Add(btnCapture);
             Controls.Add(btnWindow);
-            Controls.Add(label6);
-            Controls.Add(tbB);
-            Controls.Add(label5);
-            Controls.Add(tbG);
-            Controls.Add(label4);
             Controls.Add(tbR);
             Controls.Add(ckColor);
-            Controls.Add(pbImageRegion);
             Controls.Add(btnCreateImage);
             Controls.Add(btnDelete);
             Controls.Add(groupBox2);
@@ -670,7 +617,6 @@
             groupBox1.PerformLayout();
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pbImageRegion).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
             ResumeLayout(false);
@@ -707,15 +653,9 @@
         private Button btnDelete;
         private Button btnCreateImage;
         private Button btnWindow;
-        private PictureBox pbImageRegion;
         private Label lbXY;
         private CheckBox ckColor;
         private TextBox tbR;
-        private Label label4;
-        private Label label5;
-        private TextBox tbG;
-        private Label label6;
-        private TextBox tbB;
         private Label label8;
         private CheckBox cbTest;
         private CheckBox ckBoard;
@@ -725,9 +665,12 @@
         private TextBox tbY;
         private TextBox tbX;
         private Button btnPlay;
-        private Label lbdealer;
         private Label lbAction;
         private PictureBox pbCard1;
         private PictureBox pbCard0;
+        private Label label4;
+        private Label label5;
+        private Label label6;
+        private Label label9;
     }
 }
