@@ -1,6 +1,5 @@
 ﻿using OpenScrape.App.Helpers;
 using System.Drawing.Imaging;
-using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 
 namespace OpenScrape.App.Aplication.UseCases
 {

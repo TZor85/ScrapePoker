@@ -3,7 +3,6 @@ using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Enums;
-using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
@@ -19,7 +18,6 @@ namespace OpenScrape.App
         FormCreateImage _formCreateImage;
         FormCreateFont _formCreateFont;
         FormImage _formImage;
-        FormPlaying _formPlaying;
         Graphics _papel;
         #endregion
 
@@ -47,17 +45,11 @@ namespace OpenScrape.App
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 68, 69 };
-        private List<int> _colorSitOut = new List<int> { 5, 17, 18, 19, 20 };
-        private List<int> _colorActive = new List<int> { 32, 33, 34, 35, 36, 37 };
+        private List<int> _colorSitOut = new List<int> { 5, 6, 7, 8, 9, 10, 17, 18, 19, 20 };
+        private List<int> _colorPlaying = new List<int> { 32, 33, 34 };
         private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
 
-        private bool p1IsSitOut = false;
-        private bool p2IsSitOut = false;
-        private bool p3IsSitOut = false;
-        private bool p4IsSitOut = false;
-        private bool p5IsSitOut = false;
-
-        private int _umbral = 0;
+        private int _umbral = 130;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
 
@@ -95,25 +87,6 @@ namespace OpenScrape.App
             _formRegions.Show();
 
         }
-
-        private void btnPlay_Click(object sender, EventArgs e)
-        {
-            _formPlaying = new FormPlaying();
-
-            _formPlaying.Checked = cbTest.Checked;
-            _formPlaying.FormImage = _formImage;
-            _formPlaying.Regions = _regions;
-            _formPlaying.Images = _images;
-            _formPlaying.Fonts = _fonts;
-            _formPlaying.ImagesBoard = _imagesBoard;
-
-
-            _formPlaying.Show();
-            this.WindowState = FormWindowState.Minimized;
-        }
-
-
-
         public void Execute(List<FontRegion> fonts)
         {
             var node = twRegions.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
@@ -324,14 +297,323 @@ namespace OpenScrape.App
 
         private void btnCapture_Click(object sender, EventArgs e)
         {
-
+            lbAction.Text = string.Empty;
             if (!cbTest.Checked)
             {
                 GetImageWhilePlaying();
             }
 
             _scrapeResult = new TableScrapeResult();
+            ObtainCardsPlayer();
 
+            foreach (var item in _regions.Where(x => x.IsColor))
+            {
+                if (_formImage.pbImagen.Image == null)
+                    continue;
+
+                Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
+                var rgbColor = color.Name.Substring(2, 6);
+
+
+                if (!item.Name.Contains("dealer"))
+                {
+                    //Setear el jugador activo/desactivo
+                    switch (item.Name)
+                    {
+                        case "p1playing":
+                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P1", Active = true, Empty = false, SitOut = false });
+                            else
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P1", Active = false, Empty = false, SitOut = false });
+                            break;
+                        case "p2playing":
+                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P2", Active = true, Empty = false, SitOut = false });
+                            else
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P2", Active = false, Empty = false, SitOut = false });
+                            break;
+                        case "p3playing":
+                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P3", Active = true, Empty = false, SitOut = false });
+                            else
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P3", Active = false, Empty = false, SitOut = false });
+                            break;
+                        case "p4playing":
+                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P4", Active = true, Empty = false, SitOut = false });
+                            else
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P4", Active = false, Empty = false, SitOut = false });
+                            break;
+                        case "p5playing":
+                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P5", Active = true, Empty = false, SitOut = false });
+                            else
+                                _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P5", Active = false, Empty = false, SitOut = false });
+                            break;
+                    }
+
+                    //Setear el jugador vacio
+                    if (_colorEmpty.Contains(color.B))
+                    {
+                        switch (item.Name)
+                        {
+                            case "p1sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P1").Dealer)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
+                                break;
+                            case "p2sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P2").Dealer)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
+                                break;
+                            case "p3sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P3").Dealer)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
+                                break;
+                            case "p4sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P4").Dealer)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
+                                break;
+                            case "p5sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P5").Dealer)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    //Setear el jugador sitout
+                    if (!_colorSitOut.Contains(color.B))
+                    {
+                        switch (item.Name)
+                        {
+                            case "p1sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty && !_scrapeResult.DataPlayer.First(p => p.Name == "P1").Active)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").SitOut = true;
+                                break;
+                            case "p2sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty && !_scrapeResult.DataPlayer.First(p => p.Name == "P2").Active)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut = true;
+                                break;
+                            case "p3sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty && !_scrapeResult.DataPlayer.First(p => p.Name == "P3").Active)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut = true;
+                                break;
+                            case "p4sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty && !_scrapeResult.DataPlayer.First(p => p.Name == "P4").Active)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut = true;
+                                break;
+                            case "p5sitout":
+                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty && !_scrapeResult.DataPlayer.First(p => p.Name == "P5").Active)
+                                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").SitOut = true;
+                                break;
+                        }
+                    }
+                }
+
+                if (_colorDealer.Contains(color.R))
+                {
+                    var emptys = _scrapeResult.DataPlayer.Count(e => e.Empty) + _scrapeResult.DataPlayer.Count(s => s.SitOut);
+
+                    switch (item.Name)
+                    {
+                        case "p0dealer":
+                            _scrapeResult.P0Dealer = true;
+                            _scrapeResult.P0Position = HeroPosition.Button;
+                            break;
+                        case "p1dealer":
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P1").Dealer = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = false;
+                            _scrapeResult.P0Position = HeroPosition.CutOff;
+                            break;
+                        case "p2dealer":
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Dealer = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = false;
+
+                            switch (emptys)
+                            {
+                                case 0:
+                                    _scrapeResult.P0Position = HeroPosition.MiddlePosition;
+                                    break;
+                                case 1:
+                                    _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+                                    break;
+                                case 2:
+                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
+                                    break;
+                            }
+
+                            break;
+                        case "p3dealer":
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P3").Dealer = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = false;
+
+                            switch (emptys)
+                            {
+                                case 0:
+                                    _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+                                    break;
+                                case 1:
+                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
+                                    break;
+                                case 2:
+                                    _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                                    break;
+                            }
+
+                            break;
+                        case "p4dealer":
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P4").Dealer = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = false;
+
+                            switch (emptys)
+                            {
+                                case 0:
+                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
+                                    break;
+                                case 1:
+                                    _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                                    break;
+                                case 2:
+                                    _scrapeResult.P0Position = HeroPosition.Button;
+                                    break;
+                            }
+
+                            break;
+                        case "p5dealer":
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P5").Dealer = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = false;
+                            _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                            break;
+                    }
+                }
+            }
+
+            var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
+
+            foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash))
+            {
+                var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.Default);
+                Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
+
+                var res = ocrengine.Process(img, area, PageSegMode.Auto);
+
+                switch (item.Name)
+                {
+                    case "p1bet":
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet = SetBetValue(res);
+                        break;
+                    case "p2bet":
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet = SetBetValue(res);
+                        break;
+                    case "p3bet":
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet = SetBetValue(res);
+                        break;
+                    case "p4bet":
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet = SetBetValue(res);
+                        break;
+                    case "p5bet":
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet = SetBetValue(res);
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+
+            var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
+            var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
+            var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
+
+            tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
+            tbResumen.Text += $"Jugadores SitOut: {sitout} \r\n";
+            tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
+            tbResumen.Text += "-------------------------------- \r\n";
+            tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
+            tbResumen.Text += "-------------------------------- \r\n";
+            tbResumen.Text += $"Posición del jugador: {_scrapeResult.P0Position} \r\n\r\n";
+            tbResumen.Text += "----------- APUESTAS ----------- \r\n";
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet > 0 ? $"Bet P1 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet > 0 ? $"Bet P2 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P3").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet > 0 ? $"Bet P3 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet > 0 ? $"Bet P4 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 0 ? $"Bet P5 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet} BBs \r\n" : string.Empty;
+
+            //Comprobar si llega la mano sin subir
+            Dictionary<HeroPosition, List<decimal>> preflopHeroPosition = new Dictionary<HeroPosition, List<decimal>>()
+            {
+                {
+                    HeroPosition.BigBlind, new List<decimal>
+                    {
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                    }
+                },
+                {
+                    HeroPosition.SmallBlind, new List<decimal>
+                    {
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet
+                    }
+                },
+                {
+                    HeroPosition.Button, new List<decimal>
+                    {
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                    }
+                },
+                {
+                    HeroPosition.CutOff, new List<decimal>
+                    {
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                    }
+                },
+                {
+                    HeroPosition.MiddlePosition, new List<decimal>
+                    {
+                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                    }
+                }
+            };
+
+            var responseAction = string.Empty;
+
+            responseAction = GetOpenRaiseAction(preflopHeroPosition);
+
+            if (responseAction is null)
+            {
+                responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
+            }
+
+
+            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
+            {
+
+                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                {
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
+
+                var response = _openRaiseUseCase.Execute(openRaiseCommand);
+
+            }
+
+            SetBoardValues();
+            lbAction.Text = responseAction;          
+
+        }
+
+        private void ObtainCardsPlayer()
+        {
             foreach (var item in _regions.Where(x => x.IsHash))
             {
                 var maxEqual = 0;
@@ -368,252 +650,16 @@ namespace OpenScrape.App
                     }
                 }
             }
-
-            var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
-
-            foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash))
-            {
-                var ocrengine = new TesseractEngine(@".\tessdata\", "eng", EngineMode.Default);
-                Rect area = new Rect(item.X, item.Y, item.Width, item.Height);
-
-                var res = ocrengine.Process(img, area, PageSegMode.Auto);
-
-                switch (item.Name)
-                {
-                    case "p1bet":
-                        _scrapeResult.P1Bet = SetBetValue(res);
-                        break;
-                    case "p2bet":
-                        _scrapeResult.P2Bet = SetBetValue(res);
-                        break;
-                    case "p3bet":
-                        _scrapeResult.P3Bet = SetBetValue(res);
-                        break;
-                    case "p4bet":
-                        _scrapeResult.P4Bet = SetBetValue(res);
-                        break;
-                    case "p5bet":
-                        _scrapeResult.P5Bet = SetBetValue(res);
-                        break;
-                    default:
-                        break;
-                }
-
-            }
-
-            foreach (var item in _regions.Where(x => x.IsColor))
-            {
-                if (_formImage.pbImagen.Image == null)
-                    continue;
-
-                Color color = new Bitmap(_formImage.pbImagen.Image).GetPixel(item.X, item.Y);
-                var rgbColor = color.Name.Substring(2, 6);
-
-                if (!item.Name.Contains("dealer"))
-                {
-                    if (_colorEmpty.Contains(color.B))
-                    {
-                        switch (item.Name)
-                        {
-                            case "p1sitout":
-                                if (!_scrapeResult.P1Dealer)
-                                    _scrapeResult.P1Empty = true;
-                                break;
-                            case "p2sitout":
-                                if (!_scrapeResult.P2Dealer)
-                                    _scrapeResult.P2Empty = true;
-                                break;
-                            case "p3sitout":
-                                if (!_scrapeResult.P3Dealer)
-                                    _scrapeResult.P3Empty = true;
-                                break;
-                            case "p4sitout":
-                                if (!_scrapeResult.P4Dealer)
-                                    _scrapeResult.P4Empty = true;
-                                break;
-                            case "p5sitout":
-                                if (!_scrapeResult.P5Dealer)
-                                    _scrapeResult.P5Empty = true;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-
-                    if (_colorSitOut.Contains(color.B))
-                    {
-                        switch (item.Name)
-                        {
-                            case "p1sitout":
-                                if (!_scrapeResult.P1Empty)
-                                    p1IsSitOut = true;
-                                break;
-                            case "p2sitout":
-                                if (!_scrapeResult.P2Empty)
-                                    p2IsSitOut = true;
-                                break;
-                            case "p3sitout":
-                                if (!_scrapeResult.P3Empty)
-                                    p3IsSitOut = true;
-                                break;
-                            case "p4sitout":
-                                if (!_scrapeResult.P4Empty)
-                                    p4IsSitOut = true;
-                                break;
-                            case "p5sitout":
-                                if (!_scrapeResult.P5Empty)
-                                    p5IsSitOut = true;
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-
-                    if (!_colorSitOut.Contains(color.B) && (p1IsSitOut || p2IsSitOut || p3IsSitOut || p4IsSitOut || p5IsSitOut))
-                    {
-                        switch (item.Name)
-                        {
-                            case "p1sitout2":
-                                if (p1IsSitOut && !_scrapeResult.P1Empty)
-                                    _scrapeResult.P1SitOut = true;
-                                break;
-                            case "p2sitout2":
-                                if (p2IsSitOut && !_scrapeResult.P2Empty)
-                                    _scrapeResult.P2SitOut = true;
-                                break;
-                            case "p3sitout2":
-                                if (p3IsSitOut && !_scrapeResult.P3Empty)
-                                    _scrapeResult.P3SitOut = true;
-                                break;
-                            case "p4sitout2":
-                                if (p4IsSitOut && !_scrapeResult.P4Empty)
-                                    _scrapeResult.P4SitOut = true;
-                                break;
-                            case "p5sitout2":
-                                if (p5IsSitOut && !_scrapeResult.P5Empty)
-                                    _scrapeResult.P5SitOut = true;
-                                break;
-                        }
-                    }
-                }
-
-                if (_colorDealer.Contains(color.R))
-                {
-                    switch (item.Name)
-                    {
-                        case "p0dealer":
-                            _scrapeResult.P0Dealer = true;
-                            _scrapeResult.P0Position = HeroPosition.Button;
-                            break;
-                        case "p1dealer":
-                            _scrapeResult.P1Dealer = true;
-                            _scrapeResult.P1Empty = false;
-                            _scrapeResult.P0Position = HeroPosition.CutOff;
-
-                            if (_scrapeResult.P3Bet != 1)
-                                _scrapeResult.P0Position = HeroPosition.MiddlePosition;
-
-                            break;
-                        case "p2dealer":
-                            _scrapeResult.P2Dealer = true;
-                            _scrapeResult.P2Empty = false;
-                            _scrapeResult.P0Position = HeroPosition.MiddlePosition;
-
-                            if (_scrapeResult.P4Bet != 1)
-                                _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-
-                            break;
-                        case "p3dealer":
-                            _scrapeResult.P3Dealer = true;
-                            _scrapeResult.P3Empty = false;
-                            _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-
-                            if (_scrapeResult.P5Bet != 1)
-                                _scrapeResult.P0Position = HeroPosition.BigBlind;
-
-                            break;
-                        case "p4dealer":
-                            _scrapeResult.P4Dealer = true;
-                            _scrapeResult.P4Empty = false;
-                            _scrapeResult.P0Position = HeroPosition.BigBlind;
-
-                            if (_scrapeResult.P5Bet != 1)
-                                _scrapeResult.P0Position = HeroPosition.SmallBlind;
-
-                            break;
-                        case "p5dealer":
-                            _scrapeResult.P5Dealer = true;
-                            _scrapeResult.P5Empty = false;
-                            _scrapeResult.P0Position = HeroPosition.SmallBlind;
-                            break;
-                    }
-                }
-            }
-
-            var enMesa = 1;
-            if (!_scrapeResult.P1Empty)
-                enMesa++;
-            if (!_scrapeResult.P2Empty)
-                enMesa++;
-            if (!_scrapeResult.P3Empty)
-                enMesa++;
-            if (!_scrapeResult.P4Empty)
-                enMesa++;
-            if (!_scrapeResult.P5Empty)
-                enMesa++;
-
-            label5.Text = enMesa.ToString();
-
-            //Comprobar si llega la mano sin subir
-            Dictionary<HeroPosition, List<double>> preflopHeroPosition = new Dictionary<HeroPosition, List<double>>()
-            {
-                { HeroPosition.BigBlind, new List<double> { _scrapeResult.P1Bet, _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
-                { HeroPosition.SmallBlind, new List<double> { _scrapeResult.P2Bet, _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
-                { HeroPosition.Button, new List<double> { _scrapeResult.P3Bet, _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
-                { HeroPosition.CutOff, new List<double> { _scrapeResult.P4Bet, _scrapeResult.P5Bet } },
-                { HeroPosition.MiddlePosition, new List<double> { _scrapeResult.P5Bet } }
-            };
-
-            var responseAction = string.Empty;
-
-            responseAction = GetOpenRaiseAction(preflopHeroPosition);
-
-            if (responseAction is null)
-            {
-                responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
-            }
-
-
-            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
-            {
-
-                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
-                {
-                    Hand = SetHandValue(),
-                    Position = _scrapeResult.P0Position
-                };
-
-                var response = _openRaiseUseCase.Execute(openRaiseCommand);
-
-            }
-
-            SetBoardValues();
-            lbAction.Text = responseAction;
-            responseAction = string.Empty;
-
-
-            ////var response = _openRaiseUseCase.Execute(openRaiseCommand);
-            //var response = _threeBetUseCase.Execute(openRaiseCommand);
-
         }
 
-        private string GetRaiseOverLimperAction(Dictionary<HeroPosition, List<double>> preflopHeroPosition)
+
+        private string GetRaiseOverLimperAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
         {
             var responseAction = new GetRaiseOverLimperUseCaseResponse();
 
             if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
             {
-                List<double> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
                 bool noneBet = bets.Any(b => b == 1 && b <= 1);
 
                 if (noneBet)
@@ -631,13 +677,13 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseAction(Dictionary<HeroPosition, List<double>> preflopHeroPosition)
+        private string GetOpenRaiseAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
         {
             var responseAction = new GetOpenRaiseUseCaseResponse();
 
             if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
             {
-                List<double> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
                 bool noneBet = bets.Any(b => b > 0);
 
                 if (!noneBet)
@@ -654,6 +700,8 @@ namespace OpenScrape.App
 
             return responseAction.Action;
         }
+
+        //private string Get
 
         private string SetHandValue()
         {
@@ -674,7 +722,7 @@ namespace OpenScrape.App
             return hand;
         }
 
-        private double SetBetValue(Page res)
+        private decimal SetBetValue(Page res)
         {
             var text = string.Empty;
             var resultText = res.GetText();
@@ -689,7 +737,7 @@ namespace OpenScrape.App
             if (pBet == 50)
                 pBet = 0.5f;
 
-            return pBet;
+            return (decimal)pBet;
         }
 
         private void GetImageWhilePlaying()

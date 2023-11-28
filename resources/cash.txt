@@ -3,6 +3,11 @@
 // Regions
 //
 
+r$p1playing # 260 - 482 - 1 - 1 & False & True & False & bd2d21
+r$p2playing # 176 - 182 - 1 - 1 & False & True & False & bd2d21
+r$p3playing # 557 - 102 - 1 - 1 & False & True & False & bd2d21
+r$p4playing # 937 - 182 - 1 - 1 & False & True & False & bd2d21
+r$p5playing # 855 - 483 - 1 - 1 & False & True & False & bd2d21
 r$p0dealer # 413 - 501 - 1 - 1 & False & True & False & ffd800
 r$p1dealer # 324 - 486 - 1 - 1 & False & True & False & ffd800
 r$p2dealer # 181 - 276 - 1 - 1 & False & True & False & ffd800
@@ -16,16 +21,16 @@ r$p4bet # 720 - 268 - 90 - 15 & False & False & False &
 r$p5bet # 653 - 453 - 90 - 15 & False & False & False & 
 r$u0cardface0 # 446 - 496 - 20 - 35 & True & False & False & 
 r$u0cardface1 # 513 - 496 - 20 - 35 & True & False & False & 
-r$p1sitout # 213 - 434 - 1 - 1 & False & True & False & 5c8744
-r$p1sitout2 # 213 - 483 - 1 - 1 & False & True & False & 1f1f1f
-r$p2sitout # 129 - 133 - 1 - 1 & False & True & False & 0d3b2e
-r$p2sitout2 # 130 - 182 - 1 - 1 & False & True & False & 104838
-r$p3sitout # 511 - 55 - 1 - 1 & False & True & False & 0c372b
-r$p3sitout2 # 511 - 104 - 1 - 1 & False & True & False & 104839
-r$p4sitout # 893 - 134 - 1 - 1 & False & True & False & 0d3c2f
-r$p4sitout2 # 893 - 184 - 1 - 1 & False & True & False & 104839
-r$p5sitout # 810 - 435 - 1 - 1 & False & True & False & 5c8645
-r$p5sitout2 # 810 - 484 - 1 - 1 & False & True & False & 121010
+r$p1empty # 213 - 434 - 1 - 1 & False & True & False & 5c8744
+r$p2empty # 129 - 133 - 1 - 1 & False & True & False & 0d3b2e
+r$p3empty # 511 - 55 - 1 - 1 & False & True & False & 0c372b
+r$p4empty # 893 - 134 - 1 - 1 & False & True & False & 0d3c2f
+r$p5empty # 810 - 435 - 1 - 1 & False & True & False & 5c8645
+r$p1sitout # 213 - 483 - 1 - 1 & False & True & False & 090909
+r$p2sitout # 130 - 182 - 1 - 1 & False & True & False & 051611
+r$p3sitout # 511 - 104 - 1 - 1 & False & True & False & 051611
+r$p4sitout # 893 - 184 - 1 - 1 & False & True & False & 051611
+r$p5sitout # 810 - 484 - 1 - 1 & False & True & False & 050505
 
 //
 // Fonts

@@ -71,12 +71,10 @@
             cbTest = new CheckBox();
             ckBoard = new CheckBox();
             btnCreateFont = new Button();
-            btnPlay = new Button();
             lbAction = new Label();
             pbCard1 = new PictureBox();
             pbCard0 = new PictureBox();
-            label4 = new Label();
-            label5 = new Label();
+            tbResumen = new TextBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
@@ -177,7 +175,7 @@
             // 
             // btnSaveMap
             // 
-            btnSaveMap.Location = new Point(260, 367);
+            btnSaveMap.Location = new Point(297, 408);
             btnSaveMap.Name = "btnSaveMap";
             btnSaveMap.Size = new Size(75, 23);
             btnSaveMap.TabIndex = 13;
@@ -187,7 +185,7 @@
             // 
             // btnLoadMap
             // 
-            btnLoadMap.Location = new Point(176, 367);
+            btnLoadMap.Location = new Point(213, 408);
             btnLoadMap.Name = "btnLoadMap";
             btnLoadMap.Size = new Size(75, 23);
             btnLoadMap.TabIndex = 14;
@@ -527,21 +525,11 @@
             btnCreateFont.UseVisualStyleBackColor = true;
             btnCreateFont.Click += btnCreateFont_Click;
             // 
-            // btnPlay
-            // 
-            btnPlay.Location = new Point(496, 367);
-            btnPlay.Name = "btnPlay";
-            btnPlay.Size = new Size(75, 23);
-            btnPlay.TabIndex = 53;
-            btnPlay.Text = "Play";
-            btnPlay.UseVisualStyleBackColor = true;
-            btnPlay.Click += btnPlay_Click;
-            // 
             // lbAction
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbAction.Location = new Point(222, 467);
+            lbAction.Location = new Point(259, 508);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(57, 21);
             lbAction.TabIndex = 55;
@@ -549,7 +537,7 @@
             // 
             // pbCard1
             // 
-            pbCard1.Location = new Point(288, 410);
+            pbCard1.Location = new Point(325, 451);
             pbCard1.Name = "pbCard1";
             pbCard1.Size = new Size(20, 35);
             pbCard1.TabIndex = 57;
@@ -557,41 +545,29 @@
             // 
             // pbCard0
             // 
-            pbCard0.Location = new Point(257, 410);
+            pbCard0.Location = new Point(294, 451);
             pbCard0.Name = "pbCard0";
             pbCard0.Size = new Size(20, 35);
             pbCard0.TabIndex = 56;
             pbCard0.TabStop = false;
             // 
-            // label4
+            // tbResumen
             // 
-            label4.AutoSize = true;
-            label4.Location = new Point(187, 214);
-            label4.Name = "label4";
-            label4.Size = new Size(125, 15);
-            label4.TabIndex = 58;
-            label4.Text = "Jugadores en la mesa: ";
-            // 
-            // label5
-            // 
-            label5.AutoSize = true;
-            label5.Location = new Point(317, 214);
-            label5.Name = "label5";
-            label5.Size = new Size(38, 15);
-            label5.TabIndex = 59;
-            label5.Text = "label5";
+            tbResumen.Location = new Point(177, 183);
+            tbResumen.Multiline = true;
+            tbResumen.Name = "tbResumen";
+            tbResumen.Size = new Size(251, 207);
+            tbResumen.TabIndex = 60;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(593, 515);
-            Controls.Add(label5);
-            Controls.Add(label4);
+            ClientSize = new Size(593, 538);
+            Controls.Add(tbResumen);
             Controls.Add(pbCard1);
             Controls.Add(pbCard0);
             Controls.Add(lbAction);
-            Controls.Add(btnPlay);
             Controls.Add(btnCreateFont);
             Controls.Add(ckBoard);
             Controls.Add(cbTest);
@@ -664,13 +640,11 @@
         private Label label3;
         private TextBox tbY;
         private TextBox tbX;
-        private Button btnPlay;
         private Label lbAction;
         private PictureBox pbCard1;
         private PictureBox pbCard0;
-        private Label label4;
-        private Label label5;
         private Label label6;
         private Label label9;
+        private TextBox tbResumen;
     }
 }

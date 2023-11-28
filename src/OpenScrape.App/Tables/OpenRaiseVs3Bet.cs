@@ -1,18 +1,10 @@
-﻿using Emgu.CV.CvEnum;
-using OpenScrape.App.Enums;
-using static OpenScrape.App.Tables.OpenRaiseVs3Bet;
+﻿using OpenScrape.App.Helpers;
 
 namespace OpenScrape.App.Tables
 {
     public static class OpenRaiseVs3Bet
     {
-        public class Hands
-        {
-            public string Hand { get; set; } = default!;
-            public string Action { get; set; } = default!;
-            public int Porcentajes { get; set; }
-        }
-
+        
         #region Hands
 
         private static string OpenRaiseSBvs3BetBB(string hand)
@@ -137,7 +129,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseBTNvs3BetBB(string hand)
@@ -235,7 +227,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseBTNvs3BetSB(string hand)
@@ -329,7 +321,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseCOvs3BetBB(string hand)
@@ -420,7 +412,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseCOvs3BetSB(string hand)
@@ -507,7 +499,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseCOvs3BetBTN(string hand)
@@ -608,7 +600,7 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         private static string OpenRaiseMPvs3BetBB(string hand)
@@ -719,46 +711,14 @@ namespace OpenScrape.App.Tables
             };
 
 
-            return ObtainAction(hands, hand);
+            return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         #endregion
-
-        private static string ObtainAction(List<Hands> hands, string hand)
-        {
-            Random random = new Random();
-
-            var porcen = new List<int>();
-            var numeroAleatorio = random.Next(101);
-            int acumulado = 0;
-            int sumaTotal = 0;
-
-            foreach (var item in hands)
-            {
-                if (item.Hand == hand)
-                {
-                    sumaTotal += item.Porcentajes;
-                    porcen.Add(item.Porcentajes);
-                }
-            }
-
-            foreach (var kvp in porcen)
-            {
-                acumulado += kvp;
-                if (numeroAleatorio <= acumulado)
-                {
-                    return hands.FirstOrDefault(x => x.Porcentajes == kvp)?.Action ?? "Fold";
-                }
-            }
-
-            return "Fold";
-
-
-        }
-
+                
         public static string GetOpenRaiseSBvsBB(string hand)
         {
-            return string.Empty; // OpenRaiseSBvsBB(hand);
+            return string.Empty;  //return OpenRaiseSBvsBB(hand);
         }
 
     }
