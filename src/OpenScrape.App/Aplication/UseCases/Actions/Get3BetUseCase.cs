@@ -24,7 +24,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                             _3BetVsRaiser.Get3BetBBvsRaiseEP(request.Hand),
                         HeroPosition.SmallBlind =>
                             _3BetVsRaiser.Get3BetBBvsRaiseSB(request.Hand),
-                        _ => string.Empty
+                        _ => "Fold"
                     },
                 HeroPosition.SmallBlind =>
                     request.VillainPosition switch
@@ -37,9 +37,20 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                             _3BetVsRaiser.Get3BetSBvsRaiseBTN(request.Hand),
                         HeroPosition.EarlyPosition =>
                             _3BetVsRaiser.Get3BetSBvsRaiseEP(request.Hand),
-                        _ => string.Empty
+                        _ => "Fold"
                     },
-                _ => string.Empty
+                HeroPosition.Button =>
+                    request.VillainPosition switch
+                    {
+                        HeroPosition.MiddlePosition =>
+                            _3BetVsRaiser.Get3BetBTNvsRaiseMP(request.Hand),
+                        HeroPosition.CutOff =>
+                            _3BetVsRaiser.Get3BetBTNvsRaiseCO(request.Hand),
+                        HeroPosition.EarlyPosition =>
+                            _3BetVsRaiser.Get3BetBTNvsRaiseEP(request.Hand),
+                        _ => "Fold"
+                    },
+                _ => "Fold"
             };
 
             response.Action = action;

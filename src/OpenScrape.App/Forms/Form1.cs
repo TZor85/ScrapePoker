@@ -1,6 +1,7 @@
 using MediatR;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Enums;
 using OpenScrape.App.Helpers;
