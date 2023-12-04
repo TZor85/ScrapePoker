@@ -31,7 +31,7 @@ namespace OpenScrape.App.Helpers
                 acumulado += kvp;
                 if (numeroAleatorio <= acumulado)
                 {
-                    return hands.FirstOrDefault(x => x.Porcentajes == kvp)?.Action ?? "Fold";
+                    return hands.FirstOrDefault(x => x.Porcentajes == kvp && x.Hand == hand)?.Action ?? "Fold";
                 }
             }
 

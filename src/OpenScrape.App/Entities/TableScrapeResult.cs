@@ -34,5 +34,6 @@ namespace OpenScrape.App.Entities
         public bool Empty { get; set; }
         public bool BigBlind { get; set; }
         public bool SmallBlind { get; set; }
+        public HeroPosition Position { get; set; }
     }
 }

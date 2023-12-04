@@ -50,6 +50,22 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                             _3BetVsRaiser.Get3BetBTNvsRaiseEP(request.Hand),
                         _ => "Fold"
                     },
+                HeroPosition.CutOff =>
+                    request.VillainPosition switch
+                    {
+                        HeroPosition.MiddlePosition =>
+                            _3BetVsRaiser.Get3BetCOvsRaiseMP(request.Hand),
+                        HeroPosition.EarlyPosition =>
+                            _3BetVsRaiser.Get3BetCOvsRaiseEP(request.Hand),
+                        _ => "Fold"
+                    },
+                HeroPosition.EarlyPosition =>
+                    request.VillainPosition switch
+                    {
+                        HeroPosition.EarlyPosition =>
+                            _3BetVsRaiser.Get3BetMPvsRaiseEP(request.Hand),
+                        _ => "Fold"
+                    },
                 _ => "Fold"
             };
 

@@ -64,6 +64,21 @@ namespace OpenScrape.App.Tables
             return _3BetBTNvsRaiseEP(hand);
         }
 
+        public static string Get3BetCOvsRaiseMP(string hand)
+        {
+            return _3BetCOvsRaiseMP(hand);
+        }
+
+        public static string Get3BetCOvsRaiseEP(string hand)
+        {
+            return _3BetCOvsRaiseEP(hand);
+        }
+
+        public static string Get3BetMPvsRaiseEP(string hand)
+        {
+            return _3BetMPvsRaiseEP(hand);
+        }
+
         #region Hands
 
         private static string _3BetBBvsRaiseSB(string hand)
@@ -1478,7 +1493,7 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "AQs", Action = "3Bet x7.5", Porcentajes = 100 },
                 new Hands { Hand = "AJs", Action = "3Bet x7.5", Porcentajes = 50 },
                 new Hands { Hand = "AJs", Action = "Call", Porcentajes = 50 },
-                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 12 },
+                new Hands { Hand = "ATs", Action = "3Bet x7.5", Porcentajes = 12 },
                 new Hands { Hand = "ATs", Action = "Call", Porcentajes = 88 },
                 new Hands { Hand = "A9s", Action = "3Bet x7.5", Porcentajes = 75 },
                 new Hands { Hand = "A9s", Action = "Call", Porcentajes = 25 },
@@ -1584,7 +1599,7 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "AQs", Action = "Call", Porcentajes = 1 },
                 new Hands { Hand = "AJs", Action = "3Bet x7", Porcentajes = 25 },
                 new Hands { Hand = "AJs", Action = "Call", Porcentajes = 75 },
-                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 33 },
+                new Hands { Hand = "ATs", Action = "3Bet x7", Porcentajes = 33 },
                 new Hands { Hand = "ATs", Action = "Call", Porcentajes = 67 },
                 new Hands { Hand = "A9s", Action = "3Bet x7", Porcentajes = 68 },
                 new Hands { Hand = "A9s", Action = "Call", Porcentajes = 32 },
@@ -1694,7 +1709,7 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "AQs", Action = "Call", Porcentajes = 12 },
                 new Hands { Hand = "AJs", Action = "3Bet x6.5", Porcentajes = 30 },
                 new Hands { Hand = "AJs", Action = "Call", Porcentajes = 70 },
-                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 52 },
+                new Hands { Hand = "ATs", Action = "3Bet x6.5", Porcentajes = 52 },
                 new Hands { Hand = "ATs", Action = "Call", Porcentajes = 48 },
                 new Hands { Hand = "A9s", Action = "3Bet x6.5", Porcentajes = 37 },
                 new Hands { Hand = "A9s", Action = "Marginal Call", Porcentajes = 15 },
@@ -1729,96 +1744,330 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "K6s", Action = "Fold", Porcentajes = 60 },
                 new Hands { Hand = "K5s", Action = "3Bet x6.5", Porcentajes = 67 },
                 new Hands { Hand = "K5s", Action = "Fold", Porcentajes = 33 },
-                
-                new Hands { Hand = "AQo", Action = "3Bet x6.5", Porcentajes = 63 },
-                new Hands { Hand = "AQo", Action = "Call", Porcentajes = 37 },
-                
-                new Hands { Hand = "KQo", Action = "3Bet x6.5", Porcentajes = 100 },
-                
-                new Hands { Hand = "QQ", Action = "3Bet x6.5", Porcentajes = 95 },
-                new Hands { Hand = "QQ", Action = "Call", Porcentajes = 5 },
-                
-                new Hands { Hand = "QJs", Action = "3Bet x6.5", Porcentajes = 57 },
-                new Hands { Hand = "QJs", Action = "Call", Porcentajes = 43 },
-                
-                new Hands { Hand = "QTs", Action = "3Bet x6.5", Porcentajes = 92 },
-                new Hands { Hand = "QTs", Action = "Call", Porcentajes = 8 },
-                
-                new Hands { Hand = "AJo", Action = "3Bet x6.5", Porcentajes = 85 },
-                new Hands { Hand = "AJo", Action = "Marginal Call", Porcentajes = 2 },
-                new Hands { Hand = "AJo", Action = "Fold", Porcentajes = 13 },
-                
-                new Hands { Hand = "KJo", Action = "3Bet x6.5", Porcentajes = 15 },
-                new Hands { Hand = "KJo", Action = "Fold", Porcentajes = 85 },
-                
-                new Hands { Hand = "JJ", Action = "3Bet x6.5", Porcentajes = 52 },
-                new Hands { Hand = "JJ", Action = "Call", Porcentajes = 48 },
-                
-                new Hands { Hand = "JTs", Action = "3Bet x6.5", Porcentajes = 48 },
-                new Hands { Hand = "JTs", Action = "Call", Porcentajes = 52 },
-                
-                new Hands { Hand = "ATo", Action = "3Bet x6.5", Porcentajes = 10 },
-                new Hands { Hand = "ATo", Action = "Fold", Porcentajes = 90 },
-                
-                new Hands { Hand = "TT", Action = "3Bet x6.5", Porcentajes = 40 },
-                new Hands { Hand = "TT", Action = "Call", Porcentajes = 60 },
-                
-                new Hands { Hand = "T9s", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "AQo", Action = "3Bet x6.5", Porcentajes = 58 },
+                new Hands { Hand = "AQo", Action = "Call", Porcentajes = 42 },
+                new Hands { Hand = "KQo", Action = "3Bet x6.5", Porcentajes = 78 },
+                new Hands { Hand = "KQo", Action = "Fold", Porcentajes = 22 },
+                new Hands { Hand = "QQ", Action = "3Bet x6.5", Porcentajes = 82 },
+                new Hands { Hand = "QQ", Action = "Call", Porcentajes = 18 },
+                new Hands { Hand = "QJs", Action = "3Bet x6.5", Porcentajes = 85 },
+                new Hands { Hand = "QJs", Action = "Call", Porcentajes = 15 },
+                new Hands { Hand = "QTs", Action = "3Bet x6.5", Porcentajes = 33 },
+                new Hands { Hand = "QTs", Action = "Marginal Call", Porcentajes = 20 },
+                new Hands { Hand = "QTs", Action = "Fold", Porcentajes = 47 },
+                new Hands { Hand = "AJo", Action = "3Bet x6.5", Porcentajes = 30 },
+                new Hands { Hand = "AJo", Action = "Fold", Porcentajes = 70 },
+                new Hands { Hand = "JJ", Action = "3Bet x6.5", Porcentajes = 38 },
+                new Hands { Hand = "JJ", Action = "Call", Porcentajes = 62 },
+                new Hands { Hand = "JTs", Action = "3Bet x6.5", Porcentajes = 38 },
+                new Hands { Hand = "JTs", Action = "Marginal Call", Porcentajes = 32 },
+                new Hands { Hand = "JTs", Action = "Fold", Porcentajes = 30 },
+                new Hands { Hand = "TT", Action = "3Bet x6.5", Porcentajes = 52 },
+                new Hands { Hand = "TT", Action = "Call", Porcentajes = 48 },
+                new Hands { Hand = "T9s", Action = "Marginal Call", Porcentajes = 3 },
                 new Hands { Hand = "T9s", Action = "Fold", Porcentajes = 97 },
-                
-                new Hands { Hand = "99", Action = "3Bet x6.5", Porcentajes = 33 },
-                new Hands { Hand = "99", Action = "Call", Porcentajes = 67 },
-                
+                new Hands { Hand = "99", Action = "3Bet x6.5", Porcentajes = 52 },
+                new Hands { Hand = "99", Action = "Call", Porcentajes = 48 },
                 new Hands { Hand = "98s", Action = "Marginal Call", Porcentajes = 7 },
                 new Hands { Hand = "98s", Action = "Fold", Porcentajes = 93 },
-                
-                new Hands { Hand = "88", Action = "3Bet x6.5", Porcentajes = 20 },
-                new Hands { Hand = "88", Action = "Marginal Call", Porcentajes = 52 },
-                new Hands { Hand = "88", Action = "Fold", Porcentajes = 28 },
-                
-                new Hands { Hand = "87s", Action = "3Bet x6.5", Porcentajes = 7 },
-                new Hands { Hand = "87s", Action = "Marginal Call", Porcentajes = 5 },
-                new Hands { Hand = "87s", Action = "Fold", Porcentajes = 88 },
-                
-                new Hands { Hand = "77", Action = "3Bet x6.5", Porcentajes = 13 },
-                new Hands { Hand = "77", Action = "Marginal Call", Porcentajes = 38 },
-                new Hands { Hand = "77", Action = "Fold", Porcentajes = 49 },
-                
+                new Hands { Hand = "88", Action = "3Bet x6.5", Porcentajes = 42 },
+                new Hands { Hand = "88", Action = "Marginal Call", Porcentajes = 58 },
+                new Hands { Hand = "87s", Action = "3Bet x6.5", Porcentajes = 10 },
+                new Hands { Hand = "87s", Action = "Marginal Call", Porcentajes = 8 },
+                new Hands { Hand = "87s", Action = "Fold", Porcentajes = 82 },
+                new Hands { Hand = "77", Action = "3Bet x6.5", Porcentajes = 8 },
+                new Hands { Hand = "77", Action = "Marginal Call", Porcentajes = 32 },
+                new Hands { Hand = "77", Action = "Fold", Porcentajes = 60 },
                 new Hands { Hand = "76s", Action = "3Bet x6.5", Porcentajes = 13 },
                 new Hands { Hand = "76s", Action = "Marginal Call", Porcentajes = 5 },
-                new Hands { Hand = "76s", Action = "Fold", Porcentajes = 82 },
-                
-                new Hands { Hand = "66", Action = "3Bet x6.5", Porcentajes = 10 },
-                new Hands { Hand = "66", Action = "Marginal Call", Porcentajes = 23 },
-                new Hands { Hand = "66", Action = "Fold", Porcentajes = 67 },
-                
-                new Hands { Hand = "65s", Action = "3Bet x6.5", Porcentajes = 27 },
-                new Hands { Hand = "65s", Action = "Marginal Call", Porcentajes = 12 },
-                new Hands { Hand = "65s", Action = "Fold", Porcentajes = 61 },
-                
-                new Hands { Hand = "55", Action = "Marginal Call", Porcentajes = 12 },
-                new Hands { Hand = "55", Action = "Fold", Porcentajes = 88 },
-                
-                new Hands { Hand = "54s", Action = "3Bet x6.5", Porcentajes = 23 },
-                new Hands { Hand = "54s", Action = "Marginal Call", Porcentajes = 18 },
-                new Hands { Hand = "54s", Action = "Fold", Porcentajes = 59 },
-                
-                new Hands { Hand = "44", Action = "Marginal Call", Porcentajes = 8 },
-                new Hands { Hand = "44", Action = "Fold", Porcentajes = 92 },
-                
+                new Hands { Hand = "76s", Action = "Fold", Porcentajes = 83 },
+                new Hands { Hand = "66", Action = "3Bet x6.5", Porcentajes = 2 },
+                new Hands { Hand = "66", Action = "Marginal Call", Porcentajes = 17 },
+                new Hands { Hand = "66", Action = "Fold", Porcentajes = 81 },
+                new Hands { Hand = "65s", Action = "3Bet x6.5", Porcentajes = 45 },
+                new Hands { Hand = "65s", Action = "Marginal Call", Porcentajes = 15 },
+                new Hands { Hand = "65s", Action = "Fold", Porcentajes = 40 },
+                new Hands { Hand = "55", Action = "Marginal Call", Porcentajes = 8 },
+                new Hands { Hand = "55", Action = "Fold", Porcentajes = 92 },
+                new Hands { Hand = "54s", Action = "3Bet x6.5", Porcentajes = 47 },
+                new Hands { Hand = "54s", Action = "Marginal Call", Porcentajes = 25 },
+                new Hands { Hand = "54s", Action = "Fold", Porcentajes = 28 },
+                new Hands { Hand = "44", Action = "Marginal Call", Porcentajes = 7 },
+                new Hands { Hand = "44", Action = "Fold", Porcentajes = 93 },
                 new Hands { Hand = "33", Action = "Marginal Call", Porcentajes = 3 },
                 new Hands { Hand = "33", Action = "Fold", Porcentajes = 97 },
-                
-                new Hands { Hand = "22", Action = "Marginal Call", Porcentajes = 3 },
-                new Hands { Hand = "22", Action = "Fold", Porcentajes = 97 }
+                new Hands { Hand = "22", Action = "Marginal Call", Porcentajes = 5 },
+                new Hands { Hand = "22", Action = "Fold", Porcentajes = 95 }
+            };
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string _3BetCOvsRaiseMP(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands { Hand = "AA", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "AKs", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "AQs", Action = "3Bet x6.5", Porcentajes = 97 },
+                new Hands { Hand = "AQs", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "AJs", Action = "3Bet x6.5", Porcentajes = 52 },
+                new Hands { Hand = "AJs", Action = "Call", Porcentajes = 48 },
+                new Hands { Hand = "ATs", Action = "3Bet x6.5", Porcentajes = 75 },
+                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 25 },
+                new Hands { Hand = "A9s", Action = "3Bet x6.5", Porcentajes = 58 },
+                new Hands { Hand = "A9s", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "A9s", Action = "Fold", Porcentajes = 39 },
+                new Hands { Hand = "A8s", Action = "3Bet x6.5", Porcentajes = 60 },
+                new Hands { Hand = "A8s", Action = "Marginal Call", Porcentajes = 5 },
+                new Hands { Hand = "A8s", Action = "Fold", Porcentajes = 35 },
+                new Hands { Hand = "A7s", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "A6s", Action = "3Bet x6.5", Porcentajes = 47 },
+                new Hands { Hand = "A6s", Action = "Fold", Porcentajes = 53 },
+                new Hands { Hand = "A5s", Action = "3Bet x6.5", Porcentajes = 96 },
+                new Hands { Hand = "A5s", Action = "Call", Porcentajes = 4 },
+                new Hands { Hand = "A4s", Action = "3Bet x6.5", Porcentajes = 98 },
+                new Hands { Hand = "A4s", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "A3s", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "AKo", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "KK", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "KQs", Action = "3Bet x6.5", Porcentajes = 62 },
+                new Hands { Hand = "KQs", Action = "Call", Porcentajes = 38 },
+                new Hands { Hand = "KJs", Action = "3Bet x6.5", Porcentajes = 93 },
+                new Hands { Hand = "KJs", Action = "Call", Porcentajes = 7 },
+                new Hands { Hand = "KTs", Action = "3Bet x6.5", Porcentajes = 87 },
+                new Hands { Hand = "KTs", Action = "Call", Porcentajes = 13 },
+                new Hands { Hand = "K9s", Action = "3Bet x6.5", Porcentajes = 15 },
+                new Hands { Hand = "K9s", Action = "Fold", Porcentajes = 85 },
+                new Hands { Hand = "K7s", Action = "3Bet x6.5", Porcentajes = 12 },
+                new Hands { Hand = "K7s", Action = "Fold", Porcentajes = 88 },
+                new Hands { Hand = "K5s", Action = "3Bet x6.5", Porcentajes = 37 },
+                new Hands { Hand = "K5s", Action = "Fold", Porcentajes = 63 },
+                new Hands { Hand = "AQo", Action = "3Bet x6.5", Porcentajes = 92 },
+                new Hands { Hand = "AQo", Action = "Call", Porcentajes = 8 },
+                new Hands { Hand = "KQo", Action = "3Bet x6.5", Porcentajes = 100 },
+                new Hands { Hand = "QQ", Action = "3Bet x6.5", Porcentajes = 97 },
+                new Hands { Hand = "QQ", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "QJs", Action = "3Bet x6.5", Porcentajes = 97 },
+                new Hands { Hand = "QJs", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "QTs", Action = "3Bet x6.5", Porcentajes = 55 },
+                new Hands { Hand = "QTs", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "QTs", Action = "Fold", Porcentajes = 42 },
+                new Hands { Hand = "AJo", Action = "3Bet x6.5", Porcentajes = 30 },
+                new Hands { Hand = "AJo", Action = "Fold", Porcentajes = 70 },
+                new Hands { Hand = "KJo", Action = "3Bet x6.5", Porcentajes = 2 },
+                new Hands { Hand = "KJo", Action = "Fold", Porcentajes = 98 },
+                new Hands { Hand = "JJ", Action = "3Bet x6.5", Porcentajes = 75 },
+                new Hands { Hand = "JJ", Action = "Call", Porcentajes = 25 },
+                new Hands { Hand = "JTs", Action = "3Bet x6.5", Porcentajes = 10 },
+                new Hands { Hand = "JTs", Action = "Fold", Porcentajes = 90 },
+                new Hands { Hand = "TT", Action = "3Bet x6.5", Porcentajes = 78 },
+                new Hands { Hand = "TT", Action = "Call", Porcentajes = 22 },
+                new Hands { Hand = "99", Action = "3Bet x6.5", Porcentajes = 47 },
+                new Hands { Hand = "99", Action = "Marginal Call", Porcentajes = 27 },
+                new Hands { Hand = "99", Action = "Fold", Porcentajes = 26 },
+                new Hands { Hand = "88", Action = "3Bet x6.5", Porcentajes = 27 },
+                new Hands { Hand = "88", Action = "Marginal Call", Porcentajes = 13 },
+                new Hands { Hand = "88", Action = "Fold", Porcentajes = 60 },
+                new Hands { Hand = "87s", Action = "3Bet x6.5", Porcentajes = 10 },
+                new Hands { Hand = "87s", Action = "Fold", Porcentajes = 90 },
+                new Hands { Hand = "77", Action = "3Bet x6.5", Porcentajes = 20 },
+                new Hands { Hand = "77", Action = "Marginal Call", Porcentajes = 10 },
+                new Hands { Hand = "77", Action = "Fold", Porcentajes = 70 },
+                new Hands { Hand = "76s", Action = "3Bet x6.5", Porcentajes = 13 },
+                new Hands { Hand = "76s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "76s", Action = "Fold", Porcentajes = 85 },
+                new Hands { Hand = "66", Action = "3Bet x6.5", Porcentajes = 12 },
+                new Hands { Hand = "66", Action = "Marginal Call", Porcentajes = 5 },
+                new Hands { Hand = "66", Action = "Fold", Porcentajes = 83 },
+                new Hands { Hand = "65s", Action = "3Bet x6.5", Porcentajes = 38 },
+                new Hands { Hand = "65s", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "65s", Action = "Fold", Porcentajes = 59 },
+                new Hands { Hand = "55", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "55", Action = "Fold", Porcentajes = 98 },
+                new Hands { Hand = "54s", Action = "3Bet x6.5", Porcentajes = 23 },
+                new Hands { Hand = "54s", Action = "Marginal Call", Porcentajes = 7 },
+                new Hands { Hand = "54s", Action = "Fold", Porcentajes = 70 },
+                new Hands { Hand = "44", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "44", Action = "Fold", Porcentajes = 98 }
+            };
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string _3BetCOvsRaiseEP(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands { Hand = "AA", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "AKs", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "AQs", Action = "3Bet x6", Porcentajes = 97 },
+                new Hands { Hand = "AQs", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "AJs", Action = "3Bet x6", Porcentajes = 82 },
+                new Hands { Hand = "AJs", Action = "Call", Porcentajes = 18 },
+                new Hands { Hand = "ATs", Action = "3Bet x6", Porcentajes = 95 },
+                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 5 },
+                new Hands { Hand = "A9s", Action = "3Bet x6", Porcentajes = 15 },
+                new Hands { Hand = "A9s", Action = "Fold", Porcentajes = 85 },
+                new Hands { Hand = "A8s", Action = "3Bet x6", Porcentajes = 72 },
+                new Hands { Hand = "A8s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "A8s", Action = "Fold", Porcentajes = 26 },
+                new Hands { Hand = "A7s", Action = "3Bet x6", Porcentajes = 45 },
+                new Hands { Hand = "A7s", Action = "Fold", Porcentajes = 55 },
+                new Hands { Hand = "A6s", Action = "3Bet x6", Porcentajes = 57 },
+                new Hands { Hand = "A6s", Action = "Fold", Porcentajes = 43 },
+                new Hands { Hand = "A5s", Action = "3Bet x6", Porcentajes = 96 },
+                new Hands { Hand = "A5s", Action = "Call", Porcentajes = 4 },
+                new Hands { Hand = "A4s", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "A4s", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "A3s", Action = "3Bet x6", Porcentajes = 45 },
+                new Hands { Hand = "A3s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "A3s", Action = "Fold", Porcentajes = 53 },
+                new Hands { Hand = "AKo", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "KK", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "KQs", Action = "3Bet x6", Porcentajes = 87 },
+                new Hands { Hand = "KQs", Action = "Call", Porcentajes = 13 },
+                new Hands { Hand = "KJs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "KJs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "KTs", Action = "3Bet x6", Porcentajes = 95 },
+                new Hands { Hand = "KTs", Action = "Call", Porcentajes = 5 },
+                new Hands { Hand = "K8s", Action = "3Bet x6", Porcentajes = 10 },
+                new Hands { Hand = "K8s", Action = "Fold", Porcentajes = 90 },
+                new Hands { Hand = "K7s", Action = "3Bet x6", Porcentajes = 13 },
+                new Hands { Hand = "K7s", Action = "Fold", Porcentajes = 87 },
+                new Hands { Hand = "K6s", Action = "3Bet x6", Porcentajes = 28 },
+                new Hands { Hand = "K6s", Action = "Fold", Porcentajes = 72 },
+                new Hands { Hand = "K5s", Action = "3Bet x6", Porcentajes = 65 },
+                new Hands { Hand = "K5s", Action = "Fold", Porcentajes = 35 },
+                new Hands { Hand = "AQo", Action = "3Bet x6", Porcentajes = 97 },
+                new Hands { Hand = "AQo", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "KQo", Action = "3Bet x6", Porcentajes = 50 },
+                new Hands { Hand = "KQo", Action = "Fold", Porcentajes = 50 },
+                new Hands { Hand = "QQ", Action = "3Bet x6", Porcentajes = 97 },
+                new Hands { Hand = "QQ", Action = "Call", Porcentajes = 3 },
+                new Hands { Hand = "QJs", Action = "3Bet x6", Porcentajes = 52 },
+                new Hands { Hand = "QJs", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "QJs", Action = "Fold", Porcentajes = 46 },
+                new Hands { Hand = "QTs", Action = "3Bet x6", Porcentajes = 3 },
+                new Hands { Hand = "QTs", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "QTs", Action = "Fold", Porcentajes = 94 },
+                new Hands { Hand = "JJ", Action = "3Bet x6", Porcentajes = 92 },
+                new Hands { Hand = "JJ", Action = "Call", Porcentajes = 8 },
+                new Hands { Hand = "JTs", Action = "3Bet x6", Porcentajes = 3 },
+                new Hands { Hand = "JTs", Action = "Fold", Porcentajes = 97 },
+                new Hands { Hand = "TT", Action = "3Bet x6", Porcentajes = 92 },
+                new Hands { Hand = "TT", Action = "Call", Porcentajes = 8 },
+                new Hands { Hand = "99", Action = "3Bet x6", Porcentajes = 63 },
+                new Hands { Hand = "99", Action = "Marginal Call", Porcentajes = 10 },
+                new Hands { Hand = "99", Action = "Fold", Porcentajes = 27 },
+                new Hands { Hand = "88", Action = "3Bet x6", Porcentajes = 27 },
+                new Hands { Hand = "88", Action = "Marginal Call", Porcentajes = 7 },
+                new Hands { Hand = "88", Action = "Fold", Porcentajes = 66 },
+                new Hands { Hand = "87s", Action = "3Bet x6", Porcentajes = 17 },
+                new Hands { Hand = "87s", Action = "Fold", Porcentajes = 83 },
+                new Hands { Hand = "77", Action = "3Bet x6", Porcentajes = 12 },
+                new Hands { Hand = "77", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "77", Action = "Fold", Porcentajes = 85 },
+                new Hands { Hand = "76s", Action = "3Bet x6", Porcentajes = 12 },
+                new Hands { Hand = "76s", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "76s", Action = "Fold", Porcentajes = 85 },
+                new Hands { Hand = "66", Action = "3Bet x6", Porcentajes = 5 },
+                new Hands { Hand = "66", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "66", Action = "Fold", Porcentajes = 93 },
+                new Hands { Hand = "65s", Action = "3Bet x6", Porcentajes = 52 },
+                new Hands { Hand = "65s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "65s", Action = "Fold", Porcentajes = 46 },
+                new Hands { Hand = "54s", Action = "3Bet x6", Porcentajes = 43 },
+                new Hands { Hand = "54s", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "54s", Action = "Fold", Porcentajes = 54 },
+            };
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string _3BetMPvsRaiseEP(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands { Hand = "AA", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "AKs", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "AQs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "AQs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "AJs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "AJs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "ATs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "ATs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "A9s", Action = "3Bet x6", Porcentajes = 17 },
+                new Hands { Hand = "A9s", Action = "Fold", Porcentajes = 83 },
+                new Hands { Hand = "A8s", Action = "3Bet x6", Porcentajes = 88 },
+                new Hands { Hand = "A8s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "A8s", Action = "Fold", Porcentajes = 10 },
+                new Hands { Hand = "A7s", Action = "3Bet x6", Porcentajes = 42 },
+                new Hands { Hand = "A7s", Action = "Fold", Porcentajes = 58 },
+                new Hands { Hand = "A6s", Action = "3Bet x6", Porcentajes = 33 },
+                new Hands { Hand = "A6s", Action = "Fold", Porcentajes = 67 },
+                new Hands { Hand = "A5s", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "A4s", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "A3s", Action = "3Bet x6", Porcentajes = 18 },
+                new Hands { Hand = "A3s", Action = "Fold", Porcentajes = 82 },
+                new Hands { Hand = "AKo", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "KK", Action = "3Bet x6", Porcentajes = 100 },
+                new Hands { Hand = "KQs", Action = "3Bet x6", Porcentajes = 95 },
+                new Hands { Hand = "KQs", Action = "Call", Porcentajes = 5 },
+                new Hands { Hand = "KJs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "KJs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "KTs", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "KTs", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "K9s", Action = "3Bet x6", Porcentajes = 10 },
+                new Hands { Hand = "K9s", Action = "Fold", Porcentajes = 90 },
+                new Hands { Hand = "K8s", Action = "3Bet x6", Porcentajes = 13 },
+                new Hands { Hand = "K8s", Action = "Fold", Porcentajes = 87 },
+                new Hands { Hand = "K7s", Action = "3Bet x6", Porcentajes = 18 },
+                new Hands { Hand = "K7s", Action = "Fold", Porcentajes = 82 },
+                new Hands { Hand = "K6s", Action = "3Bet x6", Porcentajes = 27 },
+                new Hands { Hand = "K6s", Action = "Fold", Porcentajes = 73 },
+                new Hands { Hand = "K5s", Action = "3Bet x6", Porcentajes = 52 },
+                new Hands { Hand = "K5s", Action = "Fold", Porcentajes = 48 },
+                new Hands { Hand = "AQo", Action = "3Bet x6", Porcentajes = 87 },
+                new Hands { Hand = "AQo", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "AQo", Action = "Fold", Porcentajes = 10 },
+                new Hands { Hand = "KQo", Action = "3Bet x6", Porcentajes = 45 },
+                new Hands { Hand = "KQo", Action = "Fold", Porcentajes = 55 },
+                new Hands { Hand = "QQ", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "QQ", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "QJs", Action = "3Bet x6", Porcentajes = 10 },
+                new Hands { Hand = "QJs", Action = "Fold", Porcentajes = 90 },
+                new Hands { Hand = "JJ", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "JJ", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "TT", Action = "3Bet x6", Porcentajes = 98 },
+                new Hands { Hand = "TT", Action = "Call", Porcentajes = 2 },
+                new Hands { Hand = "99", Action = "3Bet x6", Porcentajes = 52 },
+                new Hands { Hand = "99", Action = "Marginal Call", Porcentajes = 8 },
+                new Hands { Hand = "99", Action = "Fold", Porcentajes = 40 },
+                new Hands { Hand = "88", Action = "3Bet x6", Porcentajes = 20 },
+                new Hands { Hand = "88", Action = "Marginal Call", Porcentajes = 8 },
+                new Hands { Hand = "88", Action = "Fold", Porcentajes = 72 },
+                new Hands { Hand = "87s", Action = "3Bet x6", Porcentajes = 12 },
+                new Hands { Hand = "87s", Action = "Fold", Porcentajes = 88 },
+                new Hands { Hand = "77", Action = "3Bet x6", Porcentajes = 12 },
+                new Hands { Hand = "77", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "77", Action = "Fold", Porcentajes = 86 },
+                new Hands { Hand = "76s", Action = "3Bet x6", Porcentajes = 13 },
+                new Hands { Hand = "76s", Action = "Marginal Call", Porcentajes = 3 },
+                new Hands { Hand = "76s", Action = "Fold", Porcentajes = 84 },
+                new Hands { Hand = "66", Action = "3Bet x6", Porcentajes = 5 },
+                new Hands { Hand = "66", Action = "Fold", Porcentajes = 95 },
+                new Hands { Hand = "65s", Action = "3Bet x6", Porcentajes = 58 },
+                new Hands { Hand = "65s", Action = "Fold", Porcentajes = 42 },
+                new Hands { Hand = "54s", Action = "3Bet x6", Porcentajes = 40 },
+                new Hands { Hand = "54s", Action = "Marginal Call", Porcentajes = 2 },
+                new Hands { Hand = "54s", Action = "Fold", Porcentajes = 58 },
             };
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
 
         #endregion
-
-
 
     }
 }

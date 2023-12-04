@@ -15,12 +15,12 @@ namespace OpenScrape.App.Enums
 
     public enum HeroPosition
     {
-        BigBlind,
-        SmallBlind,
-        Button,
-        CutOff,
+        EarlyPosition,
         MiddlePosition,
-        EarlyPosition
+        CutOff,
+        Button,
+        SmallBlind,
+        BigBlind
     }
 
     public enum TypePreflop
