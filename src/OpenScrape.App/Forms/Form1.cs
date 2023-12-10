@@ -43,6 +43,7 @@ namespace OpenScrape.App
         private int _speed = 1;
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
+        private string _responseAction = string.Empty;
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 57, 68, 69 };
@@ -58,6 +59,7 @@ namespace OpenScrape.App
         private readonly IGetOpenRaiseUseCase _openRaiseUseCase = new GetOpenRaiseUseCase();
         private readonly IGetRaiseOverLimperUseCase _raiseOverLimperUseCase = new GetRaiseOverLimperUseCase();
         private readonly IGet3BetUseCase _threeBetUseCase = new Get3BetUseCase();
+        private readonly IGetVs3BetUseCase _vs3BetUseCase = new GetVs3BetUseCase();
 
 
 
@@ -359,19 +361,19 @@ namespace OpenScrape.App
                         switch (item.Name)
                         {
                             case "p1sitout":
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
                                 break;
                             case "p2sitout":
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
                                 break;
                             case "p3sitout":
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
                                 break;
                             case "p4sitout":
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
                                 break;
                             case "p5sitout":
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
                                 break;
                             default:
                                 break;
@@ -496,6 +498,9 @@ namespace OpenScrape.App
 
                 switch (item.Name)
                 {
+                    case "p0bet":
+                        _scrapeResult.U0Bet = SetBetValue(res);
+                        break;
                     case "p1bet":
                         _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet = SetBetValue(res);
                         break;
@@ -536,8 +541,54 @@ namespace OpenScrape.App
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet > 0 ? $"Bet P4 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet} BBs \r\n" : string.Empty;
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 0 ? $"Bet P5 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet} BBs \r\n" : string.Empty;
 
+            var preflopHeroPosition = GetPreflopHeroPosition();
+
+            _responseAction = GetOpenRaiseAction(preflopHeroPosition);
+
+            if (_responseAction is null)
+            {
+                _responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
+            }
+
+            if (_responseAction is null)
+            {
+                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) == 1)
+                    _responseAction = Get3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+            }
+
+            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(_responseAction))
+            {
+
+                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                {
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
+
+                var response = _openRaiseUseCase.Execute(openRaiseCommand);
+
+            }
+
+            SetBoardValues();
+            lbAction.Text = _responseAction;
+
+        }
+
+        
+
+        private void btnCapture3bet_Click(object sender, EventArgs e)
+        {
+            var preflopHeroPosition = GetPreflopHeroPosition();
+
+            if (_responseAction is null)
+                _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+
+        }
+
+        private Dictionary<HeroPosition, List<decimal>> GetPreflopHeroPosition()
+        {
             //Comprobar si llega la mano sin subir
-            Dictionary<HeroPosition, List<decimal>> preflopHeroPosition = new Dictionary<HeroPosition, List<decimal>>()
+            return new Dictionary<HeroPosition, List<decimal>>()
             {
                 {
                     HeroPosition.BigBlind, new List<decimal>
@@ -580,46 +631,14 @@ namespace OpenScrape.App
                     }
                 },
                 {
-                    HeroPosition.EarlyPosition, new List<decimal>()                    
+                    HeroPosition.EarlyPosition, new List<decimal>()
                 }
             };
-
-            var responseAction = string.Empty;
-
-            responseAction = GetOpenRaiseAction(preflopHeroPosition);
-
-            if (responseAction is null)
-            {
-                responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
-            }
-
-            if(responseAction is null)
-            {
-                if(_scrapeResult.DataPlayer.Count(a => a.Bet > 1) == 1)
-                    responseAction = Get3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
-            }
-
-            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(responseAction))
-            {
-
-                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
-                {
-                    Hand = SetHandValue(),
-                    Position = _scrapeResult.P0Position
-                };
-
-                var response = _openRaiseUseCase.Execute(openRaiseCommand);
-
-            }
-
-            SetBoardValues();
-            lbAction.Text = responseAction;          
-
         }
 
         private void SetVillainPosition(HeroPosition p0Position)
         {
-            switch (p0Position) 
+            switch (p0Position)
             {
                 case HeroPosition.BigBlind:
                     _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.EarlyPosition;
@@ -747,13 +766,13 @@ namespace OpenScrape.App
 
                 if (!noneBet)
                 {
-                    var openRaiseCommand = new GetOpenRaiseUseCaseRequest
+                    var command = new GetOpenRaiseUseCaseRequest
                     {
                         Hand = SetHandValue(),
                         Position = _scrapeResult.P0Position
                     };
 
-                    responseAction = _openRaiseUseCase.Execute(openRaiseCommand);
+                    responseAction = _openRaiseUseCase.Execute(command);
                 }
             }
 
@@ -771,21 +790,44 @@ namespace OpenScrape.App
 
                 if (noneBet)
                 {
-                    var openRaiseCommand = new Get3BetUseCaseRequest
+                    var command = new Get3BetUseCaseRequest
                     {
                         Hand = SetHandValue(),
                         Position = _scrapeResult.P0Position,
                         VillainPosition = villainPosition
                     };
 
-                    responseAction = _threeBetUseCase.Execute(openRaiseCommand);
+                    responseAction = _threeBetUseCase.Execute(command);
                 }
             }
 
             return responseAction.Action;
         }
 
-        //private string Get
+        private string GetOpenRaiseVs3BetAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition, HeroPosition villainPosition)
+        {
+            var responseAction = new GetVs3BetUseCaseResponse();
+
+            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            {
+                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                bool noneBet = bets.Any(b => b > _scrapeResult.U0Bet);
+
+                if(noneBet)
+                {
+                    var command = new GetVs3BetUseCaseRequest
+                    {
+                        Hand = SetHandValue(),
+                        Position = _scrapeResult.P0Position,
+                        VillainPosition = villainPosition
+                    };
+
+                    responseAction = _vs3BetUseCase.Execute(command);
+                }
+            }
+
+            return responseAction.Action;
+        }
 
         private string SetHandValue()
         {
@@ -1536,7 +1578,7 @@ namespace OpenScrape.App
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
         }
 
-
+        
     }
 }
 

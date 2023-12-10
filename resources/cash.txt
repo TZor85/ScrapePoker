@@ -24,6 +24,7 @@ r$p2dealer # 181 - 276 - 1 - 1 & False & True & False & ffd800
 r$p3dealer # 413 - 181 - 1 - 1 & False & True & False & ffd800
 r$p4dealer # 821 - 275 - 1 - 1 & False & True & False & ffd800
 r$p5dealer # 679 - 489 - 1 - 1 & False & True & False & ffd800
+r$u0bet # 488 - 459 - 90 - 15 & False & False & False & 
 r$p1bet # 274 - 452 - 90 - 15 & False & False & False & 
 r$p2bet # 195 - 268 - 90 - 15 & False & False & False & 
 r$p3bet # 425 - 209 - 90 - 15 & False & False & False & 

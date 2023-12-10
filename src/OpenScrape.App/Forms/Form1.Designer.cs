@@ -28,10 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            TreeNode treeNode1 = new TreeNode("Regions");
-            TreeNode treeNode2 = new TreeNode("Board");
-            TreeNode treeNode3 = new TreeNode("Images");
-            TreeNode treeNode4 = new TreeNode("Fonts");
+            TreeNode treeNode9 = new TreeNode("Regions");
+            TreeNode treeNode10 = new TreeNode("Board");
+            TreeNode treeNode11 = new TreeNode("Images");
+            TreeNode treeNode12 = new TreeNode("Fonts");
             twRegions = new TreeView();
             btnNew = new Button();
             btnPlusWidth = new Button();
@@ -75,6 +75,8 @@
             pbCard1 = new PictureBox();
             pbCard0 = new PictureBox();
             tbResumen = new TextBox();
+            btnCapture3bet = new Button();
+            btnCapture4Bet = new Button();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
@@ -85,19 +87,19 @@
             // 
             twRegions.Location = new Point(12, 48);
             twRegions.Name = "twRegions";
-            treeNode1.Name = "Nodo0";
-            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode2.Text = "Board";
-            treeNode3.Name = "Nodo2";
-            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode3.Text = "Images";
-            treeNode4.Name = "Nodo3";
-            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode4.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
+            treeNode9.Name = "Nodo0";
+            treeNode9.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode9.Text = "Regions";
+            treeNode10.Name = "Nodo1";
+            treeNode10.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode10.Text = "Board";
+            treeNode11.Name = "Nodo2";
+            treeNode11.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode11.Text = "Images";
+            treeNode12.Name = "Nodo3";
+            treeNode12.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode12.Text = "Fonts";
+            twRegions.Nodes.AddRange(new TreeNode[] { treeNode9, treeNode10, treeNode11, treeNode12 });
             twRegions.Size = new Size(159, 342);
             twRegions.TabIndex = 0;
             twRegions.AfterSelect += twRegions_AfterSelect;
@@ -175,7 +177,7 @@
             // 
             // btnSaveMap
             // 
-            btnSaveMap.Location = new Point(297, 408);
+            btnSaveMap.Location = new Point(516, 367);
             btnSaveMap.Name = "btnSaveMap";
             btnSaveMap.Size = new Size(75, 23);
             btnSaveMap.TabIndex = 13;
@@ -185,7 +187,7 @@
             // 
             // btnLoadMap
             // 
-            btnLoadMap.Location = new Point(213, 408);
+            btnLoadMap.Location = new Point(434, 367);
             btnLoadMap.Name = "btnLoadMap";
             btnLoadMap.Size = new Size(75, 23);
             btnLoadMap.TabIndex = 14;
@@ -425,9 +427,9 @@
             // 
             // btnCapture
             // 
-            btnCapture.Location = new Point(17, 422);
+            btnCapture.Location = new Point(12, 513);
             btnCapture.Name = "btnCapture";
-            btnCapture.Size = new Size(104, 66);
+            btnCapture.Size = new Size(80, 60);
             btnCapture.TabIndex = 20;
             btnCapture.Text = "Capture";
             btnCapture.UseVisualStyleBackColor = true;
@@ -456,7 +458,7 @@
             // 
             // btnWindow
             // 
-            btnWindow.Location = new Point(489, 422);
+            btnWindow.Location = new Point(489, 460);
             btnWindow.Name = "btnWindow";
             btnWindow.Size = new Size(102, 66);
             btnWindow.TabIndex = 23;
@@ -529,7 +531,7 @@
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbAction.Location = new Point(259, 508);
+            lbAction.Location = new Point(257, 457);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(57, 21);
             lbAction.TabIndex = 55;
@@ -537,7 +539,7 @@
             // 
             // pbCard1
             // 
-            pbCard1.Location = new Point(325, 451);
+            pbCard1.Location = new Point(308, 400);
             pbCard1.Name = "pbCard1";
             pbCard1.Size = new Size(20, 35);
             pbCard1.TabIndex = 57;
@@ -545,7 +547,7 @@
             // 
             // pbCard0
             // 
-            pbCard0.Location = new Point(294, 451);
+            pbCard0.Location = new Point(277, 400);
             pbCard0.Name = "pbCard0";
             pbCard0.Size = new Size(20, 35);
             pbCard0.TabIndex = 56;
@@ -559,11 +561,32 @@
             tbResumen.Size = new Size(251, 207);
             tbResumen.TabIndex = 60;
             // 
+            // btnCapture3bet
+            // 
+            btnCapture3bet.Location = new Point(98, 513);
+            btnCapture3bet.Name = "btnCapture3bet";
+            btnCapture3bet.Size = new Size(80, 60);
+            btnCapture3bet.TabIndex = 61;
+            btnCapture3bet.Text = "vs 3Bet";
+            btnCapture3bet.UseVisualStyleBackColor = true;
+            btnCapture3bet.Click += btnCapture3bet_Click;
+            // 
+            // btnCapture4Bet
+            // 
+            btnCapture4Bet.Location = new Point(184, 513);
+            btnCapture4Bet.Name = "btnCapture4Bet";
+            btnCapture4Bet.Size = new Size(80, 60);
+            btnCapture4Bet.TabIndex = 62;
+            btnCapture4Bet.Text = "vs 4Bet";
+            btnCapture4Bet.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(593, 538);
+            ClientSize = new Size(593, 585);
+            Controls.Add(btnCapture4Bet);
+            Controls.Add(btnCapture3bet);
             Controls.Add(tbResumen);
             Controls.Add(pbCard1);
             Controls.Add(pbCard0);
@@ -646,5 +669,7 @@
         private Label label6;
         private Label label9;
         private TextBox tbResumen;
+        private Button btnCapture3bet;
+        private Button btnCapture4Bet;
     }
 }

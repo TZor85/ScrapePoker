@@ -11,6 +11,7 @@ namespace OpenScrape.App.Entities
         public int U0CardForce1 { get; set; } = 0;
         public int U0CardSuit0 { get; set; } = 0;
         public int U0CardSuit1 { get; set; } = 0;
+        public decimal U0Bet {  get; set; }
         public HeroPosition P0Position { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
      
