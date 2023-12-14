@@ -1,0 +1,2107 @@
+{box1_0: {,…},…}
+box0_0
+: 
+{colors: [{name: "#e35353", percentage: 100, place: 1}], colorPercentage: {#e35353: 100},…}
+colorPercentage
+: 
+{#e35353: 100}
+#e35353
+: 
+100
+colors
+: 
+[{name: "#e35353", percentage: 100, place: 1}]
+0
+: 
+{name: "#e35353", percentage: 100, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box0_1
+: 
+{colors: [{name: "#e35353", percentage: 100, place: 1}], colorPercentage: {#e35353: 100},…}
+colorPercentage
+: 
+{#e35353: 100}
+#e35353
+: 
+100
+colors
+: 
+[{name: "#e35353", percentage: 100, place: 1}]
+0
+: 
+{name: "#e35353", percentage: 100, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box0_2
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box0_3
+: 
+{colors: [{name: "#e35353", percentage: 51, place: 1}, {name: "#8dd6f1", percentage: 49, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 51, #8dd6f1: 49}
+#8dd6f1
+: 
+49
+#e35353
+: 
+51
+colors
+: 
+[{name: "#e35353", percentage: 51, place: 1}, {name: "#8dd6f1", percentage: 49, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 51, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+51
+place
+: 
+1
+1
+: 
+{name: "#8dd6f1", percentage: 49, place: 2}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+49
+place
+: 
+2
+fontColor
+: 
+"#191919"
+box0_4
+: 
+{,…}
+colorPercentage
+: 
+{#e35353: 16, #fff699: 63, #e0e0e0: 21}
+#e0e0e0
+: 
+21
+#e35353
+: 
+16
+#fff699
+: 
+63
+colors
+: 
+[{name: "#e35353", percentage: 16, place: 1}, {name: "#fff699", percentage: 63, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 16, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+16
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 63, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+63
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 21, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+21
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box0_5
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box0_6
+: 
+{colors: [{name: "#e35353", percentage: 23, place: 1}, {name: "#fff699", percentage: 2, place: 2},…],…}
+colorPercentage
+: 
+{#e35353: 23, #fff699: 2, #e0e0e0: 75}
+#e0e0e0
+: 
+75
+#e35353
+: 
+23
+#fff699
+: 
+2
+colors
+: 
+[{name: "#e35353", percentage: 23, place: 1}, {name: "#fff699", percentage: 2, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 23, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+23
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 2, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+2
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 75, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+75
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box0_7
+: 
+{colors: [{name: "#e35353", percentage: 31, place: 1}, {name: "#e0e0e0", percentage: 69, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 31, #e0e0e0: 69}
+#e0e0e0
+: 
+69
+#e35353
+: 
+31
+colors
+: 
+[{name: "#e35353", percentage: 31, place: 1}, {name: "#e0e0e0", percentage: 69, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 31, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+31
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 69, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+69
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box0_8
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box0_9
+: 
+{,…}
+colorPercentage
+: 
+{#e35353: 33, #fff699: 66, #e0e0e0: 1}
+#e0e0e0
+: 
+1
+#e35353
+: 
+33
+#fff699
+: 
+66
+colors
+: 
+[{name: "#e35353", percentage: 33, place: 1}, {name: "#fff699", percentage: 66, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 33, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+33
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 66, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+66
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 1, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+1
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box0_10
+: 
+{,…}
+colorPercentage
+: 
+{#e35353: 53, #fff699: 37, #e0e0e0: 10}
+#e0e0e0
+: 
+10
+#e35353
+: 
+53
+#fff699
+: 
+37
+colors
+: 
+[{name: "#e35353", percentage: 53, place: 1}, {name: "#fff699", percentage: 37, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 53, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+53
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 37, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+37
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 10, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+10
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box0_11
+: 
+{colors: [{name: "#e35353", percentage: 16, place: 1}, {name: "#e0e0e0", percentage: 84, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 16, #e0e0e0: 84}
+#e0e0e0
+: 
+84
+#e35353
+: 
+16
+colors
+: 
+[{name: "#e35353", percentage: 16, place: 1}, {name: "#e0e0e0", percentage: 84, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 16, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+16
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 84, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+84
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box0_12
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box1_0
+: 
+{,…}
+colorPercentage
+: 
+{#3d3d3d: 54, #e35353: 16, #8dd6f1: 30}
+#3d3d3d
+: 
+54
+#8dd6f1
+: 
+30
+#e35353
+: 
+16
+colors
+: 
+[{name: "#3d3d3d", percentage: 54, place: 1}, {name: "#e35353", percentage: 16, place: 2},…]
+0
+: 
+{name: "#3d3d3d", percentage: 54, place: 1}
+name
+: 
+"#3d3d3d"
+percentage
+: 
+54
+place
+: 
+1
+1
+: 
+{name: "#e35353", percentage: 16, place: 2}
+name
+: 
+"#e35353"
+percentage
+: 
+16
+place
+: 
+2
+2
+: 
+{name: "#8dd6f1", percentage: 30, place: 3}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+30
+place
+: 
+3
+fontColor
+: 
+"#191919"
+box1_1
+: 
+{colors: [{name: "#3d3d3d", percentage: 25, place: 1}, {name: "#e35353", percentage: 75, place: 2}],…}
+colorPercentage
+: 
+{#3d3d3d: 25, #e35353: 75}
+#3d3d3d
+: 
+25
+#e35353
+: 
+75
+colors
+: 
+[{name: "#3d3d3d", percentage: 25, place: 1}, {name: "#e35353", percentage: 75, place: 2}]
+0
+: 
+{name: "#3d3d3d", percentage: 25, place: 1}
+name
+: 
+"#3d3d3d"
+percentage
+: 
+25
+place
+: 
+1
+1
+: 
+{name: "#e35353", percentage: 75, place: 2}
+name
+: 
+"#e35353"
+percentage
+: 
+75
+place
+: 
+2
+fontColor
+: 
+"#191919"
+box1_2
+: 
+{colors: [{name: "#e35353", percentage: 67, place: 1}, {name: "#8dd6f1", percentage: 33, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 67, #8dd6f1: 33}
+#8dd6f1
+: 
+33
+#e35353
+: 
+67
+colors
+: 
+[{name: "#e35353", percentage: 67, place: 1}, {name: "#8dd6f1", percentage: 33, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 67, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+67
+place
+: 
+1
+1
+: 
+{name: "#8dd6f1", percentage: 33, place: 2}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+33
+place
+: 
+2
+fontColor
+: 
+"#191919"
+box1_3
+: 
+{colors: [{name: "#e35353", percentage: 42, place: 1}, {name: "#8dd6f1", percentage: 58, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 42, #8dd6f1: 58}
+#8dd6f1
+: 
+58
+#e35353
+: 
+42
+colors
+: 
+[{name: "#e35353", percentage: 42, place: 1}, {name: "#8dd6f1", percentage: 58, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 42, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+42
+place
+: 
+1
+1
+: 
+{name: "#8dd6f1", percentage: 58, place: 2}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+58
+place
+: 
+2
+fontColor
+: 
+"#191919"
+box1_4
+: 
+{,…}
+colorPercentage
+: 
+{#e35353: 42, #fff699: 35, #e0e0e0: 23}
+#e0e0e0
+: 
+23
+#e35353
+: 
+42
+#fff699
+: 
+35
+colors
+: 
+[{name: "#e35353", percentage: 42, place: 1}, {name: "#fff699", percentage: 35, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 42, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+42
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 35, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+35
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 23, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+23
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box1_5
+: 
+{colors: [{name: "#e35353", percentage: 11, place: 1}, {name: "#e0e0e0", percentage: 89, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 11, #e0e0e0: 89}
+#e0e0e0
+: 
+89
+#e35353
+: 
+11
+colors
+: 
+[{name: "#e35353", percentage: 11, place: 1}, {name: "#e0e0e0", percentage: 89, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 11, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+11
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 89, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+89
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box1_6
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box1_7
+: 
+{colors: [{name: "#e35353", percentage: 9, place: 1}, {name: "#e0e0e0", percentage: 91, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 9, #e0e0e0: 91}
+#e0e0e0
+: 
+91
+#e35353
+: 
+9
+colors
+: 
+[{name: "#e35353", percentage: 9, place: 1}, {name: "#e0e0e0", percentage: 91, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 9, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+9
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 91, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+91
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box1_8
+: 
+{colors: [{name: "#e35353", percentage: 29, place: 1}, {name: "#e0e0e0", percentage: 71, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 29, #e0e0e0: 71}
+#e0e0e0
+: 
+71
+#e35353
+: 
+29
+colors
+: 
+[{name: "#e35353", percentage: 29, place: 1}, {name: "#e0e0e0", percentage: 71, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 29, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+29
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 71, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+71
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box1_9
+: 
+{colors: [{name: "#e35353", percentage: 44, place: 1}, {name: "#e0e0e0", percentage: 56, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 44, #e0e0e0: 56}
+#e0e0e0
+: 
+56
+#e35353
+: 
+44
+colors
+: 
+[{name: "#e35353", percentage: 44, place: 1}, {name: "#e0e0e0", percentage: 56, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 44, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+44
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 56, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+56
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box2_0
+: 
+{colors: [{name: "#e35353", percentage: 45, place: 1}, {name: "#e0e0e0", percentage: 55, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 45, #e0e0e0: 55}
+#e0e0e0
+: 
+55
+#e35353
+: 
+45
+colors
+: 
+[{name: "#e35353", percentage: 45, place: 1}, {name: "#e0e0e0", percentage: 55, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 45, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+45
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 55, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+55
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box2_1
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box2_2
+: 
+{colors: [{name: "#3d3d3d", percentage: 1, place: 1}, {name: "#e35353", percentage: 17, place: 2},…],…}
+colorPercentage
+: 
+{#3d3d3d: 1, #e35353: 17, #8dd6f1: 82}
+#3d3d3d
+: 
+1
+#8dd6f1
+: 
+82
+#e35353
+: 
+17
+colors
+: 
+[{name: "#3d3d3d", percentage: 1, place: 1}, {name: "#e35353", percentage: 17, place: 2},…]
+0
+: 
+{name: "#3d3d3d", percentage: 1, place: 1}
+name
+: 
+"#3d3d3d"
+percentage
+: 
+1
+place
+: 
+1
+1
+: 
+{name: "#e35353", percentage: 17, place: 2}
+name
+: 
+"#e35353"
+percentage
+: 
+17
+place
+: 
+2
+2
+: 
+{name: "#8dd6f1", percentage: 82, place: 3}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+82
+place
+: 
+3
+fontColor
+: 
+"#191919"
+box2_3
+: 
+{colors: [{name: "#fff699", percentage: 4, place: 1}, {name: "#e0e0e0", percentage: 96, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 4, #e0e0e0: 96}
+#e0e0e0
+: 
+96
+#fff699
+: 
+4
+colors
+: 
+[{name: "#fff699", percentage: 4, place: 1}, {name: "#e0e0e0", percentage: 96, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 4, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+4
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 96, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+96
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box2_4
+: 
+{colors: [{name: "#fff699", percentage: 6, place: 1}, {name: "#e0e0e0", percentage: 94, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 6, #e0e0e0: 94}
+#e0e0e0
+: 
+94
+#fff699
+: 
+6
+colors
+: 
+[{name: "#fff699", percentage: 6, place: 1}, {name: "#e0e0e0", percentage: 94, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 6, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+6
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 94, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+94
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box2_5
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box2_6
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box3_0
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box3_1
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box3_2
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box3_3
+: 
+{colors: [{name: "#e35353", percentage: 20, place: 1}, {name: "#8dd6f1", percentage: 80, place: 2}],…}
+colorPercentage
+: 
+{#e35353: 20, #8dd6f1: 80}
+#8dd6f1
+: 
+80
+#e35353
+: 
+20
+colors
+: 
+[{name: "#e35353", percentage: 20, place: 1}, {name: "#8dd6f1", percentage: 80, place: 2}]
+0
+: 
+{name: "#e35353", percentage: 20, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+20
+place
+: 
+1
+1
+: 
+{name: "#8dd6f1", percentage: 80, place: 2}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+80
+place
+: 
+2
+fontColor
+: 
+"#191919"
+box3_4
+: 
+{colors: [{name: "#fff699", percentage: 46, place: 1}, {name: "#e0e0e0", percentage: 54, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 46, #e0e0e0: 54}
+#e0e0e0
+: 
+54
+#fff699
+: 
+46
+colors
+: 
+[{name: "#fff699", percentage: 46, place: 1}, {name: "#e0e0e0", percentage: 54, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 46, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+46
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 54, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+54
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box3_5
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box4_0
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box4_1
+: 
+{colors: [{name: "#e0e0e0", percentage: 100, place: 1}], colorPercentage: {#e0e0e0: 100},…}
+colorPercentage
+: 
+{#e0e0e0: 100}
+#e0e0e0
+: 
+100
+colors
+: 
+[{name: "#e0e0e0", percentage: 100, place: 1}]
+0
+: 
+{name: "#e0e0e0", percentage: 100, place: 1}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#000000"
+box4_4
+: 
+{colors: [{name: "#fff699", percentage: 62, place: 1}, {name: "#e0e0e0", percentage: 38, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 62, #e0e0e0: 38}
+#e0e0e0
+: 
+38
+#fff699
+: 
+62
+colors
+: 
+[{name: "#fff699", percentage: 62, place: 1}, {name: "#e0e0e0", percentage: 38, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 62, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+62
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 38, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+38
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box4_5
+: 
+{colors: [{name: "#fff699", percentage: 29, place: 1}, {name: "#e0e0e0", percentage: 71, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 29, #e0e0e0: 71}
+#e0e0e0
+: 
+71
+#fff699
+: 
+29
+colors
+: 
+[{name: "#fff699", percentage: 29, place: 1}, {name: "#e0e0e0", percentage: 71, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 29, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+29
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 71, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+71
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box4_6
+: 
+{colors: [{name: "#fff699", percentage: 26, place: 1}, {name: "#e0e0e0", percentage: 74, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 26, #e0e0e0: 74}
+#e0e0e0
+: 
+74
+#fff699
+: 
+26
+colors
+: 
+[{name: "#fff699", percentage: 26, place: 1}, {name: "#e0e0e0", percentage: 74, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 26, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+26
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 74, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+74
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box5_5
+: 
+{colors: [{name: "#e35353", percentage: 7, place: 1}, {name: "#fff699", percentage: 41, place: 2},…],…}
+colorPercentage
+: 
+{#e35353: 7, #fff699: 41, #e0e0e0: 52}
+#e0e0e0
+: 
+52
+#e35353
+: 
+7
+#fff699
+: 
+41
+colors
+: 
+[{name: "#e35353", percentage: 7, place: 1}, {name: "#fff699", percentage: 41, place: 2},…]
+0
+: 
+{name: "#e35353", percentage: 7, place: 1}
+name
+: 
+"#e35353"
+percentage
+: 
+7
+place
+: 
+1
+1
+: 
+{name: "#fff699", percentage: 41, place: 2}
+name
+: 
+"#fff699"
+percentage
+: 
+41
+place
+: 
+2
+2
+: 
+{name: "#e0e0e0", percentage: 52, place: 3}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+52
+place
+: 
+3
+fontColor
+: 
+"#000000"
+box5_6
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box6_6
+: 
+{colors: [{name: "#fff699", percentage: 41, place: 1}, {name: "#e0e0e0", percentage: 59, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 41, #e0e0e0: 59}
+#e0e0e0
+: 
+59
+#fff699
+: 
+41
+colors
+: 
+[{name: "#fff699", percentage: 41, place: 1}, {name: "#e0e0e0", percentage: 59, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 41, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+41
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 59, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+59
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box6_7
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box7_7
+: 
+{colors: [{name: "#fff699", percentage: 39, place: 1}, {name: "#e0e0e0", percentage: 61, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 39, #e0e0e0: 61}
+#e0e0e0
+: 
+61
+#fff699
+: 
+39
+colors
+: 
+[{name: "#fff699", percentage: 39, place: 1}, {name: "#e0e0e0", percentage: 61, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 39, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+39
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 61, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+61
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box7_8
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box8_8
+: 
+{colors: [{name: "#fff699", percentage: 60, place: 1}, {name: "#e0e0e0", percentage: 40, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 60, #e0e0e0: 40}
+#e0e0e0
+: 
+40
+#fff699
+: 
+60
+colors
+: 
+[{name: "#fff699", percentage: 60, place: 1}, {name: "#e0e0e0", percentage: 40, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 60, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+60
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 40, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+40
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box8_9
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box9_9
+: 
+{colors: [{name: "#fff699", percentage: 83, place: 1}, {name: "#e0e0e0", percentage: 17, place: 2}],…}
+colorPercentage
+: 
+{#fff699: 83, #e0e0e0: 17}
+#e0e0e0
+: 
+17
+#fff699
+: 
+83
+colors
+: 
+[{name: "#fff699", percentage: 83, place: 1}, {name: "#e0e0e0", percentage: 17, place: 2}]
+0
+: 
+{name: "#fff699", percentage: 83, place: 1}
+name
+: 
+"#fff699"
+percentage
+: 
+83
+place
+: 
+1
+1
+: 
+{name: "#e0e0e0", percentage: 17, place: 2}
+name
+: 
+"#e0e0e0"
+percentage
+: 
+17
+place
+: 
+2
+fontColor
+: 
+"#000000"
+box9_10
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box10_10
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box11_11
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+box12_12
+: 
+{colors: [{name: "#8dd6f1", percentage: 100, place: 1}], colorPercentage: {#8dd6f1: 100},…}
+colorPercentage
+: 
+{#8dd6f1: 100}
+#8dd6f1
+: 
+100
+colors
+: 
+[{name: "#8dd6f1", percentage: 100, place: 1}]
+0
+: 
+{name: "#8dd6f1", percentage: 100, place: 1}
+name
+: 
+"#8dd6f1"
+percentage
+: 
+100
+place
+: 
+1
+fontColor
+: 
+"#191919"
+colorData
+: 
+[{name: "ALL IN", combos: 8, comboPercentage: "0.61", color: "#3d3d3d"},…]
+0
+: 
+{name: "ALL IN", combos: 8, comboPercentage: "0.61", color: "#3d3d3d"}
+color
+: 
+"#3d3d3d"
+comboPercentage
+: 
+"0.61"
+combos
+: 
+8
+name
+: 
+"ALL IN"
+1
+: 
+{name: "4BET (19 BB)", combos: 43, comboPercentage: "3.25", color: "#e35353"}
+color
+: 
+"#e35353"
+comboPercentage
+: 
+"3.25"
+combos
+: 
+43
+name
+: 
+"4BET (19 BB)"
+2
+: 
+{name: "CALL", combos: 61, comboPercentage: "4.59", color: "#8dd6f1"}
+color
+: 
+"#8dd6f1"
+comboPercentage
+: 
+"4.59"
+combos
+: 
+61
+name
+: 
+"CALL"
+3
+: 
+{name: "MARGINAL CALL", combos: 32, comboPercentage: "2.42", color: "#fff699"}
+color
+: 
+"#fff699"
+comboPercentage
+: 
+"2.42"
+combos
+: 
+32
+name
+: 
+"MARGINAL CALL"
+4
+: 
+{name: "FOLD", combos: 162, comboPercentage: "12.20", color: "#e0e0e0"}
+color
+: 
+"#e0e0e0"
+comboPercentage
+: 
+"12.20"
+combos
+: 
+162
+name
+: 
+"FOLD"

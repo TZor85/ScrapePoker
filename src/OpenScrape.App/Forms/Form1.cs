@@ -60,6 +60,7 @@ namespace OpenScrape.App
         private readonly IGetRaiseOverLimperUseCase _raiseOverLimperUseCase = new GetRaiseOverLimperUseCase();
         private readonly IGet3BetUseCase _threeBetUseCase = new Get3BetUseCase();
         private readonly IGetVs3BetUseCase _vs3BetUseCase = new GetVs3BetUseCase();
+        private readonly IGetVs3BetAndCall _vs3BetAndCall = new GetVs3BetAndCall();
 
 
 
@@ -546,14 +547,38 @@ namespace OpenScrape.App
             _responseAction = GetOpenRaiseAction(preflopHeroPosition);
 
             if (_responseAction is null)
-            {
                 _responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
-            }
+            else
+                _scrapeResult.HeroAction = HeroAction.OpenRaise;
+            
 
             if (_responseAction is null)
             {
-                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) == 1)
+                var apuesta = 0m;
+                var cont = 0;
+
+                foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Bet > 1))
+                {
+                    if(item.Bet > apuesta)
+                    {
+                        cont++; // Si cont > 1, hay mas de un jugador que ha subido (hay 4bet)
+                        apuesta = item.Bet;
+                    }
+                }
+
+                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) > 1 && cont == 1)
                     _responseAction = Get3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+
+                if(_responseAction is not null)
+                    _scrapeResult.HeroAction = HeroAction.ThreeBet;
+                else
+                {
+                    //hacer aquí los 4bets    
+                }
+            }
+            else
+            {
+                _scrapeResult.HeroAction = HeroAction.RaiseOverLimper;
             }
 
             if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(_responseAction))
@@ -578,10 +603,18 @@ namespace OpenScrape.App
 
         private void btnCapture3bet_Click(object sender, EventArgs e)
         {
+            if (!cbTest.Checked)
+            {
+                GetImageWhilePlaying();
+            }
+
             var preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (_responseAction is null)
+            if (_responseAction is null && _scrapeResult.HeroAction == HeroAction.OpenRaise)
                 _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+
+            if (_responseAction is null && _scrapeResult.HeroAction == HeroAction.OpenRaise)
+                _responseAction = GetOpenRaiseVs3BetAndCallAction(preflopHeroPosition);
 
         }
 
@@ -823,6 +856,48 @@ namespace OpenScrape.App
                     };
 
                     responseAction = _vs3BetUseCase.Execute(command);
+                }
+            }
+
+            return responseAction.Action;
+        }
+
+        private string GetOpenRaiseVs3BetAndCallAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
+        {
+
+            var responseAction = new GetVs3BetAndCallUseCaseResponse();
+
+            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            {
+                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
+                bool noneBet = bets.Any(b => b > _scrapeResult.U0Bet);
+
+                var apuesta = 0m;
+                var cont = 0;
+                var positions = new List<HeroPosition>();
+
+                foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Bet > _scrapeResult.U0Bet))
+                {
+                    positions.Add(item.Position);
+
+                    if (item.Bet > apuesta)
+                    {
+                        cont++;
+                        apuesta = item.Bet;
+                    }
+                }
+
+                if (noneBet && cont == 1)
+                {
+                    var command = new GetVs3BetAndCallUseCaseRequest
+                    {
+                        Hand = SetHandValue(),
+                        Position = _scrapeResult.P0Position,
+                        VillainPosition = positions[0],
+                        CallerPosition = positions[1]
+                    };
+
+                    responseAction = _vs3BetAndCall.Execute(command);
                 }
             }
 
