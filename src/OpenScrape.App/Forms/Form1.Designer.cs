@@ -28,10 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
-            TreeNode treeNode9 = new TreeNode("Regions");
-            TreeNode treeNode10 = new TreeNode("Board");
-            TreeNode treeNode11 = new TreeNode("Images");
-            TreeNode treeNode12 = new TreeNode("Fonts");
+            TreeNode treeNode1 = new TreeNode("Regions");
+            TreeNode treeNode2 = new TreeNode("Board");
+            TreeNode treeNode3 = new TreeNode("Images");
+            TreeNode treeNode4 = new TreeNode("Fonts");
             twRegions = new TreeView();
             btnNew = new Button();
             btnPlusWidth = new Button();
@@ -87,19 +87,19 @@
             // 
             twRegions.Location = new Point(12, 48);
             twRegions.Name = "twRegions";
-            treeNode9.Name = "Nodo0";
-            treeNode9.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode9.Text = "Regions";
-            treeNode10.Name = "Nodo1";
-            treeNode10.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode10.Text = "Board";
-            treeNode11.Name = "Nodo2";
-            treeNode11.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode11.Text = "Images";
-            treeNode12.Name = "Nodo3";
-            treeNode12.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode12.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode9, treeNode10, treeNode11, treeNode12 });
+            treeNode1.Name = "Nodo0";
+            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode1.Text = "Regions";
+            treeNode2.Name = "Nodo1";
+            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode2.Text = "Board";
+            treeNode3.Name = "Nodo2";
+            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode3.Text = "Images";
+            treeNode4.Name = "Nodo3";
+            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode4.Text = "Fonts";
+            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
             twRegions.Size = new Size(159, 342);
             twRegions.TabIndex = 0;
             twRegions.AfterSelect += twRegions_AfterSelect;

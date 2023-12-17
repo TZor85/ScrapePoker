@@ -13,15 +13,15 @@ r$p2empty # 129 - 133 - 1 - 1 & False & True & False & 0d3b2e
 r$p3empty # 511 - 55 - 1 - 1 & False & True & False & 0c372b
 r$p4empty # 893 - 134 - 1 - 1 & False & True & False & 0d3c2f
 r$p5empty # 810 - 435 - 1 - 1 & False & True & False & 5c8645
-r$p1sitout # 213 - 483 - 1 - 1 & False & True & False & 090909
-r$p2sitout # 130 - 182 - 1 - 1 & False & True & False & 051611
-r$p3sitout # 511 - 104 - 1 - 1 & False & True & False & 051611
-r$p4sitout # 893 - 184 - 1 - 1 & False & True & False & 051611
-r$p5sitout # 810 - 484 - 1 - 1 & False & True & False & 050505
+r$p1sitout # 154 - 472 - 122 - 22 & False & False & False & 
+r$p2sitout # 70 - 171 - 122 - 22 & False & False & False & 
+r$p3sitout # 450 - 91 - 122 - 22 & False & False & False & 
+r$p4sitout # 835 - 171 - 122 - 22 & False & False & False & 
+r$p5sitout # 750 - 472 - 122 - 22 & False & False & False & 
 r$p0dealer # 413 - 501 - 1 - 1 & False & True & False & ffd800
 r$p1dealer # 324 - 486 - 1 - 1 & False & True & False & ffd800
 r$p2dealer # 181 - 276 - 1 - 1 & False & True & False & ffd800
-r$p3dealer # 413 - 181 - 1 - 1 & False & True & False & ffd800
+r$p3dealer # 413 - 181 - 1 - 1 & False & True & False & 577e41
 r$p4dealer # 821 - 275 - 1 - 1 & False & True & False & ffd800
 r$p5dealer # 679 - 489 - 1 - 1 & False & True & False & ffd800
 r$u0bet # 488 - 459 - 90 - 15 & False & False & False & 
