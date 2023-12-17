@@ -28,7 +28,7 @@ r$u0bet # 488 - 459 - 90 - 15 & False & False & False &
 r$p1bet # 274 - 452 - 90 - 15 & False & False & False & 
 r$p2bet # 195 - 268 - 90 - 15 & False & False & False & 
 r$p3bet # 425 - 209 - 90 - 15 & False & False & False & 
-r$p4bet # 720 - 268 - 90 - 15 & False & False & False & 
+r$p4bet # 720 - 269 - 90 - 15 & False & False & False & 
 r$p5bet # 653 - 453 - 90 - 15 & False & False & False & 
 r$u0cardface0 # 446 - 496 - 20 - 35 & True & False & False & 
 r$u0cardface1 # 513 - 496 - 20 - 35 & True & False & False & 

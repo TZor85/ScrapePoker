@@ -81,27 +81,27 @@
 
         public static string GetSmallBlindAction(string hand)
         {
-            return smallBlindHands.Contains(hand) ? "Open Raise" : "Fold";
+            return smallBlindHands.Contains(hand) ? "Open Raise x2.6" : "Fold";
         }
 
         public static string GetButtonAction(string hand)
         {
-            return buttonHands.Contains(hand) ? "Open Raise" : "Fold";
+            return buttonHands.Contains(hand) ? "Open Raise x2.4" : "Fold";
         }
 
         public static string GetCutOffAction(string hand)
         {
-            return cutOffHands.Contains(hand) ? "Open Raise" : "Fold";
+            return cutOffHands.Contains(hand) ? "Open Raise x2.2" : "Fold";
         }
 
         public static string GetMiddleAction(string hand)
         {
-            return middleHands.Contains(hand) ? "Open Raise" : "Fold";
+            return middleHands.Contains(hand) ? "Open Raise x2.1" : "Fold";
         }
 
         public static string GetEarlyAction(string hand)
         {
-            return earlyHands.Contains(hand) ? "Open Raise" : "Fold";
+            return earlyHands.Contains(hand) ? "Open Raise x2" : "Fold";
         }
     }
 }
