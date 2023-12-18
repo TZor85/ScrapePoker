@@ -9,6 +9,7 @@
 
     public enum HeroPosition
     {
+        None,
         EarlyPosition,
         MiddlePosition,
         CutOff,

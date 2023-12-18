@@ -367,18 +367,23 @@ namespace OpenScrape.App
                         {
                             case "p1empty":
                                 _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P1").SitOut = true;
                                 break;
                             case "p2empty":
                                 _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut = true;
                                 break;
                             case "p3empty":
                                 _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut = true;
                                 break;
                             case "p4empty":
                                 _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut = true;
                                 break;
                             case "p5empty":
                                 _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
+                                _scrapeResult.DataPlayer.First(n => n.Name == "P5").SitOut = true;
                                 break;
                             default:
                                 break;
@@ -560,10 +565,10 @@ namespace OpenScrape.App
 
             var preflopHeroPosition = GetPreflopHeroPosition();
 
-            _responseAction = GetOpenRaiseAction(preflopHeroPosition);
+            _responseAction = GetOpenRaiseAction(preflopHeroPosition.Values.ToList());
 
             if (_responseAction is null)
-                _responseAction = GetRaiseOverLimperAction(preflopHeroPosition);
+                _responseAction = GetRaiseOverLimperAction(preflopHeroPosition.Values.ToList());
             else
                 _scrapeResult.HeroAction = HeroAction.OpenRaise;
 
@@ -583,7 +588,7 @@ namespace OpenScrape.App
                 }
 
                 if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && cont == 1)
-                    _responseAction = Get3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+                    _responseAction = Get3BetAction(preflopHeroPosition.Values.ToList(), _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
 
                 if (_responseAction is not null)
                     _scrapeResult.HeroAction = HeroAction.ThreeBet;
@@ -651,63 +656,63 @@ namespace OpenScrape.App
             var preflopHeroPosition = GetPreflopHeroPosition();
 
             if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
-                _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition, _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+                _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition.Values.ToList(), _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
 
             if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
-                _responseAction = GetOpenRaiseVs3BetAndCallAction(preflopHeroPosition);
+                _responseAction = GetOpenRaiseVs3BetAndCallAction(preflopHeroPosition.Values.ToList());
 
             lbAction.Text = _responseAction;
 
         }
 
-        private Dictionary<HeroPosition, List<decimal>> GetPreflopHeroPosition()
+        private Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>> GetPreflopHeroPosition()
         {
             //Comprobar si llega la mano sin subir
-            var position = new Dictionary<HeroPosition, List<decimal>>()
+            var position = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>()
             {
                 {
-                    HeroPosition.BigBlind, new List<decimal>
+                    HeroPosition.BigBlind, new Dictionary<HeroPosition, decimal>
                     {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }                        
                     }
                 },
                 {
-                    HeroPosition.SmallBlind, new List<decimal>
+                    HeroPosition.SmallBlind, new Dictionary<HeroPosition, decimal>
                     {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
                     }
                 },
                 {
-                    HeroPosition.Button, new List<decimal>
+                    HeroPosition.Button, new Dictionary<HeroPosition, decimal>
                     {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
                     }
                 },
                 {
-                    HeroPosition.CutOff, new List<decimal>
+                    HeroPosition.CutOff, new Dictionary<HeroPosition, decimal>
                     {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet,
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
                     }
                 },
                 {
-                    HeroPosition.MiddlePosition, new List<decimal>
+                    HeroPosition.MiddlePosition, new Dictionary<HeroPosition, decimal>
                     {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet
+                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
                     }
                 },
                 {
-                    HeroPosition.EarlyPosition, new List<decimal>()
+                    HeroPosition.EarlyPosition, new Dictionary<HeroPosition, decimal>()
                 }
             };
 
@@ -716,21 +721,27 @@ namespace OpenScrape.App
 
         private void SetVillainPosition(HeroPosition p0Position)
         {
+            string[] playerNames = { "P1", "P2", "P3", "P4", "P5" };
+
+            List<HeroPosition> positions = new List<HeroPosition>();
+
+
+
+
+
             switch (p0Position)
             {
                 case HeroPosition.BigBlind:
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.EarlyPosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.MiddlePosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.CutOff;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.Button;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.SmallBlind;
+
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.EarlyPosition, HeroPosition.MiddlePosition, HeroPosition.CutOff, HeroPosition.Button, HeroPosition.SmallBlind });
+                    SetPositionVillain(playerNames, positions);
+
                     break;
                 case HeroPosition.SmallBlind:
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.BigBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.EarlyPosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.MiddlePosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.CutOff;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.Button;
+
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.BigBlind, HeroPosition.EarlyPosition, HeroPosition.MiddlePosition, HeroPosition.CutOff, HeroPosition.Button });
+                    SetPositionVillain(playerNames, positions);
+
                     break;
                 case HeroPosition.Button:
                     _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.SmallBlind;
@@ -740,122 +751,10 @@ namespace OpenScrape.App
                     _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.CutOff;
                     break;
                 case HeroPosition.CutOff:
-                    if (!_scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P1").SitOut)
-                    {
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.Button;
-                        if (!_scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut)
-                        {
-                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.SmallBlind;
-                            if (!_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                            {
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.BigBlind;
-                            }
-                            else
-                            {
-                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                                {
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.BigBlind;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                            {
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.SmallBlind;
-                            }
-                            else
-                            {
-                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                                {
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.SmallBlind;
-                                }
-                                else
-                                {
+                                        
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.EarlyPosition });
+                    SetPositionVillain(playerNames, positions);
 
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (!_scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut)
-                        {
-                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.Button;
-                        }
-                        else
-                        {
-                            if (!_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                            {
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.Button;
-                            }
-                            else
-                            {
-                                if (!_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || !_scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                                {
-                                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.Button;
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                        }
-                    }
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if (_scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut)
-                            if (_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.Button;
-                            else
-                            {
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.Button;
-
-                            }
-                        else
-                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.Button;
-                    else
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.Button;
-
-
-                    if (_scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut)
-                        if (_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                            if (_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.SmallBlind;
-                            else
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.SmallBlind;
-                        else
-                            _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.SmallBlind;
-                    else
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.SmallBlind;
-
-
-                    if (_scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut)
-                        if (_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                            if (_scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P5").SitOut)
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.BigBlind;
-                            else
-                                _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.BigBlind;
-                        else
-                            _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.BigBlind;
-                    else
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.BigBlind;
-
-                    if (_scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty || _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut)
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.EarlyPosition;
-                    else
-                        _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.EarlyPosition;
-
-                    //_scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.MiddlePosition;
                     break;
                 case HeroPosition.MiddlePosition:
                     _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.CutOff;
@@ -873,6 +772,23 @@ namespace OpenScrape.App
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void SetPositionVillain(string[] playerNames, List<HeroPosition> positions)
+        {
+            foreach (var position in positions)
+            {
+                foreach (var name in playerNames)
+                {
+                    var player = _scrapeResult.DataPlayer.FirstOrDefault(n => n.Name == name);
+
+                    if (player != null && (!player.Empty || !player.SitOut) && player.Position == HeroPosition.None)
+                    {
+                        player.Position = position;
+                        break;
+                    }
+                }
             }
         }
 
@@ -917,7 +833,7 @@ namespace OpenScrape.App
         }
 
 
-        private string GetRaiseOverLimperAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
+        private string GetRaiseOverLimperAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
         {
             var responseAction = new GetRaiseOverLimperUseCaseResponse();
 
@@ -944,7 +860,7 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
+        private string GetOpenRaiseAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
         {
             var responseAction = new GetOpenRaiseUseCaseResponse();
 
@@ -968,7 +884,7 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
-        private string Get3BetAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition, HeroPosition villainPosition)
+        private string Get3BetAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition, HeroPosition villainPosition)
         {
             var responseAction = new Get3BetUseCaseResponse();
 
@@ -993,7 +909,7 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseVs3BetAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition, HeroPosition villainPosition)
+        private string GetOpenRaiseVs3BetAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition, HeroPosition villainPosition)
         {
             var responseAction = new GetVs3BetUseCaseResponse();
 
@@ -1018,7 +934,7 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseVs3BetAndCallAction(Dictionary<HeroPosition, List<decimal>> preflopHeroPosition)
+        private string GetOpenRaiseVs3BetAndCallAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
         {
 
             var responseAction = new GetVs3BetAndCallUseCaseResponse();
