@@ -29,6 +29,7 @@
 
     public enum HeroAction
     {
+        None,
         OpenRaise,
         RaiseOverLimper,
         Call,

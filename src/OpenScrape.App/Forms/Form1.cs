@@ -44,6 +44,7 @@ namespace OpenScrape.App
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
         private string _responseAction = string.Empty;
+        private string _folderPath = string.Empty;
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 68, 69 };
@@ -83,6 +84,10 @@ namespace OpenScrape.App
             _formImage.Show();
         }
 
+        
+
+        #region FrontMethods
+
         private void btnNew_Click(object sender, EventArgs e)
         {
             _formRegions = new FormRegions();
@@ -92,100 +97,6 @@ namespace OpenScrape.App
             _formRegions.Show();
 
         }
-        public void Execute(List<FontRegion> fonts)
-        {
-            var node = twRegions.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
-
-            _fonts.AddRange(fonts);
-
-            foreach (var item in fonts)
-            {
-                node.Nodes.Add(item.Name);
-            }
-        }
-
-        public void Execute(string texto, string nodo)
-        {
-            if (nodo == "Image")
-                nodo = _locRegion.IsBoard ? "Nodo1" : "Nodo2";
-
-            var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
-            var type = string.Empty;
-            Bitmap img = null;
-
-            switch (nodo)
-            {
-                case "Nodo0":
-                    _locRegion = new Regions { Name = texto, Type = "r" };
-                    _regions.Add(_locRegion);
-                    break;
-                case "Nodo1":
-                    texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
-                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = true };
-                    _imagesBoard.Add(_locImage);
-                    break;
-                case "Nodo2":
-                    texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
-                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
-                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = false, Value = GetValueImage(), Force = GetForceHand(texto), Suit = GetSuitHand(texto) };
-                    _images.Add(_locImage);
-                    break;
-                case "Nodo3":
-                    _fonts.Add(new FontRegion { Name = texto, Value = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 200), true) });
-                    break;
-
-                default:
-                    break;
-            }
-
-            node.Nodes.Add(texto);
-            twRegions.ExpandAll();
-
-        }
-
-        private static int GetSuitHand(string texto)
-        {
-            var suit = texto[1] switch
-            {
-                'c' => 1,
-                'h' => 2,
-                'd' => 3,
-                's' => 4,
-                _ => 0
-            };
-
-            return suit;
-        }
-
-        private static int GetForceHand(string texto)
-        {
-            var force = texto[0] switch
-            {
-                'A' => 14,
-                'K' => 13,
-                'Q' => 12,
-                'J' => 11,
-                'T' => 10,
-                '9' => 9,
-                '8' => 8,
-                '7' => 7,
-                '6' => 6,
-                '5' => 5,
-                '4' => 4,
-                '3' => 3,
-                '2' => 2,
-                _ => 0
-            };
-
-            return force;
-        }
-
-        private string GetValueImage()
-        {
-            return GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130));
-        }
-
 
         private void twRegions_AfterSelect(object sender, TreeViewEventArgs e)
         {
@@ -236,7 +147,6 @@ namespace OpenScrape.App
 
         }
 
-
         private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
         {
             int.TryParse(cbSpeed.Text, out _speed);
@@ -277,17 +187,6 @@ namespace OpenScrape.App
 
         }
 
-        public Bitmap CropImage(Bitmap source, Rectangle section)
-        {
-            Bitmap bmp = new Bitmap(section.Width, section.Height);
-            Graphics g = Graphics.FromImage(bmp);
-
-            g.DrawImage(source, 0, 0, section, GraphicsUnit.Pixel);
-
-            return bmp;
-        }
-
-
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(twRegions.SelectedNode.Text))
@@ -300,12 +199,100 @@ namespace OpenScrape.App
             }
         }
 
+        #endregion
+
+
+        private static int GetSuitHand(string texto)
+        {
+            var suit = texto[1] switch
+            {
+                'c' => 1,
+                'h' => 2,
+                'd' => 3,
+                's' => 4,
+                _ => 0
+            };
+
+            return suit;
+        }
+
+        private static int GetForceHand(string texto)
+        {
+            var force = texto[0] switch
+            {
+                'A' => 14,
+                'K' => 13,
+                'Q' => 12,
+                'J' => 11,
+                'T' => 10,
+                '9' => 9,
+                '8' => 8,
+                '7' => 7,
+                '6' => 6,
+                '5' => 5,
+                '4' => 4,
+                '3' => 3,
+                '2' => 2,
+                _ => 0
+            };
+
+            return force;
+        }
+
+        private string GetValueImage()
+        {
+            return GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130));
+        }
+
+        
+
+        
+
+        public Bitmap CropImage(Bitmap source, Rectangle section)
+        {
+            Bitmap bmp = new Bitmap(section.Width, section.Height);
+            Graphics g = Graphics.FromImage(bmp);
+
+            g.DrawImage(source, 0, 0, section, GraphicsUnit.Pixel);
+
+            return bmp;
+        }
+
+
+        
+
         private void btnCapture_Click(object sender, EventArgs e)
         {
             lbAction.Text = string.Empty;
             
             if (!cbTest.Checked)
             {
+                if(cbMark.Checked)
+                {
+                    //TODO: Pasar a método privado
+                    DirectoryInfo directoryInfo = new DirectoryInfo(@"C:\\Code\\Poker\\ScrapePoker\\resources\\Game_19_12_2023");
+                    FileInfo[] archivosPNG = directoryInfo.GetFiles("*.png")
+                                                        .Where(file => file.Extension.ToLower() == ".png")
+                                                        .ToArray();
+
+                    if (archivosPNG.Length > 0)
+                    {
+                        FileInfo ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
+                                                          .First();
+
+                        string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
+                        string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
+
+                        if (!File.Exists(rutaArchivoTexto))
+                            File.WriteAllText(rutaArchivoTexto, ultimaImagen.Name);
+                        else
+                            File.AppendAllText(rutaArchivoTexto, Environment.NewLine + ultimaImagen.Name);
+                    }
+
+                    cbMark.Checked = false;
+                    
+                }
+
                 GetImageWhilePlaying();
                 _formImage.WindowState = FormWindowState.Minimized;
             }
@@ -479,35 +466,51 @@ namespace OpenScrape.App
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P1").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active &&
                             GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 65).Contains("SIT"))
+                        {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P1").SitOut = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
+                        }
                         break;
                     case "p2sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P2").Empty &&
-                            !_scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && 
+                            !_scrapeResult.DataPlayer.First(f => f.Name == "P2").Active &&
                             GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 65).Contains("SIT"))
+                        {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
+                        }
                         break;
                     case "p3sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P3").Empty &&
-                            !_scrapeResult.DataPlayer.First(f => f.Name == "P3").Active && 
+                            !_scrapeResult.DataPlayer.First(f => f.Name == "P3").Active &&
                             GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 80).Contains("SIT"))
+                        {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
+                        }
                         break;
                     case "p4sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P4").Empty &&
-                            !_scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && 
+                            !_scrapeResult.DataPlayer.First(f => f.Name == "P4").Active &&
                             GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 78).Contains("SIT"))
+                        {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
+                        }
                         break;
                     case "p5sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P5").Empty &&
-                            !_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && 
+                            !_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active &&
                             GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 78).Contains("SIT"))
+                        {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").SitOut = true;
+                            _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
+                        }
                         break;
                 }
             }
 
+            SetVillainPosition(_scrapeResult.P0Position);
 
             var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
             
@@ -519,23 +522,23 @@ namespace OpenScrape.App
                         _scrapeResult.U0Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p1bet":
-                        if(_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active)
+                        if(_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p2bet":
-                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P2").Active)
+                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p3bet":
-                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P3").Active)
+                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P3").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p4bet":
-                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P4").Active)
+                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p5bet":
-                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active)
+                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     default:
@@ -543,52 +546,27 @@ namespace OpenScrape.App
                 }
             }
 
-            SetVillainPosition(_scrapeResult.P0Position);
+            
 
             var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
             var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
             var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
 
-            tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
-            tbResumen.Text += $"Jugadores SitOut: {sitout} \r\n";
-            tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
-            tbResumen.Text += "-------------------------------- \r\n";
-            tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
-            tbResumen.Text += "-------------------------------- \r\n";
-            tbResumen.Text += $"Posición del jugador: {_scrapeResult.P0Position} \r\n\r\n";
-            tbResumen.Text += "----------- APUESTAS ----------- \r\n";
-            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.SmallBlind ? $"Bet P1 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet} BBs \r\n" : string.Empty;
-            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.SmallBlind ? $"Bet P2 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet} BBs \r\n" : string.Empty;
-            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P3").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position != HeroPosition.SmallBlind ? $"Bet P3 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet} BBs \r\n" : string.Empty;
-            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.SmallBlind ? $"Bet P4 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet} BBs \r\n" : string.Empty;
-            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.SmallBlind ? $"Bet P5 -> {_scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet} BBs \r\n" : string.Empty;
-
+            
             var preflopHeroPosition = GetPreflopHeroPosition();
 
-            _responseAction = GetOpenRaiseAction(preflopHeroPosition.Values.ToList());
+            _responseAction = GetOpenRaiseAction(preflopHeroPosition[_scrapeResult.P0Position]);
 
             if (_responseAction is null)
-                _responseAction = GetRaiseOverLimperAction(preflopHeroPosition.Values.ToList());
+                _responseAction = GetRaiseOverLimperAction(preflopHeroPosition[_scrapeResult.P0Position]);
             else
                 _scrapeResult.HeroAction = HeroAction.OpenRaise;
 
 
             if (_responseAction is null)
             {
-                var apuesta = 0m;
-                var cont = 0;
-
-                foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Bet > 1))
-                {
-                    if (item.Bet > apuesta)
-                    {
-                        cont++; // Si cont > 1, hay mas de un jugador que ha subido (hay 4bet)
-                        apuesta = item.Bet;
-                    }
-                }
-
-                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && cont == 1)
-                    _responseAction = Get3BetAction(preflopHeroPosition.Values.ToList(), _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && Exist4Bet())
+                    _responseAction = Get3BetAction(preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
 
                 if (_responseAction is not null)
                     _scrapeResult.HeroAction = HeroAction.ThreeBet;
@@ -599,7 +577,8 @@ namespace OpenScrape.App
             }
             else
             {
-                _scrapeResult.HeroAction = HeroAction.RaiseOverLimper;
+                if(_scrapeResult.HeroAction == HeroAction.None)
+                    _scrapeResult.HeroAction = HeroAction.RaiseOverLimper;
             }
 
             if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(_responseAction))
@@ -615,9 +594,42 @@ namespace OpenScrape.App
 
             }
 
+            tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
+            tbResumen.Text += $"Jugadores SitOut: {sitout} \r\n";
+            tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
+            tbResumen.Text += "-------------------------------- \r\n";
+            tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
+            tbResumen.Text += "-------------------------------- \r\n";
+            tbResumen.Text += $"Posición del jugador: {_scrapeResult.P0Position} \r\n";
+            tbResumen.Text += $"Jugada a realizar: {_scrapeResult.HeroAction} \r\n\r\n";
+            tbResumen.Text += "----------- APUESTAS ----------- \r\n";
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P1").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P2").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P3").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P3").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P3").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P3").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P4").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet} BBs \r\n" : string.Empty;
+            tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P5").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet} BBs \r\n" : string.Empty;
+
+
             SetBoardValues();
             lbAction.Text = _responseAction;
 
+        }
+
+        private bool Exist4Bet()
+        {
+            var apuesta = 0m;
+            var cont = 0;
+
+            foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Bet > 1))
+            {
+                if (item.Bet > apuesta)
+                {
+                    cont++; // Si cont > 1, hay mas de un jugador que ha subido (hay 4bet)
+                    apuesta = item.Bet;
+                }
+            }
+
+            return cont > 1 ? false : true;
         }
 
         private Page GetTextBetByPosition(int x, int y, int width, int height, Pix imgBet)
@@ -656,10 +668,10 @@ namespace OpenScrape.App
             var preflopHeroPosition = GetPreflopHeroPosition();
 
             if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
-                _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition.Values.ToList(), _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+                _responseAction = GetOpenRaiseVs3BetAction(preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
 
-            if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
-                _responseAction = GetOpenRaiseVs3BetAndCallAction(preflopHeroPosition.Values.ToList());
+            if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper) && Exist4Bet())
+                _responseAction = GetOpenRaiseVs3BetAndCallAction(preflopHeroPosition[_scrapeResult.P0Position]);
 
             lbAction.Text = _responseAction;
 
@@ -667,54 +679,25 @@ namespace OpenScrape.App
 
         private Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>> GetPreflopHeroPosition()
         {
-            //Comprobar si llega la mano sin subir
-            var position = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>()
+            Dictionary<HeroPosition, decimal> players = new Dictionary<HeroPosition, decimal>();
+
+            foreach (var item in _scrapeResult.DataPlayer)
             {
+                if (!item.Empty || !item.SitOut)
                 {
-                    HeroPosition.BigBlind, new Dictionary<HeroPosition, decimal>
-                    {
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }                        
-                    }
-                },
-                {
-                    HeroPosition.SmallBlind, new Dictionary<HeroPosition, decimal>
-                    {
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P2").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
-                    }
-                },
-                {
-                    HeroPosition.Button, new Dictionary<HeroPosition, decimal>
-                    {
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P3").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
-                    }
-                },
-                {
-                    HeroPosition.CutOff, new Dictionary<HeroPosition, decimal>
-                    {
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P4").Bet },
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
-                    }
-                },
-                {
-                    HeroPosition.MiddlePosition, new Dictionary<HeroPosition, decimal>
-                    {
-                        { _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position, _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet }
-                    }
-                },
-                {
-                    HeroPosition.EarlyPosition, new Dictionary<HeroPosition, decimal>()
+                    if(item.Position != HeroPosition.None)
+                        players[item.Position] = item.Bet; 
                 }
-            };
+            }
+
+            //Comprobar si llega la mano sin subir
+            var position = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
+
+            foreach (var heroPosition in Enum.GetValues(typeof(HeroPosition)).Cast<HeroPosition>())
+            {
+                if(heroPosition != HeroPosition.None)
+                    position[heroPosition] = new Dictionary<HeroPosition, decimal>(players);
+            }
 
             return position;
         }
@@ -722,60 +705,40 @@ namespace OpenScrape.App
         private void SetVillainPosition(HeroPosition p0Position)
         {
             string[] playerNames = { "P1", "P2", "P3", "P4", "P5" };
-
             List<HeroPosition> positions = new List<HeroPosition>();
-
-
-
-
 
             switch (p0Position)
             {
                 case HeroPosition.BigBlind:
-
                     positions.AddRange(new List<HeroPosition> { HeroPosition.EarlyPosition, HeroPosition.MiddlePosition, HeroPosition.CutOff, HeroPosition.Button, HeroPosition.SmallBlind });
-                    SetPositionVillain(playerNames, positions);
-
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.SmallBlind:
-
                     positions.AddRange(new List<HeroPosition> { HeroPosition.BigBlind, HeroPosition.EarlyPosition, HeroPosition.MiddlePosition, HeroPosition.CutOff, HeroPosition.Button });
-                    SetPositionVillain(playerNames, positions);
-
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.Button:
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.SmallBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.BigBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.EarlyPosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.MiddlePosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.CutOff;
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.EarlyPosition, HeroPosition.MiddlePosition, HeroPosition.CutOff });
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.CutOff:
-                                        
-                    positions.AddRange(new List<HeroPosition> { HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.EarlyPosition });
-                    SetPositionVillain(playerNames, positions);
-
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.MiddlePosition, HeroPosition.EarlyPosition });
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.MiddlePosition:
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.CutOff;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.Button;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.SmallBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.BigBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.EarlyPosition;
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.CutOff, HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.EarlyPosition });
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.EarlyPosition:
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P1").Position = HeroPosition.MiddlePosition;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P2").Position = HeroPosition.CutOff;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P3").Position = HeroPosition.Button;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P4").Position = HeroPosition.SmallBlind;
-                    _scrapeResult.DataPlayer.First(n => n.Name == "P5").Position = HeroPosition.BigBlind;
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.MiddlePosition, HeroPosition.CutOff, HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind });
+                    SetVillainPositionExtension(playerNames, positions);
                     break;
                 default:
                     break;
             }
         }
 
-        private void SetPositionVillain(string[] playerNames, List<HeroPosition> positions)
+        private void SetVillainPositionExtension(string[] playerNames, List<HeroPosition> positions)
         {
             foreach (var position in positions)
             {
@@ -833,144 +796,109 @@ namespace OpenScrape.App
         }
 
 
-        private string GetRaiseOverLimperAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
+        private string GetRaiseOverLimperAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
         {
             var responseAction = new GetRaiseOverLimperUseCaseResponse();
 
-            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            if ((preflopHeroPosition.ContainsKey(HeroPosition.Button) && preflopHeroPosition[HeroPosition.Button] == 1) ||
+                (preflopHeroPosition.ContainsKey(HeroPosition.CutOff) && preflopHeroPosition[HeroPosition.CutOff] == 1) ||
+                (preflopHeroPosition.ContainsKey(HeroPosition.MiddlePosition) && preflopHeroPosition[HeroPosition.MiddlePosition] == 1) ||
+                (preflopHeroPosition.ContainsKey(HeroPosition.EarlyPosition) && preflopHeroPosition[HeroPosition.EarlyPosition] == 1))
             {
-                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
-                if (!bets.Any(b => b > 1))
+                var openRaiseCommand = new GetRaiseOverLimperUseCaseRequest
                 {
-                    bool noneBet = bets.Any(b => b == 1 && b <= 1);
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
 
-                    if (noneBet)
-                    {
-                        var openRaiseCommand = new GetRaiseOverLimperUseCaseRequest
-                        {
-                            Hand = SetHandValue(),
-                            Position = _scrapeResult.P0Position
-                        };
-
-                        responseAction = _raiseOverLimperUseCase.Execute(openRaiseCommand);
-                    }
-                }
+                responseAction = _raiseOverLimperUseCase.Execute(openRaiseCommand);
             }
-
+           
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
+        private string GetOpenRaiseAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
         {
             var responseAction = new GetOpenRaiseUseCaseResponse();
 
-            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            var cont = 0;
+            var betsPosition = preflopHeroPosition
+                                .Where(w => w.Key != HeroPosition.BigBlind && w.Key != HeroPosition.SmallBlind)
+                                .Select(s => s.Key).ToList();
+
+            foreach (var item in betsPosition)
             {
-                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
-                bool noneBet = bets.Any(b => b > 1 || b == 1);
+                if (preflopHeroPosition.First(w => w.Key == item).Value > 0)
+                    cont++;
+            }
 
-                if (!noneBet && _scrapeResult.P0Position != HeroPosition.BigBlind)
+            if (cont == 0)
+            {
+                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
                 {
-                    var command = new GetOpenRaiseUseCaseRequest
-                    {
-                        Hand = SetHandValue(),
-                        Position = _scrapeResult.P0Position
-                    };
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position
+                };
 
-                    responseAction = _openRaiseUseCase.Execute(command);
-                }
+                responseAction = _openRaiseUseCase.Execute(openRaiseCommand);
             }
 
             return responseAction.Action;
         }
 
-        private string Get3BetAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition, HeroPosition villainPosition)
+        private string Get3BetAction(Dictionary<HeroPosition, decimal> preflopHeroPosition, HeroPosition villainPosition)
         {
             var responseAction = new Get3BetUseCaseResponse();
 
-            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            if (preflopHeroPosition.Any(a => a.Value > 1))
             {
-                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
-                bool noneBet = bets.Any(b => b > 1);
-
-                if (noneBet)
+                var openRaiseCommand = new Get3BetUseCaseRequest
                 {
-                    var command = new Get3BetUseCaseRequest
-                    {
-                        Hand = SetHandValue(),
-                        Position = _scrapeResult.P0Position,
-                        VillainPosition = villainPosition
-                    };
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position,
+                    VillainPosition = villainPosition
+                };
 
-                    responseAction = _threeBetUseCase.Execute(command);
-                }
+                responseAction = _threeBetUseCase.Execute(openRaiseCommand);
+
             }
 
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseVs3BetAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition, HeroPosition villainPosition)
+        private string GetOpenRaiseVs3BetAction(Dictionary<HeroPosition, decimal> preflopHeroPosition, HeroPosition villainPosition)
         {
             var responseAction = new GetVs3BetUseCaseResponse();
 
-            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            if(preflopHeroPosition.Any(a => a.Value > _scrapeResult.U0Bet))
             {
-                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
-                bool noneBet = bets.Any(b => b > _scrapeResult.U0Bet);
-
-                if (noneBet)
+                var openRaiseCommand = new GetVs3BetUseCaseRequest
                 {
-                    var command = new GetVs3BetUseCaseRequest
-                    {
-                        Hand = SetHandValue(),
-                        Position = _scrapeResult.P0Position,
-                        VillainPosition = villainPosition
-                    };
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position,
+                    VillainPosition = villainPosition
+                };
 
-                    responseAction = _vs3BetUseCase.Execute(command);
-                }
+                responseAction = _vs3BetUseCase.Execute(openRaiseCommand);
             }
 
             return responseAction.Action;
         }
 
-        private string GetOpenRaiseVs3BetAndCallAction(List<Dictionary<HeroPosition, decimal>> preflopHeroPosition)
+        private string GetOpenRaiseVs3BetAndCallAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
         {
 
             var responseAction = new GetVs3BetAndCallUseCaseResponse();
 
-            if (preflopHeroPosition.ContainsKey(_scrapeResult.P0Position))
+            if (preflopHeroPosition.Any(a => a.Value > _scrapeResult.U0Bet))
             {
-                List<decimal> bets = preflopHeroPosition[_scrapeResult.P0Position];
-                bool noneBet = bets.Any(b => b > _scrapeResult.U0Bet);
-
-                var apuesta = 0m;
-                var cont = 0;
-                var positions = new List<HeroPosition>();
-
-                foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Bet > _scrapeResult.U0Bet))
+                var command = new GetVs3BetAndCallUseCaseRequest
                 {
-                    positions.Add(item.Position);
-
-                    if (item.Bet > apuesta)
-                    {
-                        cont++;
-                        apuesta = item.Bet;
-                    }
-                }
-
-                if (noneBet && cont == 1)
-                {
-                    var command = new GetVs3BetAndCallUseCaseRequest
-                    {
-                        Hand = SetHandValue(),
-                        Position = _scrapeResult.P0Position,
-                        VillainPosition = positions[0],
-                        CallerPosition = positions[1]
-                    };
-
-                    responseAction = _vs3BetAndCall.Execute(command);
-                }
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position,
+                    VillainPosition = preflopHeroPosition.First(f => f.Value > _scrapeResult.U0Bet).Key,
+                    CallerPosition = preflopHeroPosition.Last(l => l.Value > _scrapeResult.U0Bet).Key
+                };
             }
 
             return responseAction.Action;
@@ -1018,14 +946,14 @@ namespace OpenScrape.App
 
         private void GetImageWhilePlaying()
         {
-            var folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+            _folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
-            if (!Directory.Exists(folderPath))
+            if (!Directory.Exists(_folderPath))
             {
-                Directory.CreateDirectory(folderPath);
+                Directory.CreateDirectory(_folderPath);
             }
 
-            var path = folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
+            var path = _folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
 
             var imagen = _useCase.ExecuteImage(path);
 
@@ -1303,6 +1231,79 @@ namespace OpenScrape.App
 
             return textHash;
         }
+
+        private void EnableButtons()
+        {
+            btnPlusHeight.Enabled = true;
+            btnPlusWidth.Enabled = true;
+            btnMinusHeight.Enabled = true;
+            btnMinusWidth.Enabled = true;
+            btnUp.Enabled = true;
+            btnUpRight.Enabled = true;
+            btnRigth.Enabled = true;
+            btnDownRight.Enabled = true;
+            btnDown.Enabled = true;
+            btnDownLeft.Enabled = true;
+            btnLeft.Enabled = true;
+            btnUpLeft.Enabled = true;
+            btnCreateImage.Enabled = true;
+        }
+
+        #region Executes
+
+        public void Execute(List<FontRegion> fonts)
+        {
+            var node = twRegions.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
+
+            _fonts.AddRange(fonts);
+
+            foreach (var item in fonts)
+            {
+                node.Nodes.Add(item.Name);
+            }
+        }
+
+        public void Execute(string texto, string nodo)
+        {
+            if (nodo == "Image")
+                nodo = _locRegion.IsBoard ? "Nodo1" : "Nodo2";
+
+            var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
+            var type = string.Empty;
+            Bitmap img = null;
+
+            switch (nodo)
+            {
+                case "Nodo0":
+                    _locRegion = new Regions { Name = texto, Type = "r" };
+                    _regions.Add(_locRegion);
+                    break;
+                case "Nodo1":
+                    texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
+                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = true };
+                    _imagesBoard.Add(_locImage);
+                    break;
+                case "Nodo2":
+                    texto = $"{texto} ({_locRegion.Width}x{_locRegion.Height})";
+                    img = CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height));// CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), _umbral);
+                    _locImage = new ImageRegion { Name = texto, Image = img, IsBoard = false, Value = GetValueImage(), Force = GetForceHand(texto), Suit = GetSuitHand(texto) };
+                    _images.Add(_locImage);
+                    break;
+                case "Nodo3":
+                    _fonts.Add(new FontRegion { Name = texto, Value = GetHashFont(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 200), true) });
+                    break;
+
+                default:
+                    break;
+            }
+
+            node.Nodes.Add(texto);
+            twRegions.ExpandAll();
+
+        }
+
+        #endregion
 
         #region Tamaño Region
 
@@ -1651,28 +1652,7 @@ namespace OpenScrape.App
 
         #endregion
 
-        private void EnableButtons()
-        {
-            btnPlusHeight.Enabled = true;
-            btnPlusWidth.Enabled = true;
-            btnMinusHeight.Enabled = true;
-            btnMinusWidth.Enabled = true;
-            btnUp.Enabled = true;
-            btnUpRight.Enabled = true;
-            btnRigth.Enabled = true;
-            btnDownRight.Enabled = true;
-            btnDown.Enabled = true;
-            btnDownLeft.Enabled = true;
-            btnLeft.Enabled = true;
-            btnUpLeft.Enabled = true;
-            btnCreateImage.Enabled = true;
-        }
-
-        private void pictureBox2_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        #region Salir TextBox
         private void tbWidth_Leave(object sender, EventArgs e)
         {
             _formImage.pbImagen.Refresh();
@@ -1728,6 +1708,7 @@ namespace OpenScrape.App
             lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
         }
 
+        #endregion
 
     }
 }

@@ -77,6 +77,7 @@
             tbResumen = new TextBox();
             btnCapture3bet = new Button();
             btnCapture4Bet = new Button();
+            cbMark = new CheckBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
@@ -169,7 +170,7 @@
             // 
             cbSpeed.FormattingEnabled = true;
             cbSpeed.Items.AddRange(new object[] { "1", "2", "5", "10", "20", "30", "40", "50" });
-            cbSpeed.Location = new Point(386, 58);
+            cbSpeed.Location = new Point(386, 18);
             cbSpeed.Name = "cbSpeed";
             cbSpeed.Size = new Size(42, 23);
             cbSpeed.TabIndex = 12;
@@ -206,7 +207,7 @@
             groupBox1.Controls.Add(btnMinusWidth);
             groupBox1.Controls.Add(btnPlusHeight);
             groupBox1.Controls.Add(btnMinusHeight);
-            groupBox1.Location = new Point(177, 48);
+            groupBox1.Location = new Point(177, 9);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(203, 100);
             groupBox1.TabIndex = 15;
@@ -274,7 +275,7 @@
             groupBox2.Controls.Add(btnDown);
             groupBox2.Controls.Add(btnLeft);
             groupBox2.Controls.Add(btnRigth);
-            groupBox2.Location = new Point(464, 48);
+            groupBox2.Location = new Point(464, 9);
             groupBox2.Name = "groupBox2";
             groupBox2.Size = new Size(107, 143);
             groupBox2.TabIndex = 16;
@@ -448,7 +449,7 @@
             // btnCreateImage
             // 
             btnCreateImage.Enabled = false;
-            btnCreateImage.Location = new Point(464, 206);
+            btnCreateImage.Location = new Point(464, 160);
             btnCreateImage.Name = "btnCreateImage";
             btnCreateImage.Size = new Size(91, 23);
             btnCreateImage.TabIndex = 22;
@@ -458,7 +459,7 @@
             // 
             // btnWindow
             // 
-            btnWindow.Location = new Point(489, 460);
+            btnWindow.Location = new Point(489, 507);
             btnWindow.Name = "btnWindow";
             btnWindow.Size = new Size(102, 66);
             btnWindow.TabIndex = 23;
@@ -470,7 +471,7 @@
             // 
             ckColor.AutoSize = true;
             ckColor.Enabled = false;
-            ckColor.Location = new Point(386, 119);
+            ckColor.Location = new Point(386, 79);
             ckColor.Name = "ckColor";
             ckColor.Size = new Size(55, 19);
             ckColor.TabIndex = 29;
@@ -481,15 +482,15 @@
             // tbR
             // 
             tbR.Enabled = false;
-            tbR.Location = new Point(222, 154);
+            tbR.Location = new Point(222, 113);
             tbR.Name = "tbR";
-            tbR.Size = new Size(85, 23);
+            tbR.Size = new Size(71, 23);
             tbR.TabIndex = 32;
             // 
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(177, 157);
+            label8.Location = new Point(177, 116);
             label8.Name = "label8";
             label8.Size = new Size(36, 15);
             label8.TabIndex = 39;
@@ -509,7 +510,7 @@
             // 
             ckBoard.AutoSize = true;
             ckBoard.Enabled = false;
-            ckBoard.Location = new Point(386, 94);
+            ckBoard.Location = new Point(386, 54);
             ckBoard.Name = "ckBoard";
             ckBoard.Size = new Size(57, 19);
             ckBoard.TabIndex = 45;
@@ -519,7 +520,7 @@
             // 
             // btnCreateFont
             // 
-            btnCreateFont.Location = new Point(464, 235);
+            btnCreateFont.Location = new Point(464, 189);
             btnCreateFont.Name = "btnCreateFont";
             btnCreateFont.Size = new Size(91, 23);
             btnCreateFont.TabIndex = 47;
@@ -531,7 +532,7 @@
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbAction.Location = new Point(257, 457);
+            lbAction.Location = new Point(242, 460);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(57, 21);
             lbAction.TabIndex = 55;
@@ -555,10 +556,11 @@
             // 
             // tbResumen
             // 
-            tbResumen.Location = new Point(177, 183);
+            tbResumen.Location = new Point(177, 148);
             tbResumen.Multiline = true;
             tbResumen.Name = "tbResumen";
-            tbResumen.Size = new Size(251, 207);
+            tbResumen.ReadOnly = true;
+            tbResumen.Size = new Size(251, 242);
             tbResumen.TabIndex = 60;
             // 
             // btnCapture3bet
@@ -580,11 +582,22 @@
             btnCapture4Bet.Text = "vs 4Bet";
             btnCapture4Bet.UseVisualStyleBackColor = true;
             // 
+            // cbMark
+            // 
+            cbMark.AutoSize = true;
+            cbMark.Location = new Point(373, 554);
+            cbMark.Name = "cbMark";
+            cbMark.Size = new Size(97, 19);
+            cbMark.TabIndex = 63;
+            cbMark.Text = "Marcar Mano";
+            cbMark.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 585);
+            Controls.Add(cbMark);
             Controls.Add(btnCapture4Bet);
             Controls.Add(btnCapture3bet);
             Controls.Add(tbResumen);
@@ -671,5 +684,6 @@
         private TextBox tbResumen;
         private Button btnCapture3bet;
         private Button btnCapture4Bet;
+        private CheckBox cbMark;
     }
 }
