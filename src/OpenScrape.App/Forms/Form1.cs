@@ -48,15 +48,11 @@ namespace OpenScrape.App
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 68, 69 };
-        private List<int> _colorSitOut = new List<int> { 5, 6, 7, 8, 9, 10, 17, 18, 19, 20 };
         private List<int> _colorPlaying = new List<int> { 32, 33, 34 };
-        private List<int> _colorSit = new List<int> { 0, 9, 11, 12 };
 
         private int _umbral = 130;
-        private int _umbralSitOut = 65;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
-
 
         private readonly IGetOpenRaiseUseCase _openRaiseUseCase = new GetOpenRaiseUseCase();
         private readonly IGetRaiseOverLimperUseCase _raiseOverLimperUseCase = new GetRaiseOverLimperUseCase();
@@ -68,7 +64,6 @@ namespace OpenScrape.App
 
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
-        private readonly IMediator _mediator;
 
         public Form1()
         {
@@ -244,10 +239,6 @@ namespace OpenScrape.App
             return GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(_locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height)), 130));
         }
 
-        
-
-        
-
         public Bitmap CropImage(Bitmap source, Rectangle section)
         {
             Bitmap bmp = new Bitmap(section.Width, section.Height);
@@ -258,9 +249,6 @@ namespace OpenScrape.App
             return bmp;
         }
 
-
-        
-
         private void btnCapture_Click(object sender, EventArgs e)
         {
             lbAction.Text = string.Empty;
@@ -268,30 +256,7 @@ namespace OpenScrape.App
             if (!cbTest.Checked)
             {
                 if(cbMark.Checked)
-                {
-                    //TODO: Pasar a método privado
-                    DirectoryInfo directoryInfo = new DirectoryInfo(@"C:\\Code\\Poker\\ScrapePoker\\resources\\Game_19_12_2023");
-                    FileInfo[] archivosPNG = directoryInfo.GetFiles("*.png")
-                                                        .Where(file => file.Extension.ToLower() == ".png")
-                                                        .ToArray();
-
-                    if (archivosPNG.Length > 0)
-                    {
-                        FileInfo ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
-                                                          .First();
-
-                        string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
-                        string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
-
-                        if (!File.Exists(rutaArchivoTexto))
-                            File.WriteAllText(rutaArchivoTexto, ultimaImagen.Name);
-                        else
-                            File.AppendAllText(rutaArchivoTexto, Environment.NewLine + ultimaImagen.Name);
-                    }
-
-                    cbMark.Checked = false;
-                    
-                }
+                    CreateLogWithMarkedHands();
 
                 GetImageWhilePlaying();
                 _formImage.WindowState = FormWindowState.Minimized;
@@ -613,6 +578,30 @@ namespace OpenScrape.App
             SetBoardValues();
             lbAction.Text = _responseAction;
 
+        }
+
+        private void CreateLogWithMarkedHands()
+        {
+            DirectoryInfo directoryInfo = new DirectoryInfo(_folderPath);
+            FileInfo[] archivosPNG = directoryInfo.GetFiles("*.png")
+                                                .Where(file => file.Extension.ToLower() == ".png")
+                                                .ToArray();
+
+            if (archivosPNG.Length > 0)
+            {
+                FileInfo ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
+                                                  .First();
+
+                string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
+                string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
+
+                if (!File.Exists(rutaArchivoTexto))
+                    File.WriteAllText(rutaArchivoTexto, ultimaImagen.Name);
+                else
+                    File.AppendAllText(rutaArchivoTexto, Environment.NewLine + ultimaImagen.Name);
+            }
+
+            cbMark.Checked = false;
         }
 
         private bool Exist4Bet()
