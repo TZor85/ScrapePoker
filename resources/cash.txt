@@ -3,11 +3,11 @@
 // Regions
 //
 
-r$p1playing # 260 - 482 - 1 - 1 & False & True & False & bd2d21
-r$p2playing # 176 - 182 - 1 - 1 & False & True & False & bd2d21
-r$p3playing # 557 - 102 - 1 - 1 & False & True & False & bd2d21
-r$p4playing # 937 - 182 - 1 - 1 & False & True & False & bd2d21
-r$p5playing # 855 - 483 - 1 - 1 & False & True & False & bd2d21
+r$p1playing # 260 - 496 - 1 - 1 & False & True & False & bd2d21
+r$p2playing # 176 - 195 - 1 - 1 & False & True & False & bd2d21
+r$p3playing # 557 - 116 - 1 - 1 & False & True & False & bd2d21
+r$p4playing # 937 - 196 - 1 - 1 & False & True & False & bd2d21
+r$p5playing # 855 - 496 - 1 - 1 & False & True & False & bd2d21
 r$p1empty # 213 - 434 - 1 - 1 & False & True & False & 5c8744
 r$p2empty # 129 - 133 - 1 - 1 & False & True & False & 0d3b2e
 r$p3empty # 511 - 55 - 1 - 1 & False & True & False & 0c372b

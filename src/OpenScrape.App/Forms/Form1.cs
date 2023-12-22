@@ -47,7 +47,7 @@ namespace OpenScrape.App
         private string _folderPath = string.Empty;
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
-        private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 68, 69 };
+        private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
         private List<int> _colorPlaying = new List<int> { 32, 33, 34 };
 
         private int _umbral = 130;
@@ -58,9 +58,7 @@ namespace OpenScrape.App
         private readonly IGetRaiseOverLimperUseCase _raiseOverLimperUseCase = new GetRaiseOverLimperUseCase();
         private readonly IGet3BetUseCase _threeBetUseCase = new Get3BetUseCase();
         private readonly IGetVs3BetUseCase _vs3BetUseCase = new GetVs3BetUseCase();
-        private readonly IGetVs3BetAndCall _vs3BetAndCall = new GetVs3BetAndCall();
-
-
+        private readonly IGetVs3BetAndCall _vs3BetAndCallUseCase = new GetVs3BetAndCall();
 
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
@@ -346,8 +344,8 @@ namespace OpenScrape.App
 
                 if (_colorDealer.Contains(color.R))
                 {
-                    var emptys = _scrapeResult.DataPlayer.Where(w => w.Empty || w.SitOut).ToList().Select(s => s.ValuePosition);
-
+                    var emptys = _scrapeResult.DataPlayer.Where(w => w.Empty || w.SitOut).ToList().Select(s => s.ValuePosition).ToList();
+                    
                     switch (region.Name)
                     {
                         case "p0dealer":
@@ -362,54 +360,81 @@ namespace OpenScrape.App
                         case "p2dealer":
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").Dealer = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = false;
-                                                        
-                            switch (emptys.Count(c => c > 2))
+
+                            if (emptys.Count(c => c > 2) > 0)
                             {
-                                case 0:
-                                    _scrapeResult.P0Position = HeroPosition.MiddlePosition;
-                                    break;
-                                case 1:
-                                    _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-                                    break;
-                                case 2:
-                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
-                                    break;
+                                switch (emptys.Count(c => c > 2))
+                                {
+                                    case 1:
+                                        _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+                                        break;
+                                    case 2:
+                                        _scrapeResult.P0Position = HeroPosition.BigBlind;
+                                        break;
                                 }
+                            }
+                            else
+                            {
+                                switch (emptys.Count(c => c < 2))
+                                {
+                                    case 1:
+                                        _scrapeResult.P0Position = HeroPosition.CutOff;
+                                        break;
+                                    case 2:
+                                        _scrapeResult.P0Position = HeroPosition.EarlyPosition;
+                                        break;
+                                }
+                            }
 
                             break;
                         case "p3dealer":
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").Dealer = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = false;
 
-                            switch (emptys.Count(c => c > 3))
-                            {   
-                               case 0:
-                                    _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-                                    break;
-                                case 1:
-                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
-                                    break;
-                                case 2:
-                                    _scrapeResult.P0Position = HeroPosition.SmallBlind;
-                                    break;
+                            if (emptys.Count(c => c > 3) > 0)
+                            {
+                                switch (emptys.Count(c => c > 3))
+                                {
+                                    case 1:
+                                        _scrapeResult.P0Position = HeroPosition.BigBlind;
+                                        break;
+                                    case 2:
+                                        _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                                        break;
+                                }
                             }
+                            else
+                            {
+                                switch (emptys.Count(c => c < 3))
+                                {
+                                    case 1:
+                                        _scrapeResult.P0Position = HeroPosition.MiddlePosition;
+                                        break;
+                                    case 2:
+                                        _scrapeResult.P0Position = HeroPosition.CutOff;
+                                        break;
+                                }
+                            }
+
+                            
                             
                             break;
                         case "p4dealer":
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").Dealer = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = false;
 
-                            switch (emptys.Count())
+                            if (emptys.Count(c => c > 4) > 0)
                             {
-                                case 0:
-                                    _scrapeResult.P0Position = HeroPosition.BigBlind;
-                                    break;
-                                case 1:
-                                    _scrapeResult.P0Position = HeroPosition.SmallBlind;
-                                    break;
-                                case 2:
-                                    _scrapeResult.P0Position = HeroPosition.Button;
-                                    break;
+                                switch (emptys.Count(c => c > 4))
+                                {
+                                    case 1:
+                                        _scrapeResult.P0Position = HeroPosition.SmallBlind;
+                                        break;
+                                }
+                            }
+                            else
+                            {
+                                _scrapeResult.P0Position = HeroPosition.BigBlind;
                             }
 
                             break;
@@ -560,7 +585,7 @@ namespace OpenScrape.App
             }
 
             tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
-            tbResumen.Text += $"Jugadores SitOut: {sitout} \r\n";
+            tbResumen.Text += $"Jugadores SitOut/Empty: {sitout} \r\n";
             tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
             tbResumen.Text += "-------------------------------- \r\n";
             tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
@@ -711,7 +736,7 @@ namespace OpenScrape.App
                     SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.CutOff:
-                    positions.AddRange(new List<HeroPosition> { HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.MiddlePosition, HeroPosition.EarlyPosition });
+                    positions.AddRange(new List<HeroPosition> { HeroPosition.Button, HeroPosition.SmallBlind, HeroPosition.BigBlind, HeroPosition.EarlyPosition, HeroPosition.MiddlePosition });
                     SetVillainPositionExtension(playerNames, positions);
                     break;
                 case HeroPosition.MiddlePosition:
@@ -812,7 +837,7 @@ namespace OpenScrape.App
 
             var cont = 0;
             var betsPosition = preflopHeroPosition
-                                .Where(w => w.Key != HeroPosition.BigBlind && w.Key != HeroPosition.SmallBlind)
+                                .Where(w => w.Key != HeroPosition.BigBlind && w.Key != HeroPosition.SmallBlind && w.Key != HeroPosition.None)
                                 .Select(s => s.Key).ToList();
 
             foreach (var item in betsPosition)
@@ -888,6 +913,8 @@ namespace OpenScrape.App
                     VillainPosition = preflopHeroPosition.First(f => f.Value > _scrapeResult.U0Bet).Key,
                     CallerPosition = preflopHeroPosition.Last(l => l.Value > _scrapeResult.U0Bet).Key
                 };
+
+                responseAction = _vs3BetAndCallUseCase.Execute(command);
             }
 
             return responseAction.Action;
@@ -935,7 +962,12 @@ namespace OpenScrape.App
 
         private void GetImageWhilePlaying()
         {
-            _folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+
+            //_folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+
+
+            //portatil
+            _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
             if (!Directory.Exists(_folderPath))
             {
