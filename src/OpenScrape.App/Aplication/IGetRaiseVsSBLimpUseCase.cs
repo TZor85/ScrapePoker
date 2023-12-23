@@ -3,11 +3,14 @@
 namespace OpenScrape.App.Aplication
 {
 
-    public class GetRaiseVsSBLimpRequest : BaseRequest { }
+    public class GetRaiseVsSBLimpRequest : BaseRequest 
+    {
+        public bool OnlyCall { get; set; }
+    }
 
     public class GetRaiseVsSBLimpResponse : BaseResponse { }
 
-    public interface IGetRaiseVsSBLimp
+    public interface IGetRaiseVsSBLimpUseCase
     {
         GetRaiseVsSBLimpResponse Execute(GetRaiseVsSBLimpRequest request);
     }

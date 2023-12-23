@@ -17,7 +17,7 @@ namespace OpenScrape.App.Aplication
 
     }
 
-    public interface IGetVs3BetAndCall
+    public interface IGetVs3BetAndCallUseCase
     {
         GetVs3BetAndCallUseCaseResponse Execute(GetVs3BetAndCallUseCaseRequest request);
     }

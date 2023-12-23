@@ -9,6 +9,11 @@ namespace OpenScrape.App.Tables
             return BigBlindvsSBCall(hand);
         }
 
+        public static string GetBigBlindvsSBCallAndRaise(string hand)
+        {
+            return BigBlindvsSBCallAndRaise(hand);
+        }
+
         #region Hands
 
         private static string BigBlindvsSBCall(string hand)
@@ -296,11 +301,106 @@ namespace OpenScrape.App.Tables
                 new Hands{ Hand = "62o", Action = "Check", Porcentajes =  100 },
                 new Hands{ Hand = "52o", Action = "Check", Porcentajes =  100 },
                 new Hands{ Hand = "42o", Action = "Check", Porcentajes =  100 },
-                new Hands{ Hand = "32o", Action = "Check", Porcentajes =  100 },
+                new Hands{ Hand = "32o", Action = "Check", Porcentajes =  100 }
             };
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
+
+        private static string BigBlindvsSBCallAndRaise(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "A5s", Action = "All In", Porcentajes =  44 },
+                new Hands{ Hand = "A5s", Action = "Call", Porcentajes =  56 },
+                new Hands{ Hand = "A4s", Action = "All In", Porcentajes =  26 },
+                new Hands{ Hand = "A4s", Action = "Raise x25.5", Porcentajes =  23 },
+                new Hands{ Hand = "A4s", Action = "Call", Porcentajes =  51 },
+                new Hands{ Hand = "AKo", Action = "All In", Porcentajes =  79 },
+                new Hands{ Hand = "AKo", Action = "Raise x25.5", Porcentajes =  21 },
+                new Hands{ Hand = "KQs", Action = "All In", Porcentajes =  19 },
+                new Hands{ Hand = "KQs", Action = "Call", Porcentajes =  81 },
+                new Hands{ Hand = "AQo", Action = "All In", Porcentajes =  55 },
+                new Hands{ Hand = "AQo", Action = "Call", Porcentajes =  45 },
+                new Hands{ Hand = "QJs", Action = "All In", Porcentajes =  39 },
+                new Hands{ Hand = "QJs", Action = "Call", Porcentajes =  61 },
+                new Hands{ Hand = "JJ", Action = "All In", Porcentajes =  47 },
+                new Hands{ Hand = "JJ", Action = "Raise x25.5", Porcentajes =  45 },
+                new Hands{ Hand = "JJ", Action = "Call", Porcentajes =  8 },
+                new Hands{ Hand = "TT", Action = "All In", Porcentajes =  63 },
+                new Hands{ Hand = "TT", Action = "Raise x25.5", Porcentajes =  2 },
+                new Hands{ Hand = "TT", Action = "Call", Porcentajes =  35 },
+                new Hands{ Hand = "99", Action = "All In", Porcentajes =  11 },
+                new Hands{ Hand = "99", Action = "Raise x25.5", Porcentajes =  18 },
+                new Hands{ Hand = "99", Action = "Call", Porcentajes =  71 },
+                new Hands{ Hand = "66", Action = "All In", Porcentajes =  17 },
+                new Hands{ Hand = "66", Action = "Raise x25.5", Porcentajes =  6 },
+                new Hands{ Hand = "66", Action = "Marginal Call", Porcentajes =  66 },
+                new Hands{ Hand = "66", Action = "Fold", Porcentajes =  11 },
+                new Hands{ Hand = "AA", Action = "Raise x25.5", Porcentajes =  79 },
+                new Hands{ Hand = "AA", Action = "Call", Porcentajes =  21 },
+                new Hands{ Hand = "AKs", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "AQs", Action = "Raise x25.5", Porcentajes =  59 },
+                new Hands{ Hand = "AQs", Action = "Call", Porcentajes =  41 },
+                new Hands{ Hand = "A9s", Action = "Raise x25.5", Porcentajes =  34 },
+                new Hands{ Hand = "A9s", Action = "Call", Porcentajes =  66 },
+                new Hands{ Hand = "A8s", Action = "Raise x25.5", Porcentajes =  65 },
+                new Hands{ Hand = "A8s", Action = "Call", Porcentajes =  35 },
+                new Hands{ Hand = "A7s", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "A6s", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "A3s", Action = "Raise x25.5", Porcentajes =  31 },
+                new Hands{ Hand = "A3s", Action = "Call", Porcentajes =  69 },
+                new Hands{ Hand = "KK", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "K9s", Action = "Raise x25.5", Porcentajes =  51 },
+                new Hands{ Hand = "K9s", Action = "Call", Porcentajes =  49 },
+                new Hands{ Hand = "K5s", Action = "Raise x25.5", Porcentajes =  82 },
+                new Hands{ Hand = "K5s", Action = "Fold", Porcentajes =  18 },
+                new Hands{ Hand = "KQo", Action = "Raise x25.5", Porcentajes =  34 },
+                new Hands{ Hand = "KQo", Action = "Call", Porcentajes =  66 },
+                new Hands{ Hand = "QQ", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "QTs", Action = "Raise x25.5", Porcentajes =  12 },
+                new Hands{ Hand = "QTs", Action = "Call", Porcentajes =  88 },
+                new Hands{ Hand = "Q9s", Action = "Raise x25.5", Porcentajes =  100 },
+                new Hands{ Hand = "AJo", Action = "Raise x25.5", Porcentajes =  43 },
+                new Hands{ Hand = "AJo", Action = "Call", Porcentajes =  57 },
+                new Hands{ Hand = "KJo", Action = "Raise x25.5", Porcentajes =  7 },
+                new Hands{ Hand = "KJo", Action = "Marginal Call", Porcentajes =  24 },
+                new Hands{ Hand = "KJo", Action = "Fold", Porcentajes =  69 },
+                new Hands{ Hand = "ATo", Action = "Raise x25.5", Porcentajes =  40 },
+                new Hands{ Hand = "ATo", Action = "Fold", Porcentajes =  60 },
+                new Hands{ Hand = "KTo", Action = "Raise x25.5", Porcentajes =  28 },
+                new Hands{ Hand = "KTo", Action = "Fold", Porcentajes =  72 },
+                new Hands{ Hand = "T9s", Action = "Raise x25.5", Porcentajes =  1 },
+                new Hands{ Hand = "T9s", Action = "Call", Porcentajes =  99 },
+                new Hands{ Hand = "88", Action = "Raise x25.5", Porcentajes =  26 },
+                new Hands{ Hand = "88", Action = "Call", Porcentajes =  74 },
+                new Hands{ Hand = "77", Action = "Raise x25.5", Porcentajes =  17 },
+                new Hands{ Hand = "77", Action = "Marginal Call", Porcentajes =  72 },
+                new Hands{ Hand = "77", Action = "Fold", Porcentajes =  11 },
+                new Hands{ Hand = "AJs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "ATs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "KJs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "KTs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "K6s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "JTs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "J9s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "98s", Action = "Marginal Call", Porcentajes =  51 },
+                new Hands{ Hand = "98s", Action = "Fold", Porcentajes =  49 },
+                new Hands{ Hand = "87s", Action = "Marginal Call", Porcentajes =  53 },
+                new Hands{ Hand = "87s", Action = "Fold", Porcentajes =  47 },
+                new Hands{ Hand = "76s", Action = "Marginal Call", Porcentajes =  66 },
+                new Hands{ Hand = "76s", Action = "Fold", Porcentajes =  34 },
+                new Hands{ Hand = "65s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "55", Action = "Marginal Call", Porcentajes =  38 },
+                new Hands{ Hand = "55", Action = "Fold", Porcentajes =  62 },
+                new Hands{ Hand = "54s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "44", Action = "Marginal Call", Porcentajes =  28 },
+                new Hands{ Hand = "44", Action = "Fold", Porcentajes =  72 }
+            };
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
         #endregion
 
     }

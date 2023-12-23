@@ -3,7 +3,7 @@ using OpenScrape.App.Tables;
 
 namespace OpenScrape.App.Aplication.UseCases.Actions
 {
-    public class GetVs3BetAndCall : IGetVs3BetAndCall
+    public class GetVs3BetAndCallUseCase : IGetVs3BetAndCallUseCase
     {
         public GetVs3BetAndCallUseCaseResponse Execute(GetVs3BetAndCallUseCaseRequest request)
         {

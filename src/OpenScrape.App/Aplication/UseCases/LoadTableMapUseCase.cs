@@ -17,10 +17,10 @@ namespace OpenScrape.App.Aplication.UseCases
             OpenFileDialog theDialog = new OpenFileDialog();
             LoadTableMapUseCaseResponse response = new LoadTableMapUseCaseResponse();
 
-            //theDialog.InitialDirectory = @"C:\Code\ScrapePoker\resources";
+            theDialog.InitialDirectory = @"C:\Code\ScrapePoker\resources";
             
             //portatil
-            theDialog.InitialDirectory = @"C:\Code\Poker\ScrapePoker\resources";
+            //theDialog.InitialDirectory = @"C:\Code\Poker\ScrapePoker\resources";
             theDialog.Title = "Open Text File";
             theDialog.Filter = "TXT files|*.txt";
             if (theDialog.ShowDialog() == DialogResult.OK)
