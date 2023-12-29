@@ -22,10 +22,10 @@ namespace OpenScrape.App.Aplication.UseCases
             
         }
 
-        public void GetWindow(IntPtr handle)
+        public IntPtr GetWindow(IntPtr handle)
         {
             _handle = CaptureWindowsHelper.User32.GetForegroundWindow();
-            //_handle = handle;
+            return _handle;
             
         }
     }

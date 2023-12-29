@@ -424,7 +424,7 @@
             // 
             // backgroundWorker1
             // 
-            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             // 
             // btnCapture
             // 

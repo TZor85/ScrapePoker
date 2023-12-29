@@ -28,68 +28,68 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
-            this.cbRegions = new System.Windows.Forms.ComboBox();
-            this.btnAdd = new System.Windows.Forms.Button();
-            this.btnCancel = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            label1 = new Label();
+            cbRegions = new ComboBox();
+            btnAdd = new Button();
+            btnCancel = new Button();
+            SuspendLayout();
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(25, 9);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(80, 15);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Region name:";
+            label1.AutoSize = true;
+            label1.Location = new Point(25, 9);
+            label1.Name = "label1";
+            label1.Size = new Size(80, 15);
+            label1.TabIndex = 0;
+            label1.Text = "Region name:";
             // 
             // cbRegions
             // 
-            this.cbRegions.FormattingEnabled = true;
-            this.cbRegions.Location = new System.Drawing.Point(25, 27);
-            this.cbRegions.Name = "cbRegions";
-            this.cbRegions.Size = new System.Drawing.Size(121, 23);
-            this.cbRegions.TabIndex = 1;
-            this.cbRegions.SelectedIndexChanged += new System.EventHandler(this.cbRegions_SelectedIndexChanged);
+            cbRegions.FormattingEnabled = true;
+            cbRegions.Location = new Point(25, 27);
+            cbRegions.Name = "cbRegions";
+            cbRegions.Size = new Size(121, 23);
+            cbRegions.TabIndex = 1;
+            cbRegions.SelectedIndexChanged += cbRegions_SelectedIndexChanged;
             // 
             // btnAdd
             // 
-            this.btnAdd.Enabled = false;
-            this.btnAdd.Location = new System.Drawing.Point(25, 69);
-            this.btnAdd.Name = "btnAdd";
-            this.btnAdd.Size = new System.Drawing.Size(56, 23);
-            this.btnAdd.TabIndex = 2;
-            this.btnAdd.Text = "Add";
-            this.btnAdd.UseVisualStyleBackColor = true;
-            this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
+            btnAdd.Enabled = false;
+            btnAdd.Location = new Point(25, 69);
+            btnAdd.Name = "btnAdd";
+            btnAdd.Size = new Size(56, 23);
+            btnAdd.TabIndex = 2;
+            btnAdd.Text = "Add";
+            btnAdd.UseVisualStyleBackColor = true;
+            btnAdd.Click += btnAdd_Click;
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(87, 69);
-            this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(59, 23);
-            this.btnCancel.TabIndex = 3;
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.UseVisualStyleBackColor = true;
-            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            btnCancel.Location = new Point(87, 69);
+            btnCancel.Name = "btnCancel";
+            btnCancel.Size = new Size(59, 23);
+            btnCancel.TabIndex = 3;
+            btnCancel.Text = "Cancel";
+            btnCancel.UseVisualStyleBackColor = true;
+            btnCancel.Click += btnCancel_Click;
             // 
             // FormRegions
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(175, 104);
-            this.Controls.Add(this.btnCancel);
-            this.Controls.Add(this.btnAdd);
-            this.Controls.Add(this.cbRegions);
-            this.Controls.Add(this.label1);
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.Name = "FormRegions";
-            this.Text = "New Region Record";
-            this.Load += new System.EventHandler(this.FormRegions_Load);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(175, 104);
+            Controls.Add(btnCancel);
+            Controls.Add(btnAdd);
+            Controls.Add(cbRegions);
+            Controls.Add(label1);
+            MaximizeBox = false;
+            MinimizeBox = false;
+            Name = "FormRegions";
+            Text = "New Region Record";
+            TopMost = true;
+            Load += FormRegions_Load;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion

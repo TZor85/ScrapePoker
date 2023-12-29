@@ -34,6 +34,8 @@
         RaiseOverLimper,
         Call,
         ThreeBet,
+        OpenRaiseVs3Bet,
+        OpenRaiseVs3BetAndCall,
         FourBet,
         Cold4Bet
     }

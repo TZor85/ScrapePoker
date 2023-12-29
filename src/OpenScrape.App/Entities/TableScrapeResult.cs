@@ -12,6 +12,7 @@ namespace OpenScrape.App.Entities
         public int U0CardSuit0 { get; set; } = 0;
         public int U0CardSuit1 { get; set; } = 0;
         public decimal U0Bet {  get; set; }
+        public string? TableName { get; set; }
         public HeroPosition P0Position { get; set; }
         public HeroAction HeroAction { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
@@ -38,5 +39,12 @@ namespace OpenScrape.App.Entities
         public bool SmallBlind { get; set; }
         public HeroPosition Position { get; set; }
         public int ValuePosition { get; set; }
+    }
+
+    public class ResponseAction
+    {
+        public string? Action { get; set; }
+        public HeroAction HeroAction { get; set; }
+        public bool IsFirstAction { get; set; }
     }
 }

@@ -22,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoItX.Dotnet" Version="3.3.14.5" />
     <PackageReference Include="Emgu.CV" Version="4.7.0.5276" />
     <PackageReference Include="IronOcr" Version="2022.11.10109" />
     <PackageReference Include="MediatR" Version="12.0.1" />

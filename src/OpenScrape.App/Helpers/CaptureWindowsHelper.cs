@@ -111,6 +111,10 @@ namespace OpenScrape.App.Helpers
             public static extern IntPtr GetWindowRect(IntPtr hWnd, ref RECT rect);
             [DllImport("user32.dll")]
             public static extern IntPtr GetForegroundWindow();
+            [DllImport("user32.dll")]
+            public static extern int GetPixel(IntPtr hdc, int x, int y);
+            [DllImport("user32.dll")]
+            public static extern IntPtr GetDC(IntPtr hwnd);
         }
 
         public static Bitmap BinaryImage(Bitmap source, int umb)

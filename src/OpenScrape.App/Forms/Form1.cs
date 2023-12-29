@@ -1,15 +1,19 @@
-using MediatR;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Enums;
+using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
-using OpenScrape.App.Tables;
+using System.Text;
 using Tesseract;
+using AutoItX3Lib;
+using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using Image = System.Drawing.Image;
+using System.ComponentModel;
+using System.Reflection.Metadata;
 
 namespace OpenScrape.App
 {
@@ -21,6 +25,7 @@ namespace OpenScrape.App
         FormCreateFont _formCreateFont;
         FormImage _formImage;
         Graphics _papel;
+        FormAction _formAction;
         #endregion
 
         #region Regions
@@ -39,12 +44,13 @@ namespace OpenScrape.App
         List<KeyValuePair<string, string>> _imageList = new List<KeyValuePair<string, string>>();
 
         TableScrapeResult _scrapeResult = new TableScrapeResult();
+        ResponseAction _responseAction = new ResponseAction();
+
 
 
         private int _speed = 1;
         public string _newRegion = string.Empty;
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
-        private string _responseAction = string.Empty;
         private string _folderPath = string.Empty;
 
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
@@ -53,6 +59,10 @@ namespace OpenScrape.App
         private Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>> _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
 
         private int _umbral = 130;
+        private string _session = string.Empty;
+        private IntPtr _handle = new IntPtr();
+
+        bool _backgroundExecute = false;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
 
@@ -70,6 +80,7 @@ namespace OpenScrape.App
         public Form1()
         {
             InitializeComponent();
+            _session = GenerateRandomNumbers();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -254,11 +265,13 @@ namespace OpenScrape.App
         private void btnCapture_Click(object sender, EventArgs e)
         {
             lbAction.Text = string.Empty;
+            _formAction.DatoRecibido = string.Empty;
             _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
-            
+            _responseAction = new ResponseAction();
+
             if (!cbTest.Checked)
             {
-                if(cbMark.Checked)
+                if (cbMark.Checked)
                     CreateLogWithMarkedHands();
 
                 GetImageWhilePlaying();
@@ -466,7 +479,7 @@ namespace OpenScrape.App
             }
 
             //Setear el jugador sitout
-            foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash && x.Name.Contains("sitout")))
+            foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash && (x.Name.Contains("sitout") || x.Name.Contains("tablename"))))
             {
                 switch (item.Name)
                 {
@@ -515,6 +528,8 @@ namespace OpenScrape.App
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
                         }
                         break;
+                    default:
+                        break;
                 }
             }
 
@@ -549,6 +564,7 @@ namespace OpenScrape.App
                         if (_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
+                    
                     default:
                         break;
                 }
@@ -561,51 +577,66 @@ namespace OpenScrape.App
 
             
             _preflopHeroPosition = GetPreflopHeroPosition();
+            
+            if(_responseAction.Action is null)
+            {
+                var action = GetOpenRaiseAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))                
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.OpenRaise;
+                    _responseAction.IsFirstAction = false;
+                };
+            }
 
-            _responseAction = GetOpenRaiseAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+            if (_responseAction.Action is null)
+            {
+                var action = Cold4BetAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.Cold4Bet;
+                    _responseAction.IsFirstAction = false;
+                };
+            }
+               
+            if (_responseAction.Action is null)
+            {
+                var action = GetRaiseOverLimperAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.RaiseOverLimper;
+                    _responseAction.IsFirstAction = false;
+                };
+            }
 
-            if (_responseAction is null)
-                _responseAction = Cold4BetAction(_preflopHeroPosition[_scrapeResult.P0Position]);
-            else
-                _scrapeResult.HeroAction = HeroAction.OpenRaise;
-
-            if (_responseAction is null)
-                _responseAction = GetRaiseOverLimperAction(_preflopHeroPosition[_scrapeResult.P0Position]);
-            else
-                if (_scrapeResult.HeroAction == HeroAction.None)
-                    _scrapeResult.HeroAction = HeroAction.Cold4Bet;
-
-
-            if (_responseAction is null)
+            if (_responseAction.Action is null)
             {
                 if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && Exist4Bet())
-                    _responseAction = Get3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
-
-                if (_responseAction is not null)
-                    _scrapeResult.HeroAction = HeroAction.ThreeBet;
-                else
                 {
-                    //hacer aquí los 4bets    
+                    var action = Get3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+                    if (!string.IsNullOrEmpty(action))
+                    {
+                        _responseAction.Action = action;
+                        _responseAction.HeroAction = HeroAction.ThreeBet;
+                        _responseAction.IsFirstAction = false;
+                    };
                 }
             }
-            else
-            {
-                if(_scrapeResult.HeroAction == HeroAction.None)
-                    _scrapeResult.HeroAction = HeroAction.RaiseOverLimper;
-            }
 
-            if (_scrapeResult.P0Position == HeroPosition.EarlyPosition && string.IsNullOrEmpty(_responseAction))
+            
+
+            if (string.IsNullOrEmpty(_responseAction?.Action))
             {
 
-                var openRaiseCommand = new GetOpenRaiseUseCaseRequest
-                {
-                    Hand = SetHandValue(),
-                    Position = _scrapeResult.P0Position
-                };
-
-                var response = _openRaiseUseCase.Execute(openRaiseCommand);
+                _responseAction.Action = "None";
+                _responseAction.HeroAction = HeroAction.None;
+                _responseAction.IsFirstAction = false;
 
             }
+
+            _scrapeResult.HeroAction = _responseAction.HeroAction;
 
             tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
             tbResumen.Text += $"Jugadores SitOut/Empty: {sitout} \r\n";
@@ -624,8 +655,8 @@ namespace OpenScrape.App
 
 
             SetBoardValues();
-            lbAction.Text = _responseAction;
-
+            lbAction.Text = _responseAction.Action;
+            _formAction.DatoRecibido = _responseAction.Action;
         }
 
         
@@ -736,17 +767,34 @@ namespace OpenScrape.App
                 }
             }
 
-            _responseAction = null;
+            _responseAction = new ResponseAction();
 
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
-                _responseAction = GetOpenRaiseVs3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+            if (_responseAction.Action is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
+            {
+                var action = GetOpenRaiseVs3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.OpenRaiseVs3Bet;
+                    _responseAction.IsFirstAction = false;
+                };
+            }
 
             if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper) && Exist4Bet())
-                _responseAction = GetOpenRaiseVs3BetAndCallAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+            {
+                var action = GetOpenRaiseVs3BetAndCallAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.OpenRaiseVs3BetAndCall;
+                    _responseAction.IsFirstAction = false;
+                };
+            }
 
-            lbAction.Text = _responseAction;
+
+            lbAction.Text = _responseAction.Action;
 
         }
 
@@ -776,6 +824,19 @@ namespace OpenScrape.App
             }
 
             return position;
+        }
+
+        private string GenerateRandomNumbers()
+        {
+            Random random = new Random();
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < 10; i++)
+            {
+                sb.Append(random.Next(0, 10));
+            }
+
+            return sb.ToString();
         }
 
         private void SetVillainPosition(HeroPosition p0Position)
@@ -1095,20 +1156,23 @@ namespace OpenScrape.App
         private void GetImageWhilePlaying()
         {
 
-            _folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+            //_folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")";
 
 
             //portatil
-            //_folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+            _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+
+            _folderPath += $"\\{_session}";
 
             if (!Directory.Exists(_folderPath))
             {
                 Directory.CreateDirectory(_folderPath);
+
             }
 
             var path = _folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
 
-            var imagen = _useCase.ExecuteImage(path);
+            _useCase.ExecuteImage(path);
 
             var windowImg = Image.FromFile(path);
 
@@ -1129,8 +1193,33 @@ namespace OpenScrape.App
 
         private void btnWindow_Click(object sender, EventArgs e)
         {
-            Thread.Sleep(2000);
-            _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+
+            User32.RECT windowRect = new User32.RECT();
+            
+            if (_handle == IntPtr.Zero)
+            {
+                Thread.Sleep(2000);
+                _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+
+                User32.GetWindowRect(_handle, ref windowRect);
+
+                _formAction = new FormAction();
+                _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
+                _formAction.Show();
+            }
+
+            if (_handle != IntPtr.Zero)
+            {
+                User32.GetWindowRect(_handle, ref windowRect);
+                this.Invoke((MethodInvoker)delegate {
+                    _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
+                });
+            }
+
+
+            if (!_backgroundExecute)
+                backgroundWorker1.RunWorkerAsync();
+
         }
 
         private void btnCreateImage_Click(object sender, EventArgs e)
@@ -1141,10 +1230,35 @@ namespace OpenScrape.App
         }
 
 
-        private void backgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
-            _formCreateImage.Show();
-            twRegions.ExpandAll();
+            _backgroundExecute = true;
+            AutoItX3 au3 = new AutoItX3();
+
+            User32.RECT windowRect = new User32.RECT();
+            User32.GetWindowRect(_handle, ref windowRect);
+
+            while (true)
+            {
+                if (backgroundWorker1.CancellationPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+             
+                //if (_formAction != null)
+                //    _formAction.Close();
+
+                //_formAction = new FormAction();
+                //_formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
+                //_formAction.Show();
+
+                var pp = au3.PixelSearch(windowRect.left + ((windowRect.right - windowRect.left) / 2), windowRect.bottom - 150, windowRect.right, windowRect.bottom, 0x4D912F);
+
+                Thread.Sleep(5000);
+
+                btnWindow_Click(sender, e);
+            }
         }
 
 
