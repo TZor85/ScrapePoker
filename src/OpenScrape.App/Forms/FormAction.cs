@@ -20,21 +20,22 @@ namespace OpenScrape.App.Forms
             set
             {
                 datoRecibido = value;
-                // Realizar acciones en el formulario destino cuando el dato cambia
-                ActualizarDatosEnInterfaz(); // Método para actualizar la interfaz con el nuevo dato
+                ActualizarDatosEnInterfaz(); 
             }
         }
 
-        // Método para actualizar la interfaz con el nuevo dato
+        
+
         private void ActualizarDatosEnInterfaz()
         {
-            // Actualizar controles, etiquetas, etc., con el nuevo dato
-            // Ejemplo:
+            //label1.Text = pruebaTexto;
             lbAction.Text = datoRecibido;
         }
 
         public FormAction()
         {
+            this.BackColor = Color.Magenta;
+            this.TransparencyKey = Color.Magenta;
             InitializeComponent();
         }
 

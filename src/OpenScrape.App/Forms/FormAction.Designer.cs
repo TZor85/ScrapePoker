@@ -62,7 +62,7 @@
             Controls.Add(lbAction);
             FormBorderStyle = FormBorderStyle.None;
             Name = "FormAction";
-            Opacity = 0.5D;
+            ShowInTaskbar = false;
             StartPosition = FormStartPosition.Manual;
             Text = "FormAction";
             TopMost = true;

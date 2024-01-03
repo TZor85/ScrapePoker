@@ -33,6 +33,8 @@ r$p5bet # 653 - 453 - 90 - 15 & False & False & False &
 r$u0cardface0 # 446 - 496 - 20 - 35 & True & False & False & 
 r$u0cardface1 # 513 - 496 - 20 - 35 & True & False & False & 
 r$tablename # 29 - 5 - 111 - 20 & False & False & False & 
+r$uAction # 946 - 685 - 1 - 1 & False & True & False & fcffff
+r$isFlop # 400 - 276 - 1 - 1 & False & True & False & ffffff
 
 //
 // Fonts

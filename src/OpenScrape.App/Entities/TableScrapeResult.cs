@@ -15,6 +15,7 @@ namespace OpenScrape.App.Entities
         public string? TableName { get; set; }
         public HeroPosition P0Position { get; set; }
         public HeroAction HeroAction { get; set; }
+        public bool IsFlop { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
      
     }

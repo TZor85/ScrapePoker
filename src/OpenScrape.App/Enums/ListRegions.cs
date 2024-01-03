@@ -10,7 +10,9 @@
             "p1empty", "p2empty", "p3empty", "p4empty", "p5empty",
             "p1playing", "p2playing", "p3playing", "p4playing", "p5playing",
             "u0cardface0", "u0cardface1", "u0bet",
-            "b0card1", "b0card2", "b0card3", "b0card4", "b0card5", "fonts", "isFlop", "uAction", "uAction1", "uPlay", "tablename"
+            "b0card1", "b0card2", "b0card3", "b0card4", "b0card5", 
+            "action",
+            "fonts", "isFlop", "uAction", "uAction1", "uPlay", "tablename"
         };
 
     }

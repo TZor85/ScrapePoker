@@ -13,6 +13,11 @@ namespace OpenScrape.App.Aplication.UseCases
             return CaptureWindowsHelper.CaptureWindow(_handle);
         }
 
+        public Image Execute(IntPtr handle)
+        {
+            return CaptureWindowsHelper.CaptureWindow(handle);
+        }
+
         public Bitmap ExecuteImage(string path)
         {
             Image img = CaptureWindowsHelper.CaptureWindow(_handle);

@@ -9,11 +9,8 @@ using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
 using System.Text;
 using Tesseract;
-using AutoItX3Lib;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using Image = System.Drawing.Image;
-using System.ComponentModel;
-using System.Reflection.Metadata;
 
 namespace OpenScrape.App
 {
@@ -61,6 +58,8 @@ namespace OpenScrape.App
         private int _umbral = 130;
         private string _session = string.Empty;
         private IntPtr _handle = new IntPtr();
+        User32.RECT _locWindowRect = new User32.RECT();
+        bool _executeCapture = false;
 
         bool _backgroundExecute = false;
 
@@ -265,12 +264,18 @@ namespace OpenScrape.App
         private void btnCapture_Click(object sender, EventArgs e)
         {
             lbAction.Text = string.Empty;
-            _formAction.DatoRecibido = string.Empty;
-            _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
+            _executeCapture = true;
+
+            //if(!_responseAction.IsFirstAction)
+            //    _responseAction = new ResponseAction();
             _responseAction = new ResponseAction();
+            _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
+
 
             if (!cbTest.Checked)
             {
+                _formAction.DatoRecibido = string.Empty;
+
                 if (cbMark.Checked)
                     CreateLogWithMarkedHands();
 
@@ -280,6 +285,8 @@ namespace OpenScrape.App
 
             _scrapeResult = new TableScrapeResult();
             ObtainCardsPlayer();
+
+            //Si existe el flop, capturar las cartas del flop
 
             foreach (var region in _regions.Where(x => x.IsColor))
             {
@@ -326,7 +333,7 @@ namespace OpenScrape.App
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P5", Active = false, Empty = false, SitOut = false, ValuePosition = 5 });
                             break;
                     }
-                    
+
 
                     //Setear el jugador vacio
                     if (_colorEmpty.Contains(color.B))
@@ -357,13 +364,13 @@ namespace OpenScrape.App
                                 break;
                         }
                     }
-                    
+
                 }
 
                 if (_colorDealer.Contains(color.R))
                 {
                     var emptys = _scrapeResult.DataPlayer.Where(w => w.Empty || w.SitOut).ToList().Select(s => s.ValuePosition).ToList();
-                    
+
                     switch (region.Name)
                     {
                         case "p0dealer":
@@ -406,7 +413,7 @@ namespace OpenScrape.App
                                     }
                                 }
                             }
-                            else 
+                            else
                             {
                                 _scrapeResult.P0Position = HeroPosition.MiddlePosition;
                             }
@@ -447,8 +454,8 @@ namespace OpenScrape.App
                             else
                             {
                                 _scrapeResult.P0Position = HeroPosition.EarlyPosition;
-                            }                            
-                            
+                            }
+
                             break;
                         case "p4dealer":
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").Dealer = true;
@@ -536,7 +543,7 @@ namespace OpenScrape.App
             SetVillainPosition(_scrapeResult.P0Position);
 
             var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
-            
+
             foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash && x.Name.Contains("bet")))
             {
                 switch (item.Name)
@@ -545,7 +552,7 @@ namespace OpenScrape.App
                         _scrapeResult.U0Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p1bet":
-                        if(_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.None)
+                        if (_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P1").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
                     case "p2bet":
@@ -564,7 +571,7 @@ namespace OpenScrape.App
                         if (_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position < _scrapeResult.P0Position && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.None)
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").Bet = SetBetValue(GetTextBetByPosition(item.X, item.Y, item.Width, item.Height, img));
                         break;
-                    
+
                     default:
                         break;
                 }
@@ -575,65 +582,16 @@ namespace OpenScrape.App
             var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
             var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
 
-            
+
             _preflopHeroPosition = GetPreflopHeroPosition();
-            
-            if(_responseAction.Action is null)
+
+            if (!_scrapeResult.IsFlop)
             {
-                var action = GetOpenRaiseAction(_preflopHeroPosition[_scrapeResult.P0Position]);
-                if (!string.IsNullOrEmpty(action))                
-                {
-                    _responseAction.Action = action;
-                    _responseAction.HeroAction = HeroAction.OpenRaise;
-                    _responseAction.IsFirstAction = false;
-                };
+                SetPreflopAction();
             }
-
-            if (_responseAction.Action is null)
+            else
             {
-                var action = Cold4BetAction(_preflopHeroPosition[_scrapeResult.P0Position]);
-                if (!string.IsNullOrEmpty(action))
-                {
-                    _responseAction.Action = action;
-                    _responseAction.HeroAction = HeroAction.Cold4Bet;
-                    _responseAction.IsFirstAction = false;
-                };
-            }
-               
-            if (_responseAction.Action is null)
-            {
-                var action = GetRaiseOverLimperAction(_preflopHeroPosition[_scrapeResult.P0Position]);
-                if (!string.IsNullOrEmpty(action))
-                {
-                    _responseAction.Action = action;
-                    _responseAction.HeroAction = HeroAction.RaiseOverLimper;
-                    _responseAction.IsFirstAction = false;
-                };
-            }
-
-            if (_responseAction.Action is null)
-            {
-                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && Exist4Bet())
-                {
-                    var action = Get3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
-                    if (!string.IsNullOrEmpty(action))
-                    {
-                        _responseAction.Action = action;
-                        _responseAction.HeroAction = HeroAction.ThreeBet;
-                        _responseAction.IsFirstAction = false;
-                    };
-                }
-            }
-
-            
-
-            if (string.IsNullOrEmpty(_responseAction?.Action))
-            {
-
-                _responseAction.Action = "None";
-                _responseAction.HeroAction = HeroAction.None;
-                _responseAction.IsFirstAction = false;
-
+                _responseAction.Action = "No Preflop action";
             }
 
             _scrapeResult.HeroAction = _responseAction.HeroAction;
@@ -656,10 +614,100 @@ namespace OpenScrape.App
 
             SetBoardValues();
             lbAction.Text = _responseAction.Action;
-            _formAction.DatoRecibido = _responseAction.Action;
+
+            if(_formAction != null)
+                _formAction.DatoRecibido = _responseAction.Action;
         }
 
-        
+        private void SetPreflopAction()
+        {
+
+            if (_responseAction.IsFirstAction)
+            {
+                if (_responseAction.Action is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper))
+                {
+                    var action = GetOpenRaiseVs3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet >= 1).Position);
+                    if (!string.IsNullOrEmpty(action))
+                    {
+                        _responseAction.Action = action;
+                        _responseAction.HeroAction = HeroAction.OpenRaiseVs3Bet;
+                        _responseAction.IsFirstAction = false;
+                    };
+                }
+
+                if (_responseAction is null && (_scrapeResult.HeroAction == HeroAction.OpenRaise || _scrapeResult.HeroAction == HeroAction.RaiseOverLimper) && Exist4Bet())
+                {
+                    var action = GetOpenRaiseVs3BetAndCallAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                    if (!string.IsNullOrEmpty(action))
+                    {
+                        _responseAction.Action = action;
+                        _responseAction.HeroAction = HeroAction.OpenRaiseVs3BetAndCall;
+                        _responseAction.IsFirstAction = false;
+                    };
+                }
+            }
+
+            //OPEN RAISE
+            if (_responseAction.Action is null)
+            {
+                var action = GetOpenRaiseAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.OpenRaise;
+                    _responseAction.IsFirstAction = true;
+                };
+            }
+
+            //COLD 4BET
+            if (_responseAction.Action is null)
+            {
+                var action = Cold4BetAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.Cold4Bet;
+                    _responseAction.IsFirstAction = true;
+                };
+            }
+
+            //GET RAISE OVER LIMPER
+            if (_responseAction.Action is null)
+            {
+                var action = GetRaiseOverLimperAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.RaiseOverLimper;
+                    _responseAction.IsFirstAction = true;
+                };
+            }
+
+            if (_responseAction.Action is null)
+            {
+                if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && Exist4Bet())
+                {
+                    var action = Get3BetAction(_preflopHeroPosition[_scrapeResult.P0Position], _scrapeResult.DataPlayer.First(w => w.Bet > 1).Position);
+                    if (!string.IsNullOrEmpty(action))
+                    {
+                        _responseAction.Action = action;
+                        _responseAction.HeroAction = HeroAction.ThreeBet;
+                        _responseAction.IsFirstAction = true;
+                    };
+                }
+            }
+
+            if (string.IsNullOrEmpty(_responseAction?.Action))
+            {
+
+                _responseAction.Action = "None";
+                _responseAction.HeroAction = HeroAction.None;
+                _responseAction.IsFirstAction = false;
+
+            }
+
+        }
+
 
         private void CreateLogWithMarkedHands()
         {
@@ -1203,19 +1251,24 @@ namespace OpenScrape.App
 
                 User32.GetWindowRect(_handle, ref windowRect);
 
+                _locWindowRect = windowRect;
+
                 _formAction = new FormAction();
-                _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
+                _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 50);
                 _formAction.Show();
             }
 
             if (_handle != IntPtr.Zero)
             {
                 User32.GetWindowRect(_handle, ref windowRect);
-                this.Invoke((MethodInvoker)delegate {
-                    _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
-                });
+                if(windowRect.left != _locWindowRect.left || windowRect.right != _locWindowRect.right || windowRect.top != _locWindowRect.top || windowRect.bottom != _locWindowRect.bottom)
+                {
+                    _locWindowRect = windowRect;
+                    this.Invoke((MethodInvoker)delegate {
+                        _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 50);
+                    });
+                }                
             }
-
 
             if (!_backgroundExecute)
                 backgroundWorker1.RunWorkerAsync();
@@ -1233,29 +1286,42 @@ namespace OpenScrape.App
         private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             _backgroundExecute = true;
-            AutoItX3 au3 = new AutoItX3();
 
             User32.RECT windowRect = new User32.RECT();
             User32.GetWindowRect(_handle, ref windowRect);
 
             while (true)
             {
-                if (backgroundWorker1.CancellationPending)
+                if(_formAction != null && !_formAction.Visible)
                 {
                     e.Cancel = true;
                     return;
                 }
-             
-                //if (_formAction != null)
-                //    _formAction.Close();
 
-                //_formAction = new FormAction();
-                //_formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 100);
-                //_formAction.Show();
+                var img = _useCase.Execute(_handle);
 
-                var pp = au3.PixelSearch(windowRect.left + ((windowRect.right - windowRect.left) / 2), windowRect.bottom - 150, windowRect.right, windowRect.bottom, 0x4D912F);
+                var regionAction = _regions.First(x => x.Name == "uAction");
+                Color colorAction = new Bitmap(img).GetPixel(regionAction.X, regionAction.Y);
 
-                Thread.Sleep(5000);
+                var flop = _regions.First(x => x.Name == "isFlop");
+                Color colorFlop = new Bitmap(img).GetPixel(flop.X, flop.Y);
+
+                this.Invoke((MethodInvoker)delegate
+                {
+                    if (colorAction.B == 255 && !_executeCapture && colorFlop.B == 255)
+                    {
+                        _scrapeResult.IsFlop = true;
+                        //btnCapture_Click(sender, e);
+                    }
+
+                    if (colorAction.B == 255 && !_executeCapture)
+                    {                        
+                        btnCapture_Click(sender, e);
+                    }
+                    
+                    if(colorAction.B != 255)
+                        _executeCapture = false;
+                });
 
                 btnWindow_Click(sender, e);
             }
