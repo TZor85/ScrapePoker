@@ -1,10 +1,5 @@
 ﻿using OpenScrape.App.Enums;
 using OpenScrape.App.Tables;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenScrape.App.Aplication.UseCases.Actions
 {

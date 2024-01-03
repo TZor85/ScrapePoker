@@ -61,6 +61,8 @@ namespace OpenScrape.App
         User32.RECT _locWindowRect = new User32.RECT();
         bool _executeCapture = false;
 
+        bool _isFlop = false;
+
         bool _backgroundExecute = false;
 
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
@@ -72,6 +74,7 @@ namespace OpenScrape.App
         private readonly IGetVs3BetAndCallUseCase _vs3BetAndCallUseCase = new GetVs3BetAndCallUseCase();
         private readonly IGetRaiseVsSBLimpUseCase _raiseVsSBLimpUseCase = new GetRaiseVsSBLimpUseCase();
         private readonly IGetCold4BetUseCase _cold4BetUseCase = new GetCold4BetUseCase();
+        private readonly IGetSqueezeUseCase _squeezeUseCase = new GetSqueezeUseCase();
 
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
@@ -585,12 +588,13 @@ namespace OpenScrape.App
 
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (!_scrapeResult.IsFlop)
+            if (!_isFlop)
             {
                 SetPreflopAction();
             }
             else
             {
+                _isFlop = false;
                 _responseAction.Action = "No Preflop action";
             }
 
@@ -647,6 +651,19 @@ namespace OpenScrape.App
                 }
             }
 
+            //SQUEEZE
+            if (_responseAction.Action is null)
+            {
+                var action = GetSqueezeAction(_preflopHeroPosition[_scrapeResult.P0Position]);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    _responseAction.Action = action;
+                    _responseAction.HeroAction = HeroAction.Squeeze;
+                    _responseAction.IsFirstAction = true;
+                };
+            }
+
+
             //OPEN RAISE
             if (_responseAction.Action is null)
             {
@@ -683,6 +700,7 @@ namespace OpenScrape.App
                 };
             }
 
+            //GET 3BET
             if (_responseAction.Action is null)
             {
                 if (_scrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && Exist4Bet())
@@ -708,6 +726,7 @@ namespace OpenScrape.App
 
         }
 
+        
 
         private void CreateLogWithMarkedHands()
         {
@@ -1002,6 +1021,45 @@ namespace OpenScrape.App
             return responseAction.Action;
         }
 
+        private string? GetSqueezeAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
+        {
+            var responseAction = new GetSqueezeResponse();
+
+            var bet = 1m;
+            HeroPosition raiser = HeroPosition.None;
+            HeroPosition caller = HeroPosition.None;
+            
+            var betsPosition = preflopHeroPosition
+                                .Where(w => w.Key != HeroPosition.BigBlind && w.Key != HeroPosition.None)
+                                .Select(s => s.Key).ToList();
+
+            foreach (var item in betsPosition)
+            {
+                if (preflopHeroPosition.First(w => w.Key == item).Value == bet && item != raiser && raiser != HeroPosition.None)
+                {
+                    caller = item;
+                }
+
+                if (preflopHeroPosition.First(w => w.Key == item).Value > 1 && raiser == HeroPosition.None)
+                {
+                    bet = preflopHeroPosition.First(w => w.Key == item).Value;
+                    raiser = item;
+                }
+            }
+
+            var getSqueezeRequest = new GetSqueezeRequest
+            {
+                Hand = SetHandValue(),
+                Position = _scrapeResult.P0Position,
+                RaiserPosition = raiser,
+                CallerPosition = caller
+            };
+
+            responseAction = _squeezeUseCase.Execute(getSqueezeRequest);
+
+            return responseAction.Action;
+        }
+
         private string GetOpenRaiseAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
         {
             var responseAction = new GetOpenRaiseUseCaseResponse();
@@ -1204,11 +1262,11 @@ namespace OpenScrape.App
         private void GetImageWhilePlaying()
         {
 
-            //_folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")";
+            _folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
 
             //portatil
-            _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
+            //_folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
             _folderPath += $"\\{_session}";
 
@@ -1308,18 +1366,18 @@ namespace OpenScrape.App
 
                 this.Invoke((MethodInvoker)delegate
                 {
-                    if (colorAction.B == 255 && !_executeCapture && colorFlop.B == 255)
+                    if (colorAction.B == 24 && !_executeCapture && colorFlop.B == 255)
                     {
-                        _scrapeResult.IsFlop = true;
+                        _isFlop = true;
                         //btnCapture_Click(sender, e);
                     }
 
-                    if (colorAction.B == 255 && !_executeCapture)
+                    if (colorAction.B == 24 && !_executeCapture)
                     {                        
                         btnCapture_Click(sender, e);
                     }
                     
-                    if(colorAction.B != 255)
+                    if(colorAction.B != 24)
                         _executeCapture = false;
                 });
 
