@@ -22,7 +22,7 @@ internal class Program
         var dic = new Dictionary<string, string>();
 
         var hand = string.Empty;
-        texto = "\t\t\t{\n";
+        //texto = "\t\t\t{\n";
         foreach (var item in rootObject)
         {
             if (item.Key.Contains("box"))
@@ -34,7 +34,7 @@ internal class Program
                 {
                     var col = colors.Replace("\r\n", string.Empty).Trim().Split(":");
 
-                    texto += "\t\t\t\tnew Hands{ " + $"Hand = \"{hand}\", " + $"Action = {col[0]}, " + $"Porcentajes = {col[1]}" + " },\n";
+                    texto += "new Hands{ " + $"Hand = \"{hand}\", " + $"Action = {col[0]}, " + $"Porcentajes = {col[1]}" + " },\n";
                 }
             }
             else
@@ -72,7 +72,7 @@ internal class Program
         }
 
 
-        texto += "\t\t\t};";
+        //texto += "\t\t\t};";
 
         writer.WriteLine(texto);
 
