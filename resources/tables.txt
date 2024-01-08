@@ -7,40 +7,60 @@ wss://zerospoker.com/ws
 
 
 
-***** CO Open Raise - Hero 3Bet in BTN - and SB 4Bet  *****
+
+***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 22.5BB - and BTN Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXCOCO3BET / CALL100 BBMICRO STAKES4BETBTN",
+	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
 	"userId":887
 }
 
-***** MP Open Raise - Hero 3Bet in BTN - and SB 4Bet <= 19BB  *****
+***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET > 22.5BB - and BTN Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPMP3BET / CALL100 BBMICRO STAKES4BETBTN",
+	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
 	"userId":887
 }
 
-***** MP Open Raise - Hero 3Bet in BTN - and SB 4Bet > 19BB *****
+***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 22.5BB - and BTN Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPMP3BET / CALL100 BB100 BBMICRO STAKES4BETBTN",
+	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
 	"userId":887
 }
 
-***** EP Open Raise - Hero 3Bet in BTN - and SB 4Bet <= 19.5BB  *****
+***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET > 22.5BB - and BTN Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPEP3BET / CALL100 BBMICRO STAKES4BETBTN",
+	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
 	"userId":887
 }
 
-***** EP Open Raise - Hero 3Bet in BTN - and SB 4Bet > 19.5BB *****
 
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPEP3BET / CALL100 BB100 BBMICRO STAKES4BETBTN",
-	"userId":887
-}
+
+
+
+
+
+
+{"filters":"ALL CASINOSCASH GAMES6-MAXCOFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB","userId":76686}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

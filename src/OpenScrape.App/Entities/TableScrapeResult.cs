@@ -46,6 +46,6 @@ namespace OpenScrape.App.Entities
     {
         public string? Action { get; set; }
         public HeroAction HeroAction { get; set; }
-        public bool IsFirstAction { get; set; }
+        public bool IsSecondAction { get; set; }
     }
 }

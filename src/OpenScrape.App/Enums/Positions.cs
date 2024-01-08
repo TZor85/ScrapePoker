@@ -38,7 +38,8 @@
         OpenRaiseVs3BetAndCall,
         FourBet,
         Cold4Bet,
-        Squeeze
+        Squeeze,
+        VsSqueeze
     }
     
 }

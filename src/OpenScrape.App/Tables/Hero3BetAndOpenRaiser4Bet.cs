@@ -1,94 +1,146 @@
 ﻿using OpenScrape.App.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenScrape.App.Tables
 {
-    public class Hero3BetAndOpenRaiser4Bet
+    public static class Hero3BetAndOpenRaiser4Bet
     {
 
-        public string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(string hand)
+        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(string hand)
         {
             return SBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(hand);
         }
 
-        public string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_plus20BB(string hand)
+        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Plus20BB(string hand)
         {
             return SBOpenRaiseHeroInBB3BetAndSB4Bet_plus20BB(hand);
         }
 
-        public string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(string hand)
         {
             return BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(hand);
         }
 
-        public string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(string hand)
         {
             return BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(hand);
         }
 
-        public string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(string hand)
+        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(string hand)
         {
             return COOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(hand);
         }
 
-        public string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(string hand)
+        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(string hand)
         {
             return COOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(hand);
         }
 
-        public string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(string hand)
+        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(string hand)
         {
             return MPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(hand);
         }
 
-        public string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(string hand)
+        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(string hand)
         {
             return MPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(hand);
         }
 
-        public string GetEPOpenRaiseHeroInBB3BetAndEP4Bet(string hand)
+        public static string GetEPOpenRaiseHeroInBB3BetAndEP4Bet(string hand)
         {
             return EPOpenRaiseHeroInBB3BetAndEP4Bet(hand);
         }
 
-        public string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(string hand)
         {
             return BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(hand);
         }
 
-        public string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(string hand)
         {
             return BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(hand);
         }
 
-        public string GetCOOpenRaiseHeroInSB3BetAndCO4Bet(string hand)
+        public static string GetCOOpenRaiseHeroInSB3BetAndCO4Bet(string hand)
         {
             return COOpenRaiseHeroInSB3BetAndCO4Bet(hand);
         }
 
-        public string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(string hand)
+        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(string hand)
         {
             return MPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(hand);
         }
 
-        public string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(string hand)
+        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(string hand)
         {
             return MPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(hand);
         }
 
-        public string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(string hand)
         {
             return EPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(hand);
         }
 
-        public string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(string hand)
         {
             return EPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(hand);
         }
+
+        public static string GetCOOpenRaiseHeroInBTN3BetAndCO4Bet(string hand)
+        {
+            return COOpenRaiseHeroInBTN3BetAndCO4Bet(hand);
+        }
+
+        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(string hand)
+        {
+            return MPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(hand);
+        }
+
+        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(string hand)
+        {
+            return MPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(string hand)
+        {
+            return EPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(string hand)
+        {
+            return EPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(hand);
+        }
+
+        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(string hand)
+        {
+            return MPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(hand);
+        }
+
+        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(string hand)
+        {
+            return MPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(string hand)
+        {
+            return EPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(string hand)
+        {
+            return EPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(string hand)
+        {
+            return EPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(hand);
+        }
+
+        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(string hand)
+        {
+            return EPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(hand);
+        }
+
+        
 
 
         #region Hands
@@ -913,6 +965,216 @@ namespace OpenScrape.App.Tables
                 new Hands{ Hand = "JJ", Action = "Marginal All In", Porcentajes =  44 },
                 new Hands{ Hand = "JJ", Action = "Fold", Porcentajes =  56 },
                 new Hands{ Hand = "TT", Action = "All In", Porcentajes =  100 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string MPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  56 },
+                new Hands{ Hand = "AA", Action = "Call", Porcentajes =  44 },
+                new Hands{ Hand = "AKs", Action = "All In", Porcentajes =  96 },
+                new Hands{ Hand = "AKs", Action = "Call", Porcentajes =  4 },
+                new Hands{ Hand = "A5s", Action = "All In", Porcentajes =  63 },
+                new Hands{ Hand = "A5s", Action = "Marginal Call", Porcentajes =  25 },
+                new Hands{ Hand = "A5s", Action = "Fold", Porcentajes =  12 },
+                new Hands{ Hand = "A4s", Action = "All In", Porcentajes =  65 },
+                new Hands{ Hand = "A4s", Action = "Marginal Call", Porcentajes =  13 },
+                new Hands{ Hand = "A4s", Action = "Fold", Porcentajes =  22 },
+                new Hands{ Hand = "AKo", Action = "All In", Porcentajes =  84 },
+                new Hands{ Hand = "AKo", Action = "Call", Porcentajes =  16 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  54 },
+                new Hands{ Hand = "QQ", Action = "Call", Porcentajes =  46 },
+                new Hands{ Hand = "JJ", Action = "All In", Porcentajes =  10 },
+                new Hands{ Hand = "JJ", Action = "Call", Porcentajes =  90 },
+                new Hands{ Hand = "AQs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "AJs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "ATs", Action = "Marginal Call", Porcentajes =  66 },
+                new Hands{ Hand = "ATs", Action = "Fold", Porcentajes =  34 },
+                new Hands{ Hand = "KQs", Action = "Marginal Call", Porcentajes =  67 },
+                new Hands{ Hand = "KQs", Action = "Fold", Porcentajes =  33 },
+                new Hands{ Hand = "KJs", Action = "Marginal Call", Porcentajes =  71 },
+                new Hands{ Hand = "KJs", Action = "Fold", Porcentajes =  29 },
+                new Hands{ Hand = "KTs", Action = "Marginal Call", Porcentajes =  22 },
+                new Hands{ Hand = "KTs", Action = "Fold", Porcentajes =  78 },
+                new Hands{ Hand = "TT", Action = "Marginal Call", Porcentajes =  33 },
+                new Hands{ Hand = "TT", Action = "Fold", Porcentajes =  67 },
+                new Hands{ Hand = "99", Action = "Marginal Call", Porcentajes =  32 },
+                new Hands{ Hand = "99", Action = "Fold", Porcentajes =  68 },
+                new Hands{ Hand = "88", Action = "Marginal Call", Porcentajes =  37 },
+                new Hands{ Hand = "88", Action = "Fold", Porcentajes =  63 },
+                new Hands{ Hand = "87s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "77", Action = "Marginal Call", Porcentajes =  65 },
+                new Hands{ Hand = "77", Action = "Fold", Porcentajes =  35 },
+                new Hands{ Hand = "76s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "66", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "65s", Action = "Marginal Call", Porcentajes =  77 },
+                new Hands{ Hand = "65s", Action = "Fold", Porcentajes =  23 },
+                new Hands{ Hand = "54s", Action = "Marginal Call", Porcentajes =  81 },
+                new Hands{ Hand = "54s", Action = "Fold", Porcentajes =  19 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string MPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "AKs", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "JJ", Action = "Marginal All In", Porcentajes =  26 },
+                new Hands{ Hand = "JJ", Action = "Fold", Porcentajes =  74 },
+                new Hands{ Hand = "TT", Action = "All In", Porcentajes =  100 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string EPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  65 },
+                new Hands{ Hand = "AA", Action = "Call", Porcentajes =  35 },
+                new Hands{ Hand = "AKs", Action = "All In", Porcentajes =  94 },
+                new Hands{ Hand = "AKs", Action = "Call", Porcentajes =  6 },
+                new Hands{ Hand = "A5s", Action = "All In", Porcentajes =  51 },
+                new Hands{ Hand = "A5s", Action = "Marginal Call", Porcentajes =  40 },
+                new Hands{ Hand = "A5s", Action = "Fold", Porcentajes =  9 },
+                new Hands{ Hand = "A4s", Action = "All In", Porcentajes =  10 },
+                new Hands{ Hand = "A4s", Action = "Marginal Call", Porcentajes =  6 },
+                new Hands{ Hand = "A4s", Action = "Fold", Porcentajes =  84 },
+                new Hands{ Hand = "AKo", Action = "All In", Porcentajes =  80 },
+                new Hands{ Hand = "AKo", Action = "Call", Porcentajes =  20 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  83 },
+                new Hands{ Hand = "KK", Action = "Call", Porcentajes =  17 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  12 },
+                new Hands{ Hand = "QQ", Action = "Call", Porcentajes =  88 },
+                new Hands{ Hand = "AQs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "AJs", Action = "Marginal Call", Porcentajes =  83 },
+                new Hands{ Hand = "AJs", Action = "Fold", Porcentajes =  17 },
+                new Hands{ Hand = "ATs", Action = "Marginal Call", Porcentajes =  43 },
+                new Hands{ Hand = "ATs", Action = "Fold", Porcentajes =  57 },
+                new Hands{ Hand = "KQs", Action = "Marginal Call", Porcentajes =  31 },
+                new Hands{ Hand = "KQs", Action = "Fold", Porcentajes =  69 },
+                new Hands{ Hand = "KJs", Action = "Marginal Call", Porcentajes =  31 },
+                new Hands{ Hand = "KJs", Action = "Fold", Porcentajes =  69 },
+                new Hands{ Hand = "KTs", Action = "Marginal Call", Porcentajes =  8 },
+                new Hands{ Hand = "KTs", Action = "Fold", Porcentajes =  92 },
+                new Hands{ Hand = "JJ", Action = "Marginal Call", Porcentajes =  49 },
+                new Hands{ Hand = "JJ", Action = "Fold", Porcentajes =  51 },
+                new Hands{ Hand = "TT", Action = "Marginal Call", Porcentajes =  19 },
+                new Hands{ Hand = "TT", Action = "Fold", Porcentajes =  81 },
+                new Hands{ Hand = "99", Action = "Marginal Call", Porcentajes =  29 },
+                new Hands{ Hand = "99", Action = "Fold", Porcentajes =  71 },
+                new Hands{ Hand = "88", Action = "Marginal Call", Porcentajes =  25 },
+                new Hands{ Hand = "88", Action = "Fold", Porcentajes =  75 },
+                new Hands{ Hand = "87s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "77", Action = "Marginal Call", Porcentajes =  47 },
+                new Hands{ Hand = "77", Action = "Fold", Porcentajes =  53 },
+                new Hands{ Hand = "76s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "66", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "65s", Action = "Marginal Call", Porcentajes =  50 },
+                new Hands{ Hand = "65s", Action = "Fold", Porcentajes =  50 },
+                new Hands{ Hand = "54s", Action = "Marginal Call", Porcentajes =  45 },
+                new Hands{ Hand = "54s", Action = "Fold", Porcentajes =  55 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string EPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "AKs", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "TT", Action = "Marginal All In", Porcentajes =  85 },
+                new Hands{ Hand = "TT", Action = "Fold", Porcentajes =  15 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string EPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  63 },
+                new Hands{ Hand = "AA", Action = "Call", Porcentajes =  37 },
+                new Hands{ Hand = "AKs", Action = "All In", Porcentajes =  85 },
+                new Hands{ Hand = "AKs", Action = "Call", Porcentajes =  15 },
+                new Hands{ Hand = "A5s", Action = "All In", Porcentajes =  56 },
+                new Hands{ Hand = "A5s", Action = "Marginal Call", Porcentajes =  33 },
+                new Hands{ Hand = "A5s", Action = "Fold", Porcentajes =  11 },
+                new Hands{ Hand = "AKo", Action = "All In", Porcentajes =  81 },
+                new Hands{ Hand = "AKo", Action = "Call", Porcentajes =  19 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  82 },
+                new Hands{ Hand = "KK", Action = "Call", Porcentajes =  18 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  14 },
+                new Hands{ Hand = "QQ", Action = "Call", Porcentajes =  86 },
+                new Hands{ Hand = "AQs", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "AJs", Action = "Marginal Call", Porcentajes =  57 },
+                new Hands{ Hand = "AJs", Action = "Fold", Porcentajes =  43 },
+                new Hands{ Hand = "ATs", Action = "Marginal Call", Porcentajes =  42 },
+                new Hands{ Hand = "ATs", Action = "Fold", Porcentajes =  58 },
+                new Hands{ Hand = "A4s", Action = "Marginal Call", Porcentajes =  5 },
+                new Hands{ Hand = "A4s", Action = "Fold", Porcentajes =  95 },
+                new Hands{ Hand = "KQs", Action = "Marginal Call", Porcentajes =  21 },
+                new Hands{ Hand = "KQs", Action = "Fold", Porcentajes =  79 },
+                new Hands{ Hand = "KJs", Action = "Marginal Call", Porcentajes =  21 },
+                new Hands{ Hand = "KJs", Action = "Fold", Porcentajes =  79 },
+                new Hands{ Hand = "KTs", Action = "Marginal Call", Porcentajes =  6 },
+                new Hands{ Hand = "KTs", Action = "Fold", Porcentajes =  94 },
+                new Hands{ Hand = "JJ", Action = "Marginal Call", Porcentajes =  35 },
+                new Hands{ Hand = "JJ", Action = "Fold", Porcentajes =  65 },
+                new Hands{ Hand = "TT", Action = "Marginal Call", Porcentajes =  20 },
+                new Hands{ Hand = "TT", Action = "Fold", Porcentajes =  80 },
+                new Hands{ Hand = "99", Action = "Marginal Call", Porcentajes =  38 },
+                new Hands{ Hand = "99", Action = "Fold", Porcentajes =  62 },
+                new Hands{ Hand = "88", Action = "Marginal Call", Porcentajes =  21 },
+                new Hands{ Hand = "88", Action = "Fold", Porcentajes =  79 },
+                new Hands{ Hand = "87s", Action = "Marginal Call", Porcentajes =  91 },
+                new Hands{ Hand = "87s", Action = "Fold", Porcentajes =  9 },
+                new Hands{ Hand = "77", Action = "Marginal Call", Porcentajes =  60 },
+                new Hands{ Hand = "77", Action = "Fold", Porcentajes =  40 },
+                new Hands{ Hand = "76s", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "66", Action = "Call", Porcentajes =  100 },
+                new Hands{ Hand = "65s", Action = "Marginal Call", Porcentajes =  47 },
+                new Hands{ Hand = "65s", Action = "Fold", Porcentajes =  53 },
+                new Hands{ Hand = "54s", Action = "Marginal Call", Porcentajes =  48 },
+                new Hands{ Hand = "54s", Action = "Fold", Porcentajes =  52 }
+            };
+
+
+            return ObtainActionHelper.ObtainAction(hands, hand);
+        }
+
+        private static string EPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(string hand)
+        {
+            var hands = new List<Hands>
+            {
+                new Hands{ Hand = "AA", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "AKs", Action = "Marginal All In", Porcentajes =  87 },
+                new Hands{ Hand = "AKs", Action = "Fold", Porcentajes =  13 },
+                new Hands{ Hand = "KK", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "QQ", Action = "All In", Porcentajes =  100 },
+                new Hands{ Hand = "TT", Action = "Marginal All In", Porcentajes =  73 },
+                new Hands{ Hand = "TT", Action = "Fold", Porcentajes =  27 }
             };
 
 
