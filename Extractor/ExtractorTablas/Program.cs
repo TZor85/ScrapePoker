@@ -34,7 +34,7 @@ internal class Program
                 {
                     var col = colors.Replace("\r\n", string.Empty).Trim().Split(":");
 
-                    texto += "new Hands{ " + $"Hand = \"{hand}\", " + $"Action = {col[0]}, " + $"Porcentajes = {col[1]}" + " },\n";
+                    texto += "\t\t\t\tnew Hands{ " + $"Hand = \"{hand}\", " + $"Action = {col[0]}, " + $"Porcentajes = {col[1]}" + " },\n";
                 }
             }
             else
