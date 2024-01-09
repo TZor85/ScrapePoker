@@ -4,84 +4,9 @@ namespace OpenScrape.App.Tables
 {
     public static class OpenRaiseVs3Bet
     {
-        public static string GetOpenRaiseSBvs3BetBB(string hand)
-        {
-            return OpenRaiseSBvs3BetBB(hand);
-        }
-
-        public static string GetOpenRaiseBTNvs3BetBB(string hand)
-        {
-            return OpenRaiseBTNvs3BetBB(hand);
-        }
-
-        public static string GetOpenRaiseBTNvs3BetSB(string hand)
-        {
-            return OpenRaiseBTNvs3BetSB(hand);
-        }
-
-        public static string GetOpenRaiseCOvs3BetBB(string hand)
-        {
-            return OpenRaiseCOvs3BetBB(hand);
-        }
-
-        public static string GetOpenRaiseCOvs3BetSB(string hand)
-        {
-            return OpenRaiseCOvs3BetSB(hand);
-        }
-
-        public static string GetOpenRaiseCOvs3BetBTN(string hand)
-        {
-            return OpenRaiseCOvs3BetBTN(hand);
-        }
-
-        public static string GetOpenRaiseMPvs3BetBB(string hand)
-        {
-            return OpenRaiseMPvs3BetBB(hand);
-        }
-
-        public static string GetOpenRaiseMPvs3BetSB(string hand)
-        {
-            return OpenRaiseMPvs3BetSB(hand);
-        }
-
-        public static string GetOpenRaiseMPvs3BetBTN(string hand)
-        {
-            return OpenRaiseMPvs3BetBTN(hand);
-        }
-
-        public static string GetOpenRaiseMPvs3BetCO(string hand)
-        {
-            return OpenRaiseMPvs3BetCO(hand);
-        }
-
-        public static string GetOpenRaiseEPvs3BetBB(string hand)
-        {
-            return OpenRaiseEPvs3BetBB(hand);
-        }
-
-        public static string GetOpenRaiseEPvs3BetSB(string hand)
-        {
-            return OpenRaiseEPvs3BetSB(hand);
-        }
-
-        public static string GetOpenRaiseEPvs3BetBTN(string hand)
-        {
-            return OpenRaiseEPvs3BetBTN(hand);
-        }
-
-        public static string GetOpenRaiseEPvs3BetCO(string hand)
-        {
-            return OpenRaiseEPvs3BetCO(hand);
-        }
-
-        public static string GetOpenRaiseEPvs3BetMP(string hand)
-        {
-            return OpenRaiseEPvs3BetMP(hand);
-        }
-
         #region Hands
 
-        private static string OpenRaiseSBvs3BetBB(string hand)
+        public static string GetOpenRaiseSBvs3BetBB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -202,13 +127,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "All-In", Porcentajes = 40 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseBTNvs3BetBB(string hand)
+        public static string GetOpenRaiseBTNvs3BetBB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x23.5", Porcentajes = 100 },
@@ -300,13 +222,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "33", Action = "Fold", Porcentajes = 95 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseBTNvs3BetSB(string hand)
+        public static string GetOpenRaiseBTNvs3BetSB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x23.5", Porcentajes = 100 },
@@ -394,13 +313,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Fold", Porcentajes = 85 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseCOvs3BetBB(string hand)
+        public static string GetOpenRaiseCOvs3BetBB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x22.5", Porcentajes = 100 },
@@ -485,13 +401,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "44", Action = "Fold", Porcentajes = 96 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseCOvs3BetSB(string hand)
+        public static string GetOpenRaiseCOvs3BetSB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x22", Porcentajes = 100 },
@@ -572,13 +485,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Fold", Porcentajes = 51 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseCOvs3BetBTN(string hand)
+        public static string GetOpenRaiseCOvs3BetBTN(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x21.5", Porcentajes = 100 },
@@ -673,13 +583,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseMPvs3BetBB(string hand)
+        public static string GetOpenRaiseMPvs3BetBB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x22", Porcentajes = 100 },
@@ -763,13 +670,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "44", Action = "Fold", Porcentajes = 67 },
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseMPvs3BetSB(string hand)
+        public static string GetOpenRaiseMPvs3BetSB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x20.5", Porcentajes = 100 },
@@ -851,13 +755,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Fold", Porcentajes = 30 },
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseMPvs3BetBTN(string hand)
+        public static string GetOpenRaiseMPvs3BetBTN(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x19", Porcentajes = 100 },
@@ -943,13 +844,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseMPvs3BetCO(string hand)
+        public static string GetOpenRaiseMPvs3BetCO(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x19", Porcentajes = 100 },
@@ -1028,13 +926,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseEPvs3BetBB(string hand)
+        public static string GetOpenRaiseEPvs3BetBB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x22", Porcentajes = 100 },
@@ -1103,13 +998,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "54s", Action = "Fold", Porcentajes = 62 },
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseEPvs3BetSB(string hand)
+        public static string GetOpenRaiseEPvs3BetSB(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x20.5", Porcentajes = 100 },
@@ -1187,13 +1079,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Fold", Porcentajes = 72 },
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseEPvs3BetBTN(string hand)
+        public static string GetOpenRaiseEPvs3BetBTN(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x19.5", Porcentajes = 100 },
@@ -1275,13 +1164,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseEPvs3BetCO(string hand)
+        public static string GetOpenRaiseEPvs3BetCO(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x19", Porcentajes = 100 },
@@ -1357,13 +1243,10 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
 
-
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string OpenRaiseEPvs3BetMP(string hand)
+        public static string GetOpenRaiseEPvs3BetMP(string hand)
         {
-
             var hands = new List<Hands>
             {
                 new Hands { Hand = "AA", Action = "4Bet x19", Porcentajes = 100 },
@@ -1444,7 +1327,6 @@ namespace OpenScrape.App.Tables
                 new Hands { Hand = "33", Action = "Call", Porcentajes = 100 },
                 new Hands { Hand = "22", Action = "Call", Porcentajes = 100 }
             };
-
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }

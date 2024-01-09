@@ -5,104 +5,8 @@ namespace OpenScrape.App.Tables
     public class Squeeze
     {
 
-        public static string GetSqueezeBBvsOpenRaiseBTNandCallSB(string hand)
-        {
-            return SqueezeBBvsOpenRaiseBTNandCallSB(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseCOandCallBTN(string hand)
-        {
-            return SqueezeBBvsOpenRaiseCOandCallBTN(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseCOandCallSB(string hand)
-        {
-            return SqueezeBBvsOpenRaiseCOandCallSB(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseMPandCallCO(string hand)
-        {
-            return SqueezeBBvsOpenRaiseMPandCallCO(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseEPandCallMP(string hand)
-        {
-            return SqueezeBBvsOpenRaiseEPandCallMP(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseEPandCallCO(string hand)
-        {
-            return SqueezeBBvsOpenRaiseEPandCallCO(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseEPandCallBTN(string hand)
-        {
-            return SqueezeBBvsOpenRaiseEPandCallBTN(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseEPandCallSB(string hand)
-        {
-            return SqueezeBBvsOpenRaiseEPandCallSB(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseMPandCallBTN(string hand)
-        {
-            return SqueezeBBvsOpenRaiseMPandCallBTN(hand);
-        }
-
-        public static string GetSqueezeBBvsOpenRaiseMPandCallSB(string hand)
-        {
-            return SqueezeBBvsOpenRaiseMPandCallSB(hand);
-        }
-
-        public static string GetSqueezeSBvsOpenRaiseCOandCallBTN(string hand)
-        {
-            return SqueezeSBvsOpenRaiseCOandCallBTN(hand);
-        }
-                       
-        public static string GetSqueezeSBvsOpenRaiseMPandCallCO(string hand)
-        {
-            return SqueezeSBvsOpenRaiseMPandCallCO(hand);
-        }
-
-        public static string GetSqueezeSBvsOpenRaiseMPandCallBTN(string hand)
-        {
-            return SqueezeSBvsOpenRaiseMPandCallBTN(hand);
-        }
-
-        public static string GetSqueezeSBvsOpenRaiseEPandCallBTN(string hand)
-        {
-            return SqueezeSBvsOpenRaiseEPandCallBTN(hand);
-        }
-
-        public static string GetSqueezeSBvsOpenRaiseEPandCallMP(string hand)
-        {
-            return SqueezeSBvsOpenRaiseEPandCallMP(hand);
-        }
-
-        public static string GetSqueezeSBvsOpenRaiseEPandCallCO(string hand)
-        {
-            return SqueezeSBvsOpenRaiseEPandCallCO(hand);
-        }
-
-        public static string GetSqueezeBTNvsOpenRaiseEPandCallMP(string hand)
-        {
-            return SqueezeBTNvsOpenRaiseEPandCallMP(hand);
-        }
-
-        public static string GetSqueezeBTNvsOpenRaiseEPandCallCO(string hand)
-        {
-            return SqueezeBTNvsOpenRaiseEPandCallCO(hand);
-        }
-
-        public static string GetSqueezeCOvsOpenRaiseEPandCallMP(string hand)
-        {
-            return SqueezeCOvsOpenRaiseEPandCallMP(hand);
-        }
-
-
         #region Hands
-        private static string SqueezeBBvsOpenRaiseBTNandCallSB(string hand)
+        public static string GetSqueezeBBvsOpenRaiseBTNandCallSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -261,8 +165,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseCOandCallBTN(string hand)
+        public static string GetSqueezeBBvsOpenRaiseCOandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -379,8 +282,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseCOandCallSB(string hand)
+        public static string GetSqueezeBBvsOpenRaiseCOandCallSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -530,8 +432,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseMPandCallCO(string hand)
+        public static string GetSqueezeBBvsOpenRaiseMPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -635,8 +536,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseMPandCallBTN(string hand)
+        public static string GetSqueezeBBvsOpenRaiseMPandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -737,8 +637,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseMPandCallSB(string hand)
+        public static string GetSqueezeBBvsOpenRaiseMPandCallSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -881,8 +780,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseEPandCallMP(string hand)
+        public static string GetSqueezeBBvsOpenRaiseEPandCallMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -976,8 +874,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseEPandCallCO(string hand)
+        public static string GetSqueezeBBvsOpenRaiseEPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1072,8 +969,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseEPandCallBTN(string hand)
+        public static string GetSqueezeBBvsOpenRaiseEPandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1185,8 +1081,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBBvsOpenRaiseEPandCallSB(string hand)
+        public static string GetSqueezeBBvsOpenRaiseEPandCallSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1318,8 +1213,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseCOandCallBTN(string hand)
+        public static string GetSqueezeSBvsOpenRaiseCOandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1394,8 +1288,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseMPandCallCO(string hand)
+        public static string GetSqueezeSBvsOpenRaiseMPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1461,8 +1354,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseMPandCallBTN(string hand)
+        public static string GetSqueezeSBvsOpenRaiseMPandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1531,8 +1423,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseEPandCallMP(string hand)
+        public static string GetSqueezeSBvsOpenRaiseEPandCallMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1598,8 +1489,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseEPandCallCO(string hand)
+        public static string GetSqueezeSBvsOpenRaiseEPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1667,8 +1557,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeSBvsOpenRaiseEPandCallBTN(string hand)
+        public static string GetSqueezeSBvsOpenRaiseEPandCallBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1739,8 +1628,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBTNvsOpenRaiseMPandCallCO(string hand)
+        public static string GetSqueezeBTNvsOpenRaiseMPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1802,8 +1690,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBTNvsOpenRaiseEPandCallMP(string hand)
+        public static string GetSqueezeBTNvsOpenRaiseEPandCallMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1859,8 +1746,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeBTNvsOpenRaiseEPandCallCO(string hand)
+        public static string GetSqueezeBTNvsOpenRaiseEPandCallCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1921,8 +1807,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SqueezeCOvsOpenRaiseEPandCallMP(string hand)
+        public static string GetSqueezeCOvsOpenRaiseEPandCallMP(string hand)
         {
             var hands = new List<Hands>
             {

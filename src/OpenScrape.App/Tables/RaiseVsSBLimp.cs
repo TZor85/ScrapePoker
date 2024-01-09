@@ -4,19 +4,9 @@ namespace OpenScrape.App.Tables
 {
     public static class RaiseVsSBLimp
     {
-        public static string GetBigBlindvsSBCall(string hand)
-        {
-            return BigBlindvsSBCall(hand);
-        }
-
-        public static string GetBigBlindvsSBCallAndRaise(string hand)
-        {
-            return BigBlindvsSBCallAndRaise(hand);
-        }
-
         #region Hands
 
-        private static string BigBlindvsSBCall(string hand)
+        public static string GetBigBlindvsSBCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -306,8 +296,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BigBlindvsSBCallAndRaise(string hand)
+        public static string GetBigBlindvsSBCallAndRaise(string hand)
         {
             var hands = new List<Hands>
             {

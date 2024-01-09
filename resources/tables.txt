@@ -8,94 +8,60 @@ wss://zerospoker.com/ws
 
 
 
-***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 22.5BB - and BTN Fold  *****
+***** MP Open Raise - Hero 3Bet in CO - and BB COLD4BET - and MP Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBCO",
 	"userId":887
 }
 
-***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET > 22.5BB - and BTN Fold  *****
+***** MP Open Raise - Hero 3Bet in CO - and BB COLD4BET - and MP Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXBTNFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBBCO",
 	"userId":887
 }
 
-***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 22.5BB - and BTN Call  *****
+***** MP Open Raise - Hero 3Bet in CO - and SB COLD4BET <= 18BB - and MP Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXBTNCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETSBCO",
 	"userId":887
 }
 
-***** BTN Open Raise - Hero 3Bet in SB - and BB COLD4BET > 22.5BB - and BTN Call  *****
+***** MP Open Raise - Hero 3Bet in BNT - and SB COLD4BET > 18BB - and MP Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXBTNCALL3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETSBCO",
 	"userId":887
 }
 
-
-
-
-
-***** CO Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and CO Fold  *****
+***** MP Open Raise - Hero 3Bet in CO - and SB COLD4BET <= 18BB - and MP Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXCOFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BBMICRO STAKESCOLD4BETSBCO",
 	"userId":887
 }
 
-***** CO Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and CO Fold  *****
+***** MP Open Raise - Hero 3Bet in CO - and SB COLD4BET > 18BB - and MP Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXCOFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETSBCO",
 	"userId":887
 }
 
-***** CO Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and CO Call  *****
+***** MP Open Raise - Hero 3Bet in CO - and BTN COLD4BET - and MP Fold  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXCOCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** CO Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and CO Call  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXCOCALL3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBTNCO",
 	"userId":887
 }
 
 
-
-
-***** MP Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and MP Fold  *****
+***** MP Open Raise - Hero 3Bet in CO - and BTN COLD4BET - and MP Call  *****
 
 {
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** MP Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and MP Fold  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** MP Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and MP Call  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** MP Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and MP Call  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
+	"filters":"ALL CASINOSCASH GAMES6-MAXMPCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBTNCO",
 	"userId":887
 }
 
@@ -103,54 +69,11 @@ wss://zerospoker.com/ws
 
 
 
-***** EP Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and EP Fold  *****
+17.5
 
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
+18 y 100
 
-***** EP Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and EP Fold  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPFOLD3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** EP Open Raise - Hero 3Bet in SB - and BB COLD4BET <= 21BB - and EP Call  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPCALL3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-***** EP Open Raise - Hero 3Bet in SB - and BB COLD4BET > 21BB - and EP Call  *****
-
-{
-	"filters":"ALL CASINOSCASH GAMES6-MAXEPCALL3BET / CALL100 BB100 BBMICRO STAKESCOLD4BETBBSB",
-	"userId":887
-}
-
-
-
-{"filters":"ALL CASINOSCASH GAMES6-MAXCOFOLD3BET / CALL100 BBMICRO STAKESCOLD4BETBBSB","userId":76686}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+13.5
 
 
 

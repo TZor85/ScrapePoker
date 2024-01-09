@@ -5,147 +5,9 @@ namespace OpenScrape.App.Tables
     public static class Hero3BetAndOpenRaiser4Bet
     {
 
-        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(string hand)
-        {
-            return SBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(hand);
-        }
-
-        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Plus20BB(string hand)
-        {
-            return SBOpenRaiseHeroInBB3BetAndSB4Bet_plus20BB(hand);
-        }
-
-        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(string hand)
-        {
-            return BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(hand);
-        }
-
-        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(string hand)
-        {
-            return BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(string hand)
-        {
-            return COOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(string hand)
-        {
-            return COOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(string hand)
-        {
-            return MPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(string hand)
-        {
-            return MPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInBB3BetAndEP4Bet(string hand)
-        {
-            return EPOpenRaiseHeroInBB3BetAndEP4Bet(hand);
-        }
-
-        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(string hand)
-        {
-            return BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(hand);
-        }
-
-        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(string hand)
-        {
-            return BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroInSB3BetAndCO4Bet(string hand)
-        {
-            return COOpenRaiseHeroInSB3BetAndCO4Bet(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(string hand)
-        {
-            return MPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(string hand)
-        {
-            return MPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(string hand)
-        {
-            return EPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(string hand)
-        {
-            return EPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroInBTN3BetAndCO4Bet(string hand)
-        {
-            return COOpenRaiseHeroInBTN3BetAndCO4Bet(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(string hand)
-        {
-            return MPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(string hand)
-        {
-            return MPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(string hand)
-        {
-            return EPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(string hand)
-        {
-            return EPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(string hand)
-        {
-            return MPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(string hand)
-        {
-            return MPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(string hand)
-        {
-            return EPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(string hand)
-        {
-            return EPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(string hand)
-        {
-            return EPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(string hand)
-        {
-            return EPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(hand);
-        }
-
-        
-
-
         #region Hands
 
-        private static string SBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(string hand)
+        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Minus20BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -217,8 +79,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string SBOpenRaiseHeroInBB3BetAndSB4Bet_plus20BB(string hand)
+        public static string GetSBOpenRaiseHeroInBB3BetAndSB4Bet_Plus20BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -242,8 +103,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Minus23_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -306,8 +166,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInBB3BetAndBTN4Bet_Plus23_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -331,8 +190,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(string hand)
+        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Minus22_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -386,8 +244,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(string hand)
+        public static string GetCOOpenRaiseHeroInBB3BetAndCO4Bet_Plus22_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -411,8 +268,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(string hand)
+        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Minus22BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -455,8 +311,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(string hand)
+        public static string GetMPOpenRaiseHeroInBB3BetAndMP4Bet_Plus22BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -473,8 +328,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInBB3BetAndEP4Bet(string hand)
+        public static string GetEPOpenRaiseHeroInBB3BetAndEP4Bet(string hand)
         {
             var hands = new List<Hands>
             {
@@ -518,8 +372,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Minus23_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -580,8 +433,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(string hand)
+        public static string GetBTNOpenRaiseHeroInSB3BetAndBTN4Bet_Plus23_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -604,8 +456,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroInSB3BetAndCO4Bet(string hand)
+        public static string GetCOOpenRaiseHeroInSB3BetAndCO4Bet(string hand)
         {
             var hands = new List<Hands>
             {
@@ -652,8 +503,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(string hand)
+        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Minus20_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -700,8 +550,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(string hand)
+        public static string GetMPOpenRaiseHeroInSB3BetAndMP4Bet_Plus20_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -721,8 +570,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Minus20_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -767,8 +615,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInSB3BetAndEP4Bet_Plus20_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -787,8 +634,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroInBTN3BetAndCO4Bet(string hand)
+        public static string GetCOOpenRaiseHeroInBTN3BetAndCO4Bet(string hand)
         {
             var hands = new List<Hands>
             {
@@ -836,8 +682,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(string hand)
+        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Minus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -887,8 +732,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(string hand)
+        public static string GetMPOpenRaiseHeroInBTN3BetAndMP4Bet_Plus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -905,8 +749,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Minus19_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -953,8 +796,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(string hand)
+        public static string GetEPOpenRaiseHeroInBTN3BetAndEP4Bet_Plus19_5BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -970,8 +812,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(string hand)
+        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Minus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1022,8 +863,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(string hand)
+        public static string GetMPOpenRaiseHeroInCO3BetAndMP4Bet_Plus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1039,8 +879,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(string hand)
+        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Minus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1093,8 +932,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(string hand)
+        public static string GetEPOpenRaiseHeroInCO3BetAndEP4Bet_Plus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1109,8 +947,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(string hand)
+        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Minus19BB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -1163,8 +1000,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(string hand)
+        public static string GetEPOpenRaiseHeroInMP3BetAndEP4Bet_Plus19BB(string hand)
         {
             var hands = new List<Hands>
             {

@@ -5,110 +5,9 @@ namespace OpenScrape.App.Tables
     public static class HeroCallOpenRaiseAndGetSqueeze
     {
 
-        public static string GetBTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNFold(string hand)
-        {
-            return BTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNFold(hand);
-        }
-
-        public static string GetBTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNCall(string hand)
-        {
-            return BTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNCall(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroCallBTNAndSBSqueezeAndCOFold(string hand)
-        {
-            return COOpenRaiseHeroCallBTNAndSBSqueezeAndCOFold(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroCallBTNAndSBSqueezeAndCOCall(string hand)
-        {
-            return COOpenRaiseHeroCallBTNAndSBSqueezeAndCOCall(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroCallBTNAndBBSqueezeAndCOFold(string hand)
-        {
-            return COOpenRaiseHeroCallBTNAndBBSqueezeAndCOFold(hand);
-        }
-
-        public static string GetCOOpenRaiseHeroCallBTNAndBBSqueezeAndCOCall(string hand)
-        {
-            return COOpenRaiseHeroCallBTNAndBBSqueezeAndCOCall(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndBTNSqueezeAndMPFold(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndBTNSqueezeAndMPFold(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndBTNSqueezeAndMPCall(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndBTNSqueezeAndMPCall(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndSBSqueezeAndMPFold(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndSBSqueezeAndMPFold(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndSBSqueezeAndMPCall(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndSBSqueezeAndMPCall(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndBBSqueezeAndMPFold(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndBBSqueezeAndMPFold(hand);
-        }
-
-        public static string GetMPOpenRaiseHeroCallCOAndBBSqueezeAndMPCall(string hand)
-        {
-            return MPOpenRaiseHeroCallCOAndBBSqueezeAndMPCall(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPFold(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndCOSqueezeAndEPFold(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPCall(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndCOSqueezeAndEPCall(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndBTNSqueezeAndEPFold(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndBTNSqueezeAndEPFold(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndBTNSqueezeAndEPCall(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndBTNSqueezeAndEPCall(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndSBSqueezeAndEPFold(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndSBSqueezeAndEPFold(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndSBSqueezeAndEPCall(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndSBSqueezeAndEPCall(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndBBSqueezeAndEPFold(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndBBSqueezeAndEPFold(hand);
-        }
-
-        public static string GetEPOpenRaiseHeroCallMPAndBBSqueezeAndEPCall(string hand)
-        {
-            return EPOpenRaiseHeroCallMPAndBBSqueezeAndEPCall(hand);
-        }
-
-
         #region Hands
 
-        private static string BTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNFold(string hand)
+        public static string GetBTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -164,8 +63,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string BTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNCall(string hand)
+        public static string GetBTNOpenRaiseHeroCallSBAndBBSqueezeAndBTNCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -202,8 +100,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroCallBTNAndSBSqueezeAndCOFold(string hand)
+        public static string GetCOOpenRaiseHeroCallBTNAndSBSqueezeAndCOFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -251,8 +148,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroCallBTNAndSBSqueezeAndCOCall(string hand)
+        public static string GetCOOpenRaiseHeroCallBTNAndSBSqueezeAndCOCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -286,8 +182,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroCallBTNAndBBSqueezeAndCOFold(string hand)
+        public static string GetCOOpenRaiseHeroCallBTNAndBBSqueezeAndCOFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -332,8 +227,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string COOpenRaiseHeroCallBTNAndBBSqueezeAndCOCall(string hand)
+        public static string GetCOOpenRaiseHeroCallBTNAndBBSqueezeAndCOCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -368,8 +262,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndBTNSqueezeAndMPFold(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndBTNSqueezeAndMPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -434,8 +327,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndBTNSqueezeAndMPCall(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndBTNSqueezeAndMPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -483,8 +375,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndSBSqueezeAndMPFold(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndSBSqueezeAndMPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -542,8 +433,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndSBSqueezeAndMPCall(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndSBSqueezeAndMPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -576,8 +466,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndBBSqueezeAndMPFold(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndBBSqueezeAndMPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -629,8 +518,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string MPOpenRaiseHeroCallCOAndBBSqueezeAndMPCall(string hand)
+        public static string GetMPOpenRaiseHeroCallCOAndBBSqueezeAndMPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -664,8 +552,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndCOSqueezeAndEPFold(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -710,8 +597,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndCOSqueezeAndEPCall(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -741,8 +627,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndBTNSqueezeAndEPFold(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndBTNSqueezeAndEPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -789,8 +674,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndBTNSqueezeAndEPCall(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndBTNSqueezeAndEPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -821,8 +705,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndSBSqueezeAndEPFold(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndSBSqueezeAndEPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -864,8 +747,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndSBSqueezeAndEPCall(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndSBSqueezeAndEPCall(string hand)
         {
             var hands = new List<Hands>
             {
@@ -890,8 +772,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndBBSqueezeAndEPFold(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndBBSqueezeAndEPFold(string hand)
         {
             var hands = new List<Hands>
             {
@@ -933,8 +814,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string EPOpenRaiseHeroCallMPAndBBSqueezeAndEPCall(string hand)
+        public static string GetEPOpenRaiseHeroCallMPAndBBSqueezeAndEPCall(string hand)
         {
             var hands = new List<Hands>
             {

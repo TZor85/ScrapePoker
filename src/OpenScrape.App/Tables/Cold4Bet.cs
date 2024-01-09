@@ -4,125 +4,9 @@ namespace OpenScrape.App.Tables
 {
     public class Cold4Bet
     {
-        #region RaiserEP
-        public static string GetCold4BetBBvsOpenRaiseEPand3BetMP(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseEPand3BetMP(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseEPand3BetMP(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseEPand3BetMP(hand);
-        }
-
-        public static string GetCold4BetBTNvsOpenRaiseEPand3BetMP(string hand)
-        {
-            return Cold4BetBTNvsOpenRaiseEPand3BetMP(hand);
-        }
-
-        public static string GetCold4BetCOvsOpenRaiseEPand3BetMP(string hand)
-        {
-            return Cold4BetCOvsOpenRaiseEPand3BetMP(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseEPand3BetCO(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseEPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseEPand3BetCO(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseEPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetBTNvsOpenRaiseEPand3BetCO(string hand)
-        {
-            return Cold4BetBTNvsOpenRaiseEPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseEPand3BetBTN(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseEPand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseEPand3BetBTN(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseEPand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseEPand3BetSB(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseEPand3BetSB(hand);
-        }
-        #endregion
-
-        #region RaiserMP
-
-        public static string GetCold4BetBBvsOpenRaiseMPand3BetCO(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseMPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseMPand3BetCO(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseMPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetBTNvsOpenRaiseMPand3BetCO(string hand)
-        {
-            return Cold4BetBTNvsOpenRaiseMPand3BetCO(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseMPand3BetBTN(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseMPand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseMPand3BetBTN(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseMPand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseMPand3BetSB(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseMPand3BetSB(hand);
-        }
-
-
-
-        #endregion
-
-        #region RaiserCO
-
-        public static string GetCold4BetBBvsOpenRaiseCOand3BetBTN(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseCOand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetSBvsOpenRaiseCOand3BetBTN(string hand)
-        {
-            return Cold4BetSBvsOpenRaiseCOand3BetBTN(hand);
-        }
-
-        public static string GetCold4BetBBvsOpenRaiseCOand3BetSB(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseCOand3BetSB(hand);
-        }
-
-        #endregion
-
-        #region RaiserBTN
-
-        public static string GetCold4BetBBvsOpenRaiseBTNand3BetSB(string hand)
-        {
-            return Cold4BetBBvsOpenRaiseBTNand3BetSB(hand);
-        }
-
-        #endregion
-
         #region Hands
 
-        private static string Cold4BetBBvsOpenRaiseEPand3BetMP(string hand)
+        public static string GetCold4BetBBvsOpenRaiseEPand3BetMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -147,8 +31,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseEPand3BetMP(string hand)
+        public static string GetCold4BetSBvsOpenRaiseEPand3BetMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -174,8 +57,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBTNvsOpenRaiseEPand3BetMP(string hand)
+        public static string GetCold4BetBTNvsOpenRaiseEPand3BetMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -213,8 +95,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetCOvsOpenRaiseEPand3BetMP(string hand)
+        public static string GetCold4BetCOvsOpenRaiseEPand3BetMP(string hand)
         {
             var hands = new List<Hands>
             {
@@ -253,8 +134,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseEPand3BetCO(string hand)
+        public static string GetCold4BetBBvsOpenRaiseEPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -278,8 +158,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseEPand3BetCO(string hand)
+        public static string GetCold4BetSBvsOpenRaiseEPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -303,8 +182,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBTNvsOpenRaiseEPand3BetCO(string hand)
+        public static string GetCold4BetBTNvsOpenRaiseEPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -341,8 +219,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseEPand3BetBTN(string hand)
+        public static string GetCold4BetBBvsOpenRaiseEPand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -369,8 +246,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseEPand3BetBTN(string hand)
+        public static string GetCold4BetSBvsOpenRaiseEPand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -396,8 +272,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseEPand3BetSB(string hand)
+        public static string GetCold4BetBBvsOpenRaiseEPand3BetSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -421,8 +296,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseMPand3BetCO(string hand)
+        public static string GetCold4BetBBvsOpenRaiseMPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -462,8 +336,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseMPand3BetCO(string hand)
+        public static string GetCold4BetSBvsOpenRaiseMPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -495,8 +368,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBTNvsOpenRaiseMPand3BetCO(string hand)
+        public static string GetCold4BetBTNvsOpenRaiseMPand3BetCO(string hand)
         {
             var hands = new List<Hands>
             {
@@ -539,8 +411,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseMPand3BetBTN(string hand)
+        public static string GetCold4BetBBvsOpenRaiseMPand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -582,8 +453,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseMPand3BetBTN(string hand)
+        public static string GetCold4BetSBvsOpenRaiseMPand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -621,8 +491,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseMPand3BetSB(string hand)
+        public static string GetCold4BetBBvsOpenRaiseMPand3BetSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -667,8 +536,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseCOand3BetBTN(string hand)
+        public static string GetCold4BetBBvsOpenRaiseCOand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -720,8 +588,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetSBvsOpenRaiseCOand3BetBTN(string hand)
+        public static string GetCold4BetSBvsOpenRaiseCOand3BetBTN(string hand)
         {
             var hands = new List<Hands>
             {
@@ -768,9 +635,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-
-        private static string Cold4BetBBvsOpenRaiseCOand3BetSB(string hand)
+        public static string GetCold4BetBBvsOpenRaiseCOand3BetSB(string hand)
         {
             var hands = new List<Hands>
             {
@@ -816,8 +681,7 @@ namespace OpenScrape.App.Tables
 
             return ObtainActionHelper.ObtainAction(hands, hand);
         }
-
-        private static string Cold4BetBBvsOpenRaiseBTNand3BetSB(string hand)
+        public static string GetCold4BetBBvsOpenRaiseBTNand3BetSB(string hand)
         {
             var hands = new List<Hands>
             {
