@@ -41,5 +41,13 @@
         Squeeze,
         VsSqueeze
     }
+
+    public enum BoardPosition
+    {
+        None,
+        Flop,
+        Turn,
+        River
+    }
     
 }

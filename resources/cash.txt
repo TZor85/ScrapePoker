@@ -35,6 +35,9 @@ r$u0cardface1 # 513 - 496 - 20 - 35 & True & False & False &
 r$tablename # 29 - 5 - 111 - 20 & False & False & False & 
 r$uAction # 667 - 636 - 1 - 1 & False & True & False & 0a0e18
 r$isFlop # 400 - 276 - 1 - 1 & False & True & False & ffffff
+r$b0card1 # 342 - 275 - 20 - 35 & True & False & False & 
+r$b0card2 # 413 - 275 - 20 - 35 & True & False & False & 
+r$b0card3 # 484 - 275 - 20 - 35 & True & False & False & 
 
 //
 // Fonts

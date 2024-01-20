@@ -292,7 +292,11 @@ namespace OpenScrape.App
             ObtainCardsPlayer();
 
             //Si existe el flop, capturar las cartas del flop
-
+            if (_isFlop)
+            {
+                ObtainCardsFlop();
+            }
+            
             foreach (var region in _regions.Where(x => x.IsColor))
             {
                 if (_formImage.pbImagen.Image == null)
@@ -1027,6 +1031,67 @@ namespace OpenScrape.App
             }
         }
 
+        private void ObtainCardsFlop()
+        {
+            foreach (var item in _regions.Where(x => x.IsHash && !x.Name.Contains("u0card")))
+            {
+                var maxEqual = 0;
+                var max = 0;
+
+                var name = string.Empty;
+                var force = 0;
+                var suit = 0;
+
+                string iHash1 = GetHashImage(CaptureWindowsHelper.BinaryImage(CropImage(new Bitmap(_formImage.pbImagen.Image), new Rectangle(item.X, item.Y, item.Width, item.Height)), 130));
+
+                foreach (var image in _images)
+                {
+                    int equalElements = iHash1.Zip(image.Value, (i, j) => i == j).Count(eq => eq);
+
+                    if (equalElements > maxEqual)
+                        maxEqual = equalElements;
+
+                    if (maxEqual > max && maxEqual >= (700 * 0.9))
+                    {
+                        switch (item.Name)
+                        {
+                            case "b0card1":
+                                name = image.Name.Split(" ")[0];
+                                force = image.Force;
+                                suit = image.Suit;
+                                
+                                max = maxEqual;
+                                break;
+                            case "b0card2":
+                                name = image.Name.Split(" ")[0];
+                                force = image.Force;
+                                suit = image.Suit;
+
+                                max = maxEqual;
+                                break;
+                            case "b0card3":
+                                name = image.Name.Split(" ")[0];
+                                force = image.Force;
+                                suit = image.Suit;
+
+                                max = maxEqual;
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+
+                _scrapeResult.DataBoard.Add(new BoardData
+                {
+                    Name = name,
+                    Force = force,
+                    Suit = suit,
+                    Position = BoardPosition.Flop
+                });
+
+            }
+        }
 
         private string GetRaiseOverLimperAction(Dictionary<HeroPosition, decimal> preflopHeroPosition)
         {
@@ -1053,7 +1118,7 @@ namespace OpenScrape.App
         {
             var responseAction = new GetSqueezeResponse();
 
-            var bet = 1m;
+            var bet = 2m;
             HeroPosition raiser = HeroPosition.None;
             HeroPosition caller = HeroPosition.None;
             
@@ -1075,16 +1140,19 @@ namespace OpenScrape.App
                 }
             }
 
-            var getSqueezeRequest = new GetSqueezeRequest
+            if (raiser != HeroPosition.None && caller != HeroPosition.None)
             {
-                Hand = SetHandValue(),
-                Position = _scrapeResult.P0Position,
-                RaiserPosition = raiser,
-                CallerPosition = caller
-            };
+                var getSqueezeRequest = new GetSqueezeRequest
+                {
+                    Hand = SetHandValue(),
+                    Position = _scrapeResult.P0Position,
+                    RaiserPosition = raiser,
+                    CallerPosition = caller
+                };
 
-            responseAction = _squeezeUseCase.Execute(getSqueezeRequest);
-
+                responseAction = _squeezeUseCase.Execute(getSqueezeRequest);
+            }
+            
             return responseAction.Action;
         }
 

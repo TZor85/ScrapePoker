@@ -17,6 +17,7 @@ namespace OpenScrape.App.Entities
         public HeroAction HeroAction { get; set; }
         public bool IsFlop { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
+        public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
      
     }
 
@@ -47,5 +48,14 @@ namespace OpenScrape.App.Entities
         public string? Action { get; set; }
         public HeroAction HeroAction { get; set; }
         public bool IsSecondAction { get; set; }
+    }
+
+    public class BoardData
+    {
+        public string? Name { get; set;}
+        public int Force { get; set; }
+        public int Suit { get; set; }
+        public BoardPosition Position { get; set; }
+
     }
 }
