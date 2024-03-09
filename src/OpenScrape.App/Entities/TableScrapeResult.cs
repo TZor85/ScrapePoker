@@ -11,24 +11,21 @@ namespace OpenScrape.App.Entities
         public int U0CardForce1 { get; set; } = 0;
         public int U0CardSuit0 { get; set; } = 0;
         public int U0CardSuit1 { get; set; } = 0;
+        public bool U0InPosition {  get; set; } = false;
+        public bool HighCardInFlop { get; set; }
+        public bool FlopIsCoordinate { get; set; } = false;
+        public bool TurnAndFlopIsCoordinate { get; set; } = false;
+        public bool RiverAndTurnAndFlopIsCoordinate { get; set; } = false;
+        public bool HavePairOnHand { get; set; }
+        public HeroHand Hand { get; set; }
         public decimal U0Bet {  get; set; }
-        public string? TableName { get; set; }
         public HeroPosition P0Position { get; set; }
         public HeroAction HeroAction { get; set; }
-        public bool IsFlop { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
         public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
      
     }
-
-    public class BackgroundTableScrap
-    {
-        public bool IsFlop { get; set; }
-        public bool UserAction { get; set; }
-        public bool UserAction1 { get; set; }
-        public bool UserPlay { get; set; }
-    }
-
+    
     public class PlayerData
     {
         public string? Name { get; set; }

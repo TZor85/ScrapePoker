@@ -28,74 +28,95 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.btnNew = new System.Windows.Forms.Button();
-            this.pbImagen = new System.Windows.Forms.PictureBox();
-            this.btnLoad = new System.Windows.Forms.Button();
-            this.lbPath = new System.Windows.Forms.Label();
-            ((System.ComponentModel.ISupportInitialize)(this.pbImagen)).BeginInit();
-            this.SuspendLayout();
-            // 
-            // btnNew
-            // 
-            this.btnNew.Location = new System.Drawing.Point(2, 1);
-            this.btnNew.Name = "btnNew";
-            this.btnNew.Size = new System.Drawing.Size(46, 23);
-            this.btnNew.TabIndex = 0;
-            this.btnNew.Text = "New";
-            this.btnNew.UseVisualStyleBackColor = true;
-            this.btnNew.Click += new System.EventHandler(this.btnNew_Click);
+            pbImagen = new PictureBox();
+            btnLoad = new Button();
+            lbPath = new Label();
+            btnMinus = new Button();
+            btnPlus = new Button();
+            lbTotal = new Label();
+            ((System.ComponentModel.ISupportInitialize)pbImagen).BeginInit();
+            SuspendLayout();
             // 
             // pbImagen
             // 
-            this.pbImagen.Location = new System.Drawing.Point(12, 30);
-            this.pbImagen.Name = "pbImagen";
-            this.pbImagen.Size = new System.Drawing.Size(422, 246);
-            this.pbImagen.TabIndex = 1;
-            this.pbImagen.TabStop = false;
+            pbImagen.Location = new Point(12, 30);
+            pbImagen.Name = "pbImagen";
+            pbImagen.Size = new Size(422, 246);
+            pbImagen.TabIndex = 1;
+            pbImagen.TabStop = false;
             // 
             // btnLoad
             // 
-            this.btnLoad.Location = new System.Drawing.Point(54, 1);
-            this.btnLoad.Name = "btnLoad";
-            this.btnLoad.Size = new System.Drawing.Size(46, 23);
-            this.btnLoad.TabIndex = 2;
-            this.btnLoad.Text = "Load";
-            this.btnLoad.UseVisualStyleBackColor = true;
-            this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
+            btnLoad.Location = new Point(2, 1);
+            btnLoad.Name = "btnLoad";
+            btnLoad.Size = new Size(46, 23);
+            btnLoad.TabIndex = 2;
+            btnLoad.Text = "Load";
+            btnLoad.UseVisualStyleBackColor = true;
+            btnLoad.Click += btnLoad_Click;
             // 
             // lbPath
             // 
-            this.lbPath.AutoSize = true;
-            this.lbPath.Location = new System.Drawing.Point(117, 5);
-            this.lbPath.Name = "lbPath";
-            this.lbPath.Size = new System.Drawing.Size(0, 15);
-            this.lbPath.TabIndex = 3;
+            lbPath.AutoSize = true;
+            lbPath.Location = new Point(127, 5);
+            lbPath.Name = "lbPath";
+            lbPath.Size = new Size(0, 15);
+            lbPath.TabIndex = 3;
+            // 
+            // btnMinus
+            // 
+            btnMinus.Location = new Point(54, 1);
+            btnMinus.Name = "btnMinus";
+            btnMinus.Size = new Size(30, 23);
+            btnMinus.TabIndex = 4;
+            btnMinus.Text = "<";
+            btnMinus.UseVisualStyleBackColor = true;
+            btnMinus.Click += btnMinus_Click;
+            // 
+            // btnPlus
+            // 
+            btnPlus.Location = new Point(87, 1);
+            btnPlus.Name = "btnPlus";
+            btnPlus.Size = new Size(30, 23);
+            btnPlus.TabIndex = 5;
+            btnPlus.Text = ">";
+            btnPlus.UseVisualStyleBackColor = true;
+            btnPlus.Click += btnPlus_Click;
+            // 
+            // lbTotal
+            // 
+            lbTotal.AutoSize = true;
+            lbTotal.Location = new Point(406, 9);
+            lbTotal.Name = "lbTotal";
+            lbTotal.Size = new Size(0, 15);
+            lbTotal.TabIndex = 6;
             // 
             // FormImage
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(445, 288);
-            this.Controls.Add(this.lbPath);
-            this.Controls.Add(this.btnLoad);
-            this.Controls.Add(this.pbImagen);
-            this.Controls.Add(this.btnNew);
-            this.Location = new System.Drawing.Point(150, 0);
-            this.Name = "FormImage";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "FormImage";
-            this.Load += new System.EventHandler(this.FormImage_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pbImagen)).EndInit();
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(445, 288);
+            Controls.Add(lbTotal);
+            Controls.Add(btnPlus);
+            Controls.Add(btnMinus);
+            Controls.Add(lbPath);
+            Controls.Add(btnLoad);
+            Controls.Add(pbImagen);
+            Location = new Point(150, 0);
+            Name = "FormImage";
+            StartPosition = FormStartPosition.Manual;
+            Text = "FormImage";
+            ((System.ComponentModel.ISupportInitialize)pbImagen).EndInit();
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
-
-        private Button btnNew;
         public PictureBox pbImagen;
         private Button btnLoad;
         private Label lbPath;
+        private Button btnMinus;
+        private Button btnPlus;
+        private Label lbTotal;
     }
 }

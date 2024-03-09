@@ -7,26 +7,12 @@ namespace OpenScrape.App
     public partial class FormImage : Form, IAddImage
     {
         private FormListApps _formListApps;
-        
+        private int _index = 0;
+        private List<string> _listaImagenes = new List<string>();
 
         public FormImage()
         {
             InitializeComponent();
-        }
-
-        private void btnNew_Click(object sender, EventArgs e)
-        {
-            _formListApps = new FormListApps();
-
-            _formListApps.Location = new Point(this.Location.X, this.Location.Y + 100);
-            _formListApps.addImage = this;
-            _formListApps.Show();
-
-        }
-                
-        private void FormImage_Load(object sender, EventArgs e)
-        {
-
         }
 
         public void Execute(IntPtr window)
@@ -51,9 +37,9 @@ namespace OpenScrape.App
 
                 if (string.IsNullOrWhiteSpace(lbPath.Text))
                 {
-                    folderPath = @"C:\Code\ScrapePoker\resources\Games";
+                    //folderPath = @"C:\Code\ScrapePoker\resources\Games";
                     //portatil
-                    //folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games";
+                    folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games";
                 }
                 else
                 {
@@ -66,12 +52,14 @@ namespace OpenScrape.App
 
                 if (dlg.ShowDialog() == DialogResult.OK)
                 {
-                    this.Width = 461;
-                    this.Height = 327;
-
                     lbPath.Text = dlg.FileName;
 
                     var bitmap = new Bitmap(dlg.FileName);
+
+                    _listaImagenes = new List<string>(Directory.GetFiles(lbPath.Text.Split("game")[0], "*.png"));
+
+                    this.Width = 461;
+                    this.Height = 347;
 
                     this.Width = bitmap.Width + this.Width / 11;
                     this.Height = bitmap.Height + this.Height / 4;
@@ -79,9 +67,33 @@ namespace OpenScrape.App
                     pbImagen.Width = bitmap.Width;
                     pbImagen.Height = bitmap.Height;
 
-                    pbImagen.Image = bitmap;
+                    MostrarImagenActual();
                 }
             }
+        }
+
+        private void MostrarImagenActual()
+        {
+            if (_listaImagenes.Count > 0 && _index >= 0 && _index < _listaImagenes.Count)
+            {
+                // Cargar y mostrar la imagen actual
+                pbImagen.Image = Image.FromFile(_listaImagenes[_index]);
+                lbPath.Text = _listaImagenes[_index];
+                lbTotal.Location = new Point(lbPath.Size.Width + 410, lbPath.Location.Y);
+                lbTotal.Text = $"{_index}/{_listaImagenes.Count - 1}";
+            }
+        }
+
+        private void btnMinus_Click(object sender, EventArgs e)
+        {
+            _index = (_index - 1 + _listaImagenes.Count) % _listaImagenes.Count;
+            MostrarImagenActual();
+        }
+
+        private void btnPlus_Click(object sender, EventArgs e)
+        {
+            _index = (_index + 1) % _listaImagenes.Count;
+            MostrarImagenActual();
         }
     }
 }

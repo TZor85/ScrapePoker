@@ -3,11 +3,11 @@ using OpenScrape.App.Tables;
 
 namespace OpenScrape.App.Aplication.UseCases.Actions
 {
-    public class Get3BetUseCase : IGet3BetUseCase
+    public class GetAction3BetUseCase : IGetAction3BetUseCase
     {
-        public Get3BetUseCaseResponse Execute(Get3BetUseCaseRequest request)
+        public GetAction3BetUseCaseResponse Execute(GetAction3BetUseCaseRequest request)
         {
-            var response = new Get3BetUseCaseResponse();
+            var response = new GetAction3BetUseCaseResponse();
 
             var action = request.Position switch
             {

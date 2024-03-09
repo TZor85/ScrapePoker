@@ -2,7 +2,7 @@
 {
     public enum Positions
     {
-        Default,
+        None,
         OutOfPosition,
         InPosition
     }
@@ -48,6 +48,24 @@
         Flop,
         Turn,
         River
+    }
+
+    public enum HeroHand
+    {
+        Nada,
+        ProyectoColor,
+        ProyectoEscalera,
+        ProyectoEscaleraColor,
+        CartaAlta,
+        Pareja,
+        DoblePareja,
+        Trio,
+        Escalera,
+        Color,
+        Full,
+        Poker,
+        EscaleraDeColor,
+        EscaleraReal
     }
     
 }

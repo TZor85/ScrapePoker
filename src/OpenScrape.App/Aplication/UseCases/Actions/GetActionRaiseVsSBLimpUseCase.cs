@@ -2,11 +2,11 @@
 
 namespace OpenScrape.App.Aplication.UseCases.Actions
 {
-    public class GetRaiseVsSBLimpUseCase : IGetRaiseVsSBLimpUseCase
+    public class GetActionRaiseVsSBLimpUseCase : IGetActionRaiseVsSBLimpUseCase
     {
-        public GetRaiseVsSBLimpResponse Execute(GetRaiseVsSBLimpRequest request)
+        public GetActionRaiseVsSBLimpResponse Execute(GetActionRaiseVsSBLimpRequest request)
         {
-            var response = new GetRaiseVsSBLimpResponse();
+            var response = new GetActionRaiseVsSBLimpResponse();
 
             if (request.OnlyCall)
                 response.Action = RaiseVsSBLimp.GetBigBlindvsSBCall(request.Hand);

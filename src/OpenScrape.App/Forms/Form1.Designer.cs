@@ -571,7 +571,6 @@
             btnCapture3bet.TabIndex = 61;
             btnCapture3bet.Text = "vs 3Bet";
             btnCapture3bet.UseVisualStyleBackColor = true;
-            btnCapture3bet.Click += btnCapture3bet_Click;
             // 
             // btnCapture4Bet
             // 
