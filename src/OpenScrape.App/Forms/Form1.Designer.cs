@@ -78,10 +78,15 @@
             btnCapture3bet = new Button();
             btnCapture4Bet = new Button();
             cbMark = new CheckBox();
+            gbTest = new GroupBox();
+            cbRiver = new CheckBox();
+            cbTurn = new CheckBox();
+            cbFlop = new CheckBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
+            gbTest.SuspendLayout();
             SuspendLayout();
             // 
             // twRegions
@@ -505,6 +510,7 @@
             cbTest.TabIndex = 44;
             cbTest.Text = "Test";
             cbTest.UseVisualStyleBackColor = true;
+            cbTest.CheckedChanged += cbTest_CheckedChanged;
             // 
             // ckBoard
             // 
@@ -591,11 +597,56 @@
             cbMark.Text = "Marcar Mano";
             cbMark.UseVisualStyleBackColor = true;
             // 
+            // gbTest
+            // 
+            gbTest.Controls.Add(cbRiver);
+            gbTest.Controls.Add(cbTurn);
+            gbTest.Controls.Add(cbFlop);
+            gbTest.Enabled = false;
+            gbTest.Location = new Point(12, 408);
+            gbTest.Name = "gbTest";
+            gbTest.Size = new Size(103, 99);
+            gbTest.TabIndex = 64;
+            gbTest.TabStop = false;
+            gbTest.Text = "Test";
+            // 
+            // cbRiver
+            // 
+            cbRiver.AutoSize = true;
+            cbRiver.Location = new Point(6, 72);
+            cbRiver.Name = "cbRiver";
+            cbRiver.Size = new Size(52, 19);
+            cbRiver.TabIndex = 47;
+            cbRiver.Text = "River";
+            cbRiver.UseVisualStyleBackColor = true;
+            // 
+            // cbTurn
+            // 
+            cbTurn.AutoSize = true;
+            cbTurn.Location = new Point(6, 47);
+            cbTurn.Name = "cbTurn";
+            cbTurn.Size = new Size(50, 19);
+            cbTurn.TabIndex = 46;
+            cbTurn.Text = "Turn";
+            cbTurn.UseVisualStyleBackColor = true;
+            // 
+            // cbFlop
+            // 
+            cbFlop.AutoSize = true;
+            cbFlop.Location = new Point(6, 22);
+            cbFlop.Name = "cbFlop";
+            cbFlop.Size = new Size(49, 19);
+            cbFlop.TabIndex = 45;
+            cbFlop.Text = "Flop";
+            cbFlop.UseVisualStyleBackColor = true;
+            cbFlop.CheckedChanged += cbFlop_CheckedChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(593, 585);
+            Controls.Add(gbTest);
             Controls.Add(cbMark);
             Controls.Add(btnCapture4Bet);
             Controls.Add(btnCapture3bet);
@@ -630,6 +681,8 @@
             groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
+            gbTest.ResumeLayout(false);
+            gbTest.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -684,5 +737,9 @@
         private Button btnCapture3bet;
         private Button btnCapture4Bet;
         private CheckBox cbMark;
+        private GroupBox gbTest;
+        private CheckBox cbRiver;
+        private CheckBox cbTurn;
+        private CheckBox cbFlop;
     }
 }

@@ -82,15 +82,15 @@ namespace OpenScrape.App
         static readonly IGetActionRaiseVsSBLimpUseCase _raiseVsSBLimpUseCase = new GetActionRaiseVsSBLimpUseCase();
         static readonly IGetActionCold4BetUseCase _cold4BetUseCase = new GetActionCold4BetUseCase();
 
-        readonly ISetPreflopActionUseCase _setPreflopActionUseCase = new SetPreflopActionUseCase(_heroCallOpenRaiseAndGetSqueezeUseCase, 
-                                                                                                 _hero3BetAndOpenRaiser4BetUseCase, 
-                                                                                                 _vs3BetUseCase, 
-                                                                                                 _vs3BetAndCallUseCase, 
-                                                                                                 _squeezeUseCase, 
-                                                                                                 _openRaiseUseCase, 
-                                                                                                 _raiseOverLimperUseCase, 
-                                                                                                 _threeBetUseCase, 
-                                                                                                 _raiseVsSBLimpUseCase, 
+        readonly ISetPreflopActionUseCase _setPreflopActionUseCase = new SetPreflopActionUseCase(_heroCallOpenRaiseAndGetSqueezeUseCase,
+                                                                                                 _hero3BetAndOpenRaiser4BetUseCase,
+                                                                                                 _vs3BetUseCase,
+                                                                                                 _vs3BetAndCallUseCase,
+                                                                                                 _squeezeUseCase,
+                                                                                                 _openRaiseUseCase,
+                                                                                                 _raiseOverLimperUseCase,
+                                                                                                 _threeBetUseCase,
+                                                                                                 _raiseVsSBLimpUseCase,
                                                                                                  _cold4BetUseCase);
 
         #endregion
@@ -123,7 +123,7 @@ namespace OpenScrape.App
             _formImage.Show();
         }
 
-        
+
 
         #region FrontMethods
 
@@ -303,11 +303,11 @@ namespace OpenScrape.App
                 _formImage.WindowState = FormWindowState.Minimized;
             }
 
-            if(!_isFlop)
+            if (!_isFlop)
                 _scrapeResult = new TableScrapeResult();
-                        
+
             ObtainCardsPlayer();
-            
+
             foreach (var region in _regions.Where(x => x.IsColor))
             {
                 if (_formImage.pbImagen.Image == null)
@@ -616,8 +616,8 @@ namespace OpenScrape.App
 
                     switch (_scrapeResult.HeroAction)
                     {
-                        case HeroAction.OpenRaise:    
-                            if(_scrapeResult.U0InPosition)
+                        case HeroAction.OpenRaise:
+                            if (_scrapeResult.U0InPosition)
                             {
                             }
                             else
@@ -828,7 +828,7 @@ namespace OpenScrape.App
             SetBoardValues();
             lbAction.Text = _responseAction.Action;
 
-            if(_formAction != null)
+            if (_formAction != null)
                 _formAction.DatoRecibido = _responseAction.Action;
         }
 
@@ -917,8 +917,8 @@ namespace OpenScrape.App
             {
                 if (!item.Empty || !item.SitOut)
                 {
-                    if(item.Position != HeroPosition.None)
-                        players[item.Position] = item.Bet; 
+                    if (item.Position != HeroPosition.None)
+                        players[item.Position] = item.Bet;
                 }
             }
 
@@ -927,7 +927,7 @@ namespace OpenScrape.App
 
             foreach (var heroPosition in Enum.GetValues(typeof(HeroPosition)).Cast<HeroPosition>())
             {
-                if(heroPosition != HeroPosition.None)
+                if (heroPosition != HeroPosition.None)
                     position[heroPosition] = new Dictionary<HeroPosition, decimal>(players);
             }
 
@@ -1103,7 +1103,7 @@ namespace OpenScrape.App
         {
 
             User32.RECT windowRect = new User32.RECT();
-            
+
             if (_handle == IntPtr.Zero)
             {
                 Thread.Sleep(2000);
@@ -1121,13 +1121,14 @@ namespace OpenScrape.App
             if (_handle != IntPtr.Zero)
             {
                 User32.GetWindowRect(_handle, ref windowRect);
-                if(windowRect.left != _locWindowRect.left || windowRect.right != _locWindowRect.right || windowRect.top != _locWindowRect.top || windowRect.bottom != _locWindowRect.bottom)
+                if (windowRect.left != _locWindowRect.left || windowRect.right != _locWindowRect.right || windowRect.top != _locWindowRect.top || windowRect.bottom != _locWindowRect.bottom)
                 {
                     _locWindowRect = windowRect;
-                    this.Invoke((MethodInvoker)delegate {
+                    this.Invoke((MethodInvoker)delegate
+                    {
                         _formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 50);
                     });
-                }                
+                }
             }
 
             if (!_backgroundExecute)
@@ -1152,7 +1153,7 @@ namespace OpenScrape.App
 
             while (true)
             {
-                if(_formAction != null && !_formAction.Visible)
+                if (_formAction != null && !_formAction.Visible)
                 {
                     e.Cancel = true;
                     return;
@@ -1175,11 +1176,11 @@ namespace OpenScrape.App
                     }
 
                     if (colorAction.B == 24 && !_executeCapture)
-                    {                        
+                    {
                         btnCapture_Click(sender, e);
                     }
-                    
-                    if(colorAction.B != 24)
+
+                    if (colorAction.B != 24)
                         _executeCapture = false;
                 });
 
@@ -1878,5 +1879,17 @@ namespace OpenScrape.App
 
         #endregion
 
+        private void cbTest_CheckedChanged(object sender, EventArgs e)
+        {
+            gbTest.Enabled = cbTest.Checked;
+        }
+
+        private void cbFlop_CheckedChanged(object sender, EventArgs e)
+        {
+            if (gbTest.Enabled)
+            {
+                _isFlop = cbFlop.Checked;
+            }
+        }
     }
 }
