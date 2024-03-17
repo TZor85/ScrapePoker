@@ -43,6 +43,7 @@ namespace OpenScrape.App
         List<KeyValuePair<string, string>> _imageList = new List<KeyValuePair<string, string>>();
 
         TableScrapeResult _scrapeResult = new TableScrapeResult();
+        TableScrapeFlopResult _scrapeFlopResult = new TableScrapeFlopResult();
         ResponseAction _responseAction = new ResponseAction();
 
 
@@ -611,18 +612,41 @@ namespace OpenScrape.App
                 if (_isFlop)
                 {
                     _scrapeResult.DataBoard = _getCardsFlopUseCase.Execute(new GetCardsFlopUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), Regions = _regions.Where(x => x.IsHash).ToList(), ImageRegions = _images }).DataBoard;
-                    _scrapeResult = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult }).TableScrapeResult;
+                    _scrapeResult = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult }).TableScrapeResult;
+                    _scrapeFlopResult = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult }).TableScrapeFlopResult;
+
                     SetIsInPosition();
 
                     switch (_scrapeResult.HeroAction)
                     {
                         case HeroAction.OpenRaise:
-                            if (_scrapeResult.U0InPosition)
+
+                            if(_scrapeFlopResult.HaveTwoPairOnFlop || 
+                                _scrapeFlopResult.HaveOverPairOnFlop || 
+                                (_scrapeFlopResult.HaveTopPairOnFlop && !_scrapeFlopResult.HaveHighCardsOnHand) ||
+                                (_scrapeFlopResult.HaveHighCardsOnHand && _scrapeFlopResult.HaveBackdoorFlushDraw))
                             {
+                                _responseAction.Action = "Bet 3/4";
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                _responseAction.Action = "Check";
+                            }
+
+                            if (_scrapeResult.U0InPosition)
+                            {
+                                if (_scrapeFlopResult.FlopIsCoordinate)
+                                {
+                                    //_scrapeResult.
+                                }
+                                else
+                                {
+
+                                }
+                            }
+                            else
+                            {
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -638,7 +662,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -654,7 +678,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -670,7 +694,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -686,7 +710,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -702,7 +726,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -718,7 +742,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -734,7 +758,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -750,7 +774,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -766,7 +790,7 @@ namespace OpenScrape.App
                             }
                             else
                             {
-                                if (_scrapeResult.FlopIsCoordinate)
+                                if (_scrapeFlopResult.FlopIsCoordinate)
                                 {
 
                                 }
@@ -803,18 +827,22 @@ namespace OpenScrape.App
 
             _scrapeResult.HeroAction = _responseAction.HeroAction;
 
-            var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
-            var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
-            var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
+            if (!_isFlop)
+            {
+                var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
+                var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
+                var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
 
-            tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
-            tbResumen.Text += $"Jugadores SitOut/Empty: {sitout} \r\n";
-            tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
-            tbResumen.Text += "-------------------------------- \r\n";
-            tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
-            tbResumen.Text += "-------------------------------- \r\n";
-            tbResumen.Text += $"Posición del jugador: {_scrapeResult.P0Position} \r\n";
-            tbResumen.Text += $"Jugada a realizar: {_scrapeResult.HeroAction} \r\n\r\n";
+                tbResumen.Text = $"Jugadores en la mesa: {enMesa} \r\n";
+                tbResumen.Text += $"Jugadores SitOut/Empty: {sitout} \r\n";
+                tbResumen.Text += $"Jugadores activos en la mano: {playing} \r\n";
+                tbResumen.Text += "-------------------------------- \r\n";
+                tbResumen.Text += $"Dealer -> {_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} \r\n";
+                tbResumen.Text += "-------------------------------- \r\n";
+                tbResumen.Text += $"Posición del jugador: {_scrapeResult.P0Position} \r\n";
+                tbResumen.Text += $"Jugada a realizar: {_scrapeResult.HeroAction} \r\n\r\n";
+            }
+
             tbResumen.Text += "----------- APUESTAS ----------- \r\n";
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P1").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P1").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P1").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P1").Bet} BBs \r\n" : string.Empty;
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P2").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P2").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P2").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P2").Bet} BBs \r\n" : string.Empty;
@@ -822,8 +850,8 @@ namespace OpenScrape.App
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P4").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P4").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P4").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P4").Bet} BBs \r\n" : string.Empty;
             tbResumen.Text += _scrapeResult.DataPlayer.First(f => f.Name == "P5").Active && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 0 && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.BigBlind && _scrapeResult.DataPlayer.First(f => f.Name == "P5").Position != HeroPosition.SmallBlind ? $"{_scrapeResult.DataPlayer.First(f => f.Name == "P5").Position} -> {_scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet} BBs \r\n" : string.Empty;
             tbResumen.Text += "-------------------------------- \r\n";
-            tbResumen.Text += $"Hand: {_scrapeResult.Hand} \r\n";
-            tbResumen.Text += $"Flop: {_scrapeResult.FlopIsCoordinate} \r\n";
+            tbResumen.Text += $"Hand: {_scrapeFlopResult.Hand} \r\n";
+            tbResumen.Text += $"Flop: {_scrapeFlopResult.FlopIsCoordinate} \r\n";
 
             SetBoardValues();
             lbAction.Text = _responseAction.Action;

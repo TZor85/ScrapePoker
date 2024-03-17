@@ -6,9 +6,6 @@ namespace OpenScrape.App.Aplication
     {
         public SetFlopForceBoardUseCaseResponse Execute(SetFlopForceBoardUseCaseRequest request)
         {
-            request.TableScrapeResult.HighCardInFlop = request.TableScrapeResult.DataBoard.Any(a => a.Force == 13 || a.Force == 14);
-            request.TableScrapeResult.HavePairOnHand = request.TableScrapeResult.U0CardForce0 == request.TableScrapeResult.U0CardForce1;
-
             //Si cartasMismoPalo.Count() = 1 -> Flop mismo palo
             //Si cartasMismoPalo.Count() = 2 -> Flop con dos cartas del mismo palo
             //Si cartasMismoPalo.Count() = 3 -> Flop multicolor
@@ -21,20 +18,44 @@ namespace OpenScrape.App.Aplication
             var cartasIguales = request.TableScrapeResult.DataBoard.GroupBy(g => g.Force)
                                      .Select(grupo => new { Valor = grupo.Key, Cantidad = grupo.Count() }).ToList();
 
+            var maxCardForce =  request.TableScrapeResult.DataBoard.Max(m => m.Force);
+
+            request.TableScrapeFlopResult.HighCardInFlop = request.TableScrapeResult.DataBoard.Any(a => a.Force == 13 || a.Force == 14);
+            request.TableScrapeFlopResult.HavePairOnHand = request.TableScrapeResult.U0CardForce0 == request.TableScrapeResult.U0CardForce1;
+            request.TableScrapeFlopResult.FlushDrawInFlop = request.TableScrapeResult.DataBoard.GroupBy(g => g.Suit).Any(a => a.Count() == 1);
+            
+            var handSameSuit = request.TableScrapeResult.U0CardSuit0 == request.TableScrapeResult.U0CardSuit1;
+
+            if(request.TableScrapeFlopResult.HavePairOnHand)
+                request.TableScrapeFlopResult.HaveOverPairOnFlop = request.TableScrapeResult.DataBoard.Any(a => a.Force > request.TableScrapeResult.U0CardForce0);
+                
+            if(!request.TableScrapeFlopResult.HavePairOnHand)
+                request.TableScrapeFlopResult.HaveTwoPairOnFlop = request.TableScrapeResult.DataBoard.Any(a => a.Force == request.TableScrapeResult.U0CardForce0 && a.Force == request.TableScrapeResult.U0CardForce1);
+
+            if (handSameSuit)
+                request.TableScrapeFlopResult.HaveBackdoorFlushDraw = cartasMismoPalo.Count() <= 2;
+
+            if (!request.TableScrapeFlopResult.HavePairOnHand)
+                if (request.TableScrapeResult.U0CardForce0 == maxCardForce || request.TableScrapeResult.U0CardForce1 == maxCardForce)
+                    request.TableScrapeFlopResult.HaveTopPairOnFlop = true;
+
+            if(request.TableScrapeResult.U0CardForce0 > maxCardForce && request.TableScrapeResult.U0CardForce1 > maxCardForce)
+                request.TableScrapeFlopResult.HaveHighCardsOnHand = true;
+
             switch (cartasIguales.Count())
             {
                 case 1:
-                    if (request.TableScrapeResult.HavePairOnHand)
-                        request.TableScrapeResult.Hand = HeroHand.Full;
+                    if (request.TableScrapeFlopResult.HavePairOnHand)
+                        request.TableScrapeFlopResult.Hand = HeroHand.Full;
                     else
                     {
                         if (request.TableScrapeResult.DataBoard.Any(a => a.Force == request.TableScrapeResult.U0CardForce0 || a.Force == request.TableScrapeResult.U0CardForce1))
-                            request.TableScrapeResult.Hand = HeroHand.Poker;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Poker;
                         else
-                            request.TableScrapeResult.Hand = HeroHand.Trio;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Trio;
                     }
 
-                    request.TableScrapeResult.FlopIsCoordinate = true;
+                    request.TableScrapeFlopResult.FlopIsCoordinate = true;
                     break;
                 case 2:
                     var forcePairFlop = cartasIguales.First(f => f.Cantidad == 2).Valor;
@@ -42,29 +63,29 @@ namespace OpenScrape.App.Aplication
 
                     var hayProyectoEscalera = ProyectoEscalera(cartasIguales[0].Valor, cartasIguales[1].Valor, cartasIguales[2].Valor, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
-                    if (request.TableScrapeResult.HavePairOnHand)
+                    if (request.TableScrapeFlopResult.HavePairOnHand)
                     {
-                        request.TableScrapeResult.Hand = HeroHand.DoblePareja;
+                        request.TableScrapeFlopResult.Hand = HeroHand.DoblePareja;
 
                         if (forceCardFlop == request.TableScrapeResult.U0CardForce0)
-                            request.TableScrapeResult.Hand = HeroHand.Full;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Full;
 
                         if (forcePairFlop == request.TableScrapeResult.U0CardForce0)
-                            request.TableScrapeResult.Hand = HeroHand.Poker;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Poker;
 
-                        request.TableScrapeResult.FlopIsCoordinate = true;
+                        request.TableScrapeFlopResult.FlopIsCoordinate = true;
                     }
                     else
                     {
-                        request.TableScrapeResult.Hand = HeroHand.Pareja;
+                        request.TableScrapeFlopResult.Hand = HeroHand.Pareja;
 
                         if (forcePairFlop == request.TableScrapeResult.U0CardForce0 || forcePairFlop == request.TableScrapeResult.U0CardForce1)
-                            request.TableScrapeResult.Hand = HeroHand.Trio;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Trio;
 
                         if (hayProyectoEscalera)
                         {
-                            if (request.TableScrapeResult.Hand == HeroHand.Nada)
-                                request.TableScrapeResult.Hand = HeroHand.ProyectoEscalera;
+                            if (request.TableScrapeFlopResult.Hand == HeroHand.Nada)
+                                request.TableScrapeFlopResult.Hand = HeroHand.ProyectoEscalera;
                         }
 
                         if (cartasMismoPalo.Count == 2)
@@ -73,32 +94,32 @@ namespace OpenScrape.App.Aplication
 
                             if (request.TableScrapeResult.U0CardSuit0 == suitCartasMismoPalo && request.TableScrapeResult.U0CardSuit1 == suitCartasMismoPalo)
                             {
-                                if (request.TableScrapeResult.Hand == HeroHand.Nada || request.TableScrapeResult.Hand == HeroHand.ProyectoEscalera)
-                                    request.TableScrapeResult.Hand = HeroHand.ProyectoColor;
+                                if (request.TableScrapeFlopResult.Hand == HeroHand.Nada || request.TableScrapeFlopResult.Hand == HeroHand.ProyectoEscalera)
+                                    request.TableScrapeFlopResult.Hand = HeroHand.ProyectoColor;
                             }
                         }
                     }
 
-                    request.TableScrapeResult.FlopIsCoordinate = true;
+                    request.TableScrapeFlopResult.FlopIsCoordinate = true;
 
                     break;
                 case 3:
 
-                    if (request.TableScrapeResult.HavePairOnHand)
+                    if (request.TableScrapeFlopResult.HavePairOnHand)
                     {
                         hayProyectoEscalera = ProyectoEscalera(cartasIguales[0].Valor, cartasIguales[1].Valor, cartasIguales[2].Valor, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
-                        request.TableScrapeResult.Hand = HeroHand.Pareja;
+                        request.TableScrapeFlopResult.Hand = HeroHand.Pareja;
 
                         if (cartasIguales.Any(a => a.Valor == request.TableScrapeResult.U0CardForce0 && a.Valor == request.TableScrapeResult.U0CardForce1))
-                            request.TableScrapeResult.Hand = HeroHand.Trio;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Trio;
 
                         if (hayProyectoEscalera)
                         {
-                            if (request.TableScrapeResult.Hand == HeroHand.Nada)
-                                request.TableScrapeResult.Hand = HeroHand.ProyectoEscalera;
+                            if (request.TableScrapeFlopResult.Hand == HeroHand.Nada)
+                                request.TableScrapeFlopResult.Hand = HeroHand.ProyectoEscalera;
 
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
 
                         if (cartasMismoPalo.Count == 1)
@@ -107,17 +128,17 @@ namespace OpenScrape.App.Aplication
 
                             if (request.TableScrapeResult.U0CardSuit0 == suitCartasMismoPalo)
                             {
-                                if (request.TableScrapeResult.Hand == HeroHand.Nada || request.TableScrapeResult.Hand == HeroHand.ProyectoEscalera)
-                                    request.TableScrapeResult.Hand = HeroHand.ProyectoColor;
+                                if (request.TableScrapeFlopResult.Hand == HeroHand.Nada || request.TableScrapeFlopResult.Hand == HeroHand.ProyectoEscalera)
+                                    request.TableScrapeFlopResult.Hand = HeroHand.ProyectoColor;
                             }
 
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
 
-                        if (request.TableScrapeResult.Hand == HeroHand.ProyectoColor && hayProyectoEscalera)
+                        if (request.TableScrapeFlopResult.Hand == HeroHand.ProyectoColor && hayProyectoEscalera)
                         {
-                            request.TableScrapeResult.Hand = HeroHand.ProyectoEscaleraColor;
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.Hand = HeroHand.ProyectoEscaleraColor;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
 
                     }
@@ -126,19 +147,19 @@ namespace OpenScrape.App.Aplication
                         if ((cartasIguales.Any(a => a.Valor == request.TableScrapeResult.U0CardForce0) && !cartasIguales.Any(a => a.Valor == request.TableScrapeResult.U0CardForce1)) ||
                             (!cartasIguales.Any(a => a.Valor == request.TableScrapeResult.U0CardForce0) && cartasIguales.Any(a => a.Valor == request.TableScrapeResult.U0CardForce1)))
                         {
-                            request.TableScrapeResult.Hand = HeroHand.Pareja;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Pareja;
                         }
                         else
-                            request.TableScrapeResult.Hand = HeroHand.DoblePareja;
+                            request.TableScrapeFlopResult.Hand = HeroHand.DoblePareja;
 
                         if (ExisteEscalera(cartasIguales[0].Valor, cartasIguales[1].Valor, cartasIguales[2].Valor, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1))
-                            request.TableScrapeResult.Hand = HeroHand.Escalera;
+                            request.TableScrapeFlopResult.Hand = HeroHand.Escalera;
                         else if (ProyectoEscalera(cartasIguales[0].Valor, cartasIguales[1].Valor, cartasIguales[2].Valor, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1))
                         {
-                            if (request.TableScrapeResult.Hand == HeroHand.Nada)
-                                request.TableScrapeResult.Hand = HeroHand.ProyectoEscalera;
+                            if (request.TableScrapeFlopResult.Hand == HeroHand.Nada)
+                                request.TableScrapeFlopResult.Hand = HeroHand.ProyectoEscalera;
 
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
 
                         if (cartasMismoPalo.Count == 1)
@@ -146,9 +167,9 @@ namespace OpenScrape.App.Aplication
                             var suitCartasMismoPalo = cartasMismoPalo.First().Valor;
 
                             if (request.TableScrapeResult.U0CardSuit0 == suitCartasMismoPalo && request.TableScrapeResult.U0CardSuit1 == suitCartasMismoPalo)
-                                request.TableScrapeResult.Hand = HeroHand.Color;
+                                request.TableScrapeFlopResult.Hand = HeroHand.Color;
 
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
                         else if (cartasMismoPalo.Count == 2)
                         {
@@ -156,11 +177,11 @@ namespace OpenScrape.App.Aplication
 
                             if (request.TableScrapeResult.U0CardSuit0 == suitCartasMismoPalo && request.TableScrapeResult.U0CardSuit1 == suitCartasMismoPalo)
                             {
-                                if (request.TableScrapeResult.Hand == HeroHand.Nada || request.TableScrapeResult.Hand == HeroHand.ProyectoEscalera)
-                                    request.TableScrapeResult.Hand = HeroHand.ProyectoColor;
+                                if (request.TableScrapeFlopResult.Hand == HeroHand.Nada || request.TableScrapeFlopResult.Hand == HeroHand.ProyectoEscalera)
+                                    request.TableScrapeFlopResult.Hand = HeroHand.ProyectoColor;
                             }
 
-                            request.TableScrapeResult.FlopIsCoordinate = true;
+                            request.TableScrapeFlopResult.FlopIsCoordinate = true;
                         }
                     }
 
@@ -169,7 +190,11 @@ namespace OpenScrape.App.Aplication
                     break;
             }
 
-            return new SetFlopForceBoardUseCaseResponse { TableScrapeResult = request.TableScrapeResult };
+            return new SetFlopForceBoardUseCaseResponse 
+                { 
+                    TableScrapeResult = request.TableScrapeResult, 
+                    TableScrapeFlopResult = request.TableScrapeFlopResult 
+                };
         }
 
         private bool ProyectoEscalera(int card1, int card2, int card3, int card4, int card5)

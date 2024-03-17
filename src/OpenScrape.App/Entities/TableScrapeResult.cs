@@ -1,4 +1,5 @@
 ﻿using OpenScrape.App.Enums;
+using System.Security.Policy;
 
 namespace OpenScrape.App.Entities
 {
@@ -12,12 +13,6 @@ namespace OpenScrape.App.Entities
         public int U0CardSuit0 { get; set; } = 0;
         public int U0CardSuit1 { get; set; } = 0;
         public bool U0InPosition {  get; set; } = false;
-        public bool HighCardInFlop { get; set; }
-        public bool FlopIsCoordinate { get; set; } = false;
-        public bool TurnAndFlopIsCoordinate { get; set; } = false;
-        public bool RiverAndTurnAndFlopIsCoordinate { get; set; } = false;
-        public bool HavePairOnHand { get; set; }
-        public HeroHand Hand { get; set; }
         public decimal U0Bet {  get; set; }
         public HeroPosition P0Position { get; set; }
         public HeroAction HeroAction { get; set; }
@@ -26,6 +21,23 @@ namespace OpenScrape.App.Entities
      
     }
     
+    public class TableScrapeFlopResult
+    {
+        public bool HighCardInFlop { get; set; }
+        public bool FlushDrawInFlop { get; set; }
+        public bool StraightDrawInFlop { get; set; }
+        public bool FlopIsCoordinate { get; set; }
+        public bool TurnAndFlopIsCoordinate { get; set; }
+        public bool RiverAndTurnAndFlopIsCoordinate { get; set; }
+        public bool HavePairOnHand { get; set; }
+        public bool HaveTopPairOnFlop { get; set; }
+        public bool HaveOverPairOnFlop { get; set; }
+        public bool HaveTwoPairOnFlop { get; set; }
+        public bool HaveBackdoorFlushDraw { get; set; }
+        public bool HaveHighCardsOnHand { get; set; }
+        public HeroHand Hand { get; set; }
+    }
+
     public class PlayerData
     {
         public string? Name { get; set; }
