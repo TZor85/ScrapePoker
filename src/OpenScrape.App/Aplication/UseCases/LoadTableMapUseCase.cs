@@ -1,11 +1,5 @@
 ﻿using OpenScrape.App.Helpers;
 using OpenScrape.App.Models;
-using OpenScrape.App.Properties;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
