@@ -56,9 +56,11 @@ namespace OpenScrape.App
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
         private List<int> _colorPlaying = new List<int> { 32, 33, 34 };
+        private List<int> _colorPlayingRed = new List<int> { 36 };
+        private List<int> _colorSitOut = new List<int> { 68, 78, 80 };
         private Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>> _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
 
-        private int _umbral = 130;
+        private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
         private IntPtr _handle = new IntPtr();
         User32.RECT _locWindowRect = new User32.RECT();
@@ -324,31 +326,31 @@ namespace OpenScrape.App
                     switch (region.Name)
                     {
                         case "p1playing":
-                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                            if (_colorPlaying.Contains(color.B) && !_colorPlayingRed.Contains(color.R))
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P1", Active = true, Empty = false, SitOut = false, ValuePosition = 1 });
                             else
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P1", Active = false, Empty = false, SitOut = false, ValuePosition = 1 });
                             break;
                         case "p2playing":
-                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                            if (_colorPlaying.Contains(color.B) && !_colorPlayingRed.Contains(color.R))
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P2", Active = true, Empty = false, SitOut = false, ValuePosition = 2 });
                             else
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P2", Active = false, Empty = false, SitOut = false, ValuePosition = 2 });
                             break;
                         case "p3playing":
-                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                            if (_colorPlaying.Contains(color.B) && !_colorPlayingRed.Contains(color.R))
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P3", Active = true, Empty = false, SitOut = false, ValuePosition = 3 });
                             else
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P3", Active = false, Empty = false, SitOut = false, ValuePosition = 3 });
                             break;
                         case "p4playing":
-                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                            if (_colorPlaying.Contains(color.B) && !_colorPlayingRed.Contains(color.R))
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P4", Active = true, Empty = false, SitOut = false, ValuePosition = 4 });
                             else
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P4", Active = false, Empty = false, SitOut = false, ValuePosition = 4 });
                             break;
                         case "p5playing":
-                            if (_colorPlaying.Contains(color.B) && color.R != 36)
+                            if (_colorPlaying.Contains(color.B) && !_colorPlayingRed.Contains(color.R))
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P5", Active = true, Empty = false, SitOut = false, ValuePosition = 5 });
                             else
                                 _scrapeResult.DataPlayer.Add(new PlayerData { Name = "P5", Active = false, Empty = false, SitOut = false, ValuePosition = 5 });
@@ -513,7 +515,7 @@ namespace OpenScrape.App
                     case "p1sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P1").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active &&
-                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 65).Contains("SIT"))
+                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, _colorSitOut[0]).Contains("SIT"))
                         {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P1").SitOut = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P1").Empty = true;
@@ -522,7 +524,7 @@ namespace OpenScrape.App
                     case "p2sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P2").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P2").Active &&
-                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 65).Contains("SIT"))
+                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, _colorSitOut[0]).Contains("SIT"))
                         {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").SitOut = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P2").Empty = true;
@@ -531,7 +533,7 @@ namespace OpenScrape.App
                     case "p3sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P3").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P3").Active &&
-                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 80).Contains("SIT"))
+                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, _colorSitOut[2]).Contains("SIT"))
                         {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").SitOut = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P3").Empty = true;
@@ -540,7 +542,7 @@ namespace OpenScrape.App
                     case "p4sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P4").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P4").Active &&
-                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 78).Contains("SIT"))
+                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, _colorSitOut[1]).Contains("SIT"))
                         {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").SitOut = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P4").Empty = true;
@@ -549,7 +551,7 @@ namespace OpenScrape.App
                     case "p5sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P5").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P5").Active &&
-                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, 78).Contains("SIT"))
+                            GetTextSitOutByPosition(item.X, item.Y, item.Width, item.Height, _colorSitOut[1]).Contains("SIT"))
                         {
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").SitOut = true;
                             _scrapeResult.DataPlayer.First(n => n.Name == "P5").Empty = true;
@@ -562,7 +564,7 @@ namespace OpenScrape.App
 
             SetVillainPosition(_scrapeResult.P0Position);
 
-            var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _umbral));
+            var img = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _pictureUmbralBet));
 
             foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash && x.Name.Contains("bet")))
             {

@@ -51,7 +51,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = HeroAction.VsSqueeze;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.VsSqueeze : HeroAction.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -62,7 +62,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = HeroAction.FourBet;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.FourBet : HeroAction.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -73,7 +73,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = HeroAction.OpenRaiseVs3Bet;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaiseVs3Bet : HeroAction.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -84,7 +84,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = HeroAction.OpenRaiseVs3BetAndCall;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaiseVs3BetAndCall : HeroAction.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -98,7 +98,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = HeroAction.Squeeze;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.Squeeze : HeroAction.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -111,7 +111,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = HeroAction.OpenRaise;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaise : HeroAction.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -123,7 +123,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = HeroAction.Cold4Bet;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.Cold4Bet : HeroAction.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -135,7 +135,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = HeroAction.RaiseOverLimper;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.RaiseOverLimper : HeroAction.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -149,7 +149,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = HeroAction.ThreeBet;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.ThreeBet : HeroAction.None;
                         request.ResponseAction.IsSecondAction = true;
                     };
                 }

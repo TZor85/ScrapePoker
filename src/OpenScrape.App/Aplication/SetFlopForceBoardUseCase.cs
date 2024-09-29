@@ -238,14 +238,37 @@ namespace OpenScrape.App.Aplication
 
         private bool ProyectoEscalera(int card1, int card2, int card3, int card4, int card5)
         {
-            // Implementación del método ProyectoEscalera
-            // ...
+            var listaForceCards = new List<int> { card1, card2, card3, card4, card5 };
+
+            listaForceCards.Sort();
+
+            int[] diferencias = new int[listaForceCards.ToArray().Length - 1];
+            for (int i = 0; i < diferencias.Length; i++)
+            {
+                diferencias[i] = listaForceCards[i + 1] - listaForceCards[i];
+            }
+
+            if (!diferencias.Any(d => d > 2))
+                return true;
+
+            return false;
         }
 
-        private bool ExisteEscalera(int card1, int card2, int card3, int card4, int card5)
+        private bool ExisteEscalera(List<int> cards)
         {
-            // Implementación del método ExisteEscalera
-            // ...
+            cards.Sort();
+
+            int[] diferencias = new int[cards.ToArray().Length - 1];
+            for (int i = 0; i < diferencias.Length; i++)
+            {
+                diferencias[i] = cards[i + 1] - cards[i];
+            }
+
+            // Verificar si todas las diferencias son iguales a 1 (correlativos)
+            if (diferencias.All(d => d == 1))
+                return true;
+
+            return false;
         }
     }
 }
