@@ -15,7 +15,7 @@ namespace OpenScrape.App.Entities
         public bool U0InPosition {  get; set; } = false;
         public decimal U0Bet {  get; set; }
         public HeroPosition P0Position { get; set; }
-        public HeroAction HeroAction { get; set; }
+        public HandSituation HandSituation { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
         public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
      
@@ -27,8 +27,6 @@ namespace OpenScrape.App.Entities
         public bool FlushDrawInFlop { get; set; }
         public bool StraightDrawInFlop { get; set; }
         public bool FlopIsCoordinate { get; set; }
-        public bool TurnAndFlopIsCoordinate { get; set; }
-        public bool RiverAndTurnAndFlopIsCoordinate { get; set; }
         public bool HavePairOnHand { get; set; }
         public bool HaveTopPairOnFlop { get; set; }
         public bool HaveOverPairOnFlop { get; set; }
@@ -55,7 +53,7 @@ namespace OpenScrape.App.Entities
     public class ResponseAction
     {
         public string? Action { get; set; }
-        public HeroAction HeroAction { get; set; }
+        public HandSituation HeroAction { get; set; }
         public bool IsSecondAction { get; set; }
     }
 

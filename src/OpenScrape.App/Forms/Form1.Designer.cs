@@ -1,4 +1,7 @@
-﻿namespace OpenScrape.App
+﻿using Emgu.CV.Aruco;
+using OpenScrape.App.Models;
+
+namespace OpenScrape.App
 {
     partial class Form1
     {
@@ -32,21 +35,27 @@
             TreeNode treeNode2 = new TreeNode("Board");
             TreeNode treeNode3 = new TreeNode("Images");
             TreeNode treeNode4 = new TreeNode("Fonts");
-            twRegions = new TreeView();
-            btnNew = new Button();
-            btnPlusWidth = new Button();
-            btnMinusWidth = new Button();
-            btnPlusHeight = new Button();
-            btnMinusHeight = new Button();
-            cbSpeed = new ComboBox();
-            btnSaveMap = new Button();
-            btnLoadMap = new Button();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            tbControl = new TabControl();
+            tabPage1 = new TabPage();
+            tbResumen = new TextBox();
+            ckBoard = new CheckBox();
+            label8 = new Label();
+            tbR = new TextBox();
+            ckColor = new CheckBox();
             groupBox1 = new GroupBox();
             lbXY = new Label();
             tbHeight = new TextBox();
             label2 = new Label();
             label1 = new Label();
             tbWidth = new TextBox();
+            btnPlusWidth = new Button();
+            btnMinusWidth = new Button();
+            btnPlusHeight = new Button();
+            btnMinusHeight = new Button();
+            cbSpeed = new ComboBox();
+            btnCreateFont = new Button();
+            btnCreateImage = new Button();
             groupBox2 = new GroupBox();
             label7 = new Label();
             label3 = new Label();
@@ -60,66 +69,202 @@
             btnDown = new Button();
             btnLeft = new Button();
             btnRigth = new Button();
-            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
-            btnCapture = new Button();
-            btnDelete = new Button();
-            btnCreateImage = new Button();
+            btnLoadMap = new Button();
+            btnSaveMap = new Button();
+            cbMark = new CheckBox();
             btnWindow = new Button();
-            ckColor = new CheckBox();
-            tbR = new TextBox();
-            label8 = new Label();
-            cbTest = new CheckBox();
-            ckBoard = new CheckBox();
-            btnCreateFont = new Button();
-            lbAction = new Label();
+            btnCapture4Bet = new Button();
+            btnCapture3bet = new Button();
             pbCard1 = new PictureBox();
             pbCard0 = new PictureBox();
-            tbResumen = new TextBox();
-            btnCapture3bet = new Button();
-            btnCapture4Bet = new Button();
-            cbMark = new CheckBox();
+            lbAction = new Label();
+            btnCapture = new Button();
             gbTest = new GroupBox();
             cbRiver = new CheckBox();
             cbTurn = new CheckBox();
             cbFlop = new CheckBox();
+            cbTest = new CheckBox();
+            btnDelete = new Button();
+            btnNew = new Button();
+            twRegions = new TreeView();
+            tabPage2 = new TabPage();
+            tbResume = new TextBox();
+            pictureBox1 = new PictureBox();
+            label4 = new Label();
+            tbControl.SuspendLayout();
+            tabPage1.SuspendLayout();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
             gbTest.SuspendLayout();
+            tabPage2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
-            // twRegions
+            // backgroundWorker1
             // 
-            twRegions.Location = new Point(12, 48);
-            twRegions.Name = "twRegions";
-            treeNode1.Name = "Nodo0";
-            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode2.Text = "Board";
-            treeNode3.Name = "Nodo2";
-            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode3.Text = "Images";
-            treeNode4.Name = "Nodo3";
-            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode4.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
-            twRegions.Size = new Size(159, 342);
-            twRegions.TabIndex = 0;
-            twRegions.AfterSelect += twRegions_AfterSelect;
-            twRegions.DoubleClick += twRegions_DoubleClick;
+            backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             // 
-            // btnNew
+            // tbControl
             // 
-            btnNew.Location = new Point(12, 19);
-            btnNew.Name = "btnNew";
-            btnNew.Size = new Size(48, 23);
-            btnNew.TabIndex = 1;
-            btnNew.Text = "New";
-            btnNew.UseVisualStyleBackColor = true;
-            btnNew.Click += btnNew_Click;
+            tbControl.Controls.Add(tabPage1);
+            tbControl.Controls.Add(tabPage2);
+            tbControl.Location = new Point(12, 12);
+            tbControl.Name = "tbControl";
+            tbControl.SelectedIndex = 0;
+            tbControl.Size = new Size(616, 621);
+            tbControl.TabIndex = 65;
+            // 
+            // tabPage1
+            // 
+            tabPage1.Controls.Add(tbResumen);
+            tabPage1.Controls.Add(ckBoard);
+            tabPage1.Controls.Add(label8);
+            tabPage1.Controls.Add(tbR);
+            tabPage1.Controls.Add(ckColor);
+            tabPage1.Controls.Add(groupBox1);
+            tabPage1.Controls.Add(cbSpeed);
+            tabPage1.Controls.Add(btnCreateFont);
+            tabPage1.Controls.Add(btnCreateImage);
+            tabPage1.Controls.Add(groupBox2);
+            tabPage1.Controls.Add(btnLoadMap);
+            tabPage1.Controls.Add(btnSaveMap);
+            tabPage1.Controls.Add(cbMark);
+            tabPage1.Controls.Add(btnWindow);
+            tabPage1.Controls.Add(btnCapture4Bet);
+            tabPage1.Controls.Add(btnCapture3bet);
+            tabPage1.Controls.Add(pbCard1);
+            tabPage1.Controls.Add(pbCard0);
+            tabPage1.Controls.Add(lbAction);
+            tabPage1.Controls.Add(btnCapture);
+            tabPage1.Controls.Add(gbTest);
+            tabPage1.Controls.Add(cbTest);
+            tabPage1.Controls.Add(btnDelete);
+            tabPage1.Controls.Add(btnNew);
+            tabPage1.Controls.Add(twRegions);
+            tabPage1.Location = new Point(4, 24);
+            tabPage1.Name = "tabPage1";
+            tabPage1.Padding = new Padding(3);
+            tabPage1.Size = new Size(608, 593);
+            tabPage1.TabIndex = 0;
+            tabPage1.Text = "Configurar";
+            tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // tbResumen
+            // 
+            tbResumen.Location = new Point(186, 147);
+            tbResumen.Multiline = true;
+            tbResumen.Name = "tbResumen";
+            tbResumen.ReadOnly = true;
+            tbResumen.Size = new Size(251, 242);
+            tbResumen.TabIndex = 85;
+            // 
+            // ckBoard
+            // 
+            ckBoard.AutoSize = true;
+            ckBoard.Enabled = false;
+            ckBoard.Location = new Point(395, 53);
+            ckBoard.Name = "ckBoard";
+            ckBoard.Size = new Size(57, 19);
+            ckBoard.TabIndex = 84;
+            ckBoard.Text = "Board";
+            ckBoard.UseVisualStyleBackColor = true;
+            ckBoard.CheckedChanged += ckBoard_CheckedChanged;
+            // 
+            // label8
+            // 
+            label8.AutoSize = true;
+            label8.Location = new Point(186, 115);
+            label8.Name = "label8";
+            label8.Size = new Size(36, 15);
+            label8.TabIndex = 83;
+            label8.Text = "Color";
+            // 
+            // tbR
+            // 
+            tbR.Enabled = false;
+            tbR.Location = new Point(231, 112);
+            tbR.Name = "tbR";
+            tbR.Size = new Size(71, 23);
+            tbR.TabIndex = 82;
+            // 
+            // ckColor
+            // 
+            ckColor.AutoSize = true;
+            ckColor.Enabled = false;
+            ckColor.Location = new Point(395, 78);
+            ckColor.Name = "ckColor";
+            ckColor.Size = new Size(55, 19);
+            ckColor.TabIndex = 81;
+            ckColor.Text = "Color";
+            ckColor.UseVisualStyleBackColor = true;
+            ckColor.CheckedChanged += ckColor_CheckedChanged;
+            // 
+            // groupBox1
+            // 
+            groupBox1.Controls.Add(lbXY);
+            groupBox1.Controls.Add(tbHeight);
+            groupBox1.Controls.Add(label2);
+            groupBox1.Controls.Add(label1);
+            groupBox1.Controls.Add(tbWidth);
+            groupBox1.Controls.Add(btnPlusWidth);
+            groupBox1.Controls.Add(btnMinusWidth);
+            groupBox1.Controls.Add(btnPlusHeight);
+            groupBox1.Controls.Add(btnMinusHeight);
+            groupBox1.Location = new Point(186, 8);
+            groupBox1.Name = "groupBox1";
+            groupBox1.Size = new Size(203, 100);
+            groupBox1.TabIndex = 80;
+            groupBox1.TabStop = false;
+            groupBox1.Text = "Rectangle";
+            // 
+            // lbXY
+            // 
+            lbXY.AutoSize = true;
+            lbXY.Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point);
+            lbXY.Location = new Point(130, 77);
+            lbXY.Name = "lbXY";
+            lbXY.Size = new Size(0, 13);
+            lbXY.TabIndex = 8;
+            // 
+            // tbHeight
+            // 
+            tbHeight.Location = new Point(73, 42);
+            tbHeight.Name = "tbHeight";
+            tbHeight.Size = new Size(49, 23);
+            tbHeight.TabIndex = 7;
+            tbHeight.Text = "0";
+            tbHeight.TextAlign = HorizontalAlignment.Right;
+            tbHeight.Leave += tbHeight_Leave;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(73, 24);
+            label2.Name = "label2";
+            label2.Size = new Size(43, 15);
+            label2.TabIndex = 6;
+            label2.Text = "Height";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(10, 24);
+            label1.Name = "label1";
+            label1.Size = new Size(39, 15);
+            label1.TabIndex = 5;
+            label1.Text = "Width";
+            // 
+            // tbWidth
+            // 
+            tbWidth.Location = new Point(10, 42);
+            tbWidth.Name = "tbWidth";
+            tbWidth.Size = new Size(49, 23);
+            tbWidth.TabIndex = 0;
+            tbWidth.Text = "0";
+            tbWidth.TextAlign = HorizontalAlignment.Right;
+            tbWidth.Leave += tbWidth_Leave;
             // 
             // btnPlusWidth
             // 
@@ -175,96 +320,32 @@
             // 
             cbSpeed.FormattingEnabled = true;
             cbSpeed.Items.AddRange(new object[] { "1", "2", "5", "10", "20", "30", "40", "50" });
-            cbSpeed.Location = new Point(386, 18);
+            cbSpeed.Location = new Point(395, 17);
             cbSpeed.Name = "cbSpeed";
             cbSpeed.Size = new Size(42, 23);
-            cbSpeed.TabIndex = 12;
+            cbSpeed.TabIndex = 79;
             cbSpeed.SelectedIndexChanged += cbSpeed_SelectedIndexChanged;
             // 
-            // btnSaveMap
+            // btnCreateFont
             // 
-            btnSaveMap.Location = new Point(516, 367);
-            btnSaveMap.Name = "btnSaveMap";
-            btnSaveMap.Size = new Size(75, 23);
-            btnSaveMap.TabIndex = 13;
-            btnSaveMap.Text = "Save Map";
-            btnSaveMap.UseVisualStyleBackColor = true;
-            btnSaveMap.Click += btnSaveMap_Click;
+            btnCreateFont.Location = new Point(473, 186);
+            btnCreateFont.Name = "btnCreateFont";
+            btnCreateFont.Size = new Size(91, 23);
+            btnCreateFont.TabIndex = 78;
+            btnCreateFont.Text = "Create Font";
+            btnCreateFont.UseVisualStyleBackColor = true;
+            btnCreateFont.Click += btnCreateFont_Click;
             // 
-            // btnLoadMap
+            // btnCreateImage
             // 
-            btnLoadMap.Location = new Point(434, 367);
-            btnLoadMap.Name = "btnLoadMap";
-            btnLoadMap.Size = new Size(75, 23);
-            btnLoadMap.TabIndex = 14;
-            btnLoadMap.Text = "Load Map";
-            btnLoadMap.UseVisualStyleBackColor = true;
-            btnLoadMap.Click += btnLoadMap_Click;
-            // 
-            // groupBox1
-            // 
-            groupBox1.Controls.Add(lbXY);
-            groupBox1.Controls.Add(tbHeight);
-            groupBox1.Controls.Add(label2);
-            groupBox1.Controls.Add(label1);
-            groupBox1.Controls.Add(tbWidth);
-            groupBox1.Controls.Add(btnPlusWidth);
-            groupBox1.Controls.Add(btnMinusWidth);
-            groupBox1.Controls.Add(btnPlusHeight);
-            groupBox1.Controls.Add(btnMinusHeight);
-            groupBox1.Location = new Point(177, 9);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(203, 100);
-            groupBox1.TabIndex = 15;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "Rectangle";
-            // 
-            // lbXY
-            // 
-            lbXY.AutoSize = true;
-            lbXY.Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point);
-            lbXY.Location = new Point(130, 77);
-            lbXY.Name = "lbXY";
-            lbXY.Size = new Size(0, 13);
-            lbXY.TabIndex = 8;
-            // 
-            // tbHeight
-            // 
-            tbHeight.Location = new Point(73, 42);
-            tbHeight.Name = "tbHeight";
-            tbHeight.Size = new Size(49, 23);
-            tbHeight.TabIndex = 7;
-            tbHeight.Text = "0";
-            tbHeight.TextAlign = HorizontalAlignment.Right;
-            tbHeight.Leave += tbHeight_Leave;
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(73, 24);
-            label2.Name = "label2";
-            label2.Size = new Size(43, 15);
-            label2.TabIndex = 6;
-            label2.Text = "Height";
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(10, 24);
-            label1.Name = "label1";
-            label1.Size = new Size(39, 15);
-            label1.TabIndex = 5;
-            label1.Text = "Width";
-            // 
-            // tbWidth
-            // 
-            tbWidth.Location = new Point(10, 42);
-            tbWidth.Name = "tbWidth";
-            tbWidth.Size = new Size(49, 23);
-            tbWidth.TabIndex = 0;
-            tbWidth.Text = "0";
-            tbWidth.TextAlign = HorizontalAlignment.Right;
-            tbWidth.Leave += tbWidth_Leave;
+            btnCreateImage.Enabled = false;
+            btnCreateImage.Location = new Point(473, 157);
+            btnCreateImage.Name = "btnCreateImage";
+            btnCreateImage.Size = new Size(91, 23);
+            btnCreateImage.TabIndex = 77;
+            btnCreateImage.Text = "Create Image";
+            btnCreateImage.UseVisualStyleBackColor = true;
+            btnCreateImage.Click += btnCreateImage_Click;
             // 
             // groupBox2
             // 
@@ -280,10 +361,10 @@
             groupBox2.Controls.Add(btnDown);
             groupBox2.Controls.Add(btnLeft);
             groupBox2.Controls.Add(btnRigth);
-            groupBox2.Location = new Point(464, 9);
+            groupBox2.Location = new Point(473, 6);
             groupBox2.Name = "groupBox2";
             groupBox2.Size = new Size(107, 143);
-            groupBox2.TabIndex = 16;
+            groupBox2.TabIndex = 76;
             groupBox2.TabStop = false;
             groupBox2.Text = "Nudge";
             // 
@@ -427,175 +508,99 @@
             btnRigth.UseVisualStyleBackColor = true;
             btnRigth.Click += btnRigth_Click;
             // 
-            // backgroundWorker1
+            // btnLoadMap
             // 
-            backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
+            btnLoadMap.Location = new Point(443, 364);
+            btnLoadMap.Name = "btnLoadMap";
+            btnLoadMap.Size = new Size(75, 23);
+            btnLoadMap.TabIndex = 75;
+            btnLoadMap.Text = "Load Map";
+            btnLoadMap.UseVisualStyleBackColor = true;
+            btnLoadMap.Click += btnLoadMap_Click;
             // 
-            // btnCapture
+            // btnSaveMap
             // 
-            btnCapture.Location = new Point(12, 513);
-            btnCapture.Name = "btnCapture";
-            btnCapture.Size = new Size(80, 60);
-            btnCapture.TabIndex = 20;
-            btnCapture.Text = "Capture";
-            btnCapture.UseVisualStyleBackColor = true;
-            btnCapture.Click += btnCapture_Click;
+            btnSaveMap.Location = new Point(525, 364);
+            btnSaveMap.Name = "btnSaveMap";
+            btnSaveMap.Size = new Size(75, 23);
+            btnSaveMap.TabIndex = 74;
+            btnSaveMap.Text = "Save Map";
+            btnSaveMap.UseVisualStyleBackColor = true;
+            btnSaveMap.Click += btnSaveMap_Click;
             // 
-            // btnDelete
+            // cbMark
             // 
-            btnDelete.Location = new Point(66, 19);
-            btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(49, 23);
-            btnDelete.TabIndex = 21;
-            btnDelete.Text = "Delete";
-            btnDelete.UseVisualStyleBackColor = true;
-            btnDelete.Click += btnDelete_Click;
-            // 
-            // btnCreateImage
-            // 
-            btnCreateImage.Enabled = false;
-            btnCreateImage.Location = new Point(464, 160);
-            btnCreateImage.Name = "btnCreateImage";
-            btnCreateImage.Size = new Size(91, 23);
-            btnCreateImage.TabIndex = 22;
-            btnCreateImage.Text = "Create Image";
-            btnCreateImage.UseVisualStyleBackColor = true;
-            btnCreateImage.Click += btnCreateImage_Click;
+            cbMark.AutoSize = true;
+            cbMark.Location = new Point(384, 548);
+            cbMark.Name = "cbMark";
+            cbMark.Size = new Size(97, 19);
+            cbMark.TabIndex = 73;
+            cbMark.Text = "Marcar Mano";
+            cbMark.UseVisualStyleBackColor = true;
             // 
             // btnWindow
             // 
-            btnWindow.Location = new Point(489, 507);
+            btnWindow.Location = new Point(500, 501);
             btnWindow.Name = "btnWindow";
             btnWindow.Size = new Size(102, 66);
-            btnWindow.TabIndex = 23;
+            btnWindow.TabIndex = 72;
             btnWindow.Text = "Window";
             btnWindow.UseVisualStyleBackColor = true;
             btnWindow.Click += btnWindow_Click;
             // 
-            // ckColor
+            // btnCapture4Bet
             // 
-            ckColor.AutoSize = true;
-            ckColor.Enabled = false;
-            ckColor.Location = new Point(386, 79);
-            ckColor.Name = "ckColor";
-            ckColor.Size = new Size(55, 19);
-            ckColor.TabIndex = 29;
-            ckColor.Text = "Color";
-            ckColor.UseVisualStyleBackColor = true;
-            ckColor.CheckedChanged += ckColor_CheckedChanged;
+            btnCapture4Bet.Location = new Point(183, 512);
+            btnCapture4Bet.Name = "btnCapture4Bet";
+            btnCapture4Bet.Size = new Size(80, 60);
+            btnCapture4Bet.TabIndex = 71;
+            btnCapture4Bet.Text = "vs 4Bet";
+            btnCapture4Bet.UseVisualStyleBackColor = true;
             // 
-            // tbR
+            // btnCapture3bet
             // 
-            tbR.Enabled = false;
-            tbR.Location = new Point(222, 113);
-            tbR.Name = "tbR";
-            tbR.Size = new Size(71, 23);
-            tbR.TabIndex = 32;
+            btnCapture3bet.Location = new Point(97, 512);
+            btnCapture3bet.Name = "btnCapture3bet";
+            btnCapture3bet.Size = new Size(80, 60);
+            btnCapture3bet.TabIndex = 70;
+            btnCapture3bet.Text = "vs 3Bet";
+            btnCapture3bet.UseVisualStyleBackColor = true;
             // 
-            // label8
+            // pbCard1
             // 
-            label8.AutoSize = true;
-            label8.Location = new Point(177, 116);
-            label8.Name = "label8";
-            label8.Size = new Size(36, 15);
-            label8.TabIndex = 39;
-            label8.Text = "Color";
+            pbCard1.Location = new Point(307, 399);
+            pbCard1.Name = "pbCard1";
+            pbCard1.Size = new Size(20, 35);
+            pbCard1.TabIndex = 69;
+            pbCard1.TabStop = false;
             // 
-            // cbTest
+            // pbCard0
             // 
-            cbTest.AutoSize = true;
-            cbTest.Location = new Point(125, 23);
-            cbTest.Name = "cbTest";
-            cbTest.Size = new Size(46, 19);
-            cbTest.TabIndex = 44;
-            cbTest.Text = "Test";
-            cbTest.UseVisualStyleBackColor = true;
-            cbTest.CheckedChanged += cbTest_CheckedChanged;
-            // 
-            // ckBoard
-            // 
-            ckBoard.AutoSize = true;
-            ckBoard.Enabled = false;
-            ckBoard.Location = new Point(386, 54);
-            ckBoard.Name = "ckBoard";
-            ckBoard.Size = new Size(57, 19);
-            ckBoard.TabIndex = 45;
-            ckBoard.Text = "Board";
-            ckBoard.UseVisualStyleBackColor = true;
-            ckBoard.CheckedChanged += ckBoard_CheckedChanged;
-            // 
-            // btnCreateFont
-            // 
-            btnCreateFont.Location = new Point(464, 189);
-            btnCreateFont.Name = "btnCreateFont";
-            btnCreateFont.Size = new Size(91, 23);
-            btnCreateFont.TabIndex = 47;
-            btnCreateFont.Text = "Create Font";
-            btnCreateFont.UseVisualStyleBackColor = true;
-            btnCreateFont.Click += btnCreateFont_Click;
+            pbCard0.Location = new Point(276, 399);
+            pbCard0.Name = "pbCard0";
+            pbCard0.Size = new Size(20, 35);
+            pbCard0.TabIndex = 68;
+            pbCard0.TabStop = false;
             // 
             // lbAction
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
-            lbAction.Location = new Point(242, 460);
+            lbAction.Location = new Point(241, 459);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(57, 21);
-            lbAction.TabIndex = 55;
+            lbAction.TabIndex = 67;
             lbAction.Text = "label9";
             // 
-            // pbCard1
+            // btnCapture
             // 
-            pbCard1.Location = new Point(308, 400);
-            pbCard1.Name = "pbCard1";
-            pbCard1.Size = new Size(20, 35);
-            pbCard1.TabIndex = 57;
-            pbCard1.TabStop = false;
-            // 
-            // pbCard0
-            // 
-            pbCard0.Location = new Point(277, 400);
-            pbCard0.Name = "pbCard0";
-            pbCard0.Size = new Size(20, 35);
-            pbCard0.TabIndex = 56;
-            pbCard0.TabStop = false;
-            // 
-            // tbResumen
-            // 
-            tbResumen.Location = new Point(177, 148);
-            tbResumen.Multiline = true;
-            tbResumen.Name = "tbResumen";
-            tbResumen.ReadOnly = true;
-            tbResumen.Size = new Size(251, 242);
-            tbResumen.TabIndex = 60;
-            // 
-            // btnCapture3bet
-            // 
-            btnCapture3bet.Location = new Point(98, 513);
-            btnCapture3bet.Name = "btnCapture3bet";
-            btnCapture3bet.Size = new Size(80, 60);
-            btnCapture3bet.TabIndex = 61;
-            btnCapture3bet.Text = "vs 3Bet";
-            btnCapture3bet.UseVisualStyleBackColor = true;
-            // 
-            // btnCapture4Bet
-            // 
-            btnCapture4Bet.Location = new Point(184, 513);
-            btnCapture4Bet.Name = "btnCapture4Bet";
-            btnCapture4Bet.Size = new Size(80, 60);
-            btnCapture4Bet.TabIndex = 62;
-            btnCapture4Bet.Text = "vs 4Bet";
-            btnCapture4Bet.UseVisualStyleBackColor = true;
-            // 
-            // cbMark
-            // 
-            cbMark.AutoSize = true;
-            cbMark.Location = new Point(373, 554);
-            cbMark.Name = "cbMark";
-            cbMark.Size = new Size(97, 19);
-            cbMark.TabIndex = 63;
-            cbMark.Text = "Marcar Mano";
-            cbMark.UseVisualStyleBackColor = true;
+            btnCapture.Location = new Point(11, 512);
+            btnCapture.Name = "btnCapture";
+            btnCapture.Size = new Size(80, 60);
+            btnCapture.TabIndex = 66;
+            btnCapture.Text = "Capture";
+            btnCapture.UseVisualStyleBackColor = true;
+            btnCapture.Click += btnCapture_Click;
             // 
             // gbTest
             // 
@@ -603,10 +608,10 @@
             gbTest.Controls.Add(cbTurn);
             gbTest.Controls.Add(cbFlop);
             gbTest.Enabled = false;
-            gbTest.Location = new Point(12, 408);
+            gbTest.Location = new Point(6, 383);
             gbTest.Name = "gbTest";
             gbTest.Size = new Size(103, 99);
-            gbTest.TabIndex = 64;
+            gbTest.TabIndex = 65;
             gbTest.TabStop = false;
             gbTest.Text = "Test";
             // 
@@ -641,40 +646,115 @@
             cbFlop.UseVisualStyleBackColor = true;
             cbFlop.CheckedChanged += cbFlop_CheckedChanged;
             // 
+            // cbTest
+            // 
+            cbTest.AutoSize = true;
+            cbTest.Location = new Point(119, 10);
+            cbTest.Name = "cbTest";
+            cbTest.Size = new Size(46, 19);
+            cbTest.TabIndex = 48;
+            cbTest.Text = "Test";
+            cbTest.UseVisualStyleBackColor = true;
+            cbTest.CheckedChanged += cbTest_CheckedChanged;
+            // 
+            // btnDelete
+            // 
+            btnDelete.Location = new Point(60, 6);
+            btnDelete.Name = "btnDelete";
+            btnDelete.Size = new Size(49, 23);
+            btnDelete.TabIndex = 47;
+            btnDelete.Text = "Delete";
+            btnDelete.UseVisualStyleBackColor = true;
+            btnDelete.Click += btnDelete_Click;
+            // 
+            // btnNew
+            // 
+            btnNew.Location = new Point(6, 6);
+            btnNew.Name = "btnNew";
+            btnNew.Size = new Size(48, 23);
+            btnNew.TabIndex = 46;
+            btnNew.Text = "New";
+            btnNew.UseVisualStyleBackColor = true;
+            btnNew.Click += btnNew_Click;
+            // 
+            // twRegions
+            // 
+            twRegions.Location = new Point(6, 35);
+            twRegions.Name = "twRegions";
+            treeNode1.Name = "Nodo0";
+            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode1.Text = "Regions";
+            treeNode2.Name = "Nodo1";
+            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode2.Text = "Board";
+            treeNode3.Name = "Nodo2";
+            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode3.Text = "Images";
+            treeNode4.Name = "Nodo3";
+            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
+            treeNode4.Text = "Fonts";
+            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
+            twRegions.Size = new Size(159, 342);
+            twRegions.TabIndex = 45;
+            twRegions.AfterSelect += twRegions_AfterSelect;
+            twRegions.DoubleClick += twRegions_DoubleClick;
+            // 
+            // tabPage2
+            // 
+            tabPage2.Controls.Add(tbResume);
+            tabPage2.Location = new Point(4, 24);
+            tabPage2.Name = "tabPage2";
+            tabPage2.Padding = new Padding(3);
+            tabPage2.Size = new Size(608, 593);
+            tabPage2.TabIndex = 1;
+            tabPage2.Text = "Logs";
+            tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // tbResume
+            // 
+            tbResume.Dock = DockStyle.Fill;
+            tbResume.Enabled = false;
+            tbResume.Location = new Point(3, 3);
+            tbResume.Multiline = true;
+            tbResume.Name = "tbResume";
+            tbResume.ReadOnly = true;
+            tbResume.Size = new Size(602, 587);
+            tbResume.TabIndex = 1;
+            // 
+            // pictureBox1
+            // 
+            pictureBox1.Location = new Point(634, 193);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(302, 192);
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox1.TabIndex = 66;
+            pictureBox1.TabStop = false;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Font = new Font("Segoe UI", 16F, FontStyle.Regular, GraphicsUnit.Point);
+            label4.Location = new Point(648, 435);
+            label4.Name = "label4";
+            label4.Size = new Size(71, 30);
+            label4.TabIndex = 67;
+            label4.Text = "label4";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(593, 585);
-            Controls.Add(gbTest);
-            Controls.Add(cbMark);
-            Controls.Add(btnCapture4Bet);
-            Controls.Add(btnCapture3bet);
-            Controls.Add(tbResumen);
-            Controls.Add(pbCard1);
-            Controls.Add(pbCard0);
-            Controls.Add(lbAction);
-            Controls.Add(btnCreateFont);
-            Controls.Add(ckBoard);
-            Controls.Add(cbTest);
-            Controls.Add(label8);
-            Controls.Add(btnCapture);
-            Controls.Add(btnWindow);
-            Controls.Add(tbR);
-            Controls.Add(ckColor);
-            Controls.Add(btnCreateImage);
-            Controls.Add(btnDelete);
-            Controls.Add(groupBox2);
-            Controls.Add(groupBox1);
-            Controls.Add(btnLoadMap);
-            Controls.Add(btnSaveMap);
-            Controls.Add(cbSpeed);
-            Controls.Add(btnNew);
-            Controls.Add(twRegions);
+            ClientSize = new Size(630, 635);
+            Controls.Add(label4);
+            Controls.Add(pictureBox1);
+            Controls.Add(tbControl);
             Name = "Form1";
             StartPosition = FormStartPosition.Manual;
             Text = "Form1";
             Load += Form1_Load;
+            tbControl.ResumeLayout(false);
+            tabPage1.ResumeLayout(false);
+            tabPage1.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             groupBox2.ResumeLayout(false);
@@ -683,27 +763,59 @@
             ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
             gbTest.ResumeLayout(false);
             gbTest.PerformLayout();
+            tabPage2.ResumeLayout(false);
+            tabPage2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-
-        private TreeView twRegions;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private Label label6;
+        private Label label9;
+        private TabControl tbControl;
+        private TabPage tabPage1;
+        private TabPage tabPage2;
+        private CheckBox cbMark;
+        private Button btnWindow;
+        private Button btnCapture4Bet;
+        private Button btnCapture3bet;
+        private PictureBox pbCard1;
+        private PictureBox pbCard0;
+        private Label lbAction;
+        private Button btnCapture;
+        private GroupBox gbTest;
+        private CheckBox cbRiver;
+        private CheckBox cbTurn;
+        private CheckBox cbFlop;
+        private CheckBox cbTest;
+        private Button btnDelete;
         private Button btnNew;
+        private TreeView twRegions;
+        private TextBox tbResumen;
+        private CheckBox ckBoard;
+        private Label label8;
+        private TextBox tbR;
+        private CheckBox ckColor;
+        private GroupBox groupBox1;
+        private Label lbXY;
+        private TextBox tbHeight;
+        private Label label2;
+        private Label label1;
+        private TextBox tbWidth;
         private Button btnPlusWidth;
         private Button btnMinusWidth;
         private Button btnPlusHeight;
         private Button btnMinusHeight;
         private ComboBox cbSpeed;
-        private Button btnSaveMap;
-        private Button btnLoadMap;
-        private GroupBox groupBox1;
-        private TextBox tbHeight;
-        private Label label2;
-        private Label label1;
-        private TextBox tbWidth;
+        private Button btnCreateFont;
+        private Button btnCreateImage;
         private GroupBox groupBox2;
+        private Label label7;
+        private Label label3;
+        private TextBox tbY;
+        private TextBox tbX;
         private Button btnUpRight;
         private Button btnDownRight;
         private Button btnDownLeft;
@@ -712,34 +824,10 @@
         private Button btnDown;
         private Button btnLeft;
         private Button btnRigth;
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
-        private Button btnCapture;
-        private Button btnDelete;
-        private Button btnCreateImage;
-        private Button btnWindow;
-        private Label lbXY;
-        private CheckBox ckColor;
-        private TextBox tbR;
-        private Label label8;
-        private CheckBox cbTest;
-        private CheckBox ckBoard;
-        private Button btnCreateFont;
-        private Label label7;
-        private Label label3;
-        private TextBox tbY;
-        private TextBox tbX;
-        private Label lbAction;
-        private PictureBox pbCard1;
-        private PictureBox pbCard0;
-        private Label label6;
-        private Label label9;
-        private TextBox tbResumen;
-        private Button btnCapture3bet;
-        private Button btnCapture4Bet;
-        private CheckBox cbMark;
-        private GroupBox gbTest;
-        private CheckBox cbRiver;
-        private CheckBox cbTurn;
-        private CheckBox cbFlop;
+        private Button btnLoadMap;
+        private Button btnSaveMap;
+        private TextBox tbResume;
+        private PictureBox pictureBox1;
+        private Label label4;
     }
 }

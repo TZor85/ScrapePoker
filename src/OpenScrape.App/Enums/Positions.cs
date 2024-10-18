@@ -27,7 +27,7 @@
         FourBetPot
     }
 
-    public enum HeroAction
+    public enum HandSituation
     {
         None,
         OpenRaise,

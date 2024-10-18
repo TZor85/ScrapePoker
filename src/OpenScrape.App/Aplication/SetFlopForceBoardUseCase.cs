@@ -85,7 +85,7 @@ namespace OpenScrape.App.Aplication
                     var forcePairFlop = cartasIguales.First(f => f.Count == 2).Force;
                     var forceCardFlop = cartasIguales.First(f => f.Count == 1).Force;
 
-                    var hayProyectoEscalera = ProyectoEscalera(cartasIguales[0].Force, cartasIguales[1].Force, cartasIguales[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
+                    var hayProyectoEscalera = ProyectoEscalera(request.TableScrapeResult.DataBoard[0].Force, request.TableScrapeResult.DataBoard[1].Force, request.TableScrapeResult.DataBoard[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
                     if (request.TableScrapeFlopResult.HavePairOnHand)
                     {
@@ -192,7 +192,9 @@ namespace OpenScrape.App.Aplication
                             request.TableScrapeFlopResult.Hand = HeroHand.DoblePareja;
                         }
 
-                        if (ExisteEscalera(cartasIguales[0].Force, cartasIguales[1].Force, cartasIguales[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1))
+
+                        var listaEscalera = new List<int> { cartasIguales[0].Force, cartasIguales[1].Force, cartasIguales[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1 };
+                        if (ExisteEscalera(listaEscalera))
                         {
                             request.TableScrapeFlopResult.Hand = HeroHand.Escalera;
                         }
@@ -233,7 +235,7 @@ namespace OpenScrape.App.Aplication
                     break;
             }
 
-            return new SetFlopForceBoardUseCaseResponse();
+            return new SetFlopForceBoardUseCaseResponse { TableScrapeResult = request.TableScrapeResult, TableScrapeFlopResult = request.TableScrapeFlopResult };
         }
 
         private bool ProyectoEscalera(int card1, int card2, int card3, int card4, int card5)

@@ -1,0 +1,38 @@
+----------- APUESTAS ----------- 
+EarlyPosition -> 4 BBs 
+-------------------------------- 
+Jugadores en la mesa: 6 
+Jugadores SitOut/Empty: 0 
+Jugadores activos en la mano: 3 
+Posición del jugador: BigBlind 
+-------------------------------- 
+Dealer -> P4 
+Mano: Qc Jd 
+-------------------------------- 
+Hand: Nada 
+
+Flop: False 
+-------------------------------- 
+Jugada a realizar: None 
+
+
+----------- APUESTAS ----------- 
+EarlyPosition -> 1 BBs 
+MiddlePosition -> 2 BBs 
+CutOff -> 2 BBs 
+-------------------------------- 
+Jugadores en la mesa: 5 
+Jugadores SitOut/Empty: 1 
+Jugadores activos en la mano: 5 
+Posición del jugador: SmallBlind 
+-------------------------------- 
+Dealer -> P5 
+Mano: 5h Td 
+-------------------------------- 
+Hand: Nada 
+
+Flop: False 
+-------------------------------- 
+Jugada a realizar: None 
+
+

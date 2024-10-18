@@ -12,7 +12,7 @@
             "u0cardface0", "u0cardface1", "u0bet",
             "b0card1", "b0card2", "b0card3", "b0card4", "b0card5", 
             "action",
-            "fonts", "isFlop", "uAction", "uAction1", "uPlay", "tablename"
+            "fonts", "isFlop", "uAction", "uAction1", "uPlay", "tablename", "tablehand"
         };
 
     }

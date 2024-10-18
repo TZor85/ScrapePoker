@@ -45,46 +45,46 @@ namespace OpenScrape.App.Aplication
         {
             if (request.ResponseAction.IsSecondAction)
             {
-                if (request.ResponseAction.Action is not null && request.ScrapeResult.HeroAction == HeroAction.Call)
+                if (request.ResponseAction.Action is not null && request.ScrapeResult.HandSituation == HandSituation.Call)
                 {
                     var action = GetHeroCallOpenRaiseAndGetSqueezeAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.First(w => w.Bet > request.ScrapeResult.U0Bet && w.Position > request.ScrapeResult.P0Position).Position, request.ScrapeResult);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.VsSqueeze : HeroAction.None;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
 
-                if (request.ResponseAction.Action is not null && request.ScrapeResult.HeroAction == HeroAction.ThreeBet)
+                if (request.ResponseAction.Action is not null && request.ScrapeResult.HandSituation == HandSituation.ThreeBet)
                 {
                     var action = GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.First(w => w.Bet > request.ScrapeResult.U0Bet).Position, request.ScrapeResult);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.FourBet : HeroAction.None;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
 
-                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HeroAction == HeroAction.OpenRaise || request.ScrapeResult.HeroAction == HeroAction.RaiseOverLimper))
+                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HandSituation == HandSituation.OpenRaise || request.ScrapeResult.HandSituation == HandSituation.RaiseOverLimper))
                 {
                     var action = GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.First(w => w.Bet >= 1).Position, request.ScrapeResult);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaiseVs3Bet : HeroAction.None;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaiseVs3Bet : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
 
-                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HeroAction == HeroAction.OpenRaise || request.ScrapeResult.HeroAction == HeroAction.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.ScrapeResult))
+                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HandSituation == HandSituation.OpenRaise || request.ScrapeResult.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.ScrapeResult))
                 {
                     var action = GetOpenRaiseVs3BetAndCallAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaiseVs3BetAndCall : HeroAction.None;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaiseVs3BetAndCall : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -98,7 +98,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.Squeeze : HeroAction.None;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.Squeeze : HandSituation.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -111,7 +111,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.OpenRaise : HeroAction.None;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaise : HandSituation.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -123,7 +123,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.Cold4Bet : HeroAction.None;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.Cold4Bet : HandSituation.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -135,7 +135,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.RaiseOverLimper : HeroAction.None;
+                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.RaiseOverLimper : HandSituation.None;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -149,7 +149,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HeroAction.ThreeBet : HeroAction.None;
+                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.ThreeBet : HandSituation.None;
                         request.ResponseAction.IsSecondAction = true;
                     };
                 }
@@ -159,13 +159,13 @@ namespace OpenScrape.App.Aplication
             {
 
                 request.ResponseAction.Action = "None";
-                request.ResponseAction.HeroAction = HeroAction.None;
+                request.ResponseAction.HeroAction = HandSituation.None;
                 request.ResponseAction.IsSecondAction = false;
 
             }
 
             if (request.ResponseAction.Action.Contains("Call"))
-                request.ScrapeResult.HeroAction = HeroAction.Call;
+                request.ScrapeResult.HandSituation = HandSituation.Call;
 
 
             return new SetPreflopActionUseCaseResponse
