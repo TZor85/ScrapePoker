@@ -100,6 +100,13 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                                             Squeeze.GetSqueezeBTNvsOpenRaiseEPandCallMP(request.Hand),
                                     _ => "Fold"
                                 },
+                            HeroPosition.MiddlePosition =>
+                                request.CallerPosition switch
+                                {
+                                    HeroPosition.CutOff =>
+                                            Squeeze.GetSqueezeBTNvsOpenRaiseMPandCallCO(request.Hand),
+                                    _ => "Fold"
+                                },
                             _ => "Fold"
                         },
                     HeroPosition.CutOff =>

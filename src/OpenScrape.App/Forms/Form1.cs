@@ -56,6 +56,8 @@ namespace OpenScrape.App
         //Portatil
         private string _pathResume = @$"C:\Code\Poker\ScrapePoker\resources\resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt";
 
+        //private string _pathResume = @$"C:\Code\ScrapePoker\resources\resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt";
+
         private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
         private List<int> _colorEmpty = new List<int> { 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
         private List<int> _colorPlaying = new List<int> { 32, 33, 34 };
@@ -295,18 +297,18 @@ namespace OpenScrape.App
 
                 File.AppendAllText(path, tbResume.Text + Environment.NewLine);
                 tbResume.Text = string.Empty;
-            }                
 
+                
+            }
+
+            //TODO: Comprobar second hand
             ObtainCardsPlayer();
-
             SetEmptyAndActivePlayer();
-
             SetDealerPlayer();
-
             SetSitOutPlayer();
-
             SetVillainPosition(_scrapeResult.P0Position);
 
+            
             SetBetPlayer();
 
             _preflopHeroPosition = GetPreflopHeroPosition();
@@ -396,7 +398,7 @@ namespace OpenScrape.App
                             if (_scrapeResult.U0InPosition)
                             {
                                 //Manos fuertes
-                                if((_scrapeFlopResult.HaveTopPairOnFlop && _scrapeFlopResult) || _scrapeFlopResult.HaveTwoPairOnFlop )
+                                if((_scrapeFlopResult.HaveTwoPairOnFlop ))
                                 {
                                     _responseAction.Action = "Bet 3/4";
                                 }
@@ -561,7 +563,7 @@ namespace OpenScrape.App
                 _responseAction.Action = "No Preflop action";
             }
 
-            _scrapeResult.HandSituation = _responseAction.HeroAction;
+            _scrapeResult.HandSituation = _responseAction.HandSituation;
 
             if (_scrapeResult != null)
             {

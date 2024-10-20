@@ -51,7 +51,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
+                        request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -62,7 +62,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
+                        request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -73,7 +73,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaiseVs3Bet : HandSituation.None;
+                        request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3Bet;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -84,7 +84,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaiseVs3BetAndCall : HandSituation.None;
+                        request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3BetAndCall;
                         request.ResponseAction.IsSecondAction = false;
                     };
                 }
@@ -98,7 +98,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.Squeeze : HandSituation.None;
+                    request.ResponseAction.HandSituation = HandSituation.Squeeze;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -111,7 +111,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.OpenRaise : HandSituation.None;
+                    request.ResponseAction.HandSituation = HandSituation.OpenRaise;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -123,7 +123,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.Cold4Bet : HandSituation.None;
+                    request.ResponseAction.HandSituation = HandSituation.Cold4Bet;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -135,7 +135,7 @@ namespace OpenScrape.App.Aplication
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
-                    request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.RaiseOverLimper : HandSituation.None;
+                    request.ResponseAction.HandSituation = HandSituation.RaiseOverLimper;
                     request.ResponseAction.IsSecondAction = true;
                 };
             }
@@ -149,7 +149,7 @@ namespace OpenScrape.App.Aplication
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
-                        request.ResponseAction.HeroAction = action != "Fold" ? HandSituation.ThreeBet : HandSituation.None;
+                        request.ResponseAction.HandSituation = HandSituation.ThreeBet;
                         request.ResponseAction.IsSecondAction = true;
                     };
                 }
@@ -159,7 +159,7 @@ namespace OpenScrape.App.Aplication
             {
 
                 request.ResponseAction.Action = "None";
-                request.ResponseAction.HeroAction = HandSituation.None;
+                request.ResponseAction.HandSituation = HandSituation.None;
                 request.ResponseAction.IsSecondAction = false;
 
             }

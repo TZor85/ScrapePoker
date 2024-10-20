@@ -17,6 +17,8 @@ namespace OpenScrape.App.Aplication
                 .ToList();
 
             var maxCardForce = request.TableScrapeResult.DataBoard.Max(m => m.Force);
+            var middleCardForce = request.TableScrapeResult.DataBoard.OrderBy(o => o.Force).ElementAt(1).Force;
+            var bottomCardForce = request.TableScrapeResult.DataBoard.Min(m => m.Force);
 
             request.TableScrapeFlopResult.HighCardInFlop = request.TableScrapeResult.DataBoard
                 .Any(a => a.Force == 13 || a.Force == 14);
@@ -51,6 +53,16 @@ namespace OpenScrape.App.Aplication
                 if (request.TableScrapeResult.U0CardForce0 == maxCardForce || request.TableScrapeResult.U0CardForce1 == maxCardForce)
                 {
                     request.TableScrapeFlopResult.HaveTopPairOnFlop = true;
+                }
+
+                if (request.TableScrapeResult.U0CardForce0 == middleCardForce || request.TableScrapeResult.U0CardForce1 == middleCardForce)
+                {
+                    request.TableScrapeFlopResult.HaveMiddlePairOnFlop = true;
+                }
+
+                if (request.TableScrapeResult.U0CardForce0 == bottomCardForce || request.TableScrapeResult.U0CardForce1 == bottomCardForce)
+                {
+                    request.TableScrapeFlopResult.HaveBottomPairOnFlop = true;
                 }
             }
 
@@ -140,7 +152,7 @@ namespace OpenScrape.App.Aplication
                 case 3:
                     if (request.TableScrapeFlopResult.HavePairOnHand)
                     {
-                        hayProyectoEscalera = ProyectoEscalera(cartasIguales[0].Force, cartasIguales[1].Force, cartasIguales[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
+                        hayProyectoEscalera = ProyectoEscalera(request.TableScrapeResult.DataBoard[0].Force, request.TableScrapeResult.DataBoard[1].Force, request.TableScrapeResult.DataBoard[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
                         request.TableScrapeFlopResult.Hand = HeroHand.Pareja;
 
@@ -198,7 +210,7 @@ namespace OpenScrape.App.Aplication
                         {
                             request.TableScrapeFlopResult.Hand = HeroHand.Escalera;
                         }
-                        else if (ProyectoEscalera(cartasIguales[0].Force, cartasIguales[1].Force, cartasIguales[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1))
+                        else if (ProyectoEscalera(request.TableScrapeResult.DataBoard[0].Force, request.TableScrapeResult.DataBoard[1].Force, request.TableScrapeResult.DataBoard[2].Force, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1))
                         {
                             if (request.TableScrapeFlopResult.Hand == HeroHand.Nada)
                             {

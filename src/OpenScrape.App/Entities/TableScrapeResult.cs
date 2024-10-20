@@ -29,11 +29,26 @@ namespace OpenScrape.App.Entities
         public bool FlopIsCoordinate { get; set; }
         public bool HavePairOnHand { get; set; }
         public bool HaveTopPairOnFlop { get; set; }
+        public bool HaveMiddlePairOnFlop { get; set; }
+        public bool HaveBottomPairOnFlop { get; set; }
         public bool HaveOverPairOnFlop { get; set; }
         public bool HaveTwoPairOnFlop { get; set; }
         public bool HaveBackdoorFlushDraw { get; set; }
         public bool HaveHighCardsOnHand { get; set; }
         public HeroHand Hand { get; set; }
+
+        
+        public bool StrongHand()
+        {
+            return HaveTopPairOnFlop || HaveOverPairOnFlop || HaveTwoPairOnFlop || Hand >= HeroHand.DoblePareja;
+        }
+
+
+
+        public bool LowHand()
+        {
+            return HavePairOnHand || Hand == HeroHand.CartaAlta;
+        }
     }
 
     public class PlayerData
@@ -53,7 +68,7 @@ namespace OpenScrape.App.Entities
     public class ResponseAction
     {
         public string? Action { get; set; }
-        public HandSituation HeroAction { get; set; }
+        public HandSituation HandSituation { get; set; }
         public bool IsSecondAction { get; set; }
     }
 
@@ -65,4 +80,6 @@ namespace OpenScrape.App.Entities
         public BoardPosition Position { get; set; }
 
     }
+
+    
 }
