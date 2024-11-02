@@ -282,6 +282,7 @@ namespace OpenScrape.App
                 _responseAction = new ResponseAction();
                 _preflopHeroPosition = new Dictionary<HeroPosition, Dictionary<HeroPosition, decimal>>();
                 _newHand = false;
+                _isFlop = false;
 
                 _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
 
@@ -301,14 +302,16 @@ namespace OpenScrape.App
                 
             }
 
-            //TODO: Comprobar second hand
-            ObtainCardsPlayer();
-            SetEmptyAndActivePlayer();
-            SetDealerPlayer();
-            SetSitOutPlayer();
-            SetVillainPosition(_scrapeResult.P0Position);
+            if (_scrapeResult.DataPlayer.Count() == 0)
+            {
+                ObtainCardsPlayer();
+                SetEmptyAndActivePlayer();
+                SetDealerPlayer();
+                SetSitOutPlayer();
+                SetVillainPosition(_scrapeResult.P0Position);
+            }
 
-            
+            //TODO: Comprobar second hand 
             SetBetPlayer();
 
             _preflopHeroPosition = GetPreflopHeroPosition();
@@ -326,7 +329,7 @@ namespace OpenScrape.App
                 //Si existe el flop, capturar las cartas del flop
                 if (_isFlop)
                 {
-                    
+                    _isFlop = false;
                     var dataBoard = _getCardsFlopUseCase.Execute(new GetCardsFlopUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), Regions = _regions.Where(x => x.IsHash).ToList(), ImageRegions = _images }).DataBoard;
                     _scrapeResult.DataBoard = dataBoard;
                     var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult });
