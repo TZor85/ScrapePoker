@@ -28,6 +28,8 @@ namespace OpenScrape.App.Entities
         public bool StraightDrawInFlop { get; set; }
         public bool FlopIsCoordinate { get; set; }
         public bool HavePairOnHand { get; set; }
+        public bool HaveHandSuited { get; set; }
+        public bool HaveHandConnected { get; set; }
         public bool HaveTopPairOnFlop { get; set; }
         public bool HaveMiddlePairOnFlop { get; set; }
         public bool HaveBottomPairOnFlop { get; set; }
@@ -35,6 +37,10 @@ namespace OpenScrape.App.Entities
         public bool HaveTwoPairOnFlop { get; set; }
         public bool HaveBackdoorFlushDraw { get; set; }
         public bool HaveHighCardsOnHand { get; set; }
+        public bool HasAce { get; set; }
+        public bool HasKing { get; set; }
+        public int GetHighestRank { get; set; }
+        public int GetLowestRank { get; set; }
         public HeroHand Hand { get; set; }
 
         
@@ -42,8 +48,6 @@ namespace OpenScrape.App.Entities
         {
             return HaveTopPairOnFlop || HaveOverPairOnFlop || HaveTwoPairOnFlop || Hand >= HeroHand.DoblePareja;
         }
-
-
 
         public bool LowHand()
         {

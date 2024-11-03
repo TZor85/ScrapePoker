@@ -24,6 +24,12 @@ namespace OpenScrape.App.Aplication
                 .Any(a => a.Force == 13 || a.Force == 14);
 
             request.TableScrapeFlopResult.HavePairOnHand = request.TableScrapeResult.U0CardForce0 == request.TableScrapeResult.U0CardForce1;
+            request.TableScrapeFlopResult.HaveHandSuited = request.TableScrapeResult.U0CardSuit0 == request.TableScrapeResult.U0CardSuit1;
+            request.TableScrapeFlopResult.HaveHandConnected = Math.Abs(request.TableScrapeResult.U0CardForce0 - request.TableScrapeResult.U0CardForce1) == 1;
+            request.TableScrapeFlopResult.HasAce = request.TableScrapeResult.U0CardForce0 == 14 || request.TableScrapeResult.U0CardForce1 == 14;
+            request.TableScrapeFlopResult.HasKing = request.TableScrapeResult.U0CardForce0 == 13 || request.TableScrapeResult.U0CardForce1 == 13;
+            request.TableScrapeFlopResult.GetHighestRank = Math.Max(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
+            request.TableScrapeFlopResult.GetLowestRank = Math.Min(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
             request.TableScrapeFlopResult.FlushDrawInFlop = request.TableScrapeResult.DataBoard
                 .GroupBy(g => g.Suit)

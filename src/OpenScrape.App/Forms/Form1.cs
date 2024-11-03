@@ -5,6 +5,7 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Enums;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
+using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
 using System.Text;
@@ -341,6 +342,8 @@ namespace OpenScrape.App
 
                     SetIsInPosition();
 
+                    var flopAnalyzerRequest = new FlopAnalyzerHelperReqest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult };
+
                     switch (_scrapeResult.HandSituation)
                     {
                         case HandSituation.OpenRaise:
@@ -397,37 +400,19 @@ namespace OpenScrape.App
                             }
                             break;
                         case HandSituation.RaiseOverLimper:
+                            
+
                             //IP
                             if (_scrapeResult.U0InPosition)
                             {
-                                //Manos fuertes
-                                if((_scrapeFlopResult.HaveTwoPairOnFlop ))
-                                {
-                                    _responseAction.Action = "Bet 3/4";
-                                }
-                                else
-                                {
-                                    _responseAction.Action = "Check";
-                                }
-
-                                //Flop ofensivo (cartas altas)
-                                if (_scrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).Count(c => c.Force > 11) >= 2)
-                                    _responseAction.Action = "Bet 1/3";
                                 
-
 
                             }
                             //OOP
                             else
                             {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
+                                if(FlopAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                                    _responseAction.Action = "Check/Call"
                             }
                             break;
                         case HandSituation.ThreeBet:
