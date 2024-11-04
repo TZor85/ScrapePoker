@@ -69,7 +69,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
 
         #region CheckFold
 
-        public static bool IsActionToCheckfold(FlopAnalyzerHelperReqest request)
+        public static bool IsActionToCheckFold(FlopAnalyzerHelperReqest request)
         {
             if (IsHighCardsVsLowFlop(request) && IsAceWeakKickerVsDangerousBoard(request) && IsKingVsDifficultBoard(request) && IsMediumPairVsMultipleOvercards(request))
                 return true;

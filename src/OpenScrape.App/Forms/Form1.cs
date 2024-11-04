@@ -400,8 +400,6 @@ namespace OpenScrape.App
                             }
                             break;
                         case HandSituation.RaiseOverLimper:
-                            
-
                             //IP
                             if (_scrapeResult.U0InPosition)
                             {
@@ -411,8 +409,12 @@ namespace OpenScrape.App
                             //OOP
                             else
                             {
-                                if(FlopAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
-                                    _responseAction.Action = "Check/Call"
+                                if (FlopAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                                    _responseAction.Action = "Check/Call";
+                                else if (FlopAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
+                                    _responseAction.Action = "Check/Fold";
+                                else
+                                    _responseAction.Action = "Bet 1/3";
                             }
                             break;
                         case HandSituation.ThreeBet:
