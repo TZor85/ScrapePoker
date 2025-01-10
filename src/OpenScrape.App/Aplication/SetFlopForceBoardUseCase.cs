@@ -1,4 +1,5 @@
-﻿using OpenScrape.App.Enums;
+﻿using OpenScrape.App.Entities;
+using OpenScrape.App.Enums;
 
 namespace OpenScrape.App.Aplication
 {
@@ -19,6 +20,7 @@ namespace OpenScrape.App.Aplication
             var maxCardForce = request.TableScrapeResult.DataBoard.Max(m => m.Force);
             var middleCardForce = request.TableScrapeResult.DataBoard.OrderBy(o => o.Force).ElementAt(1).Force;
             var bottomCardForce = request.TableScrapeResult.DataBoard.Min(m => m.Force);
+            var maxHandCardForce = Math.Max(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
 
             request.TableScrapeFlopResult.HighCardInFlop = request.TableScrapeResult.DataBoard
                 .Any(a => a.Force == 13 || a.Force == 14);
@@ -30,6 +32,22 @@ namespace OpenScrape.App.Aplication
             request.TableScrapeFlopResult.HasKing = request.TableScrapeResult.U0CardForce0 == 13 || request.TableScrapeResult.U0CardForce1 == 13;
             request.TableScrapeFlopResult.GetHighestRank = Math.Max(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
             request.TableScrapeFlopResult.GetLowestRank = Math.Min(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
+            request.TableScrapeFlopResult.HasOverCards = Math.Max(request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1) > maxCardForce;
+            request.TableScrapeFlopResult.IsRainbow = cartasMismoPalo.Count == 3;
+
+            var ranks = request.TableScrapeResult.DataBoard.Select(s => s.Force).OrderBy(r => r).ToList();
+            request.TableScrapeFlopResult.IsFlopConnected = (ranks[1] - ranks[0] <= 2) || (ranks[2] - ranks[1] <= 2);
+
+            request.TableScrapeFlopResult.IsFlopPaired = cartasIguales.Any(a => a.Count == 2);
+            request.TableScrapeFlopResult.IsDryBoard = request.TableScrapeFlopResult.IsRainbow && !request.TableScrapeFlopResult.IsFlopConnected && !request.TableScrapeFlopResult.IsFlopPaired;
+
+            request.TableScrapeFlopResult.NoOverCardsOnFlop = !request.TableScrapeResult.DataBoard.All(a => a.Force > maxHandCardForce);
+            request.TableScrapeFlopResult.HasFlushDraw = HasflushDraw(request.TableScrapeResult.DataBoard, request.TableScrapeResult.U0CardSuit0, request.TableScrapeResult.U0CardSuit1);
+            request.TableScrapeFlopResult.HasStraightDraw = HasStraightDraw(request.TableScrapeResult.DataBoard, request.TableScrapeResult.U0CardForce0, request.TableScrapeResult.U0CardForce1);
+            request.TableScrapeFlopResult.HasDrawingHand = request.TableScrapeFlopResult.HasFlushDraw || request.TableScrapeFlopResult.HasStraightDraw;
+
+            //HasShowdownValue, HasPair
+
 
             request.TableScrapeFlopResult.FlushDrawInFlop = request.TableScrapeResult.DataBoard
                 .GroupBy(g => g.Suit)
@@ -287,6 +305,32 @@ namespace OpenScrape.App.Aplication
             // Verificar si todas las diferencias son iguales a 1 (correlativos)
             if (diferencias.All(d => d == 1))
                 return true;
+
+            return false;
+        }
+
+        private bool HasflushDraw(List<BoardData> boardData, int cardSuit0, int cardSuit1)
+        {
+            var allCards = new List<int> { cardSuit0, cardSuit1 };
+            allCards.AddRange(boardData.Select(s => s.Suit));
+
+            return allCards
+                .GroupBy(g => g)
+                .Any(a => a.Count() >= 4);
+        }
+
+        private bool HasStraightDraw(List<BoardData> boardData, int cardForce0, int cardForce1)
+        {
+            var allCards = new List<int> { cardForce0, cardForce1 };
+            allCards.AddRange(boardData.Select(s => s.Force));
+
+            var distinctRanks = allCards.Select(s => s).Distinct().OrderBy(o => o).ToList();
+
+            for (int i = 0; i < distinctRanks.Count - 3; i++)
+            {
+                if (distinctRanks[i + 3] - distinctRanks[i] <= 4)
+                    return true;
+            }
 
             return false;
         }

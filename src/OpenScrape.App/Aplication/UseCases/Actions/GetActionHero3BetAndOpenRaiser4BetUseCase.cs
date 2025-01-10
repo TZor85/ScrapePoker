@@ -114,7 +114,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                             },
                         _ => "Fold"
                     },
-                _ => "Fold"
+                _ => "Fold" 
             };
 
             return response;

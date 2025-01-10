@@ -59,7 +59,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                             _3BetVsRaiser.Get3BetCOvsRaiseEP(request.Hand),
                         _ => "Fold"
                     },
-                HeroPosition.EarlyPosition =>
+                HeroPosition.MiddlePosition =>
                     request.VillainPosition switch
                     {
                         HeroPosition.EarlyPosition =>

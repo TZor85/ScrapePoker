@@ -37,8 +37,17 @@ namespace OpenScrape.App.Entities
         public bool HaveTwoPairOnFlop { get; set; }
         public bool HaveBackdoorFlushDraw { get; set; }
         public bool HaveHighCardsOnHand { get; set; }
+        public bool HasOverCards { get; set; }
+        public bool IsRainbow { get; set; }
+        public bool IsFlopConnected { get; set; }
+        public bool IsFlopPaired { get; set; }
+        public bool IsDryBoard { get; set; }
         public bool HasAce { get; set; }
         public bool HasKing { get; set; }
+        public bool NoOverCardsOnFlop { get; set; }
+        public bool HasDrawingHand { get; set; }
+        public bool HasFlushDraw { get; set; }
+        public bool HasStraightDraw { get; set; }
         public int GetHighestRank { get; set; }
         public int GetLowestRank { get; set; }
         public HeroHand Hand { get; set; }

@@ -119,7 +119,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                                         Cold4Bet.GetCold4BetCOvsOpenRaiseEPand3BetMP(request.Hand),
                                 _ => "Fold"
                             },
-                        _ => "Fold"
+                        _ => "Fold" 
                     },
                 _ => "Fold"
             };

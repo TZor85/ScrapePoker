@@ -121,32 +121,29 @@ namespace OpenScrape.App.Helpers
 
                 var base64String = Convert.ToBase64String(imageBytes);
 
-                SHA256 mySHA256 = SHA256Managed.Create();
-                byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+                using (SHA256 mySHA256 = SHA256.Create())
+                {
+                    byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+                    byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
-                byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-                return EncrypterHelper.Encrypt(base64String, key, iv);
+                    return EncrypterHelper.Encrypt(base64String, key, iv);
+                }
             }
         }
 
         public static Image GetImageDecrypted(string base64String, string secret)
         {
+            using (SHA256 mySHA256 = SHA256.Create())
+            {
+                byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+                byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
-            SHA256 mySHA256 = SHA256Managed.Create();
-            byte[] key = mySHA256.ComputeHash(Encoding.ASCII.GetBytes(secret));
+                string decrypted = EncrypterHelper.Decrypt(base64String, key, iv);
+                byte[] byteImage = Convert.FromBase64String(decrypted);
 
-
-            byte[] iv = new byte[16] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
-
-            //string encrypted = EncrypterHelper.Encrypt(base64String, key, iv);
-            string decrypted = EncrypterHelper.Decrypt(base64String, key, iv);
-
-            byte[] byteImage = Convert.FromBase64String(decrypted);
-
-            var mss = new MemoryStream(byteImage, 0, byteImage.Length);
-
-            return Image.FromStream(mss, true);
+                var mss = new MemoryStream(byteImage, 0, byteImage.Length);
+                return Image.FromStream(mss, true);
+            }
         }
 
     }

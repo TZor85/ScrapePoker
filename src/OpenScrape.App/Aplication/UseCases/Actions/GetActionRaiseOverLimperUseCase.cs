@@ -18,7 +18,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                 HeroPosition.MiddlePosition => RaiseOverLimpers.GetMiddleAction(request.Hand),
                 _ => string.Empty
             };
-
+             
             return response;
         }
     }

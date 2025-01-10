@@ -307,6 +307,48 @@ namespace OpenScrape.App.Aplication
             return responseAction.Action;
         }
 
+        private string Cold4BetAction(Dictionary<HeroPosition, decimal> dictionary, TableScrapeResult scrapeResult)
+        {
+            var responseAction = new GetActionCold4BetUseCaseResponse();
+            var openRaiseValue = 0m;
+            var openRaisePosition = HeroPosition.None;
+
+            var threeBetValue = 0m;
+            var threeBetPosition = HeroPosition.None;
+
+            foreach (var item in dictionary)
+            {
+                if (item.Value > 1 && openRaiseValue == 0)
+                {
+                    openRaiseValue = item.Value;
+                    openRaisePosition = item.Key;
+                }
+
+                if (item.Value > 1 && item.Value > openRaiseValue && threeBetValue == 0)
+                {
+                    threeBetValue = item.Value;
+                    threeBetPosition = item.Key;
+                }
+
+            }
+
+            if (openRaiseValue > 0 && threeBetValue > 0)
+            {
+                var Cold4BetCommand = new GetActionCold4BetUseCaseRequest
+                {
+                    Hand = UserHandHelper.SetHandValue(scrapeResult),
+                    Position = scrapeResult.P0Position,
+                    RaiserPosition = openRaisePosition,
+                    ThreeBetVillainPosition = threeBetPosition
+                };
+
+                responseAction = _cold4BetUseCase.Execute(Cold4BetCommand);
+            }
+
+            return responseAction.Action;
+        }
+
+
         private string GetOpenRaiseAction(Dictionary<HeroPosition, decimal> preflopHeroPosition, TableScrapeResult scrapeResult)
         {
             var responseAction = new GetActionOpenRaiseUseCaseResponse();
@@ -364,48 +406,6 @@ namespace OpenScrape.App.Aplication
 
             return action;
         }
-
-        private string Cold4BetAction(Dictionary<HeroPosition, decimal> dictionary, TableScrapeResult scrapeResult)
-        {
-            var responseAction = new GetActionCold4BetUseCaseResponse();
-            var openRaiseValue = 0m;
-            var openRaisePosition = HeroPosition.None;
-
-            var threeBetValue = 0m;
-            var threeBetPosition = HeroPosition.None;
-
-            foreach (var item in dictionary)
-            {
-                if (item.Value > 1 && openRaiseValue == 0)
-                {
-                    openRaiseValue = item.Value;
-                    openRaisePosition = item.Key;
-                }
-
-                if (item.Value > 1 && item.Value > openRaiseValue && threeBetValue == 0)
-                {
-                    threeBetValue = item.Value;
-                    threeBetPosition = item.Key;
-                }
-
-            }
-
-            if (openRaiseValue > 0 && threeBetValue > 0)
-            {
-                var Cold4BetCommand = new GetActionCold4BetUseCaseRequest
-                {
-                    Hand = UserHandHelper.SetHandValue(scrapeResult),
-                    Position = scrapeResult.P0Position,
-                    RaiserPosition = openRaisePosition,
-                    ThreeBetVillainPosition = threeBetPosition
-                };
-
-                responseAction = _cold4BetUseCase.Execute(Cold4BetCommand);
-            }
-
-            return responseAction.Action;
-        }
-
         private string GetRaiseOverLimperAction(Dictionary<HeroPosition, decimal> preflopHeroPosition, TableScrapeResult scrapeResult)
         {
             var responseAction = new GetActionRaiseOverLimperUseCaseResponse();
@@ -426,7 +426,6 @@ namespace OpenScrape.App.Aplication
 
             return responseAction.Action;
         }
-
         private string Get3BetAction(Dictionary<HeroPosition, decimal> preflopHeroPosition, HeroPosition villainPosition, TableScrapeResult scrapeResult)
         {
             var responseAction = new GetAction3BetUseCaseResponse();

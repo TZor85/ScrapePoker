@@ -119,7 +119,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                                     OpenRaiseVs3Bet_Call.GetOpenRaiseEPvs3BetMPAndSBCall(request.Hand),
                                 _ => "Fold"
                             },
-                        _ => "Fold"
+                        _ => "Fold" 
                     },
                 _ => "Fold"
             };

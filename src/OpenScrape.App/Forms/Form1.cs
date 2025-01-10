@@ -1606,7 +1606,7 @@ namespace OpenScrape.App
 
         #endregion
 
-        #region Tamaño Region
+        #region Tamaï¿½o Region
 
         private void btnPlusWidth_Click(object sender, EventArgs e)
         {

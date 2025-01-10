@@ -9,6 +9,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
         {
             var response = new GetActionOpenRaiseUseCaseResponse();
 
+
             response.Action = request.Position switch
             {
                 HeroPosition.SmallBlind => OpenRaises.GetSmallBlindAction(request.Hand),

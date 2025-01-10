@@ -66,7 +66,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                         OpenRaiseVs3Bet.GetOpenRaiseEPvs3BetSB(request.Hand),
                     _ => "Fold"
                 },
-                _ => "Fold"
+                _ => "Fold" 
             };
 
             response.Action = action;

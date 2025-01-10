@@ -89,7 +89,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
                                 false => HeroCallOpenRaiseAndGetSqueeze.GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPFold(request.Hand),
                                 true => HeroCallOpenRaiseAndGetSqueeze.GetEPOpenRaiseHeroCallMPAndCOSqueezeAndEPCall(request.Hand)
                             },
-                        _ => "Fold"
+                        _ => "Fold" 
                     },
                 _ => "Fold"
             };
