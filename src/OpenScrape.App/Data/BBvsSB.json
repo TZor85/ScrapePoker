@@ -1,0 +1,2235 @@
+{
+	"Name": "BigBlindVsSmallBlind",
+	"Positions": [
+		{
+			"Name": "SB Limp",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": "SmallBlind",
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 76
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 24
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 45
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 55
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 21
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 79
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 97
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 3
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 49
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 51
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 21
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 79
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 72
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 28
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 33
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 67
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 39
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 61
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 67
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 33
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 77
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 23
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 59
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 41
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 73
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 27
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 19
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 81
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 4
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 96
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 46
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 54
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 34
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 66
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 74
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 26
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 31
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 69
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 33
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 67
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 5
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 95
+				},
+				{
+					"Name": "J5",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 19
+				},
+				{
+					"Name": "J5",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 81
+				},
+				{
+					"Name": "J4",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 28
+				},
+				{
+					"Name": "J4",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 72
+				},
+				{
+					"Name": "J3",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 56
+				},
+				{
+					"Name": "J3",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 44
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 60
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 40
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 36
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 64
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 33
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 67
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 26
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 74
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 51
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 49
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 11
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 89
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 13
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 87
+				},
+				{
+					"Name": "T6",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 2
+				},
+				{
+					"Name": "T6",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 98
+				},
+				{
+					"Name": "T5",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 78
+				},
+				{
+					"Name": "T5",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 22
+				},
+				{
+					"Name": "T4",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 93
+				},
+				{
+					"Name": "T4",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 7
+				},
+				{
+					"Name": "T3",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 10
+				},
+				{
+					"Name": "T3",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 90
+				},
+				{
+					"Name": "T2",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 28
+				},
+				{
+					"Name": "T2",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 72
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 55
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 45
+				},
+				{
+					"Name": "K9",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 14
+				},
+				{
+					"Name": "K9",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 86
+				},
+				{
+					"Name": "Q9",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 48
+				},
+				{
+					"Name": "Q9",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 52
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 63
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 37
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 48
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 52
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "95",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "94",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 25
+				},
+				{
+					"Name": "94",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 75
+				},
+				{
+					"Name": "93",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 81
+				},
+				{
+					"Name": "93",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 19
+				},
+				{
+					"Name": "92",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 98
+				},
+				{
+					"Name": "92",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 2
+				},
+				{
+					"Name": "K8",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 5
+				},
+				{
+					"Name": "K8",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 95
+				},
+				{
+					"Name": "Q8",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 40
+				},
+				{
+					"Name": "Q8",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 60
+				},
+				{
+					"Name": "J8",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 67
+				},
+				{
+					"Name": "J8",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 33
+				},
+				{
+					"Name": "T8",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 71
+				},
+				{
+					"Name": "T8",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 29
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 54
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 46
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "84",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 91
+				},
+				{
+					"Name": "84",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 9
+				},
+				{
+					"Name": "82",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 57
+				},
+				{
+					"Name": "82",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 43
+				},
+				{
+					"Name": "A7",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 7
+				},
+				{
+					"Name": "A7",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 93
+				},
+				{
+					"Name": "K7",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 54
+				},
+				{
+					"Name": "K7",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 46
+				},
+				{
+					"Name": "Q7",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 72
+				},
+				{
+					"Name": "Q7",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 28
+				},
+				{
+					"Name": "J7",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 41
+				},
+				{
+					"Name": "J7",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 59
+				},
+				{
+					"Name": "T7",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 47
+				},
+				{
+					"Name": "T7",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 53
+				},
+				{
+					"Name": "97",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 39
+				},
+				{
+					"Name": "97",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 61
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 55
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 45
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 88
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 12
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 89
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 11
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 100
+				},
+				{
+					"Name": "73",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 76
+				},
+				{
+					"Name": "73",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 24
+				},
+				{
+					"Name": "A6",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 41
+				},
+				{
+					"Name": "A6",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 59
+				},
+				{
+					"Name": "K6",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 72
+				},
+				{
+					"Name": "K6",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q6",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 79
+				},
+				{
+					"Name": "Q6",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 21
+				},
+				{
+					"Name": "J6",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 45
+				},
+				{
+					"Name": "J6",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 55
+				},
+				{
+					"Name": "T6",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 50
+				},
+				{
+					"Name": "T6",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 50
+				},
+				{
+					"Name": "96",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 40
+				},
+				{
+					"Name": "96",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 60
+				},
+				{
+					"Name": "86",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 45
+				},
+				{
+					"Name": "86",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 55
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 30
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 70
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 78
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 22
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 39
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 61
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 89
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 11
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 75
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 25
+				},
+				{
+					"Name": "62",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 30
+				},
+				{
+					"Name": "62",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 70
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 45
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 55
+				},
+				{
+					"Name": "K5",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 51
+				},
+				{
+					"Name": "K5",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 49
+				},
+				{
+					"Name": "Q5",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 38
+				},
+				{
+					"Name": "Q5",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 62
+				},
+				{
+					"Name": "J5",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 34
+				},
+				{
+					"Name": "J5",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 66
+				},
+				{
+					"Name": "T5",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 11
+				},
+				{
+					"Name": "T5",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 89
+				},
+				{
+					"Name": "95",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 8
+				},
+				{
+					"Name": "95",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 92
+				},
+				{
+					"Name": "85",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 20
+				},
+				{
+					"Name": "85",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 80
+				},
+				{
+					"Name": "75",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 34
+				},
+				{
+					"Name": "75",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 66
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 44
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 56
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 69
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 31
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 37
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 63
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 47
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 53
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 65
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 35
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 25
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 75
+				},
+				{
+					"Name": "K4",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 32
+				},
+				{
+					"Name": "K4",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 68
+				},
+				{
+					"Name": "Q4",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 20
+				},
+				{
+					"Name": "Q4",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 80
+				},
+				{
+					"Name": "J4",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 22
+				},
+				{
+					"Name": "J4",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 78
+				},
+				{
+					"Name": "T4",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 16
+				},
+				{
+					"Name": "T4",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 84
+				},
+				{
+					"Name": "74",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 10
+				},
+				{
+					"Name": "74",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 90
+				},
+				{
+					"Name": "64",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 20
+				},
+				{
+					"Name": "64",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 80
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 44
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 56
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 62
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 38
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 26
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 74
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 78
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 22
+				},
+				{
+					"Name": "A3",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 39
+				},
+				{
+					"Name": "A3",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 61
+				},
+				{
+					"Name": "K3",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 18
+				},
+				{
+					"Name": "K3",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 82
+				},
+				{
+					"Name": "Q3",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 14
+				},
+				{
+					"Name": "Q3",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 86
+				},
+				{
+					"Name": "J3",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 11
+				},
+				{
+					"Name": "J3",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 89
+				},
+				{
+					"Name": "T3",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 37
+				},
+				{
+					"Name": "T3",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 63
+				},
+				{
+					"Name": "53",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 32
+				},
+				{
+					"Name": "53",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 68
+				},
+				{
+					"Name": "43",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 25
+				},
+				{
+					"Name": "43",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 75
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 52
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 48
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 54
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 46
+				},
+				{
+					"Name": "A2",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 66
+				},
+				{
+					"Name": "A2",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 34
+				},
+				{
+					"Name": "K2",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 28
+				},
+				{
+					"Name": "K2",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 72
+				},
+				{
+					"Name": "Q2",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 21
+				},
+				{
+					"Name": "Q2",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 79
+				},
+				{
+					"Name": "J2",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 30
+				},
+				{
+					"Name": "J2",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 70
+				},
+				{
+					"Name": "T2",
+					"Suited": false,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 14
+				},
+				{
+					"Name": "T2",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 86
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Raise Over Limpers x3.4",
+					"Percentage": 54
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Check",
+					"Percentage": 46
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q2",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "J6",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "J2",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "83",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "72",
+					"Suited": true,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "94",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "84",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "93",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "83",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "73",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "92",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "82",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "72",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "62",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": false,
+					"Action": "Check",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "SB 3Bet",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": null,
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": "SmallBlind",
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 44
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 26
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 23
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 79
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 21
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 19
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 55
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 45
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 39
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 61
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 47
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 45
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 63
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 11
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 17
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 11
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 79
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 59
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 65
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 31
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 69
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 51
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 82
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 18
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 12
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 43
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 57
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 69
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 40
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 60
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Raise x25.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 72
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Raise x25.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Raise x25.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 11
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 49
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 47
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 34
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 62
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 72
+				}
+			]
+		}
+	]
+}

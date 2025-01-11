@@ -1,0 +1,10485 @@
+{
+	"Name": "Squeeze",
+	"Positions": [
+		{
+			"Name": "BTN OR And SB Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Button",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "SmallBlind",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 80
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 12
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 55
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 45
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 47
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 63
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 40
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 36
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 5
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 70
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 37
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 37
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 95
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 57
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 44
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 59
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 58
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 73
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 78
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 22
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 61
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 46
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 22
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 78
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 45
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 52
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 49
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 20
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 70
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 91
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "K9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "Q9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 46
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 41
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 76
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "95",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 8
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 23
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 56
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 50
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 5
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 99
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "CO OR And SB Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "SmallBlind",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 48
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 73
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 61
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 36
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 81
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 39
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 61
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 9
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 37
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 61
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 65
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 50
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 44
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 23
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 59
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 49
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 52
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 15
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 21
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 8
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 92
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 31
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 73
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 73
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 55
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 45
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 67
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 70
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "T6",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 35
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 12
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 21
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 34
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Squeeze x10.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Squeeze x10.5",
+					"Percentage": 5
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Squeeze x10.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "CO OR And BTN Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 40
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 19
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 49
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 40
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 13
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 95
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 82
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 59
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 22
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 50
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 29
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 83
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 65
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 47
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 72
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 75
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 38
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 29
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 59
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 52
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 47
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 39
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 61
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 38
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 8
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 92
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 99
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "MD OR And SB Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "SmallBlind",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 4
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 6
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 72
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 77
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 1
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 10
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 67
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 22
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 78
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 1
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 23
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 18
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 21
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 34
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 10
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 1
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 40
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 3
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 27
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 50
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 51
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 37
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 40
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 78
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 48
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 63
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 19
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 14
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 5
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 81
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "J6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 28
+				},
+				{
+					"Name": "J5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 5
+				},
+				{
+					"Name": "J4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 30
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 25
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 7
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 6
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 11
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 3
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 6
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 2
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 20
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 5
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 27
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 20
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 39
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 61
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 26
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 18
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 35
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 5
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 19
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD OR And BTN Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 13
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 60
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 64
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 23
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 47
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 29
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 29
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 45
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 52
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 64
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 15
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 77
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 68
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 21
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 44
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 42
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 20
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD OR And CO Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 45
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 70
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 58
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 35
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 46
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 63
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 31
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 57
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 65
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 41
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 9
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 87
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 32
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 43
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 62
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 13
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 78
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And SB Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "SmallBlind",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 89
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 22
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 78
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 9
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 12
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 52
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 28
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 20
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 12
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 11
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 24
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 40
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 38
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 35
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 28
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 38
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 33
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 70
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 43
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 57
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 41
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 35
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 28
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 56
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 48
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 26
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 9
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 36
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 1
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 2
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 3
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 17
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 3
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 28
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 13
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 36
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 17
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x11",
+					"Percentage": 10
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x11",
+					"Percentage": 27
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 73
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Squeeze x11",
+					"Percentage": 9
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 92
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "95",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And BTN Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 73
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 9
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 31
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 69
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 53
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 36
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 56
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 13
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 36
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 54
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 35
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 72
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 70
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 51
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 88
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 48
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 36
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 35
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 12
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 15
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 69
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "74",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And CO Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 42
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 58
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 42
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 58
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 23
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 32
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 25
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 38
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 38
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 53
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 40
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 68
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 26
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 77
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14.5",
+					"Percentage": 69
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 93
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 44
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 10
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 5
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x14.5",
+					"Percentage": 12
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14.5",
+					"Percentage": 4
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "54",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And MD Call",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Middle",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 62
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 17
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 19
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 15
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 12
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 50
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 54
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 15
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 10
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 92
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 12
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 25
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 20
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 17
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 64
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 65
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 46
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 2
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 64
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 44
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 96
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 38
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 42
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 58
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 44
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 8
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 92
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 31
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 69
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 18
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 25
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 6
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 94
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "63",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "52",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "42",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "CO OR And BTN Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 86
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 45
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 87
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 77
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 72
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 33
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 72
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 70
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 82
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 20
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 98
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 97
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 72
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 87
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 98
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 22
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 70
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 85
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 24
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 76
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 9
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 11
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 61
+				}
+			]
+		},
+		{
+			"Name": "MD OR And BTN Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 81
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 49
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 3
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 70
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 69
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 22
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 42
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 58
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 80
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 95
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 68
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 94
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 98
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x13.5",
+					"Percentage": 75
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 98
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 57
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 16
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 6
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x13.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x13.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 61
+				}
+			]
+		},
+		{
+			"Name": "MD OR And CO Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 38
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 73
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 17
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 62
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 73
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 60
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 47
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 88
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 7
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 32
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 9
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 69
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 37
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 47
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 61
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 3
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 16
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 9
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 4
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 61
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 9
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 1
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 5
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 14
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 1
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 5
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And BTN Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Button",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 49
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 33
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 28
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 5
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 18
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 72
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 68
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 82
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 11
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 65
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 73
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 52
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 10
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 4
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 40
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 26
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x13",
+					"Percentage": 81
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 77
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 25
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 75
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 16
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 84
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 9
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 8
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 4
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 57
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 9
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x13",
+					"Percentage": 3
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 18
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x13",
+					"Percentage": 14
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 70
+				}
+			]
+		},
+		{
+			"Name": "ER OR And CO Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 43
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 57
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 13
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 2
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 26
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 75
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 71
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 29
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 32
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 3
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 96
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 23
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 36
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 23
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 51
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 43
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 24
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x14",
+					"Percentage": 67
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 26
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 21
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 79
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 7
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 70
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 7
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x14",
+					"Percentage": 1
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 4
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 25
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x14",
+					"Percentage": 10
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 34
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 62
+				}
+			]
+		},
+		{
+			"Name": "ER OR And MD Call",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Middle",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 66
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 34
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 69
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 71
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 17
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x12.5",
+					"Percentage": 92
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 39
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 1
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 28
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 64
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x12.5",
+					"Percentage": 64
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x12.5",
+					"Percentage": 15
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 96
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 2
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 20
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 18
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 14
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x12.5",
+					"Percentage": 5
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 7
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 30
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 41
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 29
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x12.5",
+					"Percentage": 27
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 11
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 46
+				}
+			]
+		},
+		{
+			"Name": "ER OR And CO Call",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 77
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 23
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 64
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 10
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 16
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 70
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 91
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 92
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 55
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 98
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 85
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 74
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 22
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 1
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 45
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 19
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 99
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 30
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 51
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 67
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 14
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 21
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 3
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 8
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 8
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 45
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 4
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				}
+			]
+		},
+		{
+			"Name": "ER OR And MD Call",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Middle",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 75
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 53
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 9
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 99
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 92
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 94
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 95
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 36
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 38
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 56
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 41
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 61
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 95
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 60
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 53
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 32
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 19
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 11
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 32
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 43
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 26
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 16
+				}
+			]
+		},
+		{
+			"Name": "MD OR And CO Call",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "CutOff",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 65
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 78
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 14
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 93
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 94
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 63
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 65
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 90
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 26
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 81
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 62
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 33
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 24
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 79
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 55
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 16
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 63
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 35
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 28
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 17
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 26
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 14
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 12
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 7
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 19
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 27
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER OR And MD Call",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": "Middle",
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 65
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 28
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 21
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 85
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 84
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 16
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 93
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 97
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 33
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 27
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 13
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 7
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 56
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 39
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 96
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Squeeze x9",
+					"Percentage": 52
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 90
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 63
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 40
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 23
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 19
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 12
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Squeeze x9",
+					"Percentage": 1
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 34
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 47
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Squeeze x9",
+					"Percentage": 21
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				}
+			]
+		}
+	]
+}

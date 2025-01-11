@@ -3,7 +3,7 @@ using OpenScrape.App.Models;
 
 namespace OpenScrape.App
 {
-    partial class Form1
+    partial class FrmMain
     {
         /// <summary>
         ///  Required designer variable.
@@ -31,10 +31,6 @@ namespace OpenScrape.App
         /// </summary>
         private void InitializeComponent()
         {
-            TreeNode treeNode1 = new TreeNode("Regions");
-            TreeNode treeNode2 = new TreeNode("Board");
-            TreeNode treeNode3 = new TreeNode("Images");
-            TreeNode treeNode4 = new TreeNode("Fonts");
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tabPage1 = new TabPage();
@@ -86,7 +82,7 @@ namespace OpenScrape.App
             cbTest = new CheckBox();
             btnDelete = new Button();
             btnNew = new Button();
-            twRegions = new TreeView();
+            twRegionsConfig = new TreeView();
             tabPage2 = new TabPage();
             tbResume = new TextBox();
             pictureBox1 = new PictureBox();
@@ -142,7 +138,7 @@ namespace OpenScrape.App
             tabPage1.Controls.Add(cbTest);
             tabPage1.Controls.Add(btnDelete);
             tabPage1.Controls.Add(btnNew);
-            tabPage1.Controls.Add(twRegions);
+            tabPage1.Controls.Add(twRegionsConfig);
             tabPage1.Location = new Point(4, 24);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
@@ -222,7 +218,7 @@ namespace OpenScrape.App
             // lbXY
             // 
             lbXY.AutoSize = true;
-            lbXY.Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point);
+            lbXY.Font = new Font("Segoe UI", 8F);
             lbXY.Location = new Point(130, 77);
             lbXY.Name = "lbXY";
             lbXY.Size = new Size(0, 13);
@@ -269,7 +265,7 @@ namespace OpenScrape.App
             // btnPlusWidth
             // 
             btnPlusWidth.Enabled = false;
-            btnPlusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnPlusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnPlusWidth.ImageAlign = ContentAlignment.TopCenter;
             btnPlusWidth.Location = new Point(10, 69);
             btnPlusWidth.Name = "btnPlusWidth";
@@ -283,7 +279,7 @@ namespace OpenScrape.App
             // btnMinusWidth
             // 
             btnMinusWidth.Enabled = false;
-            btnMinusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+            btnMinusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnMinusWidth.Location = new Point(34, 69);
             btnMinusWidth.Name = "btnMinusWidth";
             btnMinusWidth.Size = new Size(25, 25);
@@ -585,7 +581,7 @@ namespace OpenScrape.App
             // lbAction
             // 
             lbAction.AutoSize = true;
-            lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point);
+            lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
             lbAction.Location = new Point(241, 459);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(57, 21);
@@ -677,27 +673,14 @@ namespace OpenScrape.App
             btnNew.UseVisualStyleBackColor = true;
             btnNew.Click += btnNew_Click;
             // 
-            // twRegions
+            // twRegionsConfig
             // 
-            twRegions.Location = new Point(6, 35);
-            twRegions.Name = "twRegions";
-            treeNode1.Name = "Nodo0";
-            treeNode1.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode1.Text = "Regions";
-            treeNode2.Name = "Nodo1";
-            treeNode2.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode2.Text = "Board";
-            treeNode3.Name = "Nodo2";
-            treeNode3.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode3.Text = "Images";
-            treeNode4.Name = "Nodo3";
-            treeNode4.NodeFont = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Bold, GraphicsUnit.Point);
-            treeNode4.Text = "Fonts";
-            twRegions.Nodes.AddRange(new TreeNode[] { treeNode1, treeNode2, treeNode3, treeNode4 });
-            twRegions.Size = new Size(159, 342);
-            twRegions.TabIndex = 45;
-            twRegions.AfterSelect += twRegions_AfterSelect;
-            twRegions.DoubleClick += twRegions_DoubleClick;
+            twRegionsConfig.Location = new Point(6, 35);
+            twRegionsConfig.Name = "twRegionsConfig";
+            twRegionsConfig.Size = new Size(159, 342);
+            twRegionsConfig.TabIndex = 45;
+            twRegionsConfig.AfterSelect += twRegions_AfterSelect;
+            twRegionsConfig.DoubleClick += twRegions_DoubleClick;
             // 
             // tabPage2
             // 
@@ -733,14 +716,14 @@ namespace OpenScrape.App
             // label4
             // 
             label4.AutoSize = true;
-            label4.Font = new Font("Segoe UI", 16F, FontStyle.Regular, GraphicsUnit.Point);
+            label4.Font = new Font("Segoe UI", 16F);
             label4.Location = new Point(648, 435);
             label4.Name = "label4";
             label4.Size = new Size(71, 30);
             label4.TabIndex = 67;
             label4.Text = "label4";
             // 
-            // Form1
+            // FrmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -748,7 +731,7 @@ namespace OpenScrape.App
             Controls.Add(label4);
             Controls.Add(pictureBox1);
             Controls.Add(tbControl);
-            Name = "Form1";
+            Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
             Text = "Form1";
             Load += Form1_Load;
@@ -792,7 +775,7 @@ namespace OpenScrape.App
         private CheckBox cbTest;
         private Button btnDelete;
         private Button btnNew;
-        private TreeView twRegions;
+        private TreeView twRegionsConfig;
         private TextBox tbResumen;
         private CheckBox ckBoard;
         private Label label8;

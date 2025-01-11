@@ -14,8 +14,13 @@ namespace OpenScrape.App
 {
     public partial class FormCreateFont : Form
     {
-        public IAddRegion region { get; set; }
-        public List<FontRegion> _fonts { get; set; } = new List<FontRegion>();
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public IAddRegion LocRegion { get; set; }
+
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public List<FontRegion> Fonts { get; set; } = new List<FontRegion>();
 
         public FormCreateFont()
         {
@@ -28,14 +33,14 @@ namespace OpenScrape.App
             {
                 if (lbFonts.Items.Count == 1)
                 {
-                    _fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim()).Name = tbFont.Text;
+                    Fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim()).Name = tbFont.Text;
                     lbFonts.Items.Remove(lbFonts.SelectedItem);
-                    region.Execute(_fonts);
+                    LocRegion.Execute(Fonts);
                     this.Close();
                 }
                 else
                 {
-                    _fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim()).Name = tbFont.Text;
+                    Fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim()).Name = tbFont.Text;
                     tbFont.Text = string.Empty;
                     lbFonts.Items.Remove(lbFonts.SelectedItem);
                 }
@@ -44,7 +49,7 @@ namespace OpenScrape.App
 
         private void FormCreateFont_Load(object sender, EventArgs e)
         {
-            foreach (var item in _fonts)
+            foreach (var item in Fonts)
             {
                 lbFonts.Items.Add($"{item.Name} - {item.Id}");
             }
@@ -54,7 +59,7 @@ namespace OpenScrape.App
         {
             try
             {
-                var region = _fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim());
+                var region = Fonts.FirstOrDefault(x => x.Id == lbFonts.SelectedItem.ToString().Split("-")[1].Trim());
                 var locRegion = region.Value;
                 var count = region.Value.Count();
 

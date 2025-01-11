@@ -1,0 +1,4901 @@
+{
+	"Name": "FourBet",
+	"Positions": [
+		{
+			"Name": "SB 4Bet Lower 20",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "SmallBlind",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal All In",
+					"Percentage": 51
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 49
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 46
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 54
+				}
+			]
+		},
+		{
+			"Name": "SB 4Bet Greater 20",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "SmallBlind",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 48
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 93
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 73
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 34
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 59
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 99
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 88
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 90
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 10
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 48
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 52
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 29
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 31
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 69
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "32",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 99
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "BTN 4Bet Lower 23.5",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Button",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 23.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 79
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 64
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 1
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 78
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 64
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 32
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 71
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 29
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 37
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "BTN 4Bet Greater 23.5",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Button",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 23.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Marginal All In",
+					"Percentage": 93
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 7
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "CO 4Bet Lower 22.5",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 22.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 98
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 99
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 84
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 59
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 41
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 4
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 96
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 37
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 63
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 61
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 66
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 34
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 2
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "43",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "CO 4Bet Greater 22.5",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 22.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Lower 22",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 22,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 97
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 1
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 93
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 91
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 26
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 99
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 13
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 45
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 67
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 5
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Greater 22",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 22,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Marginal All In",
+					"Percentage": 81
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 19
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet",
+			"HeroPosition": "BigBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "BigBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 97
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 85
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 96
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 66
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 34
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 63
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 46
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 95
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 5
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 58
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 42
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 11
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 13
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 87
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 13
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "BTN 4Bet Lower 23.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Button",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 23.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 95
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 40
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 98
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 59
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 7
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 34
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 64
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 36
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 95
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 41
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 16
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 46
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 54
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 38
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 62
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 18
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 44
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 66
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 34
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 12
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 99
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 83
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 69
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 86
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "BTN 4Bet Greater 23.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Button",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 23.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal All In",
+					"Percentage": 30
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 70
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 49
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 51
+				}
+			]
+		},
+		{
+			"Name": "CO 4Bet",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 41
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 59
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 99
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 98
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 45
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 55
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 76
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 1
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 2
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 98
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 1
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 99
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 2
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 98
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Lower 20.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 92
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 85
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 3
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 70
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 9
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 26
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 74
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 49
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 3
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 97
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 80
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 1
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Greater 20.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Marginal All In",
+					"Percentage": 86
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 14
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 95
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 5
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Lower 20.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 76
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 34
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 60
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 95
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 81
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 35
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 85
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 15
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 44
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 56
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 44
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 99
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 1
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 14
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 80
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 20
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 78
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Greater 20.5",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "SmallBlind",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 20.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 69
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 31
+				}
+			]
+		},
+		{
+			"Name": "CO 4Bet",
+			"HeroPosition": "Button",
+			"OpenRaiser": "CutOff",
+			"ThreeBetPosition": "Button",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"IsGreater": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 47
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 53
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 73
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 27
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 85
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 32
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 68
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 60
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 69
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 96
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 91
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 67
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Lower 19",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "Button",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 56
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 76
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 87
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 91
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 78
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 11
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 87
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 78
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 22
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Marginal Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 96
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 87
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 89
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 11
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 97
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 3
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 51
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 49
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 54
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 9
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Greater 19",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "Button",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Marginal All In",
+					"Percentage": 7
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Fold",
+					"Percentage": 93
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Lower 19.5",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "Button",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19.5,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 70
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 30
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 88
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 12
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 55
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 39
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 6
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 34
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 9
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 57
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 84
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 86
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 14
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 18
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 82
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 72
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 28
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 78
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 67
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 24
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 76
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 54
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 50
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 65
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Greater 19.5",
+			"HeroPosition": "Button",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "Button",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19.5,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 44
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 56
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Lower 19",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "CutOff",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 56
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 44
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 96
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 4
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 63
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 12
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 65
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 13
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 22
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 84
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 16
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 54
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 46
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 10
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 90
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 66
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 34
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 67
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 33
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 71
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 29
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 22
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 78
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 67
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 32
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 68
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 63
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 65
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 35
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 77
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 23
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 81
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 19
+				}
+			]
+		},
+		{
+			"Name": "MD 4Bet Greater 19",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": "Middle",
+			"ThreeBetPosition": "CutOff",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 26
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 74
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Lower 19",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "CutOff",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 65
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 94
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 51
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 40
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 9
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 10
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 84
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 80
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 83
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 17
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 12
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 88
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 83
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 17
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 43
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 57
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 69
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 31
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 69
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 8
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 92
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 49
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 51
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 81
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 29
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 71
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 25
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 75
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 53
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 50
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 50
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 45
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 55
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Greater 19",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "CutOff",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 85
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 15
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Lower 19",
+			"HeroPosition": "Middle",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "Middle",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": false,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 63
+				},
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 37
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 85
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 15
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "All In",
+					"Percentage": 56
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 33
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 11
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "All In",
+					"Percentage": 81
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Call",
+					"Percentage": 19
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 82
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 18
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 14
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 86
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 57
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 43
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 42
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 58
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 5
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 95
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 79
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 79
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 6
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 94
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 35
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 65
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 20
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 80
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 38
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 62
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 21
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 79
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 91
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 9
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Marginal Call",
+					"Percentage": 60
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 40
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Call",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 47
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 53
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Marginal Call",
+					"Percentage": 48
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 52
+				}
+			]
+		},
+		{
+			"Name": "ER 4Bet Greater 19",
+			"HeroPosition": "Middle",
+			"OpenRaiser": "Early",
+			"ThreeBetPosition": "Middle",
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": 19,
+			"IsGreater": true,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Marginal All In",
+					"Percentage": 87
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Fold",
+					"Percentage": 13
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "All In",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Marginal All In",
+					"Percentage": 73
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Fold",
+					"Percentage": 27
+				}
+			]
+		}
+	]
+}

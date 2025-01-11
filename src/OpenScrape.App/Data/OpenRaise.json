@@ -1,0 +1,1984 @@
+{
+	"Name": "OpenRaise",
+	"Positions": [
+		{
+			"Name": "OR SB",
+			"HeroPosition": "SmallBlind",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q2",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "86",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "85",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "53",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "OR BTN",
+			"HeroPosition": "Button",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K2",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q3",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J5",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J4",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T7",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T6",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "96",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "75",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "65",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "64",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "54",
+					"Suited": true,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": false,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "33",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				},
+				{
+					"Name": "22",
+					"Suited": null,
+					"Action": "Open Raise x2.5",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "OR CO",
+			"HeroPosition": "CutOff",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K4",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K3",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "J8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "J7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "T8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "97",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "87",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "76",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "55",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "44",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "OR MD",
+			"HeroPosition": "Middle",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K5",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "J9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "98",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "66",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				}
+			]
+		},
+		{
+			"Name": "OR ER",
+			"HeroPosition": "Early",
+			"OpenRaiser": null,
+			"ThreeBetPosition": null,
+			"Limper": null,
+			"Caller": null,
+			"Squeezer": null,
+			"BetSize": null,
+			"RaiserFolds": null,
+			"Hands": [
+				{
+					"Name": "AA",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A7",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A6",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A5",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A4",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A3",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "A2",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AK",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KK",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "K8",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KQ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QQ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QJ",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "QT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "Q9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "KJ",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JJ",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "JT",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "AT",
+					"Suited": false,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "TT",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "T9",
+					"Suited": true,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "99",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "88",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				},
+				{
+					"Name": "77",
+					"Suited": null,
+					"Action": "Open Raise x2",
+					"Percentage": 100
+				}
+			]
+		}
+	]
+}

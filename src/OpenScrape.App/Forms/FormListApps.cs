@@ -1,5 +1,6 @@
 ﻿using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
+using System.ComponentModel;
 
 namespace OpenScrape.App
 {
@@ -7,7 +8,10 @@ namespace OpenScrape.App
     {
         private IEnumerable<KeyValuePair<string, IntPtr>> _windows = new List<KeyValuePair<string, IntPtr>>();
         public IntPtr windowsValue;
-        public IAddImage addImage { get; set; }
+
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public IAddImage AddImage { get; set; }
 
         public IntPtr handle;
         
@@ -47,7 +51,7 @@ namespace OpenScrape.App
         private void btnAceptar_Click(object sender, EventArgs e)
         {
             var selectItem = lbApps.SelectedItem.ToString();
-            addImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
+            AddImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
 
             handle = _windows.FirstOrDefault(x => x.Key == selectItem).Value;
 

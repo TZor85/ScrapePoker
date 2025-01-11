@@ -1,19 +1,13 @@
 ﻿using OpenScrape.App.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace OpenScrape.App
 {
     public partial class FormCreateImage : Form
     {
-        public IAddRegion region { get; set; }
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+        public IAddRegion LocRegion { get; set; }
 
         public FormCreateImage()
         {
@@ -24,7 +18,7 @@ namespace OpenScrape.App
         {
             if (!string.IsNullOrEmpty(tbImage.Text))
             {
-                region.Execute(tbImage.Text, "Image");
+                LocRegion.Execute(tbImage.Text, "Image");
                 this.Close();
             }
         }

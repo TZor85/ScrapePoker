@@ -1,9 +1,13 @@
-﻿namespace OpenScrape.App.Forms
+﻿using System.ComponentModel;
+
+namespace OpenScrape.App.Forms
 {
     public partial class FormAction : Form
     {
         private string? datoRecibido;
 
+        [Browsable(true)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string DatoRecibido
         {
             get { return datoRecibido ?? string.Empty; }

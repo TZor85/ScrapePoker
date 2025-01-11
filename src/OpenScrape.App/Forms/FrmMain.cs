@@ -1,3 +1,4 @@
+using Marten;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Aplication.UseCases.Actions;
@@ -8,6 +9,7 @@ using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
+using OpenScrape.Domain.Entities;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
@@ -16,7 +18,7 @@ using Page = Tesseract.Page;
 
 namespace OpenScrape.App
 {
-    public partial class Form1 : Form, IAddRegion
+    public partial class FrmMain : Form, IAddRegion
     {
         #region Forms
         FormRegions _formRegions;
@@ -53,6 +55,13 @@ namespace OpenScrape.App
         private string Key = "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO";
         private string _folderPath = string.Empty;
         private string _tableHand = string.Empty;
+
+        private List<RegionTableMap>? _regionsTableMap;
+        private Domain.ValueObjects.Region? _selectedRegion;
+        private double _umbral = 0;
+        private double _inactiveUmbral = 0;
+        private Rectangle currentRectangle;
+        private bool shouldDrawRectangle = false;
 
         //Portatil
         private string _pathResume = @$"C:\Code\Poker\ScrapePoker\resources\resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt";
@@ -118,25 +127,68 @@ namespace OpenScrape.App
 
         #endregion
 
+        #region DataBase
+        private readonly IDocumentStore _dataBase;
+        #endregion
+
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
 
-        public Form1()
+        public FrmMain(IDocumentStore dataBase)
         {
             InitializeComponent();
+            _dataBase = dataBase;   
             _session = GenerateRandomNumbers();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private async void Form1_Load(object sender, EventArgs e)
         {
+            var session = _dataBase.LightweightSession();
+            var regions = new List<Domain.ValueObjects.Region>();
+
             _formImage = new FormImage();
             cbSpeed.SelectedIndex = 0;
 
+            var regionsTableMap = await session.Query<RegionTableMap>().ToListAsync();
+            var categories = regionsTableMap.Select(x => x.Regions).Where(x => x != null).Distinct().ToList();
+
+            foreach (var group in categories)
+            {
+                foreach (var category in group!)
+                {
+                    regions.Add(category);
+                }
+            }
+
+            _regionsTableMap = regionsTableMap.ToList();
+            LoadTreeView(regionsTableMap.ToList());
+
+
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
+
+
         }
 
+        private void LoadTreeView(List<RegionTableMap> categories)
+        {
+            twRegionsConfig.Nodes.Clear();
 
+            foreach (var category in categories)
+            {
+                // Añadir nodo principal (categoría)
+                TreeNode categoryNode = twRegionsConfig.Nodes.Add(category.Id);
+
+                // Añadir sub-nodos (regiones)
+                if (category.Regions != null)
+                {
+                    foreach (var region in category.Regions)
+                    {
+                        categoryNode.Nodes.Add(region.Name); // Asumiendo que Region tiene una propiedad Name
+                    }
+                }
+            }
+        }
 
         #region FrontMethods
 
@@ -145,7 +197,7 @@ namespace OpenScrape.App
             _formRegions = new FormRegions();
 
             _formRegions.Location = new Point(_formImage.Location.X, _formImage.Location.Y + 100);
-            _formRegions.region = this;
+            _formRegions.LocRegion = this;
             _formRegions.Show();
 
         }
@@ -155,9 +207,9 @@ namespace OpenScrape.App
             var sen = (System.Windows.Forms.TreeView)sender;
             var name = sen.SelectedNode.Text;
 
-            if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo0")
+            if (twRegionsConfig.SelectedNode.Parent != null && twRegionsConfig.SelectedNode.Parent.Name == "Nodo0")
             {
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
                 _locRegion = region;
 
@@ -167,9 +219,9 @@ namespace OpenScrape.App
                 ckBoard.Checked = region.IsBoard;
             }
 
-            if (twRegions.SelectedNode.Parent != null && twRegions.SelectedNode.Parent.Name == "Nodo2")
+            if (twRegionsConfig.SelectedNode.Parent != null && twRegionsConfig.SelectedNode.Parent.Name == "Nodo2")
             {
-                _locImage = _images?.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text) ?? new ImageRegion();
+                _locImage = _images?.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text) ?? new ImageRegion();
 
                 ckColor.Enabled = false;
                 ckBoard.Enabled = false;
@@ -184,19 +236,29 @@ namespace OpenScrape.App
 
             _formImage.pbImagen.Refresh();
 
-            if (_locRegion != null)
+            if (twRegionsConfig.SelectedNode != null)
             {
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
+                _selectedRegion = ObtenerRegionDelNodo(twRegionsConfig.SelectedNode);
+                if (_selectedRegion != null)
+                {
+                    _papel = _formImage.pbImagen.CreateGraphics();
+                    Pen lapiz = new Pen(Color.Red);
 
-                _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-                tbWidth.Text = _locRegion.Width.ToString();
-                tbHeight.Text = _locRegion.Height.ToString();
-                tbX.Text = _locRegion.X.ToString();
-                tbY.Text = _locRegion.Y.ToString();
-                lbXY.Text = $"X: {_locRegion.X.ToString()} Y:{_locRegion.Y.ToString()}";
+                    _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+                    tbX.Text = _selectedRegion.PosX.ToString();
+                    tbY.Text = _selectedRegion.PosY.ToString();
+                    tbWidth.Text = _selectedRegion.Width.ToString();
+                    tbHeight.Text = _selectedRegion.Height.ToString();
+                    lbXY.Text = $"X: {_selectedRegion.PosX} Y:{_selectedRegion.PosY}";
+                }
             }
+        }
 
+        private Domain.ValueObjects.Region? ObtenerRegionDelNodo(TreeNode node)
+        {
+            // Implementa la lógica para obtener la región basada en el nodo
+            return _regionsTableMap.SelectMany(c => c.Regions ?? new List<Domain.ValueObjects.Region>())
+                        .FirstOrDefault(r => r.Name == node.Text);
         }
 
         private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
@@ -225,7 +287,7 @@ namespace OpenScrape.App
 
             foreach (var item in response.Tree)
             {
-                var node = twRegions.Nodes.Find(item.Key, true).FirstOrDefault() as TreeNode;
+                var node = twRegionsConfig.Nodes.Find(item.Key, true).FirstOrDefault() as TreeNode;
 
                 if (node != null)
                     node.Nodes.Add(item.Value);
@@ -241,11 +303,11 @@ namespace OpenScrape.App
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            if (!string.IsNullOrWhiteSpace(twRegions.SelectedNode.Text))
+            if (!string.IsNullOrWhiteSpace(twRegionsConfig.SelectedNode.Text))
             {
-                var node = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var node = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
-                twRegions.Nodes.Remove(twRegions.SelectedNode);
+                twRegionsConfig.Nodes.Remove(twRegionsConfig.SelectedNode);
                 _regions.Remove(node);
 
             }
@@ -1271,7 +1333,7 @@ namespace OpenScrape.App
         private void btnCreateImage_Click(object sender, EventArgs e)
         {
             _formCreateImage = new FormCreateImage();
-            _formCreateImage.region = this;
+            _formCreateImage.LocRegion = this;
             _formCreateImage.Show();
         }
 
@@ -1325,9 +1387,9 @@ namespace OpenScrape.App
         {
             if (ckColor.Checked)
             {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
 
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
                 var rgbRequest = new GetRGBColorRequest
                 {
@@ -1354,9 +1416,9 @@ namespace OpenScrape.App
             }
             else
             {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
 
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
                 tbR.Text = string.Empty;
 
@@ -1369,9 +1431,9 @@ namespace OpenScrape.App
         {
             if (ckBoard.Checked)
             {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
 
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
                 if (region != null)
                     region.IsBoard = true;
@@ -1379,16 +1441,14 @@ namespace OpenScrape.App
             }
             else
             {
-                var node = twRegions.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
+                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
 
-                var region = _regions.FirstOrDefault(x => x.Name == twRegions.SelectedNode.Text);
+                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
 
                 if (region != null)
                     region.IsBoard = false;
             }
         }
-
-
 
         private void btnCreateFont_Click(object sender, EventArgs e)
         {
@@ -1464,8 +1524,8 @@ namespace OpenScrape.App
             if (locFontsRegion.Count > 0)
             {
                 _formCreateFont = new FormCreateFont();
-                _formCreateFont._fonts = locFontsRegion;
-                _formCreateFont.region = this;
+                _formCreateFont.Fonts = locFontsRegion;
+                _formCreateFont.LocRegion = this;
                 _formCreateFont.Show();
             }
 
@@ -1553,7 +1613,7 @@ namespace OpenScrape.App
 
         public void Execute(List<FontRegion> fonts)
         {
-            var node = twRegions.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
+            var node = twRegionsConfig.Nodes.Find("Nodo3", true).FirstOrDefault() as TreeNode;
 
             _fonts.AddRange(fonts);
 
@@ -1568,7 +1628,7 @@ namespace OpenScrape.App
             if (nodo == "Image")
                 nodo = _locRegion.IsBoard ? "Nodo1" : "Nodo2";
 
-            var node = twRegions.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
+            var node = twRegionsConfig.Nodes.Find(nodo, true).FirstOrDefault() as TreeNode;
             var type = string.Empty;
             Bitmap img = null;
 
@@ -1600,7 +1660,7 @@ namespace OpenScrape.App
             }
 
             node.Nodes.Add(texto);
-            twRegions.ExpandAll();
+            twRegionsConfig.ExpandAll();
 
         }
 
