@@ -33,7 +33,8 @@ namespace OpenScrape.App
         {
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
-            tabPage1 = new TabPage();
+            tbJuego = new TabPage();
+            tbConfig = new TabPage();
             tbResumen = new TextBox();
             ckBoard = new CheckBox();
             label8 = new Label();
@@ -83,18 +84,23 @@ namespace OpenScrape.App
             btnDelete = new Button();
             btnNew = new Button();
             twRegionsConfig = new TreeView();
-            tabPage2 = new TabPage();
+            tbTables = new TabPage();
+            dgvHands = new DataGridView();
+            twTables = new TreeView();
+            tbLogs = new TabPage();
             tbResume = new TextBox();
             pictureBox1 = new PictureBox();
             label4 = new Label();
             tbControl.SuspendLayout();
-            tabPage1.SuspendLayout();
+            tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
             gbTest.SuspendLayout();
-            tabPage2.SuspendLayout();
+            tbTables.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
+            tbLogs.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
@@ -104,48 +110,60 @@ namespace OpenScrape.App
             // 
             // tbControl
             // 
-            tbControl.Controls.Add(tabPage1);
-            tbControl.Controls.Add(tabPage2);
-            tbControl.Location = new Point(12, 12);
+            tbControl.Controls.Add(tbJuego);
+            tbControl.Controls.Add(tbConfig);
+            tbControl.Controls.Add(tbTables);
+            tbControl.Controls.Add(tbLogs);
+            tbControl.Dock = DockStyle.Fill;
+            tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(616, 621);
+            tbControl.Size = new Size(679, 635);
             tbControl.TabIndex = 65;
             // 
-            // tabPage1
+            // tbJuego
             // 
-            tabPage1.Controls.Add(tbResumen);
-            tabPage1.Controls.Add(ckBoard);
-            tabPage1.Controls.Add(label8);
-            tabPage1.Controls.Add(tbR);
-            tabPage1.Controls.Add(ckColor);
-            tabPage1.Controls.Add(groupBox1);
-            tabPage1.Controls.Add(cbSpeed);
-            tabPage1.Controls.Add(btnCreateFont);
-            tabPage1.Controls.Add(btnCreateImage);
-            tabPage1.Controls.Add(groupBox2);
-            tabPage1.Controls.Add(btnLoadMap);
-            tabPage1.Controls.Add(btnSaveMap);
-            tabPage1.Controls.Add(cbMark);
-            tabPage1.Controls.Add(btnWindow);
-            tabPage1.Controls.Add(btnCapture4Bet);
-            tabPage1.Controls.Add(btnCapture3bet);
-            tabPage1.Controls.Add(pbCard1);
-            tabPage1.Controls.Add(pbCard0);
-            tabPage1.Controls.Add(lbAction);
-            tabPage1.Controls.Add(btnCapture);
-            tabPage1.Controls.Add(gbTest);
-            tabPage1.Controls.Add(cbTest);
-            tabPage1.Controls.Add(btnDelete);
-            tabPage1.Controls.Add(btnNew);
-            tabPage1.Controls.Add(twRegionsConfig);
-            tabPage1.Location = new Point(4, 24);
-            tabPage1.Name = "tabPage1";
-            tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(608, 593);
-            tabPage1.TabIndex = 0;
-            tabPage1.Text = "Configurar";
-            tabPage1.UseVisualStyleBackColor = true;
+            tbJuego.Location = new Point(4, 24);
+            tbJuego.Name = "tbJuego";
+            tbJuego.Size = new Size(671, 607);
+            tbJuego.TabIndex = 2;
+            tbJuego.Text = "Juego";
+            tbJuego.UseVisualStyleBackColor = true;
+            // 
+            // tbConfig
+            // 
+            tbConfig.Controls.Add(tbResumen);
+            tbConfig.Controls.Add(ckBoard);
+            tbConfig.Controls.Add(label8);
+            tbConfig.Controls.Add(tbR);
+            tbConfig.Controls.Add(ckColor);
+            tbConfig.Controls.Add(groupBox1);
+            tbConfig.Controls.Add(cbSpeed);
+            tbConfig.Controls.Add(btnCreateFont);
+            tbConfig.Controls.Add(btnCreateImage);
+            tbConfig.Controls.Add(groupBox2);
+            tbConfig.Controls.Add(btnLoadMap);
+            tbConfig.Controls.Add(btnSaveMap);
+            tbConfig.Controls.Add(cbMark);
+            tbConfig.Controls.Add(btnWindow);
+            tbConfig.Controls.Add(btnCapture4Bet);
+            tbConfig.Controls.Add(btnCapture3bet);
+            tbConfig.Controls.Add(pbCard1);
+            tbConfig.Controls.Add(pbCard0);
+            tbConfig.Controls.Add(lbAction);
+            tbConfig.Controls.Add(btnCapture);
+            tbConfig.Controls.Add(gbTest);
+            tbConfig.Controls.Add(cbTest);
+            tbConfig.Controls.Add(btnDelete);
+            tbConfig.Controls.Add(btnNew);
+            tbConfig.Controls.Add(twRegionsConfig);
+            tbConfig.Location = new Point(4, 24);
+            tbConfig.Name = "tbConfig";
+            tbConfig.Padding = new Padding(3);
+            tbConfig.Size = new Size(671, 607);
+            tbConfig.TabIndex = 0;
+            tbConfig.Text = "Configurar";
+            tbConfig.UseVisualStyleBackColor = true;
             // 
             // tbResumen
             // 
@@ -682,16 +700,46 @@ namespace OpenScrape.App
             twRegionsConfig.AfterSelect += twRegions_AfterSelect;
             twRegionsConfig.DoubleClick += twRegions_DoubleClick;
             // 
-            // tabPage2
+            // tbTables
             // 
-            tabPage2.Controls.Add(tbResume);
-            tabPage2.Location = new Point(4, 24);
-            tabPage2.Name = "tabPage2";
-            tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(608, 593);
-            tabPage2.TabIndex = 1;
-            tabPage2.Text = "Logs";
-            tabPage2.UseVisualStyleBackColor = true;
+            tbTables.Controls.Add(dgvHands);
+            tbTables.Controls.Add(twTables);
+            tbTables.Location = new Point(4, 24);
+            tbTables.Name = "tbTables";
+            tbTables.Size = new Size(671, 607);
+            tbTables.TabIndex = 3;
+            tbTables.Text = "Tablas";
+            tbTables.UseVisualStyleBackColor = true;
+            // 
+            // dgvHands
+            // 
+            dgvHands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvHands.Dock = DockStyle.Fill;
+            dgvHands.Location = new Point(205, 0);
+            dgvHands.Name = "dgvHands";
+            dgvHands.Size = new Size(466, 607);
+            dgvHands.TabIndex = 1;
+            // 
+            // twTables
+            // 
+            twTables.Dock = DockStyle.Left;
+            twTables.Location = new Point(0, 0);
+            twTables.Name = "twTables";
+            twTables.Size = new Size(205, 607);
+            twTables.TabIndex = 0;
+            twTables.BeforeExpand += twTables_BeforeExpand;
+            twTables.DoubleClick += twTables_DoubleClick;
+            // 
+            // tbLogs
+            // 
+            tbLogs.Controls.Add(tbResume);
+            tbLogs.Location = new Point(4, 24);
+            tbLogs.Name = "tbLogs";
+            tbLogs.Padding = new Padding(3);
+            tbLogs.Size = new Size(671, 607);
+            tbLogs.TabIndex = 1;
+            tbLogs.Text = "Logs";
+            tbLogs.UseVisualStyleBackColor = true;
             // 
             // tbResume
             // 
@@ -701,12 +749,12 @@ namespace OpenScrape.App
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(602, 587);
+            tbResume.Size = new Size(665, 601);
             tbResume.TabIndex = 1;
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(634, 193);
+            pictureBox1.Location = new Point(782, 193);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(302, 192);
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
@@ -717,7 +765,7 @@ namespace OpenScrape.App
             // 
             label4.AutoSize = true;
             label4.Font = new Font("Segoe UI", 16F);
-            label4.Location = new Point(648, 435);
+            label4.Location = new Point(777, 435);
             label4.Name = "label4";
             label4.Size = new Size(71, 30);
             label4.TabIndex = 67;
@@ -727,17 +775,17 @@ namespace OpenScrape.App
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(630, 635);
+            ClientSize = new Size(679, 635);
             Controls.Add(label4);
             Controls.Add(pictureBox1);
             Controls.Add(tbControl);
             Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
-            Text = "Form1";
-            Load += Form1_Load;
+            Text = "Dealytics";
+            Load += FrmMain_Load;
             tbControl.ResumeLayout(false);
-            tabPage1.ResumeLayout(false);
-            tabPage1.PerformLayout();
+            tbConfig.ResumeLayout(false);
+            tbConfig.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             groupBox2.ResumeLayout(false);
@@ -746,8 +794,10 @@ namespace OpenScrape.App
             ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
             gbTest.ResumeLayout(false);
             gbTest.PerformLayout();
-            tabPage2.ResumeLayout(false);
-            tabPage2.PerformLayout();
+            tbTables.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
+            tbLogs.ResumeLayout(false);
+            tbLogs.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();
@@ -758,8 +808,8 @@ namespace OpenScrape.App
         private Label label6;
         private Label label9;
         private TabControl tbControl;
-        private TabPage tabPage1;
-        private TabPage tabPage2;
+        private TabPage tbConfig;
+        private TabPage tbLogs;
         private CheckBox cbMark;
         private Button btnWindow;
         private Button btnCapture4Bet;
@@ -812,5 +862,9 @@ namespace OpenScrape.App
         private TextBox tbResume;
         private PictureBox pictureBox1;
         private Label label4;
+        private TabPage tbJuego;
+        private TabPage tbTables;
+        private TreeView twTables;
+        private DataGridView dgvHands;
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.Enums
+namespace OpenScrape.Domain.Enums
 {
     public class ActionsResponse
     {
@@ -12,7 +12,7 @@ namespace OpenScrape.App.Enums
         public List<string> Hands { get; set; } = default!;
         public Styles Style { get; set; } = default!;
         public Positions Position { get; set; } = default!;
-        
+
     }
 
 }

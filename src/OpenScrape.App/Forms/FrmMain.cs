@@ -3,13 +3,14 @@ using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
-using OpenScrape.App.Enums;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Interfaces;
 using OpenScrape.App.Models;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
+using System.Data;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
@@ -89,6 +90,9 @@ namespace OpenScrape.App
         bool _newHand = false;
         bool _backgroundExecute = false;
 
+        private IReadOnlyList<Table>? _tables;
+        private List<Table>? _dataTables;
+
         private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
 
         #region Action_UseCase
@@ -137,11 +141,11 @@ namespace OpenScrape.App
         public FrmMain(IDocumentStore dataBase)
         {
             InitializeComponent();
-            _dataBase = dataBase;   
+            _dataBase = dataBase;
             _session = GenerateRandomNumbers();
         }
 
-        private async void Form1_Load(object sender, EventArgs e)
+        private async void FrmMain_Load(object sender, EventArgs e)
         {
             var session = _dataBase.LightweightSession();
             var regions = new List<Domain.ValueObjects.Region>();
@@ -161,8 +165,12 @@ namespace OpenScrape.App
             }
 
             _regionsTableMap = regionsTableMap.ToList();
-            LoadTreeView(regionsTableMap.ToList());
+            LoadTreeViewRegions(regionsTableMap.ToList());
 
+
+            _tables = await session.Query<Table>().ToListAsync();
+            _dataTables = _tables.ToList();
+            LoadTreeViewTables(_dataTables);
 
             _formImage.Location = new Point(this.Width, this.Location.Y);
             _formImage.Show();
@@ -170,21 +178,58 @@ namespace OpenScrape.App
 
         }
 
-        private void LoadTreeView(List<RegionTableMap> categories)
+        private void LoadTreeViewTables(IReadOnlyList<Table> tables)
+        {
+            twTables.Nodes.Clear();
+
+            foreach (var table in tables)
+            {
+                // Primer nivel - Name de la tabla
+                TreeNode actionNode = twTables.Nodes.Add(table.Id, table.Id);
+
+                if (table.Positions != null && table.Positions.Any())
+                {
+                    // Agrupar por HeroPosition para crear el segundo nivel
+                    var positionGroups = table.Positions
+                        .GroupBy(p => p.HeroPosition)
+                        .ToDictionary(g => g.Key, g => g.ToList());
+
+                    foreach (var positionGroup in positionGroups)
+                    {
+                        // Segundo nivel - HeroPosition
+                        TreeNode heroPositionNode = actionNode.Nodes.Add(
+                            positionGroup.Key, // Key como identificador
+                            positionGroup.Key  // Key como texto a mostrar
+                        );
+
+                        // Tercer nivel - Name de cada posición
+                        foreach (var position in positionGroup.Value)
+                        {
+                            heroPositionNode.Nodes.Add(
+                                position.Name, // Identificador único (puedes usar un Guid si lo necesitas)
+                                position.Name  // Texto a mostrar
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        private void LoadTreeViewRegions(List<RegionTableMap> categories)
         {
             twRegionsConfig.Nodes.Clear();
 
             foreach (var category in categories)
             {
                 // Añadir nodo principal (categoría)
-                TreeNode categoryNode = twRegionsConfig.Nodes.Add(category.Id);
+                TreeNode regionsConfigNode = twRegionsConfig.Nodes.Add(category.Id);
 
                 // Añadir sub-nodos (regiones)
                 if (category.Regions != null)
                 {
                     foreach (var region in category.Regions)
                     {
-                        categoryNode.Nodes.Add(region.Name); // Asumiendo que Region tiene una propiedad Name
+                        regionsConfigNode.Nodes.Add(region.Name); // Asumiendo que Region tiene una propiedad Name
                     }
                 }
             }
@@ -204,7 +249,7 @@ namespace OpenScrape.App
 
         private void twRegions_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            var sen = (System.Windows.Forms.TreeView)sender;
+            var sen = (TreeView)sender;
             var name = sen.SelectedNode.Text;
 
             if (twRegionsConfig.SelectedNode.Parent != null && twRegionsConfig.SelectedNode.Parent.Name == "Nodo0")
@@ -362,7 +407,7 @@ namespace OpenScrape.App
                 File.AppendAllText(path, tbResume.Text + Environment.NewLine);
                 tbResume.Text = string.Empty;
 
-                
+
             }
 
             if (_scrapeResult.DataPlayer.Count() == 0)
@@ -465,7 +510,7 @@ namespace OpenScrape.App
                             //IP
                             if (_scrapeResult.U0InPosition)
                             {
-                                
+
 
                             }
                             //OOP
@@ -619,7 +664,7 @@ namespace OpenScrape.App
 
             if (_scrapeResult != null)
             {
-                if(_isPreflop)
+                if (_isPreflop)
                 {
                     var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
                     var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
@@ -631,7 +676,7 @@ namespace OpenScrape.App
                     tbResume.Text += $"{_scrapeResult.DataPlayer.FirstOrDefault(f => f.Position == HeroPosition.BigBlind)?.Name ?? "Hero"}: posts big blind\r\n";
                     tbResume.Text += "*** HOLE CARDS ***\r\n";
                     tbResume.Text += $"Dealt to Hero [{_scrapeResult.U0CardFace0} {_scrapeResult.U0CardFace1}]\r\n";
-                    
+
                     foreach (HeroPosition position in Enum.GetValues(typeof(HeroPosition)))
                     {
                         if (position != HeroPosition.None && position <= _scrapeResult.P0Position)
@@ -650,7 +695,7 @@ namespace OpenScrape.App
                                 }
                             }
 
-                            if(!string.IsNullOrWhiteSpace(action))
+                            if (!string.IsNullOrWhiteSpace(action))
                                 tbResume.Text += $"{name}: {action}\r\n";
                         }
                     }
@@ -658,14 +703,14 @@ namespace OpenScrape.App
                     _isPreflop = false;
                 }
 
-                if(_isFlop)
+                if (_isFlop)
                 {
                     tbResume.Text += "*** FLOP *** [";
                     var countFlop = 0;
                     foreach (var carta in _scrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop))
                     {
                         countFlop++;
-                        if(countFlop == 3)
+                        if (countFlop == 3)
                             tbResume.Text += $"{carta.Name}]";
                         else
                             tbResume.Text += $"{carta.Name} ";
@@ -675,7 +720,7 @@ namespace OpenScrape.App
 
             if (!_isFlop)
             {
-                
+
             }
 
             SetBoardValues();
@@ -826,7 +871,7 @@ namespace OpenScrape.App
                             _newHand = true;
                             _newTableHand++;
                             _tableHand = _newTableHand.ToString();
-                        }   
+                        }
                     }
                 }
             }
@@ -967,7 +1012,7 @@ namespace OpenScrape.App
             foreach (var item in _regions.Where(x => !x.IsColor && !x.IsHash && (x.Name.Contains("sitout") || x.Name.Contains("tablename"))))
             {
                 switch (item.Name)
-                {   
+                {
                     case "p1sitout":
                         if (!_scrapeResult.DataPlayer.First(f => f.Name == "P1").Empty &&
                             !_scrapeResult.DataPlayer.First(f => f.Name == "P1").Active &&
@@ -1092,7 +1137,7 @@ namespace OpenScrape.App
             Rect area = new Rect(x, y, width, height);
 
             var res = ocrengine.Process(imgSitOut, area, PageSegMode.Auto);
-            
+
             //if (umbral == 168)
             //{
             //    pictureBox1.Image = CaptureWindowsHelper.BinaryImage(_getCropImageUseCase.Execute(new GetCropImageUseCaseRequest { Source = new Bitmap(_formImage.pbImagen.Image), Section = new Rectangle(x, y, width, height) }).Image, umbral);
@@ -1664,24 +1709,24 @@ namespace OpenScrape.App
 
         }
 
-        #endregion
-
-        #region Tama�o Region
-
         private void btnPlusWidth_Click(object sender, EventArgs e)
         {
-
             _formImage.pbImagen.Refresh();
 
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
-            _locRegion.Width += _speed;
-            tbWidth.Text = _locRegion.Width.ToString();
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            if (_selectedRegion != null)
+            {
+                var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width + _speed };
+                _selectedRegion = updatedRegion;
+                tbWidth.Text = _selectedRegion.Width.ToString();
+                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+
+                _selectedRegion = updatedRegion;
+            }
 
             _img = _formImage.pbImagen.Image;
-
         }
 
         private void btnMinusWidth_Click(object sender, EventArgs e)
@@ -1691,44 +1736,57 @@ namespace OpenScrape.App
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
-            _locRegion.Width -= _speed;
-            tbWidth.Text = _locRegion.Width.ToString();
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            if (_selectedRegion != null)
+            {
+                var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width - _speed };
+                _selectedRegion = updatedRegion;
+                tbWidth.Text = _selectedRegion.Width.ToString();
+                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
 
+                _selectedRegion = updatedRegion;
+            }
 
             _img = _formImage.pbImagen.Image;
         }
 
         private void btnPlusHeight_Click(object sender, EventArgs e)
         {
-
             _formImage.pbImagen.Refresh();
 
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
-            _locRegion.Height += _speed;
-            tbHeight.Text = _locRegion.Height.ToString();
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            if (_selectedRegion != null)
+            {
+                var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height + _speed };
+                _selectedRegion = updatedRegion;
+                tbHeight.Text = _selectedRegion.Height.ToString();
+                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+
+                _selectedRegion = updatedRegion;
+            }
 
             _img = _formImage.pbImagen.Image;
-
         }
 
         private void btnMinusHeight_Click(object sender, EventArgs e)
         {
-
             _formImage.pbImagen.Refresh();
 
             _papel = _formImage.pbImagen.CreateGraphics();
             Pen lapiz = new Pen(Color.Red);
 
-            _locRegion.Height -= _speed;
-            tbHeight.Text = _locRegion.Height.ToString();
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
+            if (_selectedRegion != null)
+            {
+                var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height - _speed };
+                _selectedRegion = updatedRegion;
+                tbHeight.Text = _selectedRegion.Height.ToString();
+                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+
+                _selectedRegion = updatedRegion;
+            }
 
             _img = _formImage.pbImagen.Image;
-
         }
 
 
@@ -1738,275 +1796,311 @@ namespace OpenScrape.App
 
         private void btnRigth_Click(object sender, EventArgs e)
         {
-
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX + _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.X += _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-            _img = _formImage.pbImagen.Image;
-
         }
 
         private void btnLeft_Click(object sender, EventArgs e)
         {
-
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX - _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.X -= _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
 
         }
 
         private void btnDown_Click(object sender, EventArgs e)
         {
-
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y += _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-            _img = _formImage.pbImagen.Image;
-
         }
 
         private void btnUp_Click(object sender, EventArgs e)
         {
-
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y -= _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
         }
 
         private void btnUpLeft_Click(object sender, EventArgs e)
         {
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX - _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y -= _speed;
-            _locRegion.X -= _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
         }
 
         private void btnUpRight_Click(object sender, EventArgs e)
         {
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX + _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y -= _speed;
-            _locRegion.X += _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
         }
 
         private void btnDownLeft_Click(object sender, EventArgs e)
         {
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX - _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y += _speed;
-            _locRegion.X -= _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
         }
 
         private void btnDownRight_Click(object sender, EventArgs e)
         {
-            _formImage.pbImagen.Refresh();
-
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            var rgbRequest = new GetRGBColorRequest
+            if (_selectedRegion != null)
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
-                X = _locRegion.X,
-                Y = _locRegion.Y,
-                IsColor = ckColor.Checked
-            };
+                _formImage.pbImagen.Refresh();
 
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+                _papel = _formImage.pbImagen.CreateGraphics();
+                Pen lapiz = new Pen(Color.Red);
 
-            if (ckColor.Checked)
-            {
-                tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                var rgbRequest = new GetRGBColorRequest
+                {
+                    Image = (Bitmap)_formImage.pbImagen.Image,
+                    X = _selectedRegion.PosX,
+                    Y = _selectedRegion.PosY,
+                    IsColor = ckColor.Checked
+                };
+
+                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+                if (ckColor.Checked)
+                {
+                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                }
+
+                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX + _speed };
+                tbY.Text = updateRegion.PosY.ToString();
+                tbX.Text = updateRegion.PosX.ToString();
+                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
+                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
+
+                if (updateRegion.IsColor.GetValueOrDefault())
+                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+
+                _selectedRegion = updateRegion;
+                _img = _formImage.pbImagen.Image;
             }
-
-            _locRegion.Y += _speed;
-            _locRegion.X += _speed;
-            tbY.Text = _locRegion.Y.ToString();
-            tbX.Text = _locRegion.X.ToString();
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
-            _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
-            _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-
-
-            _img = _formImage.pbImagen.Image;
         }
 
 
@@ -2084,5 +2178,77 @@ namespace OpenScrape.App
             }
         }
 
+        private void twTables_DoubleClick(object sender, EventArgs e)
+        {
+            if (sender is TreeView treeView && treeView.SelectedNode != null)
+            {
+                var manos = ObtenerManosActionNodo(treeView.SelectedNode);
+                var manosOrder = manos?.OrderByDescending(o => o.Name).ToList();
+                dgvHands.DataSource = manosOrder;
+            }
+        }
+
+        private List<Domain.ValueObjects.Hand> ObtenerManosActionNodo(TreeNode selectedNode)
+        {
+            // Solo procesar si es un nodo hoja (último nivel)
+            if (selectedNode.Nodes.Count == 0 &&
+                selectedNode.Parent != null &&
+                selectedNode.Parent.Parent != null)
+            {
+                // Obtener el nombre de la posición (nivel actual)
+                string positionName = selectedNode.Text;
+
+                // Obtener el HeroPosition (nivel padre)
+                string heroPosition = selectedNode.Parent.Text;
+
+                // Obtener el nombre de la tabla (nivel raíz)
+                string tableName = selectedNode.Parent.Parent.Text;
+
+                // Buscar la tabla correspondiente
+                var table = _dataTables?.FirstOrDefault(f => f.Id == tableName);
+                if (table != null)
+                {
+                    // Buscar la posición específica
+                    var position = table.Positions?
+                        .FirstOrDefault(p =>
+                            p.Name == positionName &&
+                            p.HeroPosition == heroPosition);
+
+                    return position?.Hands?.ToList() ?? new List<Domain.ValueObjects.Hand>();
+                }
+            }
+
+            return new List<Domain.ValueObjects.Hand>();
+        }
+
+        private void twTables_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+        {
+            TreeNode nodeToExpand = e.Node;
+
+            // Obtener todos los nodos del mismo nivel
+            IEnumerable<TreeNode> siblingNodes;
+
+            if (nodeToExpand.Parent == null)
+            {
+                // Nodos raíz
+                siblingNodes = twTables.Nodes.Cast<TreeNode>()
+                    .Where(node => node != nodeToExpand);
+            }
+            else
+            {
+                // Nodos hijo
+                siblingNodes = nodeToExpand.Parent.Nodes.Cast<TreeNode>()
+                    .Where(node => node != nodeToExpand);
+            }
+
+            // Colapsar todos los nodos hermanos que estén expandidos
+            foreach (TreeNode sibling in siblingNodes)
+            {
+                if (sibling.IsExpanded)
+                {
+                    sibling.Collapse();
+                }
+            }
+        }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenScrape.App.Enums
+namespace OpenScrape.Domain.Enums
 {
     public enum Styles
     {

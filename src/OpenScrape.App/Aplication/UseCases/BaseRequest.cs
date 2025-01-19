@@ -1,10 +1,10 @@
-﻿using OpenScrape.App.Enums;
+﻿using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
     public class BaseRequest
     {
         public string Hand { get; set; } = default!;
-        public HeroPosition Position { get; set; }
+        public TablePosition Position { get; set; }
     }
 }

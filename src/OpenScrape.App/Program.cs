@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 
 namespace OpenScrape.App
@@ -25,7 +26,7 @@ namespace OpenScrape.App
                 {
                     // Agregar configuración de base de datos
                     services.AddDataBase(context.Configuration, true);
-                    //services.AddUseCases();
+                    services.AddUseCases();
                     //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
 
                     //services.AddScoped<OcrService>();

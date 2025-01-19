@@ -1,4 +1,4 @@
-﻿namespace OpenScrape.App.Enums
+﻿namespace OpenScrape.Domain.Enums
 {
     public enum JugadasEnum
     {

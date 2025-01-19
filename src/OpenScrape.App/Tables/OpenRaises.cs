@@ -79,6 +79,7 @@
 
         #endregion
 
+
         public static string GetSmallBlindAction(string hand)
         {
             return smallBlindHands.Contains(hand) ? "Open Raise x2.5" : "Fold";

@@ -9,6 +9,6 @@
 
     public interface IGetActionOpenRaiseUseCase
     {
-        GetActionOpenRaiseUseCaseResponse Execute(GetActionOpenRaiseUseCaseRequest request);
+        Task<GetActionOpenRaiseUseCaseResponse> Execute(GetActionOpenRaiseUseCaseRequest request);
     }
 }
