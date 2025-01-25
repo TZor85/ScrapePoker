@@ -1,25 +1,29 @@
-﻿using OpenScrape.App.Enums;
-using OpenScrape.App.Tables;
+﻿using OpenScrape.Domain.Enums;
+using OpenScrape.Features.ActionScenario;
 
-namespace OpenScrape.App.Aplication.UseCases.Actions
+namespace OpenScrape.App.Aplication.UseCases.Actions;
+
+public class GetActionRaiseOverLimperUseCase : IGetActionRaiseOverLimperUseCase
 {
-    public class GetActionRaiseOverLimperUseCase : IGetActionRaiseOverLimperUseCase
-    {
-        public GetActionRaiseOverLimperUseCaseResponse Execute(GetActionRaiseOverLimperUseCaseRequest request)
-        {
-            var response = new GetActionRaiseOverLimperUseCaseResponse();
+    private ActionScenarioUseCases _actionUseCase;
 
-            response.Action = request.Position switch
-            {
-                HeroPosition.BigBlind => RaiseOverLimpers.GetBigBlindVsSmallBlindHands(request.Hand),
-                HeroPosition.SmallBlind => RaiseOverLimpers.GetSmallBlindAction(request.Hand),
-                HeroPosition.Button => RaiseOverLimpers.GetButtonAction(request.Hand),
-                HeroPosition.CutOff => RaiseOverLimpers.GetCutOffAction(request.Hand),
-                HeroPosition.MiddlePosition => RaiseOverLimpers.GetMiddleAction(request.Hand),
-                _ => string.Empty
-            };
-             
-            return response;
-        }
+    public GetActionRaiseOverLimperUseCase(ActionScenarioUseCases actionUseCase)
+    {
+        _actionUseCase = actionUseCase;
+    }
+
+    public async Task<GetActionRaiseOverLimperUseCaseResponse> Execute(GetActionRaiseOverLimperUseCaseRequest request)
+    {
+        var response = new GetActionRaiseOverLimperUseCaseResponse();
+
+        response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.RaiseOverLimpers, new ActionScenarioRequest
+        {
+            HeroPosition = request.Position,
+            HandName = request.Hand,
+            Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
+            Limper = request.LimperPosition
+        });
+         
+        return response;
     }
 }

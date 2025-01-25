@@ -28,7 +28,7 @@ public class GetActionScenario
                                 && (request.Limper == null || w.Limper == request.Limper.GetDescription())
                                 && (request.Caller == null || w.Caller == request.Caller.GetDescription())
                                 && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
-                                && (request.BetSize == null || w.BetSize == request.BetSize)
+                                //&& (request.BetSize == null || w.BetSize == request.BetSize)
                                 && (request.IsGreater == null || w.IsGreater == request.IsGreater)
                                 && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
                         .FirstOrDefault()?.Hands

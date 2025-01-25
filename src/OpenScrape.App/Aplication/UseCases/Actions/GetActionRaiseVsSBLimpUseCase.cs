@@ -1,20 +1,30 @@
-﻿using OpenScrape.App.Tables;
+﻿using OpenScrape.Domain.Enums;
+using OpenScrape.Features.ActionScenario;
 
-namespace OpenScrape.App.Aplication.UseCases.Actions
+namespace OpenScrape.App.Aplication.UseCases.Actions;
+
+public class GetActionRaiseVsSBLimpUseCase : IGetActionRaiseVsSBLimpUseCase
 {
-    public class GetActionRaiseVsSBLimpUseCase : IGetActionRaiseVsSBLimpUseCase
+    private ActionScenarioUseCases _actionUseCase;
+
+    public GetActionRaiseVsSBLimpUseCase(ActionScenarioUseCases actionUseCase)
     {
-        public GetActionRaiseVsSBLimpResponse Execute(GetActionRaiseVsSBLimpRequest request)
+        _actionUseCase = actionUseCase;
+    }
+
+    public async Task<GetActionRaiseVsSBLimpResponse> Execute(GetActionRaiseVsSBLimpRequest request)
+    {
+        var response = new GetActionRaiseVsSBLimpResponse();
+
+        response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.BigBlindVsSmallBlind, new ActionScenarioRequest
         {
-            var response = new GetActionRaiseVsSBLimpResponse();
+            HeroPosition = request.Position,
+            HandName = request.Hand,
+            Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
+            Limper = request.LimperPosition,
+            ThreeBetPosition = request.ThreeBetPosition
+        });
 
-            if (request.OnlyCall)
-                response.Action = RaiseVsSBLimp.GetBigBlindvsSBCall(request.Hand);
-            else
-                response.Action = RaiseVsSBLimp.GetBigBlindvsSBCallAndRaise(request.Hand);
-
-
-            return response;
-        }
+        return response;
     }
 }

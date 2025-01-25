@@ -2,22 +2,21 @@
 using OpenScrape.App.Entities;
 using OpenScrape.App.Models;
 
-namespace OpenScrape.App.Aplication
+namespace OpenScrape.App.Aplication;
+
+public class GetCardsFlopUseCaseRequest : BaseRequest
 {
-    public class GetCardsFlopUseCaseRequest : BaseRequest
-    {
-        public List<Regions> Regions { get; set; } = new List<Regions>();
-        public List<ImageRegion> ImageRegions { get; set; } = new List<ImageRegion>();
-        public Image? Image { get; set; }
-    }
+    public List<Domain.ValueObjects.Region> Regions { get; set; } = new List<Domain.ValueObjects.Region>();
+    public List<ImageRegion> ImageRegions { get; set; } = new List<ImageRegion>();
+    public Image? Image { get; set; }
+}
 
-    public class GetCardsFlopUseCaseResponse : BaseResponse
-    {
-        public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
-    }
+public class GetCardsFlopUseCaseResponse : BaseResponse
+{
+    public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
+}
 
-    public interface IGetCardsFlopUseCase
-    {
-        GetCardsFlopUseCaseResponse Execute(GetCardsFlopUseCaseRequest request);
-    }
+public interface IGetCardsFlopUseCase
+{
+    GetCardsFlopUseCaseResponse Execute(GetCardsFlopUseCaseRequest request);
 }

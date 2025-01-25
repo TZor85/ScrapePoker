@@ -1,4 +1,4 @@
-﻿using OpenScrape.App.Enums;
+﻿using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Entities
 {

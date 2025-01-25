@@ -1,6 +1,6 @@
 ﻿using OpenScrape.App.Entities;
-using OpenScrape.App.Enums;
 using OpenScrape.App.Helpers;
+using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
@@ -19,7 +19,7 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             var response = new GetCardsFlopUseCaseResponse();
 
-            foreach (var item in request.Regions.Where(x => x.IsHash && !x.Name.Contains("u0card")))
+            foreach (var item in request.Regions)
             {
                 var maxEqual = 0;
                 var max = 0;
@@ -28,7 +28,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 var force = 0;
                 var suit = 0;
 
-                var imageBmp = _getCropImageUseCase.Execute(new GetCropImageUseCaseRequest { Source = new Bitmap(request.Image), Section = new Rectangle(item.X, item.Y, item.Width, item.Height) }).Image;
+                var imageBmp = _getCropImageUseCase.Execute(new GetCropImageUseCaseRequest { Source = new Bitmap(request.Image), Section = new Rectangle(item.PosX, item.PosY, item.Width, item.Height) }).Image;
                 string iHash1 = _getHashImageUseCase
                                 .Execute(new GetHashImageUseCaseRequest { Image = CaptureWindowsHelper.BinaryImage(imageBmp, 130) }).Hash;
 

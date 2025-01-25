@@ -1,6 +1,8 @@
 ﻿using Marten;
-using OpenScrape.App.Enums;
 using OpenScrape.App.Interfaces;
+using OpenScrape.Domain.Enums;
+using OpenScrape.Features.ActionScenario;
+using OpenScrape.Features.Card;
 using System.ComponentModel;
 
 namespace OpenScrape.App
@@ -16,21 +18,25 @@ namespace OpenScrape.App
         public IAddRegion LocRegion { get; set; }
 
         private readonly IDocumentStore _dataBase;
+        private ActionScenarioUseCases _actionScenarioUseCases;
+        private CardUseCases _cardUseCases;
 
         public FormRegions()
         {
             InitializeComponent();
         }
 
-        public FormRegions(IDocumentStore dataBase)
+        public FormRegions(IDocumentStore dataBase, ActionScenarioUseCases actionScenarioUseCases, CardUseCases cardUseCases)
         {
             _dataBase = dataBase;
             InitializeComponent();
+            _actionScenarioUseCases = actionScenarioUseCases;
+            _cardUseCases = cardUseCases;
         }
 
         private void FormRegions_Load(object sender, EventArgs e)
         {
-            form = new FrmMain(_dataBase);
+            form = new FrmMain(_dataBase, _actionScenarioUseCases, _cardUseCases);
             cbRegions.Items.AddRange(ListRegions.Regions.ToArray());
         }
 

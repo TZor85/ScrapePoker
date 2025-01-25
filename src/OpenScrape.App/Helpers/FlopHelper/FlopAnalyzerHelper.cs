@@ -1,5 +1,5 @@
-﻿using OpenScrape.App.Aplication;
-using OpenScrape.App.Entities;
+﻿using OpenScrape.App.Entities;
+using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Helpers.FlopHelper
 {
@@ -24,14 +24,14 @@ namespace OpenScrape.App.Helpers.FlopHelper
             if (pairRank >= 10) return false; // No es par medio/bajo
 
             // Verifica si hay sobrecartas en el flop
-            return request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).Any(card => card.Force > pairRank);
+            return request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).Any(card => card.Force > pairRank);
         }
 
         private static bool IsSuitedWithDraws(FlopAnalyzerHelperReqest request)
         {
             if (!request.TableScrapeFlopResult.HaveHandSuited) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop);
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop);
 
             // Verifica si hay potencial de color o escalera
             bool hasFlushDraw = flop.Count(c => c.Suit == request.TableScrapeResult.U0CardSuit0) >= 2;
@@ -45,14 +45,14 @@ namespace OpenScrape.App.Helpers.FlopHelper
             if (!request.TableScrapeFlopResult.HasAce) return false;
 
             // Verifica si el flop es bajo/medio (todas las cartas menores a Q)
-            return request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).All(card => card.Force < 12);
+            return request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).All(card => card.Force < 12);
         }
 
         private static bool IsConnectedWithPairVsDangerousBoard(FlopAnalyzerHelperReqest request)
         {
             if (!request.TableScrapeFlopResult.HaveHandConnected) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop);
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop);
             var pairRank0 = request.TableScrapeResult.U0CardForce0;
             var pairRank1 = request.TableScrapeResult.U0CardForce1;
 
@@ -82,7 +82,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
             // Verifica si tenemos cartas altas (QJ+) y el flop es bajo (menor que 10)
             bool hasHighCards = request.TableScrapeFlopResult.GetLowestRank >= 11; // J o mayor
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).ToList();
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             bool isLowFlop = flop.All(c => c.Force < 10);
             bool isUnconnectedFlop = IsUnconnectedBoard(flop);
@@ -97,7 +97,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
             // Verifica si el kicker es débil (menor que T)
             bool hasWeakKicker = request.TableScrapeFlopResult.GetLowestRank < 10;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).ToList();
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Verifica si el flop es peligroso (coordinado o con cartas altas)
             bool isDangerousFlop = IsCoordinatedBoard(flop) ||
@@ -110,7 +110,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
         {
             if (!request.TableScrapeFlopResult.HasKing) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).ToList();
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Verifica si hay una J o Q en el flop y el board está descoordinado
             bool hasJackOrQueen = flop.Any(c => c.Force == 11 || c.Force == 12);
@@ -126,7 +126,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
             int pairRank = request.TableScrapeResult.U0CardForce0;
             if (pairRank >= 10) return false; // No es par medio
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == Enums.BoardPosition.Flop).ToList();
+            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Cuenta las sobrecartas en el flop
             int overcardsCount = flop.Count(c => c.Force > pairRank);

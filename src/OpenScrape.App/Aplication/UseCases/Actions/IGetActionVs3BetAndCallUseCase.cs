@@ -1,23 +1,17 @@
-﻿using OpenScrape.App.Enums;
+﻿using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Aplication.UseCases.Actions
+namespace OpenScrape.App.Aplication.UseCases.Actions;
+
+
+public class GetActionVs3BetAndCallUseCaseRequest : BaseRequest
 {
+    public TablePosition ThreeBetPosition { get; set; }
+    public TablePosition CallerPosition { get; set; }
+}
 
-    public class GetActionVs3BetAndCallUseCaseRequest
-    {
-        public string Hand { get; set; } = default!;
-        public HeroPosition Position { get; set; }
-        public HeroPosition VillainPosition { get; set; }
-        public HeroPosition CallerPosition { get; set; }
-    }
+public class GetActionVs3BetAndCallUseCaseResponse : BaseResponse { }
 
-    public class GetActionVs3BetAndCallUseCaseResponse : BaseResponse
-    {
-
-    }
-
-    public interface IGetActionVs3BetAndCallUseCase
-    {
-        GetActionVs3BetAndCallUseCaseResponse Execute(GetActionVs3BetAndCallUseCaseRequest request);
-    }
+public interface IGetActionVs3BetAndCallUseCase
+{
+    Task<GetActionVs3BetAndCallUseCaseResponse> Execute(GetActionVs3BetAndCallUseCaseRequest request);
 }

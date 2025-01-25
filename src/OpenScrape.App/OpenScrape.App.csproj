@@ -10,6 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\tessdata\eng.traineddata" />
+    <None Remove="tessdata\eng.traineddata" />
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="AutoItX3Lib">
       <VersionMinor>0</VersionMinor>
       <VersionMajor>1</VersionMajor>
@@ -22,6 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Resources\tessdata\eng.traineddata" />
+    <EmbeddedResource Include="tessdata\eng.traineddata" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Emgu.CV" Version="4.10.0.5680" />
 	<PackageReference Include="Marten" Version="7.33.2" />
     <PackageReference Include="IronOcr" Version="2025.1.2" />
@@ -30,12 +40,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Nancy" Version="2.0.0" />
     <PackageReference Include="Rijndael256" Version="3.2.0" />
+    <PackageReference Include="SkiaSharp" Version="3.116.1" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
     <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Services\" />
   </ItemGroup>
 
   <ItemGroup>

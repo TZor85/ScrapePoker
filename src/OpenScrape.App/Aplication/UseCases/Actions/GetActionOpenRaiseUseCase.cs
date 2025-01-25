@@ -1,5 +1,4 @@
-﻿using OpenScrape.App.Tables;
-using OpenScrape.Domain.Enums;
+﻿using OpenScrape.Domain.Enums;
 using OpenScrape.Features.ActionScenario;
 
 namespace OpenScrape.App.Aplication.UseCases.Actions;
@@ -17,22 +16,12 @@ public class GetActionOpenRaiseUseCase : IGetActionOpenRaiseUseCase
     {
         var response = new GetActionOpenRaiseUseCaseResponse();
 
-        await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.RaiseOverLimpers, new ActionScenarioRequest
+        response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.OpenRaise, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
             HandName = request.Hand,
-            Suited = request.Hand.Contains("s") ? true : false,
+            Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
         });
-
-        //response.Action = request.Position switch
-        //{
-        //    HeroPosition.SmallBlind => OpenRaises.GetSmallBlindAction(request.Hand),
-        //    HeroPosition.Button => OpenRaises.GetButtonAction(request.Hand),
-        //    HeroPosition.CutOff => OpenRaises.GetCutOffAction(request.Hand),
-        //    HeroPosition.MiddlePosition => OpenRaises.GetMiddleAction(request.Hand),
-        //    HeroPosition.EarlyPosition => OpenRaises.GetEarlyAction(request.Hand),
-        //    _ => string.Empty
-        //};
 
         return response;
     }

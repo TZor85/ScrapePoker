@@ -1,5 +1,4 @@
-﻿using OpenScrape.App.Enums;
-using System.Security.Policy;
+﻿using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Entities
 {
@@ -14,7 +13,7 @@ namespace OpenScrape.App.Entities
         public int U0CardSuit1 { get; set; } = 0;
         public bool U0InPosition {  get; set; } = false;
         public decimal U0Bet {  get; set; }
-        public HeroPosition P0Position { get; set; }
+        public TablePosition P0Position { get; set; }
         public HandSituation HandSituation { get; set; }
         public List<PlayerData> DataPlayer {  get; set; } = new List<PlayerData>();
         public List<BoardData> DataBoard { get; set; } = new List<BoardData>();
@@ -74,7 +73,7 @@ namespace OpenScrape.App.Entities
         public bool Empty { get; set; }
         public bool BigBlind { get; set; }
         public bool SmallBlind { get; set; }
-        public HeroPosition Position { get; set; }
+        public TablePosition Position { get; set; }
         public int ValuePosition { get; set; }
     }
 
