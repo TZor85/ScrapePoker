@@ -35,29 +35,18 @@ namespace OpenScrape.App
             tbControl = new TabControl();
             tbJuego = new TabPage();
             tbConfig = new TabPage();
-            tbResumen = new TextBox();
-            ckBoard = new CheckBox();
-            label8 = new Label();
-            tbR = new TextBox();
-            ckColor = new CheckBox();
             groupBox1 = new GroupBox();
-            lbXY = new Label();
-            tbHeight = new TextBox();
-            label2 = new Label();
-            label1 = new Label();
-            tbWidth = new TextBox();
-            btnPlusWidth = new Button();
-            btnMinusWidth = new Button();
-            btnPlusHeight = new Button();
-            btnMinusHeight = new Button();
+            tbTestTexto = new TextBox();
+            btnTestTexto = new Button();
+            pbColorDebug = new PictureBox();
+            tbTestColor = new TextBox();
+            btnTestColor = new Button();
+            rgRegion = new GroupBox();
+            pbRegionColor = new PictureBox();
+            tbRegionInactUmbral = new TextBox();
+            tbRegionUmbral = new TextBox();
+            cbRegionNumber = new CheckBox();
             cbSpeed = new ComboBox();
-            btnCreateFont = new Button();
-            btnCreateImage = new Button();
-            groupBox2 = new GroupBox();
-            label7 = new Label();
-            label3 = new Label();
-            tbY = new TextBox();
-            tbX = new TextBox();
             btnUpRight = new Button();
             btnDownRight = new Button();
             btnDownLeft = new Button();
@@ -66,6 +55,25 @@ namespace OpenScrape.App
             btnDown = new Button();
             btnLeft = new Button();
             btnRigth = new Button();
+            btnPlusWidth = new Button();
+            btnMinusWidth = new Button();
+            btnPlusHeight = new Button();
+            btnMinusHeight = new Button();
+            tbRegionName = new TextBox();
+            tbColor = new TextBox();
+            cbRegionBoard = new CheckBox();
+            cbRegionHash = new CheckBox();
+            cbRegionColor = new CheckBox();
+            label7 = new Label();
+            tbHeight = new TextBox();
+            label2 = new Label();
+            tbWidth = new TextBox();
+            label1 = new Label();
+            tbY = new TextBox();
+            label3 = new Label();
+            tbX = new TextBox();
+            btnCreateFont = new Button();
+            btnCreateImage = new Button();
             btnLoadMap = new Button();
             btnSaveMap = new Button();
             cbMark = new CheckBox();
@@ -91,10 +99,14 @@ namespace OpenScrape.App
             tbResume = new TextBox();
             pictureBox1 = new PictureBox();
             label4 = new Label();
+            btnTestCarta = new Button();
+            pbTestCarta = new PictureBox();
             tbControl.SuspendLayout();
             tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
-            groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbColorDebug).BeginInit();
+            rgRegion.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbRegionColor).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
             gbTest.SuspendLayout();
@@ -102,6 +114,7 @@ namespace OpenScrape.App
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbTestCarta).BeginInit();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -132,16 +145,10 @@ namespace OpenScrape.App
             // 
             // tbConfig
             // 
-            tbConfig.Controls.Add(tbResumen);
-            tbConfig.Controls.Add(ckBoard);
-            tbConfig.Controls.Add(label8);
-            tbConfig.Controls.Add(tbR);
-            tbConfig.Controls.Add(ckColor);
             tbConfig.Controls.Add(groupBox1);
-            tbConfig.Controls.Add(cbSpeed);
+            tbConfig.Controls.Add(rgRegion);
             tbConfig.Controls.Add(btnCreateFont);
             tbConfig.Controls.Add(btnCreateImage);
-            tbConfig.Controls.Add(groupBox2);
             tbConfig.Controls.Add(btnLoadMap);
             tbConfig.Controls.Add(btnSaveMap);
             tbConfig.Controls.Add(cbMark);
@@ -165,184 +172,428 @@ namespace OpenScrape.App
             tbConfig.Text = "Configurar";
             tbConfig.UseVisualStyleBackColor = true;
             // 
-            // tbResumen
-            // 
-            tbResumen.Location = new Point(186, 147);
-            tbResumen.Multiline = true;
-            tbResumen.Name = "tbResumen";
-            tbResumen.ReadOnly = true;
-            tbResumen.Size = new Size(251, 242);
-            tbResumen.TabIndex = 85;
-            // 
-            // ckBoard
-            // 
-            ckBoard.AutoSize = true;
-            ckBoard.Enabled = false;
-            ckBoard.Location = new Point(395, 53);
-            ckBoard.Name = "ckBoard";
-            ckBoard.Size = new Size(57, 19);
-            ckBoard.TabIndex = 84;
-            ckBoard.Text = "Board";
-            ckBoard.UseVisualStyleBackColor = true;
-            ckBoard.CheckedChanged += ckBoard_CheckedChanged;
-            // 
-            // label8
-            // 
-            label8.AutoSize = true;
-            label8.Location = new Point(186, 115);
-            label8.Name = "label8";
-            label8.Size = new Size(36, 15);
-            label8.TabIndex = 83;
-            label8.Text = "Color";
-            // 
-            // tbR
-            // 
-            tbR.Enabled = false;
-            tbR.Location = new Point(231, 112);
-            tbR.Name = "tbR";
-            tbR.Size = new Size(71, 23);
-            tbR.TabIndex = 82;
-            // 
-            // ckColor
-            // 
-            ckColor.AutoSize = true;
-            ckColor.Enabled = false;
-            ckColor.Location = new Point(395, 78);
-            ckColor.Name = "ckColor";
-            ckColor.Size = new Size(55, 19);
-            ckColor.TabIndex = 81;
-            ckColor.Text = "Color";
-            ckColor.UseVisualStyleBackColor = true;
-            ckColor.CheckedChanged += ckColor_CheckedChanged;
-            // 
             // groupBox1
             // 
-            groupBox1.Controls.Add(lbXY);
-            groupBox1.Controls.Add(tbHeight);
-            groupBox1.Controls.Add(label2);
-            groupBox1.Controls.Add(label1);
-            groupBox1.Controls.Add(tbWidth);
-            groupBox1.Controls.Add(btnPlusWidth);
-            groupBox1.Controls.Add(btnMinusWidth);
-            groupBox1.Controls.Add(btnPlusHeight);
-            groupBox1.Controls.Add(btnMinusHeight);
-            groupBox1.Location = new Point(186, 8);
+            groupBox1.Controls.Add(pbTestCarta);
+            groupBox1.Controls.Add(btnTestCarta);
+            groupBox1.Controls.Add(tbTestTexto);
+            groupBox1.Controls.Add(btnTestTexto);
+            groupBox1.Controls.Add(pbColorDebug);
+            groupBox1.Controls.Add(tbTestColor);
+            groupBox1.Controls.Add(btnTestColor);
+            groupBox1.Location = new Point(384, 35);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(203, 100);
-            groupBox1.TabIndex = 80;
+            groupBox1.Size = new Size(200, 214);
+            groupBox1.TabIndex = 85;
             groupBox1.TabStop = false;
-            groupBox1.Text = "Rectangle";
+            groupBox1.Text = "Test Region";
             // 
-            // lbXY
+            // tbTestTexto
             // 
-            lbXY.AutoSize = true;
-            lbXY.Font = new Font("Segoe UI", 8F);
-            lbXY.Location = new Point(130, 77);
-            lbXY.Name = "lbXY";
-            lbXY.Size = new Size(0, 13);
-            lbXY.TabIndex = 8;
+            tbTestTexto.Location = new Point(68, 51);
+            tbTestTexto.Name = "tbTestTexto";
+            tbTestTexto.Size = new Size(126, 23);
+            tbTestTexto.TabIndex = 88;
             // 
-            // tbHeight
+            // btnTestTexto
             // 
-            tbHeight.Location = new Point(73, 42);
-            tbHeight.Name = "tbHeight";
-            tbHeight.Size = new Size(49, 23);
-            tbHeight.TabIndex = 7;
-            tbHeight.Text = "0";
-            tbHeight.TextAlign = HorizontalAlignment.Right;
-            tbHeight.Leave += tbHeight_Leave;
+            btnTestTexto.Enabled = false;
+            btnTestTexto.Location = new Point(6, 51);
+            btnTestTexto.Name = "btnTestTexto";
+            btnTestTexto.Size = new Size(56, 23);
+            btnTestTexto.TabIndex = 87;
+            btnTestTexto.Text = "Texto";
+            btnTestTexto.UseVisualStyleBackColor = true;
+            btnTestTexto.Click += btnTestTexto_Click;
             // 
-            // label2
+            // pbColorDebug
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(73, 24);
-            label2.Name = "label2";
-            label2.Size = new Size(43, 15);
-            label2.TabIndex = 6;
-            label2.Text = "Height";
+            pbColorDebug.Location = new Point(174, 25);
+            pbColorDebug.Name = "pbColorDebug";
+            pbColorDebug.Size = new Size(20, 20);
+            pbColorDebug.TabIndex = 86;
+            pbColorDebug.TabStop = false;
             // 
-            // label1
+            // tbTestColor
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(10, 24);
-            label1.Name = "label1";
-            label1.Size = new Size(39, 15);
-            label1.TabIndex = 5;
-            label1.Text = "Width";
+            tbTestColor.Location = new Point(68, 22);
+            tbTestColor.Name = "tbTestColor";
+            tbTestColor.Size = new Size(56, 23);
+            tbTestColor.TabIndex = 85;
             // 
-            // tbWidth
+            // btnTestColor
             // 
-            tbWidth.Location = new Point(10, 42);
-            tbWidth.Name = "tbWidth";
-            tbWidth.Size = new Size(49, 23);
-            tbWidth.TabIndex = 0;
-            tbWidth.Text = "0";
-            tbWidth.TextAlign = HorizontalAlignment.Right;
-            tbWidth.Leave += tbWidth_Leave;
+            btnTestColor.Enabled = false;
+            btnTestColor.Location = new Point(6, 21);
+            btnTestColor.Name = "btnTestColor";
+            btnTestColor.Size = new Size(56, 23);
+            btnTestColor.TabIndex = 0;
+            btnTestColor.Text = "Color";
+            btnTestColor.UseVisualStyleBackColor = true;
+            btnTestColor.Click += btnTestColor_Click;
+            // 
+            // rgRegion
+            // 
+            rgRegion.Controls.Add(pbRegionColor);
+            rgRegion.Controls.Add(tbRegionInactUmbral);
+            rgRegion.Controls.Add(tbRegionUmbral);
+            rgRegion.Controls.Add(cbRegionNumber);
+            rgRegion.Controls.Add(cbSpeed);
+            rgRegion.Controls.Add(btnUpRight);
+            rgRegion.Controls.Add(btnDownRight);
+            rgRegion.Controls.Add(btnDownLeft);
+            rgRegion.Controls.Add(btnUpLeft);
+            rgRegion.Controls.Add(btnUp);
+            rgRegion.Controls.Add(btnDown);
+            rgRegion.Controls.Add(btnLeft);
+            rgRegion.Controls.Add(btnRigth);
+            rgRegion.Controls.Add(btnPlusWidth);
+            rgRegion.Controls.Add(btnMinusWidth);
+            rgRegion.Controls.Add(btnPlusHeight);
+            rgRegion.Controls.Add(btnMinusHeight);
+            rgRegion.Controls.Add(tbRegionName);
+            rgRegion.Controls.Add(tbColor);
+            rgRegion.Controls.Add(cbRegionBoard);
+            rgRegion.Controls.Add(cbRegionHash);
+            rgRegion.Controls.Add(cbRegionColor);
+            rgRegion.Controls.Add(label7);
+            rgRegion.Controls.Add(tbHeight);
+            rgRegion.Controls.Add(label2);
+            rgRegion.Controls.Add(tbWidth);
+            rgRegion.Controls.Add(label1);
+            rgRegion.Controls.Add(tbY);
+            rgRegion.Controls.Add(label3);
+            rgRegion.Controls.Add(tbX);
+            rgRegion.Location = new Point(176, 35);
+            rgRegion.Name = "rgRegion";
+            rgRegion.Size = new Size(200, 342);
+            rgRegion.TabIndex = 84;
+            rgRegion.TabStop = false;
+            rgRegion.Text = "Region";
+            // 
+            // pbRegionColor
+            // 
+            pbRegionColor.Location = new Point(95, 270);
+            pbRegionColor.Name = "pbRegionColor";
+            pbRegionColor.Size = new Size(20, 20);
+            pbRegionColor.TabIndex = 102;
+            pbRegionColor.TabStop = false;
+            // 
+            // tbRegionInactUmbral
+            // 
+            tbRegionInactUmbral.Location = new Point(117, 306);
+            tbRegionInactUmbral.Name = "tbRegionInactUmbral";
+            tbRegionInactUmbral.PlaceholderText = "I. Umbral";
+            tbRegionInactUmbral.Size = new Size(71, 23);
+            tbRegionInactUmbral.TabIndex = 101;
+            // 
+            // tbRegionUmbral
+            // 
+            tbRegionUmbral.Location = new Point(5, 306);
+            tbRegionUmbral.Name = "tbRegionUmbral";
+            tbRegionUmbral.PlaceholderText = "Umbral";
+            tbRegionUmbral.Size = new Size(71, 23);
+            tbRegionUmbral.TabIndex = 100;
+            // 
+            // cbRegionNumber
+            // 
+            cbRegionNumber.AutoSize = true;
+            cbRegionNumber.CheckAlign = ContentAlignment.MiddleRight;
+            cbRegionNumber.FlatStyle = FlatStyle.System;
+            cbRegionNumber.Location = new Point(101, 243);
+            cbRegionNumber.Name = "cbRegionNumber";
+            cbRegionNumber.RightToLeft = RightToLeft.No;
+            cbRegionNumber.Size = new Size(87, 20);
+            cbRegionNumber.TabIndex = 99;
+            cbRegionNumber.Text = "Is Number";
+            cbRegionNumber.UseVisualStyleBackColor = true;
+            // 
+            // cbSpeed
+            // 
+            cbSpeed.FormattingEnabled = true;
+            cbSpeed.Items.AddRange(new object[] { "1", "2", "5", "10", "20", "30", "40", "50" });
+            cbSpeed.Location = new Point(146, 141);
+            cbSpeed.Name = "cbSpeed";
+            cbSpeed.Size = new Size(42, 23);
+            cbSpeed.TabIndex = 98;
+            // 
+            // btnUpRight
+            // 
+            btnUpRight.Enabled = false;
+            btnUpRight.Location = new Point(90, 141);
+            btnUpRight.Name = "btnUpRight";
+            btnUpRight.RightToLeft = RightToLeft.No;
+            btnUpRight.Size = new Size(25, 25);
+            btnUpRight.TabIndex = 97;
+            btnUpRight.Text = "↗";
+            btnUpRight.TextAlign = ContentAlignment.MiddleRight;
+            btnUpRight.UseVisualStyleBackColor = true;
+            // 
+            // btnDownRight
+            // 
+            btnDownRight.Enabled = false;
+            btnDownRight.Location = new Point(90, 189);
+            btnDownRight.Name = "btnDownRight";
+            btnDownRight.RightToLeft = RightToLeft.No;
+            btnDownRight.Size = new Size(25, 25);
+            btnDownRight.TabIndex = 96;
+            btnDownRight.Text = "↘";
+            btnDownRight.TextAlign = ContentAlignment.MiddleRight;
+            btnDownRight.UseVisualStyleBackColor = true;
+            // 
+            // btnDownLeft
+            // 
+            btnDownLeft.Enabled = false;
+            btnDownLeft.Location = new Point(42, 189);
+            btnDownLeft.Name = "btnDownLeft";
+            btnDownLeft.RightToLeft = RightToLeft.No;
+            btnDownLeft.Size = new Size(25, 25);
+            btnDownLeft.TabIndex = 95;
+            btnDownLeft.Text = "↙";
+            btnDownLeft.TextAlign = ContentAlignment.MiddleRight;
+            btnDownLeft.UseVisualStyleBackColor = true;
+            // 
+            // btnUpLeft
+            // 
+            btnUpLeft.Enabled = false;
+            btnUpLeft.Location = new Point(42, 141);
+            btnUpLeft.Name = "btnUpLeft";
+            btnUpLeft.RightToLeft = RightToLeft.No;
+            btnUpLeft.Size = new Size(25, 25);
+            btnUpLeft.TabIndex = 94;
+            btnUpLeft.Text = "↖";
+            btnUpLeft.TextAlign = ContentAlignment.MiddleRight;
+            btnUpLeft.UseVisualStyleBackColor = true;
+            // 
+            // btnUp
+            // 
+            btnUp.Enabled = false;
+            btnUp.Location = new Point(66, 141);
+            btnUp.Name = "btnUp";
+            btnUp.RightToLeft = RightToLeft.No;
+            btnUp.Size = new Size(25, 25);
+            btnUp.TabIndex = 93;
+            btnUp.Text = "↑";
+            btnUp.TextAlign = ContentAlignment.BottomCenter;
+            btnUp.UseVisualStyleBackColor = true;
+            // 
+            // btnDown
+            // 
+            btnDown.Enabled = false;
+            btnDown.Location = new Point(66, 189);
+            btnDown.Name = "btnDown";
+            btnDown.RightToLeft = RightToLeft.No;
+            btnDown.Size = new Size(25, 25);
+            btnDown.TabIndex = 92;
+            btnDown.Text = "↓";
+            btnDown.TextAlign = ContentAlignment.TopCenter;
+            btnDown.UseVisualStyleBackColor = true;
+            // 
+            // btnLeft
+            // 
+            btnLeft.Enabled = false;
+            btnLeft.Location = new Point(42, 165);
+            btnLeft.Name = "btnLeft";
+            btnLeft.Size = new Size(25, 25);
+            btnLeft.TabIndex = 91;
+            btnLeft.Text = "←";
+            btnLeft.TextAlign = ContentAlignment.TopCenter;
+            btnLeft.UseVisualStyleBackColor = true;
+            // 
+            // btnRigth
+            // 
+            btnRigth.Enabled = false;
+            btnRigth.Location = new Point(90, 165);
+            btnRigth.Name = "btnRigth";
+            btnRigth.Size = new Size(25, 25);
+            btnRigth.TabIndex = 90;
+            btnRigth.Text = "→";
+            btnRigth.TextAlign = ContentAlignment.TopCenter;
+            btnRigth.UseVisualStyleBackColor = true;
             // 
             // btnPlusWidth
             // 
             btnPlusWidth.Enabled = false;
             btnPlusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnPlusWidth.ImageAlign = ContentAlignment.TopCenter;
-            btnPlusWidth.Location = new Point(10, 69);
+            btnPlusWidth.Location = new Point(42, 72);
             btnPlusWidth.Name = "btnPlusWidth";
             btnPlusWidth.Size = new Size(25, 25);
-            btnPlusWidth.TabIndex = 3;
+            btnPlusWidth.TabIndex = 86;
             btnPlusWidth.Text = "+";
             btnPlusWidth.TextAlign = ContentAlignment.TopCenter;
             btnPlusWidth.UseVisualStyleBackColor = true;
-            btnPlusWidth.Click += btnPlusWidth_Click;
             // 
             // btnMinusWidth
             // 
             btnMinusWidth.Enabled = false;
             btnMinusWidth.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnMinusWidth.Location = new Point(34, 69);
+            btnMinusWidth.Location = new Point(66, 72);
             btnMinusWidth.Name = "btnMinusWidth";
             btnMinusWidth.Size = new Size(25, 25);
-            btnMinusWidth.TabIndex = 4;
+            btnMinusWidth.TabIndex = 87;
             btnMinusWidth.Text = "-";
             btnMinusWidth.UseVisualStyleBackColor = true;
-            btnMinusWidth.Click += btnMinusWidth_Click;
             // 
             // btnPlusHeight
             // 
             btnPlusHeight.Enabled = false;
-            btnPlusHeight.Location = new Point(73, 68);
+            btnPlusHeight.Location = new Point(146, 71);
             btnPlusHeight.Name = "btnPlusHeight";
             btnPlusHeight.Size = new Size(25, 25);
-            btnPlusHeight.TabIndex = 5;
+            btnPlusHeight.TabIndex = 88;
             btnPlusHeight.Text = "+";
             btnPlusHeight.TextAlign = ContentAlignment.MiddleRight;
             btnPlusHeight.UseVisualStyleBackColor = true;
-            btnPlusHeight.Click += btnPlusHeight_Click;
             // 
             // btnMinusHeight
             // 
             btnMinusHeight.Enabled = false;
-            btnMinusHeight.Location = new Point(97, 68);
+            btnMinusHeight.Location = new Point(170, 71);
             btnMinusHeight.Name = "btnMinusHeight";
             btnMinusHeight.Size = new Size(25, 25);
-            btnMinusHeight.TabIndex = 6;
+            btnMinusHeight.TabIndex = 89;
             btnMinusHeight.Text = "-";
             btnMinusHeight.TextAlign = ContentAlignment.TopCenter;
             btnMinusHeight.UseVisualStyleBackColor = true;
-            btnMinusHeight.Click += btnMinusHeight_Click;
             // 
-            // cbSpeed
+            // tbRegionName
             // 
-            cbSpeed.FormattingEnabled = true;
-            cbSpeed.Items.AddRange(new object[] { "1", "2", "5", "10", "20", "30", "40", "50" });
-            cbSpeed.Location = new Point(395, 17);
-            cbSpeed.Name = "cbSpeed";
-            cbSpeed.Size = new Size(42, 23);
-            cbSpeed.TabIndex = 79;
-            cbSpeed.SelectedIndexChanged += cbSpeed_SelectedIndexChanged;
+            tbRegionName.BorderStyle = BorderStyle.None;
+            tbRegionName.Location = new Point(6, 21);
+            tbRegionName.Name = "tbRegionName";
+            tbRegionName.ReadOnly = true;
+            tbRegionName.Size = new Size(187, 16);
+            tbRegionName.TabIndex = 85;
+            tbRegionName.TextAlign = HorizontalAlignment.Center;
+            // 
+            // tbColor
+            // 
+            tbColor.Location = new Point(5, 269);
+            tbColor.Name = "tbColor";
+            tbColor.PlaceholderText = "Color";
+            tbColor.Size = new Size(71, 23);
+            tbColor.TabIndex = 84;
+            // 
+            // cbRegionBoard
+            // 
+            cbRegionBoard.AutoSize = true;
+            cbRegionBoard.CheckAlign = ContentAlignment.MiddleRight;
+            cbRegionBoard.FlatStyle = FlatStyle.System;
+            cbRegionBoard.Location = new Point(5, 243);
+            cbRegionBoard.Name = "cbRegionBoard";
+            cbRegionBoard.Padding = new Padding(0, 0, 13, 0);
+            cbRegionBoard.RightToLeft = RightToLeft.No;
+            cbRegionBoard.Size = new Size(87, 20);
+            cbRegionBoard.TabIndex = 42;
+            cbRegionBoard.Text = "Is Board";
+            cbRegionBoard.UseVisualStyleBackColor = true;
+            // 
+            // cbRegionHash
+            // 
+            cbRegionHash.AutoSize = true;
+            cbRegionHash.CheckAlign = ContentAlignment.MiddleRight;
+            cbRegionHash.FlatStyle = FlatStyle.System;
+            cbRegionHash.Location = new Point(101, 223);
+            cbRegionHash.Name = "cbRegionHash";
+            cbRegionHash.Padding = new Padding(0, 0, 17, 0);
+            cbRegionHash.RightToLeft = RightToLeft.No;
+            cbRegionHash.Size = new Size(87, 20);
+            cbRegionHash.TabIndex = 41;
+            cbRegionHash.Text = "Is Hash";
+            cbRegionHash.UseVisualStyleBackColor = true;
+            // 
+            // cbRegionColor
+            // 
+            cbRegionColor.AutoSize = true;
+            cbRegionColor.CheckAlign = ContentAlignment.MiddleRight;
+            cbRegionColor.FlatStyle = FlatStyle.System;
+            cbRegionColor.Location = new Point(5, 223);
+            cbRegionColor.Name = "cbRegionColor";
+            cbRegionColor.Padding = new Padding(0, 0, 15, 0);
+            cbRegionColor.RightToLeft = RightToLeft.No;
+            cbRegionColor.Size = new Size(87, 20);
+            cbRegionColor.TabIndex = 40;
+            cbRegionColor.Text = "Is Color";
+            cbRegionColor.UseVisualStyleBackColor = true;
+            // 
+            // label7
+            // 
+            label7.AutoSize = true;
+            label7.Font = new Font("Segoe UI", 9F);
+            label7.Location = new Point(126, 46);
+            label7.Name = "label7";
+            label7.Size = new Size(14, 15);
+            label7.TabIndex = 39;
+            label7.Text = "Y";
+            // 
+            // tbHeight
+            // 
+            tbHeight.Location = new Point(146, 106);
+            tbHeight.Name = "tbHeight";
+            tbHeight.Size = new Size(49, 23);
+            tbHeight.TabIndex = 38;
+            tbHeight.Text = "0";
+            tbHeight.TextAlign = HorizontalAlignment.Right;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(100, 111);
+            label2.Name = "label2";
+            label2.Size = new Size(43, 15);
+            label2.TabIndex = 37;
+            label2.Text = "Height";
+            // 
+            // tbWidth
+            // 
+            tbWidth.Location = new Point(42, 106);
+            tbWidth.Name = "tbWidth";
+            tbWidth.Size = new Size(49, 23);
+            tbWidth.TabIndex = 36;
+            tbWidth.Text = "0";
+            tbWidth.TextAlign = HorizontalAlignment.Right;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(1, 111);
+            label1.Name = "label1";
+            label1.Size = new Size(39, 15);
+            label1.TabIndex = 35;
+            label1.Text = "Width";
+            // 
+            // tbY
+            // 
+            tbY.Location = new Point(146, 43);
+            tbY.Name = "tbY";
+            tbY.Size = new Size(49, 23);
+            tbY.TabIndex = 33;
+            tbY.Text = "0";
+            tbY.TextAlign = HorizontalAlignment.Right;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Font = new Font("Segoe UI", 9F);
+            label3.Location = new Point(19, 46);
+            label3.Name = "label3";
+            label3.Size = new Size(14, 15);
+            label3.TabIndex = 32;
+            label3.Text = "X";
+            // 
+            // tbX
+            // 
+            tbX.Location = new Point(42, 43);
+            tbX.Name = "tbX";
+            tbX.Size = new Size(49, 23);
+            tbX.TabIndex = 30;
+            tbX.Text = "0";
+            tbX.TextAlign = HorizontalAlignment.Right;
             // 
             // btnCreateFont
             // 
-            btnCreateFont.Location = new Point(473, 186);
+            btnCreateFont.Location = new Point(384, 440);
             btnCreateFont.Name = "btnCreateFont";
             btnCreateFont.Size = new Size(91, 23);
             btnCreateFont.TabIndex = 78;
@@ -353,7 +604,7 @@ namespace OpenScrape.App
             // btnCreateImage
             // 
             btnCreateImage.Enabled = false;
-            btnCreateImage.Location = new Point(473, 157);
+            btnCreateImage.Location = new Point(384, 411);
             btnCreateImage.Name = "btnCreateImage";
             btnCreateImage.Size = new Size(91, 23);
             btnCreateImage.TabIndex = 77;
@@ -361,170 +612,9 @@ namespace OpenScrape.App
             btnCreateImage.UseVisualStyleBackColor = true;
             btnCreateImage.Click += btnCreateImage_Click;
             // 
-            // groupBox2
-            // 
-            groupBox2.Controls.Add(label7);
-            groupBox2.Controls.Add(label3);
-            groupBox2.Controls.Add(tbY);
-            groupBox2.Controls.Add(tbX);
-            groupBox2.Controls.Add(btnUpRight);
-            groupBox2.Controls.Add(btnDownRight);
-            groupBox2.Controls.Add(btnDownLeft);
-            groupBox2.Controls.Add(btnUpLeft);
-            groupBox2.Controls.Add(btnUp);
-            groupBox2.Controls.Add(btnDown);
-            groupBox2.Controls.Add(btnLeft);
-            groupBox2.Controls.Add(btnRigth);
-            groupBox2.Location = new Point(473, 6);
-            groupBox2.Name = "groupBox2";
-            groupBox2.Size = new Size(107, 143);
-            groupBox2.TabIndex = 76;
-            groupBox2.TabStop = false;
-            groupBox2.Text = "Nudge";
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(57, 96);
-            label7.Name = "label7";
-            label7.Size = new Size(14, 15);
-            label7.TabIndex = 32;
-            label7.Text = "Y";
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(5, 96);
-            label3.Name = "label3";
-            label3.Size = new Size(14, 15);
-            label3.TabIndex = 31;
-            label3.Text = "X";
-            // 
-            // tbY
-            // 
-            tbY.Location = new Point(58, 114);
-            tbY.Name = "tbY";
-            tbY.Size = new Size(43, 23);
-            tbY.TabIndex = 30;
-            tbY.Text = "0";
-            tbY.TextAlign = HorizontalAlignment.Right;
-            tbY.Leave += tbY_Leave;
-            // 
-            // tbX
-            // 
-            tbX.Location = new Point(6, 114);
-            tbX.Name = "tbX";
-            tbX.Size = new Size(43, 23);
-            tbX.TabIndex = 29;
-            tbX.Text = "0";
-            tbX.TextAlign = HorizontalAlignment.Right;
-            tbX.Leave += tbX_Leave;
-            // 
-            // btnUpRight
-            // 
-            btnUpRight.Enabled = false;
-            btnUpRight.Location = new Point(66, 20);
-            btnUpRight.Name = "btnUpRight";
-            btnUpRight.RightToLeft = RightToLeft.No;
-            btnUpRight.Size = new Size(25, 25);
-            btnUpRight.TabIndex = 28;
-            btnUpRight.Text = "↗";
-            btnUpRight.TextAlign = ContentAlignment.MiddleRight;
-            btnUpRight.UseVisualStyleBackColor = true;
-            btnUpRight.Click += btnUpRight_Click;
-            // 
-            // btnDownRight
-            // 
-            btnDownRight.Enabled = false;
-            btnDownRight.Location = new Point(66, 68);
-            btnDownRight.Name = "btnDownRight";
-            btnDownRight.RightToLeft = RightToLeft.No;
-            btnDownRight.Size = new Size(25, 25);
-            btnDownRight.TabIndex = 27;
-            btnDownRight.Text = "↘";
-            btnDownRight.TextAlign = ContentAlignment.MiddleRight;
-            btnDownRight.UseVisualStyleBackColor = true;
-            btnDownRight.Click += btnDownRight_Click;
-            // 
-            // btnDownLeft
-            // 
-            btnDownLeft.Enabled = false;
-            btnDownLeft.Location = new Point(18, 68);
-            btnDownLeft.Name = "btnDownLeft";
-            btnDownLeft.RightToLeft = RightToLeft.No;
-            btnDownLeft.Size = new Size(25, 25);
-            btnDownLeft.TabIndex = 26;
-            btnDownLeft.Text = "↙";
-            btnDownLeft.TextAlign = ContentAlignment.MiddleRight;
-            btnDownLeft.UseVisualStyleBackColor = true;
-            btnDownLeft.Click += btnDownLeft_Click;
-            // 
-            // btnUpLeft
-            // 
-            btnUpLeft.Enabled = false;
-            btnUpLeft.Location = new Point(18, 20);
-            btnUpLeft.Name = "btnUpLeft";
-            btnUpLeft.RightToLeft = RightToLeft.No;
-            btnUpLeft.Size = new Size(25, 25);
-            btnUpLeft.TabIndex = 25;
-            btnUpLeft.Text = "↖";
-            btnUpLeft.TextAlign = ContentAlignment.MiddleRight;
-            btnUpLeft.UseVisualStyleBackColor = true;
-            btnUpLeft.Click += btnUpLeft_Click;
-            // 
-            // btnUp
-            // 
-            btnUp.Enabled = false;
-            btnUp.Location = new Point(42, 20);
-            btnUp.Name = "btnUp";
-            btnUp.RightToLeft = RightToLeft.No;
-            btnUp.Size = new Size(25, 25);
-            btnUp.TabIndex = 24;
-            btnUp.Text = "↑";
-            btnUp.TextAlign = ContentAlignment.BottomCenter;
-            btnUp.UseVisualStyleBackColor = true;
-            btnUp.Click += btnUp_Click;
-            // 
-            // btnDown
-            // 
-            btnDown.Enabled = false;
-            btnDown.Location = new Point(42, 68);
-            btnDown.Name = "btnDown";
-            btnDown.RightToLeft = RightToLeft.No;
-            btnDown.Size = new Size(25, 25);
-            btnDown.TabIndex = 23;
-            btnDown.Text = "↓";
-            btnDown.TextAlign = ContentAlignment.TopCenter;
-            btnDown.UseVisualStyleBackColor = true;
-            btnDown.Click += btnDown_Click;
-            // 
-            // btnLeft
-            // 
-            btnLeft.Enabled = false;
-            btnLeft.Location = new Point(18, 44);
-            btnLeft.Name = "btnLeft";
-            btnLeft.Size = new Size(25, 25);
-            btnLeft.TabIndex = 22;
-            btnLeft.Text = "←";
-            btnLeft.TextAlign = ContentAlignment.TopCenter;
-            btnLeft.UseVisualStyleBackColor = true;
-            btnLeft.Click += btnLeft_Click;
-            // 
-            // btnRigth
-            // 
-            btnRigth.Enabled = false;
-            btnRigth.Location = new Point(66, 44);
-            btnRigth.Name = "btnRigth";
-            btnRigth.Size = new Size(25, 25);
-            btnRigth.TabIndex = 21;
-            btnRigth.Text = "→";
-            btnRigth.TextAlign = ContentAlignment.TopCenter;
-            btnRigth.UseVisualStyleBackColor = true;
-            btnRigth.Click += btnRigth_Click;
-            // 
             // btnLoadMap
             // 
-            btnLoadMap.Location = new Point(443, 364);
+            btnLoadMap.Location = new Point(505, 411);
             btnLoadMap.Name = "btnLoadMap";
             btnLoadMap.Size = new Size(75, 23);
             btnLoadMap.TabIndex = 75;
@@ -534,7 +624,7 @@ namespace OpenScrape.App
             // 
             // btnSaveMap
             // 
-            btnSaveMap.Location = new Point(525, 364);
+            btnSaveMap.Location = new Point(590, 411);
             btnSaveMap.Name = "btnSaveMap";
             btnSaveMap.Size = new Size(75, 23);
             btnSaveMap.TabIndex = 74;
@@ -545,7 +635,7 @@ namespace OpenScrape.App
             // cbMark
             // 
             cbMark.AutoSize = true;
-            cbMark.Location = new Point(384, 548);
+            cbMark.Location = new Point(443, 548);
             cbMark.Name = "cbMark";
             cbMark.Size = new Size(97, 19);
             cbMark.TabIndex = 73;
@@ -554,7 +644,7 @@ namespace OpenScrape.App
             // 
             // btnWindow
             // 
-            btnWindow.Location = new Point(500, 501);
+            btnWindow.Location = new Point(565, 501);
             btnWindow.Name = "btnWindow";
             btnWindow.Size = new Size(102, 66);
             btnWindow.TabIndex = 72;
@@ -697,7 +787,6 @@ namespace OpenScrape.App
             twRegionsConfig.Name = "twRegionsConfig";
             twRegionsConfig.Size = new Size(159, 342);
             twRegionsConfig.TabIndex = 45;
-            twRegionsConfig.AfterSelect += twRegions_AfterSelect;
             twRegionsConfig.DoubleClick += twRegions_DoubleClick;
             // 
             // tbTables
@@ -771,6 +860,25 @@ namespace OpenScrape.App
             label4.TabIndex = 67;
             label4.Text = "label4";
             // 
+            // btnTestCarta
+            // 
+            btnTestCarta.Enabled = false;
+            btnTestCarta.Location = new Point(6, 92);
+            btnTestCarta.Name = "btnTestCarta";
+            btnTestCarta.Size = new Size(56, 23);
+            btnTestCarta.TabIndex = 89;
+            btnTestCarta.Text = "Carta";
+            btnTestCarta.UseVisualStyleBackColor = true;
+            btnTestCarta.Click += btnTestCarta_Click;
+            // 
+            // pbTestCarta
+            // 
+            pbTestCarta.Location = new Point(71, 80);
+            pbTestCarta.Name = "pbTestCarta";
+            pbTestCarta.Size = new Size(20, 35);
+            pbTestCarta.TabIndex = 90;
+            pbTestCarta.TabStop = false;
+            // 
             // FrmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -788,8 +896,10 @@ namespace OpenScrape.App
             tbConfig.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
-            groupBox2.ResumeLayout(false);
-            groupBox2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbColorDebug).EndInit();
+            rgRegion.ResumeLayout(false);
+            rgRegion.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbRegionColor).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
             gbTest.ResumeLayout(false);
@@ -799,6 +909,7 @@ namespace OpenScrape.App
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbTestCarta).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -826,37 +937,8 @@ namespace OpenScrape.App
         private Button btnDelete;
         private Button btnNew;
         private TreeView twRegionsConfig;
-        private TextBox tbResumen;
-        private CheckBox ckBoard;
-        private Label label8;
-        private TextBox tbR;
-        private CheckBox ckColor;
-        private GroupBox groupBox1;
-        private Label lbXY;
-        private TextBox tbHeight;
-        private Label label2;
-        private Label label1;
-        private TextBox tbWidth;
-        private Button btnPlusWidth;
-        private Button btnMinusWidth;
-        private Button btnPlusHeight;
-        private Button btnMinusHeight;
-        private ComboBox cbSpeed;
         private Button btnCreateFont;
         private Button btnCreateImage;
-        private GroupBox groupBox2;
-        private Label label7;
-        private Label label3;
-        private TextBox tbY;
-        private TextBox tbX;
-        private Button btnUpRight;
-        private Button btnDownRight;
-        private Button btnDownLeft;
-        private Button btnUpLeft;
-        private Button btnUp;
-        private Button btnDown;
-        private Button btnLeft;
-        private Button btnRigth;
         private Button btnLoadMap;
         private Button btnSaveMap;
         private TextBox tbResume;
@@ -866,5 +948,44 @@ namespace OpenScrape.App
         private TabPage tbTables;
         private TreeView twTables;
         private DataGridView dgvHands;
+        private GroupBox rgRegion;
+        private TextBox tbHeight;
+        private Label label2;
+        private TextBox tbWidth;
+        private Label label1;
+        private TextBox tbY;
+        private Label label3;
+        private TextBox tbX;
+        private Label label7;
+        private CheckBox cbRegionColor;
+        private CheckBox cbRegionHash;
+        private CheckBox cbRegionBoard;
+        private TextBox tbRegionName;
+        private TextBox tbColor;
+        private GroupBox groupBox1;
+        private TextBox tbTestColor;
+        private Button btnTestColor;
+        private ComboBox cbSpeed;
+        private Button btnUpRight;
+        private Button btnDownRight;
+        private Button btnDownLeft;
+        private Button btnUpLeft;
+        private Button btnUp;
+        private Button btnDown;
+        private Button btnLeft;
+        private Button btnRigth;
+        private Button btnPlusWidth;
+        private Button btnMinusWidth;
+        private Button btnPlusHeight;
+        private Button btnMinusHeight;
+        private TextBox tbRegionUmbral;
+        private CheckBox cbRegionNumber;
+        private TextBox tbRegionInactUmbral;
+        private PictureBox pbColorDebug;
+        private PictureBox pbRegionColor;
+        private TextBox tbTestTexto;
+        private Button btnTestTexto;
+        private PictureBox pbTestCarta;
+        private Button btnTestCarta;
     }
 }

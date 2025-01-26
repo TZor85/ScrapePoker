@@ -22,6 +22,9 @@ using OpenScrape.Domain.Mappers;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using Image = System.Drawing.Image;
 using Page = Tesseract.Page;
+using OpenScrape.Domain.Mappers;
+using Nancy.Routing.Trie.Nodes;
+using SkiaSharp;
 
 namespace OpenScrape.App
 {
@@ -108,7 +111,7 @@ namespace OpenScrape.App
         private IGetActionHero3BetAndOpenRaiser4BetUseCase _hero3BetAndOpenRaiser4BetUseCase;
         private IGetActionVs3BetUseCaseUseCase _vs3BetUseCase;
         private IGetActionVs3BetAndCallUseCase _vs3BetAndCallUseCase;
-        private IGetActionSqueezeUseCase _squeezeUseCase        ;
+        private IGetActionSqueezeUseCase _squeezeUseCase;
         private IGetActionOpenRaiseUseCase _openRaiseUseCase;
         private IGetActionRaiseOverLimperUseCase _raiseOverLimperUseCase;
         private IGetAction3BetUseCase _threeBetUseCase;
@@ -118,7 +121,7 @@ namespace OpenScrape.App
         private ISetPreflopActionUseCase _setPreflopActionUseCase;
 
         private ImageCropperService _imageCropperService = new();
-        private List<Card>? _cardsImages;
+        private List<CardDTO>? _cardsImages;
 
         #endregion
 
@@ -138,6 +141,8 @@ namespace OpenScrape.App
 
         private readonly ISaveTableMapUseCase _saveUseCase = new SaveTableMapUseCase();
         private readonly ILoadTableMapUseCase _loadUseCase = new LoadTableMapUseCase();
+        private ColorDetectionService _colorDetectionService = new();
+        private OcrService _ocrService = new();
         private CardUseCases _cardUseCases;
 
         public FrmMain(IDocumentStore dataBase, ActionScenarioUseCases actionScenarioUseCases, CardUseCases cardUseCases)
@@ -265,44 +270,27 @@ namespace OpenScrape.App
 
         }
 
-        private void twRegions_AfterSelect(object sender, TreeViewEventArgs e)
-        {
-            var sen = (TreeView)sender;
-            var name = sen.SelectedNode.Text;
-
-            if (twRegionsConfig.SelectedNode.Parent != null)
-            {
-                var region = _regionsTableMap.FirstOrDefault(x => x.Id == twRegionsConfig.SelectedNode.Parent.Text)?.Regions?.FirstOrDefault(f => f.Name == twRegionsConfig.SelectedNode.Text);
-
-                _selectedRegion = region;
-
-                ckColor.Enabled = true;
-                ckColor.Checked = region.IsColor.GetValueOrDefault();
-                ckBoard.Enabled = true;
-                ckBoard.Checked = region.IsBoard.GetValueOrDefault();
-            }
-
-            if (twRegionsConfig.SelectedNode.Parent != null)
-            {
-                _locImage = _images?.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text) ?? new ImageRegion();
-
-                ckColor.Enabled = false;
-                ckBoard.Enabled = false;
-
-            }
-
-        }
-
         private void twRegions_DoubleClick(object sender, EventArgs e)
         {
             EnableButtons();
 
             _formImage.pbImagen.Refresh();
 
-            if (twRegionsConfig.SelectedNode != null)
+            if (twRegionsConfig?.SelectedNode?.Parent != null)
+            {
+                foreach (TreeNode rootNode in twRegionsConfig.Nodes)
+                {
+                    if (rootNode != twRegionsConfig?.SelectedNode?.Parent) // Si no es el padre del nodo clickeado
+                    {
+                        rootNode.Collapse();
+                    }
+                }
+            }
+
+            if (twRegionsConfig?.SelectedNode != null)
             {
                 _selectedRegion = ObtenerRegionDelNodo(twRegionsConfig.SelectedNode);
-                if (_selectedRegion != null)
+                if (_selectedRegion != null && _formImage.pbImagen.Image != null)
                 {
                     _papel = _formImage.pbImagen.CreateGraphics();
                     Pen lapiz = new Pen(Color.Red);
@@ -312,7 +300,25 @@ namespace OpenScrape.App
                     tbY.Text = _selectedRegion.PosY.ToString();
                     tbWidth.Text = _selectedRegion.Width.ToString();
                     tbHeight.Text = _selectedRegion.Height.ToString();
-                    lbXY.Text = $"X: {_selectedRegion.PosX} Y:{_selectedRegion.PosY}";
+                    tbRegionName.Text = _selectedRegion.Name;
+                    tbColor.Text = _selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty;
+                    tbRegionUmbral.Text = _selectedRegion.Umbral.ToString();
+                    tbRegionInactUmbral.Text = _selectedRegion.InactiveUmbral.ToString();
+                    cbRegionColor.Checked = _selectedRegion.IsColor.GetValueOrDefault();
+                    cbRegionHash.Checked = _selectedRegion.IsHash.GetValueOrDefault();
+                    cbRegionBoard.Checked = _selectedRegion.IsBoard.GetValueOrDefault();
+                    cbRegionNumber.Checked = _selectedRegion.IsOnlyNumber.GetValueOrDefault();
+
+                    SetPictureBoxColor(_selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty);
+
+                    if (_selectedRegion.IsColor.GetValueOrDefault())
+                        btnTestColor.Enabled = true;
+
+                    if (_selectedRegion.Umbral != null)
+                        btnTestTexto.Enabled = true;
+
+                    if (_selectedRegion.IsHash.GetValueOrDefault())
+                        btnTestCarta.Enabled = true;
                 }
             }
         }
@@ -874,7 +880,7 @@ namespace OpenScrape.App
                             }
                         }
                     }
-                    
+
                 }
             }
         }
@@ -1166,7 +1172,7 @@ namespace OpenScrape.App
             }
         }
 
-        private async Task ObtainCardsPlayer() 
+        private async Task ObtainCardsPlayer()
         {
             var session = _dataBase.LightweightSession();
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "User");
@@ -1179,7 +1185,10 @@ namespace OpenScrape.App
                     if (_cardsImages == null)
                     {
                         var cards = await session.Query<Card>().ToListAsync();
-                        _cardsImages = cards.ToList();
+                        foreach (var item in cards)
+                        {
+                            _cardsImages.Add(item.ToDto());
+                        }
                     }
 
                     //await Task.Run(async () => await _cardUseCases.GetAllCards.ExecuteAsync());
@@ -1198,7 +1207,7 @@ namespace OpenScrape.App
                                 if (pocentaje > maxPorcentaje)
                                 {
                                     maxPorcentaje = pocentaje;
-                                    card = item.ToDto();
+                                    card = item;
                                 }
                             }
                         }
@@ -1219,7 +1228,7 @@ namespace OpenScrape.App
                                 break;
                         }
 
-                    }                    
+                    }
                 }
             }
         }
@@ -1368,74 +1377,6 @@ namespace OpenScrape.App
                 });
 
                 btnWindow_Click(sender, e);
-            }
-        }
-
-
-        private void ckColor_CheckedChanged(object sender, EventArgs e)
-        {
-            if (ckColor.Checked)
-            {
-                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _locRegion.X,
-                    Y = _locRegion.Y,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
-
-                if (region != null)
-                {
-                    region.IsColor = true;
-                    _locRegion.Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-                }
-
-
-            }
-            else
-            {
-                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
-
-                tbR.Text = string.Empty;
-
-                if (region != null)
-                    region.IsColor = false;
-            }
-        }
-
-        private void ckBoard_CheckedChanged(object sender, EventArgs e)
-        {
-            if (ckBoard.Checked)
-            {
-                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
-
-                if (region != null)
-                    region.IsBoard = true;
-
-            }
-            else
-            {
-                var node = twRegionsConfig.Nodes.Find("Nodo0", true).FirstOrDefault() as TreeNode;
-
-                var region = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
-
-                if (region != null)
-                    region.IsBoard = false;
             }
         }
 
@@ -1746,26 +1687,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX + _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1785,26 +1711,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX - _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1814,7 +1725,46 @@ namespace OpenScrape.App
 
                 _img = _formImage.pbImagen.Image;
             }
+        }
 
+        private GetRGBColorResponse GetColorResponse()
+        {
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = (Bitmap)_formImage.pbImagen.Image,
+                X = _selectedRegion.PosX,
+                Y = _selectedRegion.PosY,
+                IsColor = _selectedRegion.IsColor.GetValueOrDefault()
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (_selectedRegion.IsColor.GetValueOrDefault())
+            {
+                tbColor.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+            }
+
+            return rgbResponse;
+        }
+
+        private GetRGBColorResponse GetTestColorResponse()
+        {
+            var rgbRequest = new GetRGBColorRequest
+            {
+                Image = (Bitmap)_formImage.pbImagen.Image,
+                X = _selectedRegion.PosX,
+                Y = _selectedRegion.PosY,
+                IsColor = _selectedRegion.IsColor.GetValueOrDefault()
+            };
+
+            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
+
+            if (_selectedRegion.IsColor.GetValueOrDefault())
+            {
+                tbTestColor.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+            }
+
+            return rgbResponse;
         }
 
         private void btnDown_Click(object sender, EventArgs e)
@@ -1825,26 +1775,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1864,26 +1799,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1903,26 +1823,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX - _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1941,26 +1846,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX + _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -1979,26 +1869,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX - _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -2017,26 +1892,11 @@ namespace OpenScrape.App
 
                 _papel = _formImage.pbImagen.CreateGraphics();
                 Pen lapiz = new Pen(Color.Red);
-
-                var rgbRequest = new GetRGBColorRequest
-                {
-                    Image = (Bitmap)_formImage.pbImagen.Image,
-                    X = _selectedRegion.PosX,
-                    Y = _selectedRegion.PosY,
-                    IsColor = ckColor.Checked
-                };
-
-                var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-                if (ckColor.Checked)
-                {
-                    tbR.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
-                }
+                GetRGBColorResponse rgbResponse = GetColorResponse();
 
                 var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX + _speed };
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
-                lbXY.Text = $"X: {updateRegion.PosX} Y:{updateRegion.PosY}";
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
                 if (updateRegion.IsColor.GetValueOrDefault())
@@ -2090,7 +1950,6 @@ namespace OpenScrape.App
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
             _img = _formImage.pbImagen.Image;
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
         }
 
         private void tbY_Leave(object sender, EventArgs e)
@@ -2104,7 +1963,6 @@ namespace OpenScrape.App
             _papel.DrawRectangle(lapiz, _locRegion.X, _locRegion.Y, _locRegion.Width, _locRegion.Height);
 
             _img = _formImage.pbImagen.Image;
-            lbXY.Text = $"X: {_locRegion.X} Y:{_locRegion.Y}";
         }
 
         #endregion
@@ -2192,6 +2050,102 @@ namespace OpenScrape.App
                 {
                     sibling.Collapse();
                 }
+            }
+        }
+
+        private void btnTestColor_Click(object sender, EventArgs e)
+        {
+            if (_formImage.pbImagen.Image != null)
+            {
+                var color = _colorDetectionService.GetPixelColor(_formImage.pbImagen.Image, _selectedRegion!.PosX, _selectedRegion.PosY);
+                pbColorDebug.BackColor = Color.FromArgb(color.Alpha, color.Red, color.Green, color.Blue);
+                tbTestColor.Text = $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
+            }
+        }
+
+        private void SetPictureBoxColor(string hexColor)
+        {
+            if (!string.IsNullOrEmpty(hexColor))
+            {
+                // Asegurarse que el valor hex tenga el formato correcto
+                hexColor = hexColor.Replace("#", "");
+
+                Color color = ColorTranslator.FromHtml("#" + hexColor);
+                using (Bitmap bmp = new Bitmap(pbRegionColor.Width, pbRegionColor.Height))
+                {
+                    using (Graphics g = Graphics.FromImage(bmp))
+                    {
+                        g.Clear(color);
+                    }
+                    pbRegionColor.Image = new Bitmap(bmp);
+                }
+            }
+        }
+
+        private void btnTestTexto_Click(object sender, EventArgs e)
+        {
+            if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+            {
+                var ocr = new OcrResult();
+
+                ocr = _ocrService.ExtractTextFromRegionAndDebug(
+                            _formImage.pbImagen.Image,
+                            _selectedRegion.PosX,
+                            _selectedRegion.PosY,
+                            _selectedRegion.Width,
+                            _selectedRegion.Height,
+                            _selectedRegion.Umbral.GetValueOrDefault(),
+                            _selectedRegion.IsOnlyNumber.GetValueOrDefault());
+
+                if (string.IsNullOrEmpty(ocr.Text))
+                {
+                    ocr = _ocrService.ExtractTextFromRegionAndDebug(
+                            _formImage.pbImagen.Image,
+                            _selectedRegion.PosX,
+                            _selectedRegion.PosY,
+                            _selectedRegion.Width,
+                            _selectedRegion.Height,
+                            _selectedRegion.InactiveUmbral.GetValueOrDefault(),
+                            _selectedRegion.IsOnlyNumber.GetValueOrDefault());
+                }
+
+                tbTestTexto.Text = !string.IsNullOrEmpty(ocr.Text) ? ocr.Text : "Sin resultado";
+                //pbImageTextDebug.Image = ocr.Image;
+            }
+        }
+
+        private async void btnTestCarta_Click(object sender, EventArgs e)
+        {
+            if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+            {
+                var imageToBase64 = _imageCropperService.CropImageToBase64(_formImage.pbImagen.Image, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+
+                if (_cardsImages == null)
+                    _cardsImages = await Task.Run(async () => await _cardUseCases.GetAllCards.ExecuteAsync());
+
+                if (_cardsImages != null)
+                {
+                    var maxPorcentaje = 0.0;
+
+                    foreach (var item in _cardsImages)
+                    {
+
+                        if (!string.IsNullOrEmpty(item.ImageBase64))
+                        {
+                            var pocentaje = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64);
+
+                            if (pocentaje > maxPorcentaje)
+                            {
+                                maxPorcentaje = pocentaje;
+                                pbTestCarta.Image = _imageCropperService.Base64ToImage(item.ImageBase64);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("No se ha seleccionado una región o la imagen es nula.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
