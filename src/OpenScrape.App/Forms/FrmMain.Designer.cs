@@ -36,6 +36,8 @@ namespace OpenScrape.App
             tbJuego = new TabPage();
             tbConfig = new TabPage();
             groupBox1 = new GroupBox();
+            pbTestCarta = new PictureBox();
+            btnTestCarta = new Button();
             tbTestTexto = new TextBox();
             btnTestTexto = new Button();
             pbColorDebug = new PictureBox();
@@ -72,10 +74,7 @@ namespace OpenScrape.App
             tbY = new TextBox();
             label3 = new Label();
             tbX = new TextBox();
-            btnCreateFont = new Button();
-            btnCreateImage = new Button();
-            btnLoadMap = new Button();
-            btnSaveMap = new Button();
+            btnUpdateMap = new Button();
             cbMark = new CheckBox();
             btnWindow = new Button();
             btnCapture4Bet = new Button();
@@ -99,11 +98,10 @@ namespace OpenScrape.App
             tbResume = new TextBox();
             pictureBox1 = new PictureBox();
             label4 = new Label();
-            btnTestCarta = new Button();
-            pbTestCarta = new PictureBox();
             tbControl.SuspendLayout();
             tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbTestCarta).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbColorDebug).BeginInit();
             rgRegion.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbRegionColor).BeginInit();
@@ -114,7 +112,6 @@ namespace OpenScrape.App
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pbTestCarta).BeginInit();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -131,7 +128,7 @@ namespace OpenScrape.App
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(679, 635);
+            tbControl.Size = new Size(687, 635);
             tbControl.TabIndex = 65;
             // 
             // tbJuego
@@ -146,11 +143,9 @@ namespace OpenScrape.App
             // tbConfig
             // 
             tbConfig.Controls.Add(groupBox1);
+            tbConfig.Controls.Add(pictureBox1);
             tbConfig.Controls.Add(rgRegion);
-            tbConfig.Controls.Add(btnCreateFont);
-            tbConfig.Controls.Add(btnCreateImage);
-            tbConfig.Controls.Add(btnLoadMap);
-            tbConfig.Controls.Add(btnSaveMap);
+            tbConfig.Controls.Add(btnUpdateMap);
             tbConfig.Controls.Add(cbMark);
             tbConfig.Controls.Add(btnWindow);
             tbConfig.Controls.Add(btnCapture4Bet);
@@ -167,7 +162,7 @@ namespace OpenScrape.App
             tbConfig.Location = new Point(4, 24);
             tbConfig.Name = "tbConfig";
             tbConfig.Padding = new Padding(3);
-            tbConfig.Size = new Size(671, 607);
+            tbConfig.Size = new Size(679, 607);
             tbConfig.TabIndex = 0;
             tbConfig.Text = "Configurar";
             tbConfig.UseVisualStyleBackColor = true;
@@ -183,10 +178,29 @@ namespace OpenScrape.App
             groupBox1.Controls.Add(btnTestColor);
             groupBox1.Location = new Point(384, 35);
             groupBox1.Name = "groupBox1";
-            groupBox1.Size = new Size(200, 214);
+            groupBox1.Size = new Size(200, 129);
             groupBox1.TabIndex = 85;
             groupBox1.TabStop = false;
             groupBox1.Text = "Test Region";
+            // 
+            // pbTestCarta
+            // 
+            pbTestCarta.Location = new Point(71, 80);
+            pbTestCarta.Name = "pbTestCarta";
+            pbTestCarta.Size = new Size(20, 35);
+            pbTestCarta.TabIndex = 90;
+            pbTestCarta.TabStop = false;
+            // 
+            // btnTestCarta
+            // 
+            btnTestCarta.Enabled = false;
+            btnTestCarta.Location = new Point(6, 92);
+            btnTestCarta.Name = "btnTestCarta";
+            btnTestCarta.Size = new Size(56, 23);
+            btnTestCarta.TabIndex = 89;
+            btnTestCarta.Text = "Carta";
+            btnTestCarta.UseVisualStyleBackColor = true;
+            btnTestCarta.Click += btnTestCarta_Click;
             // 
             // tbTestTexto
             // 
@@ -328,6 +342,7 @@ namespace OpenScrape.App
             btnUpRight.Text = "↗";
             btnUpRight.TextAlign = ContentAlignment.MiddleRight;
             btnUpRight.UseVisualStyleBackColor = true;
+            btnUpRight.Click += btnUpRight_Click;
             // 
             // btnDownRight
             // 
@@ -340,6 +355,7 @@ namespace OpenScrape.App
             btnDownRight.Text = "↘";
             btnDownRight.TextAlign = ContentAlignment.MiddleRight;
             btnDownRight.UseVisualStyleBackColor = true;
+            btnDownRight.Click += btnDownRight_Click;
             // 
             // btnDownLeft
             // 
@@ -352,6 +368,7 @@ namespace OpenScrape.App
             btnDownLeft.Text = "↙";
             btnDownLeft.TextAlign = ContentAlignment.MiddleRight;
             btnDownLeft.UseVisualStyleBackColor = true;
+            btnDownLeft.Click += btnDownLeft_Click;
             // 
             // btnUpLeft
             // 
@@ -364,6 +381,7 @@ namespace OpenScrape.App
             btnUpLeft.Text = "↖";
             btnUpLeft.TextAlign = ContentAlignment.MiddleRight;
             btnUpLeft.UseVisualStyleBackColor = true;
+            btnUpLeft.Click += btnUpLeft_Click;
             // 
             // btnUp
             // 
@@ -376,6 +394,7 @@ namespace OpenScrape.App
             btnUp.Text = "↑";
             btnUp.TextAlign = ContentAlignment.BottomCenter;
             btnUp.UseVisualStyleBackColor = true;
+            btnUp.Click += btnUp_Click;
             // 
             // btnDown
             // 
@@ -388,6 +407,7 @@ namespace OpenScrape.App
             btnDown.Text = "↓";
             btnDown.TextAlign = ContentAlignment.TopCenter;
             btnDown.UseVisualStyleBackColor = true;
+            btnDown.Click += btnDown_Click;
             // 
             // btnLeft
             // 
@@ -399,6 +419,7 @@ namespace OpenScrape.App
             btnLeft.Text = "←";
             btnLeft.TextAlign = ContentAlignment.TopCenter;
             btnLeft.UseVisualStyleBackColor = true;
+            btnLeft.Click += btnLeft_Click;
             // 
             // btnRigth
             // 
@@ -410,6 +431,7 @@ namespace OpenScrape.App
             btnRigth.Text = "→";
             btnRigth.TextAlign = ContentAlignment.TopCenter;
             btnRigth.UseVisualStyleBackColor = true;
+            btnRigth.Click += btnRigth_Click;
             // 
             // btnPlusWidth
             // 
@@ -423,6 +445,7 @@ namespace OpenScrape.App
             btnPlusWidth.Text = "+";
             btnPlusWidth.TextAlign = ContentAlignment.TopCenter;
             btnPlusWidth.UseVisualStyleBackColor = true;
+            btnPlusWidth.Click += btnPlusWidth_Click;
             // 
             // btnMinusWidth
             // 
@@ -434,28 +457,31 @@ namespace OpenScrape.App
             btnMinusWidth.TabIndex = 87;
             btnMinusWidth.Text = "-";
             btnMinusWidth.UseVisualStyleBackColor = true;
+            btnMinusWidth.Click += btnMinusWidth_Click;
             // 
             // btnPlusHeight
             // 
             btnPlusHeight.Enabled = false;
-            btnPlusHeight.Location = new Point(146, 71);
+            btnPlusHeight.Location = new Point(144, 72);
             btnPlusHeight.Name = "btnPlusHeight";
             btnPlusHeight.Size = new Size(25, 25);
             btnPlusHeight.TabIndex = 88;
             btnPlusHeight.Text = "+";
             btnPlusHeight.TextAlign = ContentAlignment.MiddleRight;
             btnPlusHeight.UseVisualStyleBackColor = true;
+            btnPlusHeight.Click += btnPlusHeight_Click;
             // 
             // btnMinusHeight
             // 
             btnMinusHeight.Enabled = false;
-            btnMinusHeight.Location = new Point(170, 71);
+            btnMinusHeight.Location = new Point(168, 72);
             btnMinusHeight.Name = "btnMinusHeight";
             btnMinusHeight.Size = new Size(25, 25);
             btnMinusHeight.TabIndex = 89;
             btnMinusHeight.Text = "-";
             btnMinusHeight.TextAlign = ContentAlignment.TopCenter;
             btnMinusHeight.UseVisualStyleBackColor = true;
+            btnMinusHeight.Click += btnMinusHeight_Click;
             // 
             // tbRegionName
             // 
@@ -521,7 +547,7 @@ namespace OpenScrape.App
             // 
             label7.AutoSize = true;
             label7.Font = new Font("Segoe UI", 9F);
-            label7.Location = new Point(126, 46);
+            label7.Location = new Point(119, 112);
             label7.Name = "label7";
             label7.Size = new Size(14, 15);
             label7.TabIndex = 39;
@@ -529,7 +555,7 @@ namespace OpenScrape.App
             // 
             // tbHeight
             // 
-            tbHeight.Location = new Point(146, 106);
+            tbHeight.Location = new Point(144, 46);
             tbHeight.Name = "tbHeight";
             tbHeight.Size = new Size(49, 23);
             tbHeight.TabIndex = 38;
@@ -539,7 +565,7 @@ namespace OpenScrape.App
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(100, 111);
+            label2.Location = new Point(98, 51);
             label2.Name = "label2";
             label2.Size = new Size(43, 15);
             label2.TabIndex = 37;
@@ -547,7 +573,7 @@ namespace OpenScrape.App
             // 
             // tbWidth
             // 
-            tbWidth.Location = new Point(42, 106);
+            tbWidth.Location = new Point(43, 46);
             tbWidth.Name = "tbWidth";
             tbWidth.Size = new Size(49, 23);
             tbWidth.TabIndex = 36;
@@ -557,7 +583,7 @@ namespace OpenScrape.App
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(1, 111);
+            label1.Location = new Point(2, 51);
             label1.Name = "label1";
             label1.Size = new Size(39, 15);
             label1.TabIndex = 35;
@@ -565,7 +591,7 @@ namespace OpenScrape.App
             // 
             // tbY
             // 
-            tbY.Location = new Point(146, 43);
+            tbY.Location = new Point(139, 109);
             tbY.Name = "tbY";
             tbY.Size = new Size(49, 23);
             tbY.TabIndex = 33;
@@ -576,7 +602,7 @@ namespace OpenScrape.App
             // 
             label3.AutoSize = true;
             label3.Font = new Font("Segoe UI", 9F);
-            label3.Location = new Point(19, 46);
+            label3.Location = new Point(15, 112);
             label3.Name = "label3";
             label3.Size = new Size(14, 15);
             label3.TabIndex = 32;
@@ -584,53 +610,22 @@ namespace OpenScrape.App
             // 
             // tbX
             // 
-            tbX.Location = new Point(42, 43);
+            tbX.Location = new Point(38, 109);
             tbX.Name = "tbX";
             tbX.Size = new Size(49, 23);
             tbX.TabIndex = 30;
             tbX.Text = "0";
             tbX.TextAlign = HorizontalAlignment.Right;
             // 
-            // btnCreateFont
+            // btnUpdateMap
             // 
-            btnCreateFont.Location = new Point(384, 440);
-            btnCreateFont.Name = "btnCreateFont";
-            btnCreateFont.Size = new Size(91, 23);
-            btnCreateFont.TabIndex = 78;
-            btnCreateFont.Text = "Create Font";
-            btnCreateFont.UseVisualStyleBackColor = true;
-            btnCreateFont.Click += btnCreateFont_Click;
-            // 
-            // btnCreateImage
-            // 
-            btnCreateImage.Enabled = false;
-            btnCreateImage.Location = new Point(384, 411);
-            btnCreateImage.Name = "btnCreateImage";
-            btnCreateImage.Size = new Size(91, 23);
-            btnCreateImage.TabIndex = 77;
-            btnCreateImage.Text = "Create Image";
-            btnCreateImage.UseVisualStyleBackColor = true;
-            btnCreateImage.Click += btnCreateImage_Click;
-            // 
-            // btnLoadMap
-            // 
-            btnLoadMap.Location = new Point(505, 411);
-            btnLoadMap.Name = "btnLoadMap";
-            btnLoadMap.Size = new Size(75, 23);
-            btnLoadMap.TabIndex = 75;
-            btnLoadMap.Text = "Load Map";
-            btnLoadMap.UseVisualStyleBackColor = true;
-            btnLoadMap.Click += btnLoadMap_Click;
-            // 
-            // btnSaveMap
-            // 
-            btnSaveMap.Location = new Point(590, 411);
-            btnSaveMap.Name = "btnSaveMap";
-            btnSaveMap.Size = new Size(75, 23);
-            btnSaveMap.TabIndex = 74;
-            btnSaveMap.Text = "Save Map";
-            btnSaveMap.UseVisualStyleBackColor = true;
-            btnSaveMap.Click += btnSaveMap_Click;
+            btnUpdateMap.Location = new Point(382, 175);
+            btnUpdateMap.Name = "btnUpdateMap";
+            btnUpdateMap.Size = new Size(75, 23);
+            btnUpdateMap.TabIndex = 74;
+            btnUpdateMap.Text = "Update";
+            btnUpdateMap.UseVisualStyleBackColor = true;
+            btnUpdateMap.Click += btnSaveMap_Click;
             // 
             // cbMark
             // 
@@ -843,9 +838,9 @@ namespace OpenScrape.App
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(782, 193);
+            pictureBox1.Location = new Point(384, 224);
             pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(302, 192);
+            pictureBox1.Size = new Size(212, 83);
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBox1.TabIndex = 66;
             pictureBox1.TabStop = false;
@@ -860,32 +855,12 @@ namespace OpenScrape.App
             label4.TabIndex = 67;
             label4.Text = "label4";
             // 
-            // btnTestCarta
-            // 
-            btnTestCarta.Enabled = false;
-            btnTestCarta.Location = new Point(6, 92);
-            btnTestCarta.Name = "btnTestCarta";
-            btnTestCarta.Size = new Size(56, 23);
-            btnTestCarta.TabIndex = 89;
-            btnTestCarta.Text = "Carta";
-            btnTestCarta.UseVisualStyleBackColor = true;
-            btnTestCarta.Click += btnTestCarta_Click;
-            // 
-            // pbTestCarta
-            // 
-            pbTestCarta.Location = new Point(71, 80);
-            pbTestCarta.Name = "pbTestCarta";
-            pbTestCarta.Size = new Size(20, 35);
-            pbTestCarta.TabIndex = 90;
-            pbTestCarta.TabStop = false;
-            // 
             // FrmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(679, 635);
+            ClientSize = new Size(687, 635);
             Controls.Add(label4);
-            Controls.Add(pictureBox1);
             Controls.Add(tbControl);
             Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
@@ -896,6 +871,7 @@ namespace OpenScrape.App
             tbConfig.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbTestCarta).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbColorDebug).EndInit();
             rgRegion.ResumeLayout(false);
             rgRegion.PerformLayout();
@@ -909,7 +885,6 @@ namespace OpenScrape.App
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pbTestCarta).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -937,10 +912,7 @@ namespace OpenScrape.App
         private Button btnDelete;
         private Button btnNew;
         private TreeView twRegionsConfig;
-        private Button btnCreateFont;
-        private Button btnCreateImage;
-        private Button btnLoadMap;
-        private Button btnSaveMap;
+        private Button btnUpdateMap;
         private TextBox tbResume;
         private PictureBox pictureBox1;
         private Label label4;

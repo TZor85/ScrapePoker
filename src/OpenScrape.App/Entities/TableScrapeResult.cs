@@ -5,6 +5,7 @@ namespace OpenScrape.App.Entities
     public class TableScrapeResult
     {
         public bool P0Dealer { get; set; }
+        public decimal Pot { get; set; }
         public string U0CardFace0 { get; set; } = string.Empty;
         public string U0CardFace1 { get; set; } = string.Empty;
         public int U0CardForce0 { get; set; } = 0;

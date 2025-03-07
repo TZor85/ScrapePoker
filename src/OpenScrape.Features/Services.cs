@@ -3,7 +3,9 @@ using OpenScrape.Features.ActionScenario;
 using OpenScrape.Features.ActionScenario.Get;
 using OpenScrape.Features.Card;
 using OpenScrape.Features.Card.GetAll;
+using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.GetAll;
+using OpenScrape.Features.RegionsTableMap.Update;
 using OpenScrape.Features.Table;
 using OpenScrape.Features.Table.Get;
 using OpenScrape.Features.Table.GetAll;
@@ -24,6 +26,8 @@ public static class Services
         .AddScoped<CardUseCases>()
 
         .AddScoped<GetAllRegionTableMap>()
+        .AddScoped<UpdateRegionTableMap>()
+        .AddScoped<RegionTableMapUseCases>()
         .AddScoped<GetAllTables>();
 }
 

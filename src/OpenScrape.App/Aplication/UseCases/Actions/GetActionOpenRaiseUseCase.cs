@@ -15,13 +15,15 @@ public class GetActionOpenRaiseUseCase : IGetActionOpenRaiseUseCase
     public async Task<GetActionOpenRaiseUseCaseResponse> Execute(GetActionOpenRaiseUseCaseRequest request)
     {
         var response = new GetActionOpenRaiseUseCaseResponse();
-
-        response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.OpenRaise, new ActionScenarioRequest
+        if (!string.IsNullOrEmpty(request.Hand))
         {
-            HeroPosition = request.Position,
-            HandName = request.Hand,
-            Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
-        });
+            response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.OpenRaise, new ActionScenarioRequest
+            {
+                HeroPosition = request.Position,
+                HandName = request.Hand.Substring(0, 2),
+                Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
+            });
+        }
 
         return response;
     }

@@ -8,17 +8,20 @@ namespace OpenScrape.App.Helpers
         {
             string hand = string.Empty;
 
-            if (scrapeResult.U0CardForce0 >= scrapeResult.U0CardForce1)
-                hand = $"{scrapeResult.U0CardFace0[0]}{scrapeResult.U0CardFace1[0]}";
-            else
-                hand = $"{scrapeResult.U0CardFace1[0]}{scrapeResult.U0CardFace0[0]}";
-
-            if (scrapeResult.U0CardForce0 != scrapeResult.U0CardForce1)
+            if (scrapeResult.U0CardForce0 != 0)
             {
-                if (scrapeResult.U0CardSuit0 == scrapeResult.U0CardSuit1)
-                    hand += "s";
+                if (scrapeResult.U0CardForce0 >= scrapeResult.U0CardForce1)
+                    hand = $"{scrapeResult.U0CardFace0[0]}{scrapeResult.U0CardFace1[0]}";
                 else
-                    hand += "o";
+                    hand = $"{scrapeResult.U0CardFace1[0]}{scrapeResult.U0CardFace0[0]}";
+
+                if (scrapeResult.U0CardForce0 != scrapeResult.U0CardForce1)
+                {
+                    if (scrapeResult.U0CardSuit0 == scrapeResult.U0CardSuit1)
+                        hand += "s";
+                    else
+                        hand += "o";
+                }
             }
 
             return hand;

@@ -57,7 +57,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 
         if (request.TableScrapeFlopResult.HavePairOnHand)
         {
-            request.TableScrapeFlopResult.HaveOverPairOnFlop = request.TableScrapeResult.DataBoard
+            request.TableScrapeFlopResult.HaveOverPairOnFlop = !request.TableScrapeResult.DataBoard
                 .Any(a => a.Force > request.TableScrapeResult.U0CardForce0);
         }
 

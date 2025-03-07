@@ -1,44 +1,75 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.InteropServices;
 
 namespace OpenScrape.App.Helpers
 {
     public static class CaptureWindowsHelper
     {
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetProcessDPIAware();
 
-        public static Image CaptureWindow(IntPtr handle)
+        public static Bitmap CaptureWindow(IntPtr handle)
         {
-            // obtener hDC de la ventana deseada
-            IntPtr hdcSrc = User32.GetWindowDC(handle);
-            // Obtener el tamano
+            // Configurar DPI Awareness
+            SetProcessDPIAware();
+
+            // Obtener dimensiones
             User32.RECT windowRect = new User32.RECT();
             User32.GetWindowRect(handle, ref windowRect);
             int width = windowRect.right - windowRect.left;
             int height = windowRect.bottom - windowRect.top;
-            // Crea un contexto en el que se copiara la imagen
+
+            // Capturar con alta resolución
+            IntPtr hdcSrc = User32.GetWindowDC(handle);
             IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
-            // create a bitmap we can copy it to,
-            // using GetDeviceCaps to get the width/height
             IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
-            // Seleccionar el objeto bitmap 
             IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
-            // finalizar bitblt
-            GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, GDI32.SRCCOPY);
-            // Restaurar seleccion
+
+            // Usar PrintWindow para mejor calidad
+            bool success = User32.PrintWindow(handle, hdcDest, 0x02);
+            if (!success) GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, 0x00CC0020);
+
+            // Convertir a Bitmap y ajustar DPI
+            var bitmap = (Bitmap)Image.FromHbitmap(hBitmap);
+            bitmap.SetResolution(300, 300); // 300 DPI para OCR
+
+            // Limpieza
             GDI32.SelectObject(hdcDest, hOld);
-            // Limpiar
             GDI32.DeleteDC(hdcDest);
             User32.ReleaseDC(handle, hdcSrc);
-            // Obtener una imagen .NET image del bitmap
-            Image img = Image.FromHbitmap(hBitmap);
-            // Liberar objeto Bitmab
             GDI32.DeleteObject(hBitmap);
-            return img;
+
+            return bitmap;
         }
+                
+        //public static Image CaptureWindow(IntPtr handle)
+        //{
+        //    // obtener hDC de la ventana deseada
+        //    IntPtr hdcSrc = User32.GetWindowDC(handle);
+        //    // Obtener el tamano
+        //    User32.RECT windowRect = new User32.RECT();
+        //    User32.GetWindowRect(handle, ref windowRect);
+        //    int width = windowRect.right - windowRect.left;
+        //    int height = windowRect.bottom - windowRect.top;
+        //    // Crea un contexto en el que se copiara la imagen
+        //    IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
+        //    // create a bitmap we can copy it to,
+        //    // using GetDeviceCaps to get the width/height
+        //    IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
+        //    // Seleccionar el objeto bitmap 
+        //    IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
+        //    // finalizar bitblt
+        //    GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, GDI32.SRCCOPY);
+        //    // Restaurar seleccion
+        //    GDI32.SelectObject(hdcDest, hOld);
+        //    // Limpiar
+        //    GDI32.DeleteDC(hdcDest);
+        //    User32.ReleaseDC(handle, hdcSrc);
+        //    // Obtener una imagen .NET image del bitmap
+        //    Image img = Image.FromHbitmap(hBitmap);
+        //    // Liberar objeto Bitmab
+        //    GDI32.DeleteObject(hBitmap);
+        //    return img;
+        //}
 
         public static Image CaptureWindowByPosition(IntPtr handle)
         {
@@ -89,6 +120,9 @@ namespace OpenScrape.App.Helpers
             public static extern bool DeleteObject(IntPtr hObject);
             [DllImport("gdi32.dll")]
             public static extern IntPtr SelectObject(IntPtr hDC, IntPtr hObject);
+
+            [DllImport("gdi32.dll")]
+            public static extern bool SetBitmapDpi(IntPtr hbm, IntPtr hdc, float dpiX, float dpiY);
         }
 
         public static class User32
@@ -115,6 +149,23 @@ namespace OpenScrape.App.Helpers
             public static extern int GetPixel(IntPtr hdc, int x, int y);
             [DllImport("user32.dll")]
             public static extern IntPtr GetDC(IntPtr hwnd);
+
+            [DllImport("user32.dll")]
+            public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+
+            [DllImport("user32.dll")]
+            public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+            [DllImport("shcore.dll")]
+            public static extern int GetDpiForMonitor(IntPtr hmonitor, MONITOR_DPI_TYPE dpiType, out uint dpiX, out uint dpiY);
+
+            public const uint PW_RENDERFULLCONTENT = 0x00000002;
+            public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+            public enum MONITOR_DPI_TYPE
+            {
+                MDT_EFFECTIVE_DPI = 0
+            }
         }
 
         public static Bitmap BinaryImage(Bitmap source, int umb)

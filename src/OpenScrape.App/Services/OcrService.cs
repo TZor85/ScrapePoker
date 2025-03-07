@@ -1,6 +1,11 @@
 ﻿//using Android.Icu.Number;
+
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 using SkiaSharp;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using Tesseract;
 
 namespace OpenScrape.App.Services;
@@ -284,6 +289,45 @@ public class OcrService
         _bitmapCache.Clear();
     }
 
+    private SKBitmap ApplyMedianFilter(SKBitmap bitmap, int radius)
+    {
+        if (radius <= 0)
+            return bitmap.Copy();
+
+        SKBitmap result = new SKBitmap(bitmap.Width, bitmap.Height);
+
+        for (int y = 0; y < bitmap.Height; y++)
+        {
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                List<byte> values = new List<byte>();
+
+                // Recopilar valores en la ventana de radio
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    for (int dx = -radius; dx <= radius; dx++)
+                    {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        // Verificar límites
+                        if (nx >= 0 && nx < bitmap.Width && ny >= 0 && ny < bitmap.Height)
+                        {
+                            values.Add(bitmap.GetPixel(nx, ny).Red);
+                        }
+                    }
+                }
+
+                // Ordenar valores y tomar el del medio (mediana)
+                values.Sort();
+                byte medianValue = values[values.Count / 2];
+
+                result.SetPixel(x, y, new SKColor(medianValue, medianValue, medianValue, 255));
+            }
+        }
+
+        return result;
+    }
 }
 
 public class OcrResult

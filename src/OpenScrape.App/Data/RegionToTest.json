@@ -1,0 +1,122 @@
+[
+	{
+		"Name": "Names",
+		"Regions": [
+			{
+				"Name": "p1Name",
+				"PosX": 150,
+				"PosY": 519,
+				"Width": 128,
+				"Height": 18
+			},
+			{
+				"Name": "p2Name",
+				"PosX": 68,
+				"PosY": 219,
+				"Width": 128,
+				"Height": 20
+			},
+			{
+				"Name": "p3Name",
+				"PosX": 450,
+				"PosY": 134,
+				"Width": 128,
+				"Height": 20
+			},
+			{
+				"Name": "p4Name",
+				"PosX": 830,
+				"PosY": 219,
+				"Width": 128,
+				"Height": 20
+			},
+			{
+				"Name": "p5Name",
+				"PosX": 748,
+				"PosY": 519,
+				"Width": 128,
+				"Height": 20
+			}
+		]
+	},
+	{
+		"Name": "Bets",
+		"Regions": [
+			{
+				"Name": "p0bet",
+				"PosX": 488,
+				"PosY": 459,
+				"Width": 90,
+				"Height": 15
+			},
+			{
+				"Name": "p1bet",
+				"PosX": 274,
+				"PosY": 452,
+				"Width": 90,
+				"Height": 15
+			},
+			{
+				"Name": "p2bet",
+				"PosX": 195,
+				"PosY": 268,
+				"Width": 90,
+				"Height": 15
+			},
+			{
+				"Name": "p3bet",
+				"PosX": 425,
+				"PosY": 219,
+				"Width": 90,
+				"Height": 15
+			},
+			{
+				"Name": "p4bet",
+				"PosX": 720,
+				"PosY": 268,
+				"Width": 90,
+				"Height": 16
+			},
+			{
+				"Name": "p5bet",
+				"PosX": 653,
+				"PosY": 453,
+				"Width": 90,
+				"Height": 15
+			}
+		]
+	},
+	{
+		"Name": "Table",
+		"Regions": [
+			{
+				"Name": "isFlop",
+				"PosX": 400,
+				"PosY": 276,
+				"Width": 1,
+				"Height": 1
+			},
+			{
+				"Name": "tablehand",
+				"PosX": 117,
+				"PosY": 45,
+				"Width": 138,
+				"Height": 19
+			},
+			{
+				"Name": "tablename",
+				"PosX": 29,
+				"PosY": 6,
+				"Width": 130,
+				"Height": 20
+			},
+			{
+				"Name": "pot",
+				"PosX": 445,
+				"PosY": 249,
+				"Width": 130,
+				"Height": 15
+			}
+		]
+	}
+]
