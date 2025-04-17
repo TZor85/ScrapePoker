@@ -67,6 +67,7 @@ namespace OpenScrape.App.Entities
     public class PlayerData
     {
         public string? Name { get; set; }
+        public string? Alias { get; set; }
         public bool Dealer { get; set; }
         public decimal Bet { get; set; }
         public bool Active { get; set; }
@@ -91,7 +92,7 @@ namespace OpenScrape.App.Entities
         public int Force { get; set; }
         public int Suit { get; set; }
         public BoardPosition Position { get; set; }
-
+        public int Location { get; set; }
     }
 
     

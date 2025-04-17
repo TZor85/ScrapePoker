@@ -34,6 +34,58 @@ namespace OpenScrape.App
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tbJuego = new TabPage();
+            lbAction = new Label();
+            gbTest = new GroupBox();
+            btnClear = new Button();
+            rbRiver = new RadioButton();
+            rbTurn = new RadioButton();
+            rbFlop = new RadioButton();
+            btnWindow = new Button();
+            cbTest = new CheckBox();
+            panel10 = new Panel();
+            lbTableHand = new Label();
+            panel9 = new Panel();
+            lbTableName = new Label();
+            btnCapture = new Button();
+            panel8 = new Panel();
+            lbPot = new Label();
+            pbBoard5 = new PictureBox();
+            pbBoard4 = new PictureBox();
+            pbBoard3 = new PictureBox();
+            pbBoard2 = new PictureBox();
+            pbBoard1 = new PictureBox();
+            pbHeroCard1 = new PictureBox();
+            pbHeroCard0 = new PictureBox();
+            pbButtonHero = new PictureBox();
+            pbButtonPlayerFive = new PictureBox();
+            pbButtonPlayerFour = new PictureBox();
+            pbButtonPlayerThree = new PictureBox();
+            pbButtonPlayerTwo = new PictureBox();
+            pbbuttonPlayerOne = new PictureBox();
+            panel7 = new Panel();
+            lbBetHero = new Label();
+            panel6 = new Panel();
+            lbBetPlayerFive = new Label();
+            panel5 = new Panel();
+            lbBetPlayerFour = new Label();
+            panel4 = new Panel();
+            lbBetPlayerThree = new Label();
+            panel3 = new Panel();
+            lbBetPlayerTwo = new Label();
+            panel2 = new Panel();
+            lbBetPlayerOne = new Label();
+            panel1 = new Panel();
+            lbNamePlayerfive = new Label();
+            pnNameHero = new Panel();
+            lbNameHero = new Label();
+            pnNamePlayerFour = new Panel();
+            lbNamePlayerFour = new Label();
+            pnNamePlayerThree = new Panel();
+            lbNamePlayerThree = new Label();
+            pnNamePlayerTwo = new Panel();
+            lbNamePlayerTwo = new Label();
+            pnNamePlayerOne = new Panel();
+            lbNamePlayerOne = new Label();
             tbConfig = new TabPage();
             groupBox1 = new GroupBox();
             pbTestCarta = new PictureBox();
@@ -43,6 +95,7 @@ namespace OpenScrape.App
             pbColorDebug = new PictureBox();
             tbTestColor = new TextBox();
             btnTestColor = new Button();
+            pictureBox1 = new PictureBox();
             rgRegion = new GroupBox();
             pbRegionColor = new PictureBox();
             tbRegionInactUmbral = new TextBox();
@@ -76,42 +129,55 @@ namespace OpenScrape.App
             tbX = new TextBox();
             btnUpdateMap = new Button();
             cbMark = new CheckBox();
-            btnWindow = new Button();
             btnCapture4Bet = new Button();
             btnCapture3bet = new Button();
-            pbCard1 = new PictureBox();
-            pbCard0 = new PictureBox();
-            lbAction = new Label();
-            btnCapture = new Button();
-            gbTest = new GroupBox();
-            cbRiver = new CheckBox();
-            cbTurn = new CheckBox();
-            cbFlop = new CheckBox();
-            cbTest = new CheckBox();
-            btnDelete = new Button();
-            btnNew = new Button();
             twRegionsConfig = new TreeView();
             tbTables = new TabPage();
             dgvHands = new DataGridView();
             twTables = new TreeView();
             tbLogs = new TabPage();
             tbResume = new TextBox();
-            pictureBox1 = new PictureBox();
-            label4 = new Label();
             tbControl.SuspendLayout();
+            tbJuego.SuspendLayout();
+            gbTest.SuspendLayout();
+            panel10.SuspendLayout();
+            panel9.SuspendLayout();
+            panel8.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)pbBoard5).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard4).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard3).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard2).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbHeroCard1).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbHeroCard0).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonHero).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerFive).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerFour).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerThree).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerTwo).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbbuttonPlayerOne).BeginInit();
+            panel7.SuspendLayout();
+            panel6.SuspendLayout();
+            panel5.SuspendLayout();
+            panel4.SuspendLayout();
+            panel3.SuspendLayout();
+            panel2.SuspendLayout();
+            panel1.SuspendLayout();
+            pnNameHero.SuspendLayout();
+            pnNamePlayerFour.SuspendLayout();
+            pnNamePlayerThree.SuspendLayout();
+            pnNamePlayerTwo.SuspendLayout();
+            pnNamePlayerOne.SuspendLayout();
             tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbTestCarta).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pbColorDebug).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             rgRegion.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbRegionColor).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pbCard1).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)pbCard0).BeginInit();
-            gbTest.SuspendLayout();
             tbTables.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -128,17 +194,528 @@ namespace OpenScrape.App
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(687, 635);
+            tbControl.Size = new Size(677, 491);
             tbControl.TabIndex = 65;
             // 
             // tbJuego
             // 
+            tbJuego.Controls.Add(lbAction);
+            tbJuego.Controls.Add(gbTest);
+            tbJuego.Controls.Add(btnWindow);
+            tbJuego.Controls.Add(cbTest);
+            tbJuego.Controls.Add(panel10);
+            tbJuego.Controls.Add(panel9);
+            tbJuego.Controls.Add(btnCapture);
+            tbJuego.Controls.Add(panel8);
+            tbJuego.Controls.Add(pbBoard5);
+            tbJuego.Controls.Add(pbBoard4);
+            tbJuego.Controls.Add(pbBoard3);
+            tbJuego.Controls.Add(pbBoard2);
+            tbJuego.Controls.Add(pbBoard1);
+            tbJuego.Controls.Add(pbHeroCard1);
+            tbJuego.Controls.Add(pbHeroCard0);
+            tbJuego.Controls.Add(pbButtonHero);
+            tbJuego.Controls.Add(pbButtonPlayerFive);
+            tbJuego.Controls.Add(pbButtonPlayerFour);
+            tbJuego.Controls.Add(pbButtonPlayerThree);
+            tbJuego.Controls.Add(pbButtonPlayerTwo);
+            tbJuego.Controls.Add(pbbuttonPlayerOne);
+            tbJuego.Controls.Add(panel7);
+            tbJuego.Controls.Add(panel6);
+            tbJuego.Controls.Add(panel5);
+            tbJuego.Controls.Add(panel4);
+            tbJuego.Controls.Add(panel3);
+            tbJuego.Controls.Add(panel2);
+            tbJuego.Controls.Add(panel1);
+            tbJuego.Controls.Add(pnNameHero);
+            tbJuego.Controls.Add(pnNamePlayerFour);
+            tbJuego.Controls.Add(pnNamePlayerThree);
+            tbJuego.Controls.Add(pnNamePlayerTwo);
+            tbJuego.Controls.Add(pnNamePlayerOne);
             tbJuego.Location = new Point(4, 24);
             tbJuego.Name = "tbJuego";
-            tbJuego.Size = new Size(671, 607);
+            tbJuego.Size = new Size(669, 463);
             tbJuego.TabIndex = 2;
             tbJuego.Text = "Juego";
             tbJuego.UseVisualStyleBackColor = true;
+            // 
+            // lbAction
+            // 
+            lbAction.AutoSize = true;
+            lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lbAction.Location = new Point(280, 429);
+            lbAction.Name = "lbAction";
+            lbAction.Size = new Size(60, 21);
+            lbAction.TabIndex = 83;
+            lbAction.Text = "Action";
+            // 
+            // gbTest
+            // 
+            gbTest.Controls.Add(btnClear);
+            gbTest.Controls.Add(rbRiver);
+            gbTest.Controls.Add(rbTurn);
+            gbTest.Controls.Add(rbFlop);
+            gbTest.Enabled = false;
+            gbTest.Location = new Point(89, 361);
+            gbTest.Name = "gbTest";
+            gbTest.Size = new Size(98, 99);
+            gbTest.TabIndex = 82;
+            gbTest.TabStop = false;
+            gbTest.Text = "Test";
+            gbTest.Visible = false;
+            // 
+            // btnClear
+            // 
+            btnClear.Location = new Point(63, 71);
+            btnClear.Name = "btnClear";
+            btnClear.Size = new Size(29, 23);
+            btnClear.TabIndex = 51;
+            btnClear.Text = "cl";
+            btnClear.UseVisualStyleBackColor = true;
+            btnClear.Click += btnClear_Click;
+            // 
+            // rbRiver
+            // 
+            rbRiver.AutoSize = true;
+            rbRiver.Location = new Point(7, 71);
+            rbRiver.Name = "rbRiver";
+            rbRiver.Size = new Size(51, 19);
+            rbRiver.TabIndex = 50;
+            rbRiver.TabStop = true;
+            rbRiver.Text = "River";
+            rbRiver.UseVisualStyleBackColor = true;
+            // 
+            // rbTurn
+            // 
+            rbTurn.AutoSize = true;
+            rbTurn.Location = new Point(7, 44);
+            rbTurn.Name = "rbTurn";
+            rbTurn.Size = new Size(49, 19);
+            rbTurn.TabIndex = 49;
+            rbTurn.TabStop = true;
+            rbTurn.Text = "Turn";
+            rbTurn.UseVisualStyleBackColor = true;
+            // 
+            // rbFlop
+            // 
+            rbFlop.AutoSize = true;
+            rbFlop.Location = new Point(7, 17);
+            rbFlop.Name = "rbFlop";
+            rbFlop.Size = new Size(48, 19);
+            rbFlop.TabIndex = 48;
+            rbFlop.TabStop = true;
+            rbFlop.Text = "Flop";
+            rbFlop.UseVisualStyleBackColor = true;
+            // 
+            // btnWindow
+            // 
+            btnWindow.Location = new Point(584, 400);
+            btnWindow.Name = "btnWindow";
+            btnWindow.Size = new Size(80, 60);
+            btnWindow.TabIndex = 81;
+            btnWindow.Text = "Window";
+            btnWindow.UseVisualStyleBackColor = true;
+            btnWindow.Click += btnWindow_Click;
+            // 
+            // cbTest
+            // 
+            cbTest.AutoSize = true;
+            cbTest.CheckAlign = ContentAlignment.MiddleRight;
+            cbTest.Location = new Point(608, 9);
+            cbTest.Name = "cbTest";
+            cbTest.Size = new Size(46, 19);
+            cbTest.TabIndex = 80;
+            cbTest.Text = "Test";
+            cbTest.UseVisualStyleBackColor = true;
+            cbTest.CheckedChanged += cbTest_CheckedChanged;
+            // 
+            // panel10
+            // 
+            panel10.Controls.Add(lbTableHand);
+            panel10.Location = new Point(3, 30);
+            panel10.Name = "panel10";
+            panel10.Size = new Size(120, 25);
+            panel10.TabIndex = 79;
+            // 
+            // lbTableHand
+            // 
+            lbTableHand.AutoSize = true;
+            lbTableHand.Location = new Point(1, 5);
+            lbTableHand.Name = "lbTableHand";
+            lbTableHand.Size = new Size(0, 15);
+            lbTableHand.TabIndex = 1;
+            // 
+            // panel9
+            // 
+            panel9.Controls.Add(lbTableName);
+            panel9.Location = new Point(3, 3);
+            panel9.Name = "panel9";
+            panel9.Size = new Size(120, 25);
+            panel9.TabIndex = 78;
+            // 
+            // lbTableName
+            // 
+            lbTableName.AutoSize = true;
+            lbTableName.Location = new Point(1, 5);
+            lbTableName.Name = "lbTableName";
+            lbTableName.Size = new Size(0, 15);
+            lbTableName.TabIndex = 1;
+            // 
+            // btnCapture
+            // 
+            btnCapture.Location = new Point(3, 400);
+            btnCapture.Name = "btnCapture";
+            btnCapture.Size = new Size(80, 60);
+            btnCapture.TabIndex = 77;
+            btnCapture.Text = "Capture";
+            btnCapture.UseVisualStyleBackColor = true;
+            btnCapture.Click += btnCapture_Click;
+            // 
+            // panel8
+            // 
+            panel8.BorderStyle = BorderStyle.FixedSingle;
+            panel8.Controls.Add(lbPot);
+            panel8.Location = new Point(303, 150);
+            panel8.Name = "panel8";
+            panel8.Size = new Size(55, 20);
+            panel8.TabIndex = 76;
+            // 
+            // lbPot
+            // 
+            lbPot.AutoSize = true;
+            lbPot.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbPot.Location = new Point(2, 3);
+            lbPot.Name = "lbPot";
+            lbPot.Size = new Size(0, 13);
+            lbPot.TabIndex = 0;
+            // 
+            // pbBoard5
+            // 
+            pbBoard5.BorderStyle = BorderStyle.FixedSingle;
+            pbBoard5.Location = new Point(378, 195);
+            pbBoard5.Name = "pbBoard5";
+            pbBoard5.Size = new Size(20, 35);
+            pbBoard5.TabIndex = 75;
+            pbBoard5.TabStop = false;
+            // 
+            // pbBoard4
+            // 
+            pbBoard4.BorderStyle = BorderStyle.FixedSingle;
+            pbBoard4.Location = new Point(348, 195);
+            pbBoard4.Name = "pbBoard4";
+            pbBoard4.Size = new Size(20, 35);
+            pbBoard4.TabIndex = 74;
+            pbBoard4.TabStop = false;
+            // 
+            // pbBoard3
+            // 
+            pbBoard3.BorderStyle = BorderStyle.FixedSingle;
+            pbBoard3.Location = new Point(318, 195);
+            pbBoard3.Name = "pbBoard3";
+            pbBoard3.Size = new Size(20, 35);
+            pbBoard3.TabIndex = 73;
+            pbBoard3.TabStop = false;
+            // 
+            // pbBoard2
+            // 
+            pbBoard2.BorderStyle = BorderStyle.FixedSingle;
+            pbBoard2.Location = new Point(288, 195);
+            pbBoard2.Name = "pbBoard2";
+            pbBoard2.Size = new Size(20, 35);
+            pbBoard2.TabIndex = 72;
+            pbBoard2.TabStop = false;
+            // 
+            // pbBoard1
+            // 
+            pbBoard1.BorderStyle = BorderStyle.FixedSingle;
+            pbBoard1.Location = new Point(258, 195);
+            pbBoard1.Name = "pbBoard1";
+            pbBoard1.Size = new Size(20, 35);
+            pbBoard1.TabIndex = 71;
+            pbBoard1.TabStop = false;
+            // 
+            // pbHeroCard1
+            // 
+            pbHeroCard1.BorderStyle = BorderStyle.FixedSingle;
+            pbHeroCard1.Location = new Point(317, 331);
+            pbHeroCard1.Name = "pbHeroCard1";
+            pbHeroCard1.Size = new Size(20, 35);
+            pbHeroCard1.TabIndex = 70;
+            pbHeroCard1.TabStop = false;
+            // 
+            // pbHeroCard0
+            // 
+            pbHeroCard0.BorderStyle = BorderStyle.FixedSingle;
+            pbHeroCard0.Location = new Point(294, 331);
+            pbHeroCard0.Name = "pbHeroCard0";
+            pbHeroCard0.Size = new Size(20, 35);
+            pbHeroCard0.TabIndex = 69;
+            pbHeroCard0.TabStop = false;
+            // 
+            // pbButtonHero
+            // 
+            pbButtonHero.BorderStyle = BorderStyle.FixedSingle;
+            pbButtonHero.Location = new Point(268, 351);
+            pbButtonHero.Name = "pbButtonHero";
+            pbButtonHero.Size = new Size(15, 15);
+            pbButtonHero.TabIndex = 18;
+            pbButtonHero.TabStop = false;
+            // 
+            // pbButtonPlayerFive
+            // 
+            pbButtonPlayerFive.BorderStyle = BorderStyle.FixedSingle;
+            pbButtonPlayerFive.Location = new Point(460, 267);
+            pbButtonPlayerFive.Name = "pbButtonPlayerFive";
+            pbButtonPlayerFive.Size = new Size(15, 15);
+            pbButtonPlayerFive.TabIndex = 17;
+            pbButtonPlayerFive.TabStop = false;
+            // 
+            // pbButtonPlayerFour
+            // 
+            pbButtonPlayerFour.BorderStyle = BorderStyle.FixedSingle;
+            pbButtonPlayerFour.Location = new Point(513, 120);
+            pbButtonPlayerFour.Name = "pbButtonPlayerFour";
+            pbButtonPlayerFour.Size = new Size(15, 15);
+            pbButtonPlayerFour.TabIndex = 16;
+            pbButtonPlayerFour.TabStop = false;
+            // 
+            // pbButtonPlayerThree
+            // 
+            pbButtonPlayerThree.BorderStyle = BorderStyle.FixedSingle;
+            pbButtonPlayerThree.Location = new Point(268, 70);
+            pbButtonPlayerThree.Name = "pbButtonPlayerThree";
+            pbButtonPlayerThree.Size = new Size(15, 15);
+            pbButtonPlayerThree.TabIndex = 15;
+            pbButtonPlayerThree.TabStop = false;
+            // 
+            // pbButtonPlayerTwo
+            // 
+            pbButtonPlayerTwo.BorderStyle = BorderStyle.FixedSingle;
+            pbButtonPlayerTwo.Location = new Point(138, 120);
+            pbButtonPlayerTwo.Name = "pbButtonPlayerTwo";
+            pbButtonPlayerTwo.Size = new Size(15, 15);
+            pbButtonPlayerTwo.TabIndex = 14;
+            pbButtonPlayerTwo.TabStop = false;
+            // 
+            // pbbuttonPlayerOne
+            // 
+            pbbuttonPlayerOne.BorderStyle = BorderStyle.FixedSingle;
+            pbbuttonPlayerOne.Location = new Point(201, 267);
+            pbbuttonPlayerOne.Name = "pbbuttonPlayerOne";
+            pbbuttonPlayerOne.Size = new Size(15, 15);
+            pbbuttonPlayerOne.TabIndex = 13;
+            pbbuttonPlayerOne.TabStop = false;
+            // 
+            // panel7
+            // 
+            panel7.BorderStyle = BorderStyle.FixedSingle;
+            panel7.Controls.Add(lbBetHero);
+            panel7.Location = new Point(343, 346);
+            panel7.Name = "panel7";
+            panel7.Size = new Size(55, 20);
+            panel7.TabIndex = 12;
+            // 
+            // lbBetHero
+            // 
+            lbBetHero.AutoSize = true;
+            lbBetHero.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetHero.Location = new Point(2, 3);
+            lbBetHero.Name = "lbBetHero";
+            lbBetHero.Size = new Size(0, 13);
+            lbBetHero.TabIndex = 0;
+            // 
+            // panel6
+            // 
+            panel6.BorderStyle = BorderStyle.FixedSingle;
+            panel6.Controls.Add(lbBetPlayerFive);
+            panel6.Location = new Point(428, 297);
+            panel6.Name = "panel6";
+            panel6.Size = new Size(55, 20);
+            panel6.TabIndex = 11;
+            // 
+            // lbBetPlayerFive
+            // 
+            lbBetPlayerFive.AutoSize = true;
+            lbBetPlayerFive.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetPlayerFive.Location = new Point(2, 3);
+            lbBetPlayerFive.Name = "lbBetPlayerFive";
+            lbBetPlayerFive.Size = new Size(0, 13);
+            lbBetPlayerFive.TabIndex = 0;
+            // 
+            // panel5
+            // 
+            panel5.BorderStyle = BorderStyle.FixedSingle;
+            panel5.Controls.Add(lbBetPlayerFour);
+            panel5.Location = new Point(474, 150);
+            panel5.Name = "panel5";
+            panel5.Size = new Size(55, 20);
+            panel5.TabIndex = 10;
+            // 
+            // lbBetPlayerFour
+            // 
+            lbBetPlayerFour.AutoSize = true;
+            lbBetPlayerFour.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetPlayerFour.Location = new Point(2, 3);
+            lbBetPlayerFour.Name = "lbBetPlayerFour";
+            lbBetPlayerFour.Size = new Size(0, 13);
+            lbBetPlayerFour.TabIndex = 0;
+            // 
+            // panel4
+            // 
+            panel4.BorderStyle = BorderStyle.FixedSingle;
+            panel4.Controls.Add(lbBetPlayerThree);
+            panel4.Location = new Point(303, 65);
+            panel4.Name = "panel4";
+            panel4.Size = new Size(55, 20);
+            panel4.TabIndex = 9;
+            // 
+            // lbBetPlayerThree
+            // 
+            lbBetPlayerThree.AutoSize = true;
+            lbBetPlayerThree.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetPlayerThree.Location = new Point(2, 3);
+            lbBetPlayerThree.Name = "lbBetPlayerThree";
+            lbBetPlayerThree.Size = new Size(0, 13);
+            lbBetPlayerThree.TabIndex = 0;
+            // 
+            // panel3
+            // 
+            panel3.BorderStyle = BorderStyle.FixedSingle;
+            panel3.Controls.Add(lbBetPlayerTwo);
+            panel3.Location = new Point(132, 150);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(55, 20);
+            panel3.TabIndex = 8;
+            // 
+            // lbBetPlayerTwo
+            // 
+            lbBetPlayerTwo.AutoSize = true;
+            lbBetPlayerTwo.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetPlayerTwo.Location = new Point(2, 3);
+            lbBetPlayerTwo.Name = "lbBetPlayerTwo";
+            lbBetPlayerTwo.Size = new Size(0, 13);
+            lbBetPlayerTwo.TabIndex = 0;
+            // 
+            // panel2
+            // 
+            panel2.BorderStyle = BorderStyle.FixedSingle;
+            panel2.Controls.Add(lbBetPlayerOne);
+            panel2.Location = new Point(195, 297);
+            panel2.Name = "panel2";
+            panel2.Size = new Size(55, 20);
+            panel2.TabIndex = 7;
+            // 
+            // lbBetPlayerOne
+            // 
+            lbBetPlayerOne.AutoSize = true;
+            lbBetPlayerOne.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbBetPlayerOne.Location = new Point(2, 3);
+            lbBetPlayerOne.Name = "lbBetPlayerOne";
+            lbBetPlayerOne.Size = new Size(0, 13);
+            lbBetPlayerOne.TabIndex = 0;
+            // 
+            // panel1
+            // 
+            panel1.BorderStyle = BorderStyle.FixedSingle;
+            panel1.Controls.Add(lbNamePlayerfive);
+            panel1.Location = new Point(481, 267);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(120, 25);
+            panel1.TabIndex = 6;
+            // 
+            // lbNamePlayerfive
+            // 
+            lbNamePlayerfive.AutoSize = true;
+            lbNamePlayerfive.Location = new Point(1, 5);
+            lbNamePlayerfive.Name = "lbNamePlayerfive";
+            lbNamePlayerfive.Size = new Size(0, 15);
+            lbNamePlayerfive.TabIndex = 1;
+            // 
+            // pnNameHero
+            // 
+            pnNameHero.BorderStyle = BorderStyle.FixedSingle;
+            pnNameHero.Controls.Add(lbNameHero);
+            pnNameHero.Location = new Point(268, 372);
+            pnNameHero.Name = "pnNameHero";
+            pnNameHero.Size = new Size(120, 25);
+            pnNameHero.TabIndex = 5;
+            // 
+            // lbNameHero
+            // 
+            lbNameHero.AutoSize = true;
+            lbNameHero.Location = new Point(1, 5);
+            lbNameHero.Name = "lbNameHero";
+            lbNameHero.Size = new Size(31, 15);
+            lbNameHero.TabIndex = 1;
+            lbNameHero.Text = "TZor";
+            // 
+            // pnNamePlayerFour
+            // 
+            pnNamePlayerFour.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerFour.Controls.Add(lbNamePlayerFour);
+            pnNamePlayerFour.Location = new Point(534, 120);
+            pnNamePlayerFour.Name = "pnNamePlayerFour";
+            pnNamePlayerFour.Size = new Size(120, 25);
+            pnNamePlayerFour.TabIndex = 4;
+            // 
+            // lbNamePlayerFour
+            // 
+            lbNamePlayerFour.AutoSize = true;
+            lbNamePlayerFour.Location = new Point(1, 5);
+            lbNamePlayerFour.Name = "lbNamePlayerFour";
+            lbNamePlayerFour.Size = new Size(0, 15);
+            lbNamePlayerFour.TabIndex = 1;
+            // 
+            // pnNamePlayerThree
+            // 
+            pnNamePlayerThree.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerThree.Controls.Add(lbNamePlayerThree);
+            pnNamePlayerThree.Location = new Point(268, 35);
+            pnNamePlayerThree.Name = "pnNamePlayerThree";
+            pnNamePlayerThree.Size = new Size(120, 25);
+            pnNamePlayerThree.TabIndex = 3;
+            // 
+            // lbNamePlayerThree
+            // 
+            lbNamePlayerThree.AutoSize = true;
+            lbNamePlayerThree.Location = new Point(1, 5);
+            lbNamePlayerThree.Name = "lbNamePlayerThree";
+            lbNamePlayerThree.Size = new Size(0, 15);
+            lbNamePlayerThree.TabIndex = 1;
+            // 
+            // pnNamePlayerTwo
+            // 
+            pnNamePlayerTwo.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerTwo.Controls.Add(lbNamePlayerTwo);
+            pnNamePlayerTwo.Location = new Point(12, 120);
+            pnNamePlayerTwo.Name = "pnNamePlayerTwo";
+            pnNamePlayerTwo.Size = new Size(120, 25);
+            pnNamePlayerTwo.TabIndex = 2;
+            // 
+            // lbNamePlayerTwo
+            // 
+            lbNamePlayerTwo.AutoSize = true;
+            lbNamePlayerTwo.Location = new Point(1, 5);
+            lbNamePlayerTwo.Name = "lbNamePlayerTwo";
+            lbNamePlayerTwo.Size = new Size(0, 15);
+            lbNamePlayerTwo.TabIndex = 1;
+            // 
+            // pnNamePlayerOne
+            // 
+            pnNamePlayerOne.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerOne.Controls.Add(lbNamePlayerOne);
+            pnNamePlayerOne.Location = new Point(75, 267);
+            pnNamePlayerOne.Name = "pnNamePlayerOne";
+            pnNamePlayerOne.Size = new Size(120, 25);
+            pnNamePlayerOne.TabIndex = 1;
+            // 
+            // lbNamePlayerOne
+            // 
+            lbNamePlayerOne.AutoSize = true;
+            lbNamePlayerOne.Location = new Point(1, 5);
+            lbNamePlayerOne.Name = "lbNamePlayerOne";
+            lbNamePlayerOne.Size = new Size(0, 15);
+            lbNamePlayerOne.TabIndex = 1;
             // 
             // tbConfig
             // 
@@ -147,22 +724,13 @@ namespace OpenScrape.App
             tbConfig.Controls.Add(rgRegion);
             tbConfig.Controls.Add(btnUpdateMap);
             tbConfig.Controls.Add(cbMark);
-            tbConfig.Controls.Add(btnWindow);
             tbConfig.Controls.Add(btnCapture4Bet);
             tbConfig.Controls.Add(btnCapture3bet);
-            tbConfig.Controls.Add(pbCard1);
-            tbConfig.Controls.Add(pbCard0);
-            tbConfig.Controls.Add(lbAction);
-            tbConfig.Controls.Add(btnCapture);
-            tbConfig.Controls.Add(gbTest);
-            tbConfig.Controls.Add(cbTest);
-            tbConfig.Controls.Add(btnDelete);
-            tbConfig.Controls.Add(btnNew);
             tbConfig.Controls.Add(twRegionsConfig);
             tbConfig.Location = new Point(4, 24);
             tbConfig.Name = "tbConfig";
             tbConfig.Padding = new Padding(3);
-            tbConfig.Size = new Size(679, 607);
+            tbConfig.Size = new Size(669, 463);
             tbConfig.TabIndex = 0;
             tbConfig.Text = "Configurar";
             tbConfig.UseVisualStyleBackColor = true;
@@ -176,7 +744,7 @@ namespace OpenScrape.App
             groupBox1.Controls.Add(pbColorDebug);
             groupBox1.Controls.Add(tbTestColor);
             groupBox1.Controls.Add(btnTestColor);
-            groupBox1.Location = new Point(384, 35);
+            groupBox1.Location = new Point(384, 4);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(200, 129);
             groupBox1.TabIndex = 85;
@@ -246,6 +814,15 @@ namespace OpenScrape.App
             btnTestColor.UseVisualStyleBackColor = true;
             btnTestColor.Click += btnTestColor_Click;
             // 
+            // pictureBox1
+            // 
+            pictureBox1.Location = new Point(384, 193);
+            pictureBox1.Name = "pictureBox1";
+            pictureBox1.Size = new Size(212, 83);
+            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
+            pictureBox1.TabIndex = 66;
+            pictureBox1.TabStop = false;
+            // 
             // rgRegion
             // 
             rgRegion.Controls.Add(pbRegionColor);
@@ -278,7 +855,7 @@ namespace OpenScrape.App
             rgRegion.Controls.Add(tbY);
             rgRegion.Controls.Add(label3);
             rgRegion.Controls.Add(tbX);
-            rgRegion.Location = new Point(176, 35);
+            rgRegion.Location = new Point(176, 4);
             rgRegion.Name = "rgRegion";
             rgRegion.Size = new Size(200, 342);
             rgRegion.TabIndex = 84;
@@ -619,7 +1196,7 @@ namespace OpenScrape.App
             // 
             // btnUpdateMap
             // 
-            btnUpdateMap.Location = new Point(382, 175);
+            btnUpdateMap.Location = new Point(382, 144);
             btnUpdateMap.Name = "btnUpdateMap";
             btnUpdateMap.Size = new Size(75, 23);
             btnUpdateMap.TabIndex = 74;
@@ -637,19 +1214,9 @@ namespace OpenScrape.App
             cbMark.Text = "Marcar Mano";
             cbMark.UseVisualStyleBackColor = true;
             // 
-            // btnWindow
-            // 
-            btnWindow.Location = new Point(565, 501);
-            btnWindow.Name = "btnWindow";
-            btnWindow.Size = new Size(102, 66);
-            btnWindow.TabIndex = 72;
-            btnWindow.Text = "Window";
-            btnWindow.UseVisualStyleBackColor = true;
-            btnWindow.Click += btnWindow_Click;
-            // 
             // btnCapture4Bet
             // 
-            btnCapture4Bet.Location = new Point(183, 512);
+            btnCapture4Bet.Location = new Point(208, 394);
             btnCapture4Bet.Name = "btnCapture4Bet";
             btnCapture4Bet.Size = new Size(80, 60);
             btnCapture4Bet.TabIndex = 71;
@@ -658,127 +1225,16 @@ namespace OpenScrape.App
             // 
             // btnCapture3bet
             // 
-            btnCapture3bet.Location = new Point(97, 512);
+            btnCapture3bet.Location = new Point(122, 394);
             btnCapture3bet.Name = "btnCapture3bet";
             btnCapture3bet.Size = new Size(80, 60);
             btnCapture3bet.TabIndex = 70;
             btnCapture3bet.Text = "vs 3Bet";
             btnCapture3bet.UseVisualStyleBackColor = true;
             // 
-            // pbCard1
-            // 
-            pbCard1.Location = new Point(307, 399);
-            pbCard1.Name = "pbCard1";
-            pbCard1.Size = new Size(20, 35);
-            pbCard1.TabIndex = 69;
-            pbCard1.TabStop = false;
-            // 
-            // pbCard0
-            // 
-            pbCard0.Location = new Point(276, 399);
-            pbCard0.Name = "pbCard0";
-            pbCard0.Size = new Size(20, 35);
-            pbCard0.TabIndex = 68;
-            pbCard0.TabStop = false;
-            // 
-            // lbAction
-            // 
-            lbAction.AutoSize = true;
-            lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lbAction.Location = new Point(241, 459);
-            lbAction.Name = "lbAction";
-            lbAction.Size = new Size(57, 21);
-            lbAction.TabIndex = 67;
-            lbAction.Text = "label9";
-            // 
-            // btnCapture
-            // 
-            btnCapture.Location = new Point(11, 512);
-            btnCapture.Name = "btnCapture";
-            btnCapture.Size = new Size(80, 60);
-            btnCapture.TabIndex = 66;
-            btnCapture.Text = "Capture";
-            btnCapture.UseVisualStyleBackColor = true;
-            btnCapture.Click += btnCapture_Click;
-            // 
-            // gbTest
-            // 
-            gbTest.Controls.Add(cbRiver);
-            gbTest.Controls.Add(cbTurn);
-            gbTest.Controls.Add(cbFlop);
-            gbTest.Enabled = false;
-            gbTest.Location = new Point(6, 383);
-            gbTest.Name = "gbTest";
-            gbTest.Size = new Size(103, 99);
-            gbTest.TabIndex = 65;
-            gbTest.TabStop = false;
-            gbTest.Text = "Test";
-            // 
-            // cbRiver
-            // 
-            cbRiver.AutoSize = true;
-            cbRiver.Location = new Point(6, 72);
-            cbRiver.Name = "cbRiver";
-            cbRiver.Size = new Size(52, 19);
-            cbRiver.TabIndex = 47;
-            cbRiver.Text = "River";
-            cbRiver.UseVisualStyleBackColor = true;
-            // 
-            // cbTurn
-            // 
-            cbTurn.AutoSize = true;
-            cbTurn.Location = new Point(6, 47);
-            cbTurn.Name = "cbTurn";
-            cbTurn.Size = new Size(50, 19);
-            cbTurn.TabIndex = 46;
-            cbTurn.Text = "Turn";
-            cbTurn.UseVisualStyleBackColor = true;
-            // 
-            // cbFlop
-            // 
-            cbFlop.AutoSize = true;
-            cbFlop.Location = new Point(6, 22);
-            cbFlop.Name = "cbFlop";
-            cbFlop.Size = new Size(49, 19);
-            cbFlop.TabIndex = 45;
-            cbFlop.Text = "Flop";
-            cbFlop.UseVisualStyleBackColor = true;
-            cbFlop.CheckedChanged += cbFlop_CheckedChanged;
-            // 
-            // cbTest
-            // 
-            cbTest.AutoSize = true;
-            cbTest.Location = new Point(119, 10);
-            cbTest.Name = "cbTest";
-            cbTest.Size = new Size(46, 19);
-            cbTest.TabIndex = 48;
-            cbTest.Text = "Test";
-            cbTest.UseVisualStyleBackColor = true;
-            cbTest.CheckedChanged += cbTest_CheckedChanged;
-            // 
-            // btnDelete
-            // 
-            btnDelete.Location = new Point(60, 6);
-            btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(49, 23);
-            btnDelete.TabIndex = 47;
-            btnDelete.Text = "Delete";
-            btnDelete.UseVisualStyleBackColor = true;
-            btnDelete.Click += btnDelete_Click;
-            // 
-            // btnNew
-            // 
-            btnNew.Location = new Point(6, 6);
-            btnNew.Name = "btnNew";
-            btnNew.Size = new Size(48, 23);
-            btnNew.TabIndex = 46;
-            btnNew.Text = "New";
-            btnNew.UseVisualStyleBackColor = true;
-            btnNew.Click += btnNew_Click;
-            // 
             // twRegionsConfig
             // 
-            twRegionsConfig.Location = new Point(6, 35);
+            twRegionsConfig.Location = new Point(6, 4);
             twRegionsConfig.Name = "twRegionsConfig";
             twRegionsConfig.Size = new Size(159, 342);
             twRegionsConfig.TabIndex = 45;
@@ -790,7 +1246,7 @@ namespace OpenScrape.App
             tbTables.Controls.Add(twTables);
             tbTables.Location = new Point(4, 24);
             tbTables.Name = "tbTables";
-            tbTables.Size = new Size(671, 607);
+            tbTables.Size = new Size(669, 463);
             tbTables.TabIndex = 3;
             tbTables.Text = "Tablas";
             tbTables.UseVisualStyleBackColor = true;
@@ -801,7 +1257,7 @@ namespace OpenScrape.App
             dgvHands.Dock = DockStyle.Fill;
             dgvHands.Location = new Point(205, 0);
             dgvHands.Name = "dgvHands";
-            dgvHands.Size = new Size(466, 607);
+            dgvHands.Size = new Size(464, 463);
             dgvHands.TabIndex = 1;
             // 
             // twTables
@@ -809,7 +1265,7 @@ namespace OpenScrape.App
             twTables.Dock = DockStyle.Left;
             twTables.Location = new Point(0, 0);
             twTables.Name = "twTables";
-            twTables.Size = new Size(205, 607);
+            twTables.Size = new Size(205, 463);
             twTables.TabIndex = 0;
             twTables.BeforeExpand += twTables_BeforeExpand;
             twTables.DoubleClick += twTables_DoubleClick;
@@ -820,7 +1276,7 @@ namespace OpenScrape.App
             tbLogs.Location = new Point(4, 24);
             tbLogs.Name = "tbLogs";
             tbLogs.Padding = new Padding(3);
-            tbLogs.Size = new Size(671, 607);
+            tbLogs.Size = new Size(669, 463);
             tbLogs.TabIndex = 1;
             tbLogs.Text = "Logs";
             tbLogs.UseVisualStyleBackColor = true;
@@ -833,60 +1289,82 @@ namespace OpenScrape.App
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(665, 601);
+            tbResume.Size = new Size(663, 457);
             tbResume.TabIndex = 1;
-            // 
-            // pictureBox1
-            // 
-            pictureBox1.Location = new Point(384, 224);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(212, 83);
-            pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
-            pictureBox1.TabIndex = 66;
-            pictureBox1.TabStop = false;
-            // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Font = new Font("Segoe UI", 16F);
-            label4.Location = new Point(777, 435);
-            label4.Name = "label4";
-            label4.Size = new Size(71, 30);
-            label4.TabIndex = 67;
-            label4.Text = "label4";
             // 
             // FrmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(687, 635);
-            Controls.Add(label4);
+            ClientSize = new Size(677, 491);
             Controls.Add(tbControl);
             Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
             Text = "Dealytics";
             Load += FrmMain_Load;
             tbControl.ResumeLayout(false);
+            tbJuego.ResumeLayout(false);
+            tbJuego.PerformLayout();
+            gbTest.ResumeLayout(false);
+            gbTest.PerformLayout();
+            panel10.ResumeLayout(false);
+            panel10.PerformLayout();
+            panel9.ResumeLayout(false);
+            panel9.PerformLayout();
+            panel8.ResumeLayout(false);
+            panel8.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)pbBoard5).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard4).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard3).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard2).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbBoard1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbHeroCard1).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbHeroCard0).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonHero).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerFive).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerFour).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerThree).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbButtonPlayerTwo).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbbuttonPlayerOne).EndInit();
+            panel7.ResumeLayout(false);
+            panel7.PerformLayout();
+            panel6.ResumeLayout(false);
+            panel6.PerformLayout();
+            panel5.ResumeLayout(false);
+            panel5.PerformLayout();
+            panel4.ResumeLayout(false);
+            panel4.PerformLayout();
+            panel3.ResumeLayout(false);
+            panel3.PerformLayout();
+            panel2.ResumeLayout(false);
+            panel2.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
+            pnNameHero.ResumeLayout(false);
+            pnNameHero.PerformLayout();
+            pnNamePlayerFour.ResumeLayout(false);
+            pnNamePlayerFour.PerformLayout();
+            pnNamePlayerThree.ResumeLayout(false);
+            pnNamePlayerThree.PerformLayout();
+            pnNamePlayerTwo.ResumeLayout(false);
+            pnNamePlayerTwo.PerformLayout();
+            pnNamePlayerOne.ResumeLayout(false);
+            pnNamePlayerOne.PerformLayout();
             tbConfig.ResumeLayout(false);
             tbConfig.PerformLayout();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pbTestCarta).EndInit();
             ((System.ComponentModel.ISupportInitialize)pbColorDebug).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             rgRegion.ResumeLayout(false);
             rgRegion.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)pbRegionColor).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pbCard1).EndInit();
-            ((System.ComponentModel.ISupportInitialize)pbCard0).EndInit();
-            gbTest.ResumeLayout(false);
-            gbTest.PerformLayout();
             tbTables.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -897,25 +1375,12 @@ namespace OpenScrape.App
         private TabPage tbConfig;
         private TabPage tbLogs;
         private CheckBox cbMark;
-        private Button btnWindow;
         private Button btnCapture4Bet;
         private Button btnCapture3bet;
-        private PictureBox pbCard1;
-        private PictureBox pbCard0;
-        private Label lbAction;
-        private Button btnCapture;
-        private GroupBox gbTest;
-        private CheckBox cbRiver;
-        private CheckBox cbTurn;
-        private CheckBox cbFlop;
-        private CheckBox cbTest;
-        private Button btnDelete;
-        private Button btnNew;
         private TreeView twRegionsConfig;
         private Button btnUpdateMap;
         private TextBox tbResume;
         private PictureBox pictureBox1;
-        private Label label4;
         private TabPage tbJuego;
         private TabPage tbTables;
         private TreeView twTables;
@@ -959,5 +1424,57 @@ namespace OpenScrape.App
         private Button btnTestTexto;
         private PictureBox pbTestCarta;
         private Button btnTestCarta;
+        private Panel pnNamePlayerOne;
+        private Label lbNamePlayerOne;
+        private Panel pnNamePlayerTwo;
+        private Label lbNamePlayerTwo;
+        private Panel panel1;
+        private Label lbNamePlayerfive;
+        private Panel pnNameHero;
+        private Label lbNameHero;
+        private Panel pnNamePlayerFour;
+        private Label lbNamePlayerFour;
+        private Panel pnNamePlayerThree;
+        private Label lbNamePlayerThree;
+        private Panel panel2;
+        private Panel panel3;
+        private Label lbBetPlayerTwo;
+        private Label lbBetPlayerOne;
+        private Panel panel6;
+        private Label lbBetPlayerFive;
+        private Panel panel5;
+        private Label lbBetPlayerFour;
+        private Panel panel4;
+        private Label lbBetPlayerThree;
+        private PictureBox pbButtonPlayerTwo;
+        private PictureBox pbbuttonPlayerOne;
+        private Panel panel7;
+        private Label lbBetHero;
+        private PictureBox pbHeroCard1;
+        private PictureBox pbHeroCard0;
+        private PictureBox pbButtonHero;
+        private PictureBox pbButtonPlayerFive;
+        private PictureBox pbButtonPlayerFour;
+        private PictureBox pbButtonPlayerThree;
+        private PictureBox pbBoard3;
+        private PictureBox pbBoard2;
+        private PictureBox pbBoard1;
+        private PictureBox pbBoard5;
+        private PictureBox pbBoard4;
+        private Panel panel8;
+        private Label lbPot;
+        private Button btnCapture;
+        private Panel panel10;
+        private Label lbTableHand;
+        private Panel panel9;
+        private Label lbTableName;
+        private CheckBox cbTest;
+        private Button btnWindow;
+        private GroupBox gbTest;
+        private Label lbAction;
+        private RadioButton rbFlop;
+        private RadioButton rbRiver;
+        private RadioButton rbTurn;
+        private Button btnClear;
     }
 }

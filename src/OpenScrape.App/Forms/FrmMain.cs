@@ -1,5 +1,6 @@
 using JasperFx.Core;
 using Marten;
+using Marten.Linq.SoftDeletes;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
@@ -18,6 +19,7 @@ using OpenScrape.Features.Card;
 using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.Update;
 using System.Data;
+using System.Drawing;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
@@ -42,6 +44,7 @@ namespace OpenScrape.App
         #endregion
 
         List<Card> _cards = new List<Card>();
+        RadioButton? _lastChecked = new RadioButton();
 
         Image? _img = null;
 
@@ -74,7 +77,10 @@ namespace OpenScrape.App
 
         bool _isPreflop = true;
         bool _isFlop = false;
+        bool _isTurn = false;
+        bool _isRiver = false;
 
+        string _tableName = string.Empty;
         long _newTableHand;
 
         bool _newHand = false;
@@ -107,13 +113,12 @@ namespace OpenScrape.App
         static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
 
         readonly IGetCardsFlopUseCase _getCardsFlopUseCase;
+        readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
         readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
         readonly IPotOddsCalculator _potOddsCalculator;
 
 
         #endregion
-
-
 
         private ColorDetectionService _colorDetectionService = new();
         private OcrService _ocrService = new();
@@ -124,8 +129,8 @@ namespace OpenScrape.App
         private const int MARGIN = 5;
         private const int MATRIX_SIZE = 13;
 
-        public FrmMain(IDocumentStore dataBase, 
-                        ActionScenarioUseCases actionScenarioUseCases, 
+        public FrmMain(IDocumentStore dataBase,
+                        ActionScenarioUseCases actionScenarioUseCases,
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases)
         {
@@ -137,7 +142,8 @@ namespace OpenScrape.App
             _sessionDB = _dataBase.LightweightSession();
 
             _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
-            _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase, _getHashImageUseCase, _getCropImageUseCase);
+            _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase);
+            _getCardsTurnUseCase = new GetCardsTurnUseCase(_dataBase);
             _potOddsCalculator = new PotOddsCalculator(_outsCalculatorUseCase);
             _cardUseCases = cardUseCases;
         }
@@ -217,7 +223,7 @@ namespace OpenScrape.App
                     }
                     else if (row < col) // Suited
                     {
-                       btn.BackColor = Color.LightYellow;
+                        btn.BackColor = Color.LightYellow;
                     }
                     else // Offsuit
                     {
@@ -297,7 +303,7 @@ namespace OpenScrape.App
 
         private void btnNew_Click(object sender, EventArgs e)
         {
-            
+
         }
 
         private void twRegions_DoubleClick(object sender, EventArgs e)
@@ -402,7 +408,7 @@ namespace OpenScrape.App
             }
         }
 
-        
+
         private void btnDelete_Click(object sender, EventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(twRegionsConfig.SelectedNode.Text))
@@ -435,7 +441,10 @@ namespace OpenScrape.App
             }
 
             if (cbTest.Checked)
-                _isFlop = cbFlop.Checked;
+            {
+                _isFlop = rbFlop.Checked;
+                _isTurn = rbTurn.Checked;
+            }
 
             SetTableHand();
 
@@ -468,9 +477,10 @@ namespace OpenScrape.App
                 await ObtainCardsPlayer();
                 SetEmptyPlayer();
                 SetSitOutPlayer();
-                SetDealerPlayer();                
+                SetDealerPlayer();
                 SetVillainPosition(_scrapeResult.P0Position);
-                
+                SetAliasVillain();
+
             }
 
             //TODO: Comprobar second hand 
@@ -479,13 +489,15 @@ namespace OpenScrape.App
             SetPotValue();
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (!_isFlop)
+            
+
+            if (!_isFlop && !_isTurn && !_isRiver)
             {
                 _isPreflop = true;
-                var response = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest { ResponseAction = _responseAction, ScrapeResult = _scrapeResult, PreflopHeroPosition = _preflopHeroPosition });
+                var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest { ResponseAction = _responseAction, ScrapeResult = _scrapeResult, PreflopHeroPosition = _preflopHeroPosition });
 
-                _responseAction = response.ResponseAction;
-                _scrapeResult = response.ScrapeResult;
+                _responseAction = responseFlop.ResponseAction;
+                _scrapeResult = responseFlop.ScrapeResult;
             }
             else
             {
@@ -493,7 +505,7 @@ namespace OpenScrape.App
                 if (_isFlop)
                 {
                     _isFlop = false;
-                    var flopResponse = await _getCardsFlopUseCase.Execute(new GetCardsFlopUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), Regions = _regionsTableMap.FirstOrDefault(f => f.Id == "Board").Regions, ImageRegions = _images, RegionsTableMap = _regionsTableMap });
+                    var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), /*Regions = _regionsTableMap.FirstOrDefault(f => f.Id == "Board").Regions, ImageRegions = _images,*/ RegionsTableMap = _regionsTableMap });
                     var dataBoard = flopResponse.DataBoard;
 
                     _scrapeResult.DataBoard = dataBoard;
@@ -504,39 +516,7 @@ namespace OpenScrape.App
                     //_scrapeResult.DataBoard = dataBoard;
                     //_scrapeFlopResult = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult }).TableScrapeFlopResult;
 
-                    potOddsResult = _potOddsCalculator.Calculate(new List<CardDataOuts>
-                    {
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.U0CardForce0,
-                            Suit = (Suit)_scrapeResult.U0CardSuit0
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.U0CardForce1,
-                            Suit = (Suit)_scrapeResult.U0CardSuit1
-                        }
-                    },
-                    new List<CardDataOuts>
-                    {
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[0].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[0].Suit
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[1].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[1].Suit
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[2].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[2].Suit
-                        }
-                    },
-                    _scrapeResult.Pot,
-                    _scrapeResult.DataPlayer.Max(m => m.Bet));
+                    potOddsResult = GetPotOddsCalculator();
 
                     _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOddsPercentage.ToString());
                     _frmOverlay.UpdateEquityPercentage(potOddsResult.EquityPercentage.ToString());
@@ -735,24 +715,24 @@ namespace OpenScrape.App
                         default:
                             break;
                     }
-
-                    //vs recreacionales
-                    if (_scrapeResult.HandSituation == HandSituation.RaiseOverLimper)
-                    {
-                        if (_scrapeResult.U0InPosition)
-                        {
-
-                        }
-                        else
-                        {
-
-                        }
-
-                    }
-
                 }
 
-                _responseAction.Action =  string.IsNullOrEmpty(_responseAction.Action) ? "No Preflop action" : _responseAction.Action;
+                if (_isTurn)
+                {
+                    _isTurn = false;
+                    var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), RegionsTableMap = _regionsTableMap, DataBoard = _scrapeResult.DataBoard });
+                    _scrapeResult.DataBoard = turnResponse.DataBoard;
+                }
+
+                if(_isRiver)
+                {
+                    _isRiver = false;
+                    var riverResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), RegionsTableMap = _regionsTableMap, DataBoard = _scrapeResult.DataBoard });
+                    _scrapeResult.DataBoard = riverResponse.DataBoard;
+                }
+
+
+                _responseAction.Action = string.IsNullOrEmpty(_responseAction.Action) ? "No Preflop action" : _responseAction.Action;
             }
 
             _scrapeResult.HandSituation = _responseAction.HandSituation;
@@ -816,6 +796,60 @@ namespace OpenScrape.App
                             tbResume.Text += $"{carta.Name} ";
                     }
                 }
+
+                pbbuttonPlayerOne.BackColor = Color.Transparent;
+                pbButtonPlayerTwo.BackColor = Color.Transparent;
+                pbButtonPlayerThree.BackColor = Color.Transparent;
+                pbButtonPlayerFour.BackColor = Color.Transparent;
+                pbButtonPlayerFive.BackColor = Color.Transparent;
+                pbButtonHero.BackColor = Color.Transparent;
+
+                lbNamePlayerOne.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Alias;
+                lbNamePlayerTwo.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Alias;
+                lbNamePlayerThree.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Alias;
+                lbNamePlayerFour.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Alias;
+                lbNamePlayerfive.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Alias;
+
+                lbBetPlayerOne.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
+                lbBetPlayerTwo.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
+                lbBetPlayerThree.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
+                lbBetPlayerFour.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
+                lbBetPlayerFive.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
+
+                lbBetHero.Text = _scrapeResult.U0Bet.ToString();
+                pbHeroCard0.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace0))?.ImageBase64 ?? string.Empty) : null;
+                pbHeroCard1.Image = _scrapeResult.U0CardFace1 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace1))?.ImageBase64 ?? string.Empty) : null;
+
+                lbPot.Text = _scrapeResult.Pot.ToString();
+
+                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
+                    pbbuttonPlayerOne.BackColor = Color.Red;
+
+                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
+                    pbButtonPlayerTwo.BackColor = Color.Red;
+
+                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
+                    pbButtonPlayerThree.BackColor = Color.Red;
+
+                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
+                    pbButtonPlayerFour.BackColor = Color.Red;
+
+                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
+                    pbButtonPlayerFive.BackColor = Color.Red;
+
+                if (_scrapeResult.P0Dealer == true)
+                    pbButtonHero.BackColor = Color.Red;
+
+                lbTableHand.Text = _tableHand;
+                lbTableName.Text = _tableName;
+
+                pbBoard1.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 1) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 1)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
+                pbBoard2.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 2) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 2)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
+                pbBoard3.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 3) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 3)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
+                
+                pbBoard4.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 4) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 4)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
+                
+                pbBoard5.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 5) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 5)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
             }
 
             if (!_isFlop)
@@ -823,11 +857,48 @@ namespace OpenScrape.App
 
             }
 
-            SetBoardValues();
+            //SetBoardValues();
             lbAction.Text = _responseAction?.Action ?? string.Empty;
 
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
+        }
+
+        private PotOddsResult GetPotOddsCalculator()
+        {
+            return _potOddsCalculator.Calculate(new List<CardDataOuts>
+                    {
+                        new CardDataOuts
+                        {
+                            Rank = (Rank)_scrapeResult.U0CardForce0,
+                            Suit = (Suit)_scrapeResult.U0CardSuit0
+                        },
+                        new CardDataOuts
+                        {
+                            Rank = (Rank)_scrapeResult.U0CardForce1,
+                            Suit = (Suit)_scrapeResult.U0CardSuit1
+                        }
+                    },
+                    new List<CardDataOuts>
+                    {
+                        new CardDataOuts
+                        {
+                            Rank = (Rank)_scrapeResult.DataBoard[0].Force,
+                            Suit = (Suit)_scrapeResult.DataBoard[0].Suit
+                        },
+                        new CardDataOuts
+                        {
+                            Rank = (Rank)_scrapeResult.DataBoard[1].Force,
+                            Suit = (Suit)_scrapeResult.DataBoard[1].Suit
+                        },
+                        new CardDataOuts
+                        {
+                            Rank = (Rank)_scrapeResult.DataBoard[2].Force,
+                            Suit = (Suit)_scrapeResult.DataBoard[2].Suit
+                        }
+                    },
+                    _scrapeResult.Pot,
+                    _scrapeResult.DataPlayer.Max(m => m.Bet));
         }
 
         private void SetBetPlayer()
@@ -844,6 +915,9 @@ namespace OpenScrape.App
 
                 var betValue = SetBetValue(region.PosX, region.PosY, region.Width, region.Height, region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
+                if (betValue.ToString().Length > 2 && !betValue.ToString().Contains(",") && !betValue.ToString().Contains(".") && betValue.ToString().Contains("88"))
+                    betValue = decimal.Parse(betValue.ToString().Replace("88", ""));
+
                 if (playerNumber == 0)
                 {
                     _scrapeResult.U0Bet = betValue;
@@ -851,14 +925,9 @@ namespace OpenScrape.App
                 }
 
                 var player = _scrapeResult.DataPlayer.First(f => f.Name == $"P{playerNumber}");
-                //if (IsValidBetPosition(player))
-                //{
-                    player.Bet = betValue;
-                //}
+                player.Bet = betValue;
             }
         }
-
-        
 
         private void SetEmptyPlayer()
         {
@@ -875,9 +944,9 @@ namespace OpenScrape.App
                     continue;
 
                 var color = bitmap.GetPixel(region.PosX, region.PosY);
-                
+
                 _scrapeResult.DataPlayer.Add(CreatePlayerData(playerNumber.Value));
-               
+
                 // Verificamos si el jugador está vacío
                 if (region.Name.Contains("empty") && _colorEmpty.Contains(color.B))
                 {
@@ -888,6 +957,25 @@ namespace OpenScrape.App
             }
 
             bitmap.Dispose(); // Liberamos recursos
+        }
+
+        private void SetAliasVillain()
+        {
+            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+                return;
+
+            foreach (var region in regionTableMap.Regions)
+            {
+                var playerNumber = GetPlayerNumber(region.Name, "Name");
+                if (playerNumber == null) continue;
+
+                var player = _scrapeResult.DataPlayer.First(f => f.Name == $"P{playerNumber}");
+
+                player.Alias = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height, region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+
+            }
+
         }
 
         private PlayerData CreatePlayerData(int playerNumber) =>
@@ -926,11 +1014,10 @@ namespace OpenScrape.App
                         decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
                     else
                         potValue = decimal.Parse(pot);
+                else
+                    decimal.TryParse(pot, out potValue);
 
-                var sumBets = _scrapeResult.DataPlayer.Sum(s => s.Bet);
-                //_scrapeResult.Pot = sumBets != 0 && potValue != sumBets ? sumBets : potValue;
                 _scrapeResult.Pot = potValue;
-
             }
 
         }
@@ -967,16 +1054,13 @@ namespace OpenScrape.App
                     }
                 }
 
-                //var regionPot = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "pot");
-                //if (regionPot != null)
-                //{
-                //    decimal potValue;
-                //    if (decimal.TryParse(SetTextOCR(regionPot.PosX, regionPot.PosY, regionPot.Width, regionPot.Height, regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber), out potValue))
-                //    {
-                //        var sumBets = _scrapeResult.DataPlayer.Sum(s => s.Bet);
-                //        _scrapeResult.Pot = potValue != _scrapeResult.DataPlayer.Sum(s => s.Bet) ? _scrapeResult.DataPlayer.Sum(s => s.Bet) : potValue;
-                //    }
-                //}
+                var regionTableName = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablename");
+                if (regionTableName != null)
+                {
+                    if (string.IsNullOrEmpty(_tableName))
+                        _tableName = SetTextOCR(regionTableName.PosX, regionTableName.PosY, regionTableName.Width, regionTableName.Height, regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
+                }
+
             }
         }
 
@@ -1250,16 +1334,11 @@ namespace OpenScrape.App
             {
                 foreach (var player in players!)
                 {
-                    //var player = _scrapeResult.DataPlayer.FirstOrDefault(n => n.Name == name);
-
-                    //if(player != null && player.Empty)
-                    //    break;
-
                     if (playerNames.Contains(player.Name) && player.Empty)
                     {
                         playerNames.Remove(player.Name);
-                        if(position != TablePosition.SmallBlind && position != TablePosition.BigBlind)
-                            break;
+                        if (position != TablePosition.SmallBlind && position != TablePosition.BigBlind)
+                            continue;
                     }
 
                     if (player != null && (!player.Empty || !player.SitOut) && player.Position == TablePosition.None)
@@ -1516,18 +1595,18 @@ namespace OpenScrape.App
         }
 
 
-        private void SetBoardValues()
-        {
-            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
-                pbCard0.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace0))?.ImageBase64 ?? string.Empty) : null;
-            else
-                pbCard0.Image = null;
+        //private void SetBoardValues()
+        //{
+        //    if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
+        //        pbCard0.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace0))?.ImageBase64 ?? string.Empty) : null;
+        //    else
+        //        pbCard0.Image = null;
 
-            if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
-                pbCard1.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace1))?.ImageBase64 ?? string.Empty) : null;
-            else
-                pbCard1.Image = null;
-        }
+        //    if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
+        //        pbCard1.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace1))?.ImageBase64 ?? string.Empty) : null;
+        //    else
+        //        pbCard1.Image = null;
+        //}
 
         private void EnableButtons()
         {
@@ -1915,13 +1994,12 @@ namespace OpenScrape.App
         private void cbTest_CheckedChanged(object sender, EventArgs e)
         {
             gbTest.Enabled = cbTest.Checked;
-        }
-
-        private void cbFlop_CheckedChanged(object sender, EventArgs e)
-        {
-            if (gbTest.Enabled)
+            gbTest.Visible = cbTest.Checked;
+            if (!gbTest.Enabled)
             {
-                _isFlop = cbFlop.Checked;
+                rbFlop.Checked = false;
+                rbTurn.Checked = false;
+                rbRiver.Checked = false;
             }
         }
 
@@ -2093,5 +2171,37 @@ namespace OpenScrape.App
                 MessageBox.Show("No se ha seleccionado una región o la imagen es nula.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private void rbFlop_Click(object sender, EventArgs e)
+        {
+            RadioButton? rb = sender as RadioButton;
+
+            // Si el RadioButton ya está marcado
+            if (rb.Checked)
+            {
+                // Guarda una referencia
+                _lastChecked = rb;
+
+                // Usa BeginInvoke para ejecutar después del evento normal
+                this.BeginInvoke(new Action(() =>
+                {
+                    // Desmarca el RadioButton si sigue siendo el mismo
+                    if (_lastChecked == rb)
+                    {
+                        rb.Checked = false;
+                        _lastChecked = null;
+                    }
+                }));
+            }
+        }
+
+        private void btnClear_Click(object sender, EventArgs e)
+        {
+            rbFlop.Checked = false;
+            rbTurn.Checked = false;
+            rbRiver.Checked = false;
+        }
     }
+
+
 }

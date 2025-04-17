@@ -1,12 +1,9 @@
 ﻿//using Android.Icu.Number;
 
-using Emgu.CV;
-using Emgu.CV.CvEnum;
-using Emgu.CV.Structure;
 using SkiaSharp;
 using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 using Tesseract;
+
 
 namespace OpenScrape.App.Services;
 
@@ -136,7 +133,68 @@ public class OcrService
         }
     }
 
-    public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double porcentaje = 0, bool onlyNumber = false)
+    //public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double porcentaje = 0, bool onlyNumber = false)
+    //{
+    //    lock (_lock)
+    //    {
+    //        try
+    //        {
+    //            // Asegurarse de que el engine está disponible
+    //            if (_engine == null || _engine.IsDisposed)
+    //            {
+    //                InitializeEngine();
+    //            }
+
+    //            // Crear el resultado fuera para poder manejarlo en el finally si es necesario
+    //            OcrResult result = null;
+
+    //            using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
+    //            using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, porcentaje))
+    //            using (var debugMs = new MemoryStream())
+    //            {
+    //                // Procesar la imagen
+    //                using (var debugImage = SKImage.FromBitmap(processedBitmap))
+    //                {
+    //                    var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
+    //                    encoded.SaveTo(debugMs);
+    //                    encoded.Dispose(); // Asegurar que se libera el encoded
+    //                }
+
+    //                // Configurar Tesseract
+    //                ConfigureTesseract(onlyNumber);
+
+    //                // Convertir a array una sola vez
+    //                byte[] imageData = debugMs.ToArray();
+
+
+    //                // Procesar OCR
+    //                using (var img = Pix.LoadFromMemory(imageData))
+    //                using (var page = _engine.Process(img))
+    //                {
+    //                    var text = ProcessText(page.GetText().Trim());
+
+    //                    // Reset del MemoryStream para crear el bitmap
+    //                    debugMs.Position = 0;
+    //                    result = new OcrResult
+    //                    {
+    //                        Text = text,
+    //                        Image = new Bitmap(debugMs)
+    //                    };
+    //                }
+    //            }
+
+    //            return result;
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _engine?.Dispose(); // Intentar liberar el engine si algo falla
+    //            _engine = null;
+    //            throw new Exception($"Error en OCR: {ex.Message}", ex);
+    //        }
+    //    }
+    //}
+
+    public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double umbral = 0, bool onlyNumber = false)
     {
         lock (_lock)
         {
@@ -152,7 +210,7 @@ public class OcrService
                 OcrResult result = null;
 
                 using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
-                using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, porcentaje))
+                using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, umbral))
                 using (var debugMs = new MemoryStream())
                 {
                     // Procesar la imagen
@@ -169,19 +227,51 @@ public class OcrService
                     // Convertir a array una sola vez
                     byte[] imageData = debugMs.ToArray();
 
+                    // Invertir colores en la imagen (si es necesario)
+                    using (var ms = new MemoryStream(imageData))
+                    using (var invertedMs = new MemoryStream())
+                    {
+                        using (var bitmap = new Bitmap(ms))
+                        {
+                            // Invertir colores
+                            for (int py = 0; py < bitmap.Height; py++)
+                            {
+                                for (int px = 0; px < bitmap.Width; px++)
+                                {
+                                    Color pixel = bitmap.GetPixel(px, py);
+                                    Color inverted = Color.FromArgb(
+                                        pixel.A,
+                                        255 - pixel.R,
+                                        255 - pixel.G,
+                                        255 - pixel.B
+                                    );
+                                    bitmap.SetPixel(px, py, inverted);
+                                }
+                            }
+
+                            // Guardar la imagen invertida
+                            bitmap.Save(invertedMs, System.Drawing.Imaging.ImageFormat.Png);
+                        }
+
+                        // Usar la imagen invertida para OCR
+                        imageData = invertedMs.ToArray();
+                    }
+
                     // Procesar OCR
                     using (var img = Pix.LoadFromMemory(imageData))
                     using (var page = _engine.Process(img))
                     {
                         var text = ProcessText(page.GetText().Trim());
 
-                        // Reset del MemoryStream para crear el bitmap
-                        debugMs.Position = 0;
-                        result = new OcrResult
+                        // Crear el bitmap para el resultado
+                        using (var ms = new MemoryStream(imageData))
                         {
-                            Text = text,
-                            Image = new Bitmap(debugMs)
-                        };
+                            result = new OcrResult
+                            {
+                                Text = text,
+                                Image = new Bitmap(ms)
+                            };
+                        }
                     }
                 }
 
@@ -256,8 +346,12 @@ public class OcrService
     {
         var charWhiteList = onlyNumber ? "0123456789." : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-/";
         _engine.SetVariable("tessedit_char_whitelist", charWhiteList);
-        _engine.SetVariable("classify_bln_numeric_mode", "1");
         _engine.SetVariable("tessedit_pageseg_mode", "7");
+        _engine.SetVariable("classify_bln_numeric_mode", "0");
+        _engine.SetVariable("textord_min_linesize", "2.5");
+        _engine.SetVariable("textord_debug_block", "0");
+        _engine.SetVariable("edges_max_children_per_outline", "40");
+
     }
 
     private string ProcessText(string text)

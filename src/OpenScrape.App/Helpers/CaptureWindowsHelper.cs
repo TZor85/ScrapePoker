@@ -18,29 +18,48 @@ namespace OpenScrape.App.Helpers
             int width = windowRect.right - windowRect.left;
             int height = windowRect.bottom - windowRect.top;
 
+            // Factor de escala para mejor calidad
+            float scaleFactor = 1.0f;
+            int scaledWidth = (int)(width * scaleFactor);
+            int scaledHeight = (int)(height * scaleFactor);
+
             // Capturar con alta resolución
             IntPtr hdcSrc = User32.GetWindowDC(handle);
             IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
             IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
             IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
 
-            // Usar PrintWindow para mejor calidad
-            bool success = User32.PrintWindow(handle, hdcDest, 0x02);
+            // Usar PrintWindow con PW_RENDERFULLCONTENT para mejor calidad
+            bool success = User32.PrintWindow(handle, hdcDest, 0x02); // 0x02 = PW_RENDERFULLCONTENT
             if (!success) GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, 0x00CC0020);
 
-            // Convertir a Bitmap y ajustar DPI
+            // Convertir a Bitmap
             var bitmap = (Bitmap)Image.FromHbitmap(hBitmap);
-            bitmap.SetResolution(300, 300); // 300 DPI para OCR
+
+            // Escalar la imagen para mejor OCR
+            Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight);
+            using (Graphics g = Graphics.FromImage(scaledBitmap))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                g.DrawImage(bitmap, 0, 0, scaledWidth, scaledHeight);
+            }
+
+            // Establecer DPI alto
+            scaledBitmap.SetResolution(600, 600); // Aumentado a 600 DPI
 
             // Limpieza
             GDI32.SelectObject(hdcDest, hOld);
             GDI32.DeleteDC(hdcDest);
             User32.ReleaseDC(handle, hdcSrc);
             GDI32.DeleteObject(hBitmap);
+            bitmap.Dispose();
 
-            return bitmap;
+            return scaledBitmap;
         }
-                
+
         //public static Image CaptureWindow(IntPtr handle)
         //{
         //    // obtener hDC de la ventana deseada

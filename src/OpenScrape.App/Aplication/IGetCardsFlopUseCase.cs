@@ -7,8 +7,8 @@ namespace OpenScrape.App.Aplication;
 
 public class GetCardsFlopUseCaseRequest : BaseRequest
 {
-    public List<Domain.ValueObjects.Region> Regions { get; set; } = new List<Domain.ValueObjects.Region>();
-    public List<ImageRegion> ImageRegions { get; set; } = new List<ImageRegion>();
+    //public List<Domain.ValueObjects.Region> Regions { get; set; } = new List<Domain.ValueObjects.Region>();
+    //public List<ImageRegion> ImageRegions { get; set; } = new List<ImageRegion>();
     public Image? Image { get; set; }
     public List<RegionTableMap> RegionsTableMap { get; set; } = new List<RegionTableMap>();
 }
@@ -20,5 +20,5 @@ public class GetCardsFlopUseCaseResponse : BaseResponse
 
 public interface IGetCardsFlopUseCase
 {
-    Task<GetCardsFlopUseCaseResponse> Execute(GetCardsFlopUseCaseRequest request);
+    Task<GetCardsFlopUseCaseResponse> ExecuteAsync(GetCardsFlopUseCaseRequest request);
 }

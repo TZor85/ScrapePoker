@@ -5,8 +5,6 @@ using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Mappers;
-using System.Windows.Forms;
-using System.Xml.Linq;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
@@ -15,18 +13,14 @@ namespace OpenScrape.App.Aplication.UseCases
         private List<CardDTO>? _cardsImages;
 
         private readonly IDocumentStore _dataBase;
-        readonly IGetHashImageUseCase _getHashImageUseCase;
-        readonly IGetCropImageUseCase _getCropImageUseCase;
         private ImageCropperService _imageCropperService = new();
 
-        public GetCardsFlopUseCase(IDocumentStore database, IGetHashImageUseCase getHashImageUseCase, IGetCropImageUseCase getCropImageUseCase)
+        public GetCardsFlopUseCase(IDocumentStore database)
         {
-            _getHashImageUseCase = getHashImageUseCase;
-            _getCropImageUseCase = getCropImageUseCase;
             _dataBase = database;
         }
 
-        public async Task<GetCardsFlopUseCaseResponse> Execute(GetCardsFlopUseCaseRequest request)
+        public async Task<GetCardsFlopUseCaseResponse> ExecuteAsync(GetCardsFlopUseCaseRequest request)
         {
             var response = new GetCardsFlopUseCaseResponse();
 
@@ -57,6 +51,7 @@ namespace OpenScrape.App.Aplication.UseCases
                     var name = string.Empty;
                     var force = 0;
                     var suit = 0;
+                    var location = 0;
 
                     foreach (var item in _cardsImages)
                     {
@@ -74,91 +69,41 @@ namespace OpenScrape.App.Aplication.UseCases
                     
                     switch (region.Name)
                     {
-                        case "Card1":
+                        case "Card1":                            
                             name = card.Name.Split(" ")[0];
                             force = card.Force;
                             suit = card.Suit;
+                            location = 1;
                             break;
                         case "Card2":
                             name = card.Name.Split(" ")[0];
                             force = card.Force;
                             suit = card.Suit;
+                            location = 2;
                             break;
                         case "Card3":
                             name = card.Name.Split(" ")[0];
                             force = card.Force;
                             suit = card.Suit;
+                            location = 3;
                             break;
                         default:
                             break;
                     }
-                    
 
-                    response.DataBoard.Add(new BoardData
+                    if (response.DataBoard.Count < 3)
                     {
-                        Name = name,
-                        Force = force,
-                        Suit = suit,
-                        Position = BoardPosition.Flop
-                    });
+                        response.DataBoard.Add(new BoardData
+                        {
+                            Name = name,
+                            Force = force,
+                            Suit = suit,
+                            Position = BoardPosition.Flop,
+                            Location = location
+                        });
+                    }
                 }
             }
-
-
-            //foreach (var item in request.Regions)
-            //{
-            //    var maxEqual = 0;
-            //    var max = 0;
-
-            //    var name = string.Empty;
-            //    var force = 0;
-            //    var suit = 0;
-
-            //    var imageBmp = _getCropImageUseCase.Execute(new GetCropImageUseCaseRequest { Source = new Bitmap(request.Image), Section = new Rectangle(item.PosX, item.PosY, item.Width, item.Height) }).Image;
-            //    string iHash1 = _getHashImageUseCase
-            //                    .Execute(new GetHashImageUseCaseRequest { Image = CaptureWindowsHelper.BinaryImage(imageBmp, 130) }).Hash;
-
-            //    foreach (var image in request.ImageRegions)
-            //    {
-            //        int equalElements = iHash1.Zip(image.Value, (i, j) => i == j).Count(eq => eq);
-
-            //        if (equalElements > maxEqual)
-            //            maxEqual = equalElements;
-
-            //        if (maxEqual > max && maxEqual >= (700 * 0.9))
-            //        {
-            //            switch (item.Name)
-            //            {
-            //                case "b0card1":
-            //                    name = image.Name.Split(" ")[0];
-            //                    force = image.Force;
-            //                    suit = image.Suit;
-
-            //                    max = maxEqual;
-            //                    break;
-            //                case "b0card2":
-            //                    name = image.Name.Split(" ")[0];
-            //                    force = image.Force;
-            //                    suit = image.Suit;
-
-            //                    max = maxEqual;
-            //                    break;
-            //                case "b0card3":
-            //                    name = image.Name.Split(" ")[0];
-            //                    force = image.Force;
-            //                    suit = image.Suit;
-
-            //                    max = maxEqual;
-            //                    break;
-            //                default:
-            //                    break;
-            //            }
-            //        }
-            //    }
-
-            
-
-            //}
 
             return response;
         }

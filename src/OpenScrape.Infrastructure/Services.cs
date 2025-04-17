@@ -1,7 +1,7 @@
-﻿using Marten;
+﻿using JasperFx;
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Weasel.Core;
 
 namespace OpenScrape.Infrastructure;
 
