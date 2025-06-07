@@ -4,20 +4,20 @@ namespace OpenScrape.App.Helpers
 {
     public static class UserHandHelper
     {
-        public static string SetHandValue(TableScrapeResult scrapeResult)
+        public static string SetHandValue(PlayerGameState scrapeResult)
         {
             string hand = string.Empty;
 
-            if (scrapeResult.U0CardForce0 != 0)
+            if (scrapeResult.HoleCard1Rank != 0)
             {
-                if (scrapeResult.U0CardForce0 >= scrapeResult.U0CardForce1)
-                    hand = $"{scrapeResult.U0CardFace0[0]}{scrapeResult.U0CardFace1[0]}";
+                if (scrapeResult.HoleCard1Rank >= scrapeResult.HoleCard2Rank)
+                    hand = $"{scrapeResult.HoleCard1Face[0]}{scrapeResult.HoleCard2Face[0]}";
                 else
-                    hand = $"{scrapeResult.U0CardFace1[0]}{scrapeResult.U0CardFace0[0]}";
+                    hand = $"{scrapeResult.HoleCard2Face[0]}{scrapeResult.HoleCard1Face[0]}";
 
-                if (scrapeResult.U0CardForce0 != scrapeResult.U0CardForce1)
+                if (scrapeResult.HoleCard1Rank != scrapeResult.HoleCard2Rank)
                 {
-                    if (scrapeResult.U0CardSuit0 == scrapeResult.U0CardSuit1)
+                    if (scrapeResult.HoleCard1Suit == scrapeResult.HoleCard2Suit)
                         hand += "s";
                     else
                         hand += "o";
@@ -27,12 +27,12 @@ namespace OpenScrape.App.Helpers
             return hand;
         }
 
-        public static bool Exist4Bet(TableScrapeResult scrapeResult)
+        public static bool Exist4Bet(PlayerGameState scrapeResult)
         {
             var apuesta = 0m;
             var cont = 0;
 
-            foreach (var item in scrapeResult.DataPlayer.Where(w => w.Bet > 1))
+            foreach (var item in scrapeResult.Players.Where(w => w.Bet > 1))
             {
                 if (item.Bet > apuesta)
                 {

@@ -7,6 +7,7 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
+using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Dtos;
@@ -27,221 +28,189 @@ using Image = System.Drawing.Image;
 
 namespace OpenScrape.App
 {
-    public partial class FrmMain : Form
+    /// <summary>
+    /// Formulario principal de la aplicación OpenScrape para análisis de mesas de póker
+    /// </summary>
+    public partial class FrmMain : Form, IDisposable
     {
-        #region Forms
+        #region [Constants]
+        private const int BUTTON_SIZE = 40;
+        private const int MARGIN = 5;
+        private const int MATRIX_SIZE = 13;
+        private const string DEFAULT_RESOURCES_PATH = @"C:\Code\Poker\ScrapePoker\resources";
+        #endregion
+
+        #region [Forms]
         FormImage _formImage;
         Graphics _papel;
         FormAction _formAction;
         FrmOverlay _frmOverlay;
         #endregion
 
-        #region Regions
-
+        #region [Regions]
         List<Regions> _regions = new List<Regions>();
         List<ImageRegion> _images = new List<ImageRegion>();
-
         #endregion
 
-        List<Card> _cards = new List<Card>();
-        RadioButton? _lastChecked = new RadioButton();
-
-        Image? _img = null;
-
-        TableScrapeResult _scrapeResult = new TableScrapeResult();
-        TableScrapeFlopResult _scrapeFlopResult = new TableScrapeFlopResult();
-        ResponseAction _responseAction = new ResponseAction();
-
+        #region [Private Fields]
+        private List<Card> _cards = new();
+        private RadioButton? _lastChecked;
+        private Image? _img;
+        private PlayerGameState _scrapeResult = new();
+        private TableScrapeFlopResult _scrapeFlopResult = new();
+        private ResponseAction _responseAction = new();
         private int _speed = 1;
         private string _folderPath = string.Empty;
         private string _tableHand = string.Empty;
-
         private List<RegionTableMap>? _regionsTableMap;
         private Domain.ValueObjects.Region? _selectedRegion;
-
-
-        //Portatil
-        private string _pathResume = @$"C:\Code\Poker\ScrapePoker\resources\resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt";
-
-        //private string _pathResume = @$"C:\Code\ScrapePoker\resources\resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt";
-
-        private List<int> _colorDealer = new List<int> { 250, 251, 252, 253, 254, 255 };
-        private List<int> _colorEmpty = new List<int> { 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
-        private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-
+        private readonly string _pathResume;
+        private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
+        private readonly List<int> _colorEmpty = new() { 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
+        private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
-        private IntPtr _handle = new IntPtr();
-        User32.RECT _locWindowRect = new User32.RECT();
-        bool _executeCapture = false;
-
-        bool _isPreflop = true;
-        bool _isFlop = false;
-        bool _isTurn = false;
-        bool _isRiver = false;
-
-        string _tableName = string.Empty;
-        long _newTableHand;
-
-        bool _newHand = false;
-        bool _backgroundExecute = false;
-
+        private IntPtr _handle;
+        private User32.RECT _locWindowRect = new();
+        private bool _executeCapture;
+        private bool _isPreflop = true;
+        private bool _isFlop;
+        private bool _isTurn;
+        private bool _isRiver;
+        private string _tableName = string.Empty;
+        private long _newTableHand;
+        private bool _newHand;
+        private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
-
-        private readonly GetWindowsScreenUseCase _useCase = new GetWindowsScreenUseCase();
-        private ActionScenarioUseCases _actionScenarioUseCases;
-        private RegionTableMapUseCases _regionTableMapUseCases;
-
-        #region Action_UseCase
-        private ISetPreflopActionUseCase _setPreflopActionUseCase;
-
-        private ImageCropperService _imageCropperService = new();
-        private List<CardDTO>? _cardsImages;
-
+        private readonly CancellationTokenSource _cancellationTokenSource = new(); // MOSTRAR CAMBIOS: Añadido para gestionar cancelación
         #endregion
 
-        #region DataBase
+        #region [Services and UseCases]
+        private readonly GetWindowsScreenUseCase _useCase = new();
+        private readonly ActionScenarioUseCases _actionScenarioUseCases;
+        private readonly RegionTableMapUseCases _regionTableMapUseCases;
+        private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
+        private readonly ImageCropperService _imageCropperService = new();
+        private List<CardDTO>? _cardsImages;
         private readonly IDocumentStore _dataBase;
         private IDocumentSession _sessionDB;
+        private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase = new SetFlopForceBoardUseCase();
+        private static readonly IGetHashImageUseCase _getHashImageUseCase = new GetHashImageUseCase();
+        private static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
+        private readonly IGetCardsFlopUseCase _getCardsFlopUseCase;
+        private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
+        private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
+        private readonly IPotOddsCalculator _potOddsCalculator;
+        private readonly ColorDetectionService _colorDetectionService = new();
+        private readonly OcrService _ocrService = new();
+        private readonly CardUseCases _cardUseCases;
         #endregion
 
-        #region UseCases
-        readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase = new SetFlopForceBoardUseCase();
-
-        static readonly IGetHashImageUseCase _getHashImageUseCase = new GetHashImageUseCase();
-        static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
-
-        readonly IGetCardsFlopUseCase _getCardsFlopUseCase;
-        readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
-        readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
-        readonly IPotOddsCalculator _potOddsCalculator;
-
-
-        #endregion
-
-        private ColorDetectionService _colorDetectionService = new();
-        private OcrService _ocrService = new();
-        private CardUseCases _cardUseCases;
-
-
-        private const int BUTTON_SIZE = 40;
-        private const int MARGIN = 5;
-        private const int MATRIX_SIZE = 13;
-
+        /// <summary>
+        /// Constructor del formulario principal
+        /// </summary>
         public FrmMain(IDocumentStore dataBase,
                         ActionScenarioUseCases actionScenarioUseCases,
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases)
         {
             InitializeComponent();
-            _dataBase = dataBase;
+
+            // Inicialización de campos en constructor
+            _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
+            _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
+            _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
+            _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
+
             _session = GenerateRandomNumbers();
-            _actionScenarioUseCases = actionScenarioUseCases;
-            _regionTableMapUseCases = regionTableMapUseCases;
             _sessionDB = _dataBase.LightweightSession();
+            _lastChecked = new RadioButton();
 
             _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
             _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase);
             _getCardsTurnUseCase = new GetCardsTurnUseCase(_dataBase);
             _potOddsCalculator = new PotOddsCalculator(_outsCalculatorUseCase);
-            _cardUseCases = cardUseCases;
+
+            // Uso de Path.Combine para rutas
+            _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
+                $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
         }
 
+        /// <summary>
+        /// Evento de carga del formulario
+        /// </summary>
         private async void FrmMain_Load(object sender, EventArgs e)
         {
-            _formImage = new FormImage();
-            _frmOverlay = new FrmOverlay();
-            cbSpeed.SelectedIndex = 0;
-            await LoadRegionTableMap();
-
-            await LoadTables(_sessionDB);
-
-            var allCards = await _sessionDB.Query<Card>().ToListAsync();
-            _cards = allCards.ToList();
-
-            _formImage.Location = new Point(this.Width, this.Location.Y);
-            _formImage.Show();
-            //CreateMatrix();
-
-
-        }
-
-        private async Task LoadRegionTableMap()
-        {
-            var regions = new List<Domain.ValueObjects.Region>();
-            var regionsTableMap = await _sessionDB.Query<RegionTableMap>().ToListAsync();
-            var categories = regionsTableMap.Select(x => x.Regions).Where(x => x != null).Distinct().ToList();
-
-            foreach (var group in categories)
+            try
             {
-                foreach (var category in group!)
-                {
-                    regions.Add(category);
-                }
+                _formImage = new FormImage();
+                _frmOverlay = new FrmOverlay();
+                cbSpeed.SelectedIndex = 0;
+
+                await LoadRegionTableMapAsync();
+                await LoadTablesAsync(_sessionDB);
+
+                var allCards = await _sessionDB.Query<Card>().ToListAsync();
+                _cards.AddRange(allCards);
+
+                _formImage.Location = new Point(Width, Location.Y);
+                _formImage.Show();
             }
-
-            _regionsTableMap = regionsTableMap.ToList();
-            LoadTreeViewRegions(regionsTableMap.ToList());
-        }
-
-        private async Task LoadTables(IDocumentSession session)
-        {
-            _tables = await session.Query<Table>().ToListAsync();
-            _dataTables = _tables.ToList();
-            LoadTreeViewTables(_dataTables);
-        }
-
-        private void CreateMatrix()
-        {
-            string[] suits = { "s", "o" }; // suited y offsuit
-            string[] ranks = { "A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2" };
-
-            for (int row = 0; row < MATRIX_SIZE; row++)
+            catch (Exception ex)
             {
-                for (int col = 0; col < MATRIX_SIZE; col++)
-                {
-                    Button btn = new Button();
-                    btn.Size = new Size(BUTTON_SIZE, BUTTON_SIZE);
-                    btn.Location = new Point(
-                        col * (BUTTON_SIZE + MARGIN) + MARGIN,
-                        row * (BUTTON_SIZE + MARGIN) + MARGIN
-                    );
-
-                    // Determinar el texto del botón
-                    string firstCard = ranks[row];
-                    string secondCard = ranks[col];
-                    string suffix = row == col ? "" : (row < col ? "s" : "o");
-                    btn.Text = firstCard + secondCard + suffix;
-
-                    // Establecer el color del botón
-                    btn.FlatStyle = FlatStyle.Flat;
-
-                    if (row == col) // Pares
-                    {
-                        btn.BackColor = Color.LightBlue;
-                    }
-                    else if (row < col) // Suited
-                    {
-                        btn.BackColor = Color.LightYellow;
-                    }
-                    else // Offsuit
-                    {
-                        btn.BackColor = Color.LightGreen;
-                    }
-
-                    // Añadir número de combinaciones si es necesario
-                    if (!string.IsNullOrEmpty(suffix))
-                    {
-                        btn.Text += "\n" + (suffix == "s" ? "4" : "12");
-                    }
-
-                    //btn.Click += Button_Click;
-                    this.tbJuego.Controls.Add(btn);
-                }
+                LogError($"Error al cargar el formulario: {ex.Message}");
             }
         }
 
+        /// <summary>
+        /// Carga la configuración de regiones de la tabla desde la base de datos
+        /// </summary>
+        private async Task LoadRegionTableMapAsync()
+        {
+            try
+            {
+                var regions = new List<Domain.ValueObjects.Region>();
+                var regionsTableMap = await _sessionDB.Query<RegionTableMap>().ToListAsync();
+
+                // Uso de LINQ para simplificar código
+                var categories = regionsTableMap
+                    .Where(x => x.Regions != null)
+                    .SelectMany(x => x.Regions!)
+                    .Distinct()
+                    .ToList();
+
+                regions.AddRange(categories);
+                _regionsTableMap = regionsTableMap.ToList();
+
+                LoadTreeViewRegions(regionsTableMap);
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al cargar regiones: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Carga las tablas desde la base de datos
+        /// </summary>
+        private async Task LoadTablesAsync(IDocumentSession session)
+        {
+            try
+            {
+                _tables = await session.Query<Table>().ToListAsync();
+                _dataTables = _tables.ToList();
+                LoadTreeViewTables(_dataTables);
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al cargar tablas: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Carga el TreeView con las tablas disponibles
+        /// </summary>
         private void LoadTreeViewTables(IReadOnlyList<Table> tables)
         {
             twTables.Nodes.Clear();
@@ -253,7 +222,7 @@ namespace OpenScrape.App
 
                 if (table.Positions != null && table.Positions.Any())
                 {
-                    // Agrupar por HeroPosition para crear el segundo nivel
+                    // Uso de LINQ para agrupar y procesar datos
                     var positionGroups = table.Positions
                         .GroupBy(p => p.HeroPosition)
                         .ToDictionary(g => g.Key, g => g.ToList());
@@ -270,7 +239,7 @@ namespace OpenScrape.App
                         foreach (var position in positionGroup.Value)
                         {
                             heroPositionNode.Nodes.Add(
-                                position.Name, // Identificador único (puedes usar un Guid si lo necesitas)
+                                position.Name, // Identificador único
                                 position.Name  // Texto a mostrar
                             );
                         }
@@ -279,7 +248,10 @@ namespace OpenScrape.App
             }
         }
 
-        private void LoadTreeViewRegions(List<RegionTableMap> categories)
+        /// <summary>
+        /// Carga el TreeView con las regiones de configuración
+        /// </summary>
+        private void LoadTreeViewRegions(IReadOnlyList<RegionTableMap> categories)
         {
             twRegionsConfig.Nodes.Clear();
 
@@ -293,618 +265,896 @@ namespace OpenScrape.App
                 {
                     foreach (var region in category.Regions)
                     {
-                        regionsConfigNode.Nodes.Add(region.Name); // Asumiendo que Region tiene una propiedad Name
+                        regionsConfigNode.Nodes.Add(region.Name);
                     }
                 }
             }
         }
 
-        #region FrontMethods
+        #region [Event Handlers]
 
-        private void btnNew_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        /// <summary>
+        /// Maneja el doble clic en el TreeView de regiones
+        /// </summary>
         private void twRegions_DoubleClick(object sender, EventArgs e)
         {
-            EnableButtons();
-
-            _formImage.pbImagen.Refresh();
-
-            if (twRegionsConfig?.SelectedNode?.Parent != null)
+            try
             {
-                foreach (TreeNode rootNode in twRegionsConfig.Nodes)
+                EnableButtons();
+                _formImage.pbImagen.Refresh();
+
+                // Colapsar nodos no relacionados
+                if (twRegionsConfig?.SelectedNode?.Parent != null)
                 {
-                    if (rootNode != twRegionsConfig?.SelectedNode?.Parent) // Si no es el padre del nodo clickeado
+                    foreach (TreeNode rootNode in twRegionsConfig.Nodes)
                     {
-                        rootNode.Collapse();
+                        if (rootNode != twRegionsConfig?.SelectedNode?.Parent)
+                        {
+                            rootNode.Collapse();
+                        }
+                    }
+                }
+
+                if (twRegionsConfig?.SelectedNode != null)
+                {
+                    _selectedRegion = ObtenerRegionDelNodo(twRegionsConfig.SelectedNode);
+                    if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+                    {
+                        UpdateRegionDisplay();
                     }
                 }
             }
-
-            if (twRegionsConfig?.SelectedNode != null)
+            catch (Exception ex)
             {
-                _selectedRegion = ObtenerRegionDelNodo(twRegionsConfig.SelectedNode);
-                if (_selectedRegion != null && _formImage.pbImagen.Image != null)
-                {
-                    _papel = _formImage.pbImagen.CreateGraphics();
-                    Pen lapiz = new Pen(Color.Red);
-
-                    _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-                    tbX.Text = _selectedRegion.PosX.ToString();
-                    tbY.Text = _selectedRegion.PosY.ToString();
-                    tbWidth.Text = _selectedRegion.Width.ToString();
-                    tbHeight.Text = _selectedRegion.Height.ToString();
-                    tbRegionName.Text = _selectedRegion.Name;
-                    tbColor.Text = _selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty;
-                    tbRegionUmbral.Text = _selectedRegion.Umbral.ToString();
-                    tbRegionInactUmbral.Text = _selectedRegion.InactiveUmbral.ToString();
-                    cbRegionColor.Checked = _selectedRegion.IsColor.GetValueOrDefault();
-                    cbRegionHash.Checked = _selectedRegion.IsHash.GetValueOrDefault();
-                    cbRegionBoard.Checked = _selectedRegion.IsBoard.GetValueOrDefault();
-                    cbRegionNumber.Checked = _selectedRegion.IsOnlyNumber.GetValueOrDefault();
-
-                    SetPictureBoxColor(_selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty);
-
-                    if (_selectedRegion.IsColor.GetValueOrDefault())
-                        btnTestColor.Enabled = true;
-
-                    if (_selectedRegion.Umbral != null)
-                        btnTestTexto.Enabled = true;
-
-                    if (_selectedRegion.IsHash.GetValueOrDefault())
-                        btnTestCarta.Enabled = true;
-                }
+                LogError($"Error al seleccionar región: {ex.Message}");
             }
         }
+                
+        /// <summary>
+        /// Actualiza la visualización de la región seleccionada
+        /// </summary>
+        private void UpdateRegionDisplay()
+        {
+            using (var lapiz = new Pen(Color.Red))
+            {
+                _papel = _formImage.pbImagen.CreateGraphics();
+                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY,
+                    _selectedRegion.Width, _selectedRegion.Height);
+            }
 
+            // Actualizar campos de texto con los valores de la región
+            tbX.Text = _selectedRegion.PosX.ToString();
+            tbY.Text = _selectedRegion.PosY.ToString();
+            tbWidth.Text = _selectedRegion.Width.ToString();
+            tbHeight.Text = _selectedRegion.Height.ToString();
+            tbRegionName.Text = _selectedRegion.Name;
+            tbColor.Text = _selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty;
+            tbRegionUmbral.Text = _selectedRegion.Umbral.ToString();
+            tbRegionInactUmbral.Text = _selectedRegion.InactiveUmbral.ToString();
+
+            // Actualizar checkboxes
+            cbRegionColor.Checked = _selectedRegion.IsColor.GetValueOrDefault();
+            cbRegionHash.Checked = _selectedRegion.IsHash.GetValueOrDefault();
+            cbRegionBoard.Checked = _selectedRegion.IsBoard.GetValueOrDefault();
+            cbRegionNumber.Checked = _selectedRegion.IsOnlyNumber.GetValueOrDefault();
+
+            SetPictureBoxColor(_selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty);
+
+            // Habilitar botones según propiedades de la región
+            btnTestColor.Enabled = _selectedRegion.IsColor.GetValueOrDefault();
+            btnTestTexto.Enabled = _selectedRegion.Umbral != null;
+            btnTestCarta.Enabled = _selectedRegion.IsHash.GetValueOrDefault();
+        }
+
+        /// <summary>
+        /// Obtiene la región correspondiente al nodo seleccionado
+        /// </summary>
         private Domain.ValueObjects.Region? ObtenerRegionDelNodo(TreeNode node)
         {
-            // Implementa la lógica para obtener la región basada en el nodo
-            return _regionsTableMap.SelectMany(c => c.Regions ?? new List<Domain.ValueObjects.Region>())
-                        .FirstOrDefault(r => r.Name == node.Text);
+            // Uso de LINQ para simplificar código y null-conditional operators
+            return _regionsTableMap?
+                .SelectMany(c => c.Regions ?? new List<Domain.ValueObjects.Region>())
+                .FirstOrDefault(r => r.Name == node.Text);
         }
 
+        /// <summary>
+        /// Maneja el cambio en la velocidad de movimiento
+        /// </summary>
         private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int.TryParse(cbSpeed.Text, out _speed);
+            // Uso de TryParse con out var para mayor claridad
+            if (int.TryParse(cbSpeed.Text, out var speed))
+            {
+                _speed = speed;
+            }
         }
 
+        /// <summary>
+        /// Guarda los cambios en la configuración de la región
+        /// </summary>
         private async void btnSaveMap_Click(object sender, EventArgs e)
         {
-            var umbral = string.IsNullOrEmpty(tbRegionUmbral.Text) ? "0" : tbRegionUmbral.Text;
-            var inactUmbral = string.IsNullOrEmpty(tbRegionInactUmbral.Text) ? "0" : tbRegionInactUmbral.Text;
-
-            if (double.TryParse(umbral, out double regionUmbral) &&
-                double.TryParse(inactUmbral, out double regionInactUmbral) &&
-                int.TryParse(tbX.Text, out int x) &&
-                int.TryParse(tbY.Text, out int y) &&
-                int.TryParse(tbWidth.Text, out int width) &&
-                int.TryParse(tbHeight.Text, out int height))
+            try
             {
-                await Task.Run(async () => await _regionTableMapUseCases.UpdateRegionTableMap.ExecuteAsync(new UpdateRegionTableMapRequest
-                (
-                    _selectedRegion!.Category,
-                    _selectedRegion!.Name,
-                    x,
-                    y,
-                    width,
-                    height,
-                    regionUmbral,
-                    regionInactUmbral,
-                    tbColor.Text,
-                    cbRegionColor.Checked,
-                    cbRegionHash.Checked,
-                    cbRegionNumber.Checked,
-                    cbRegionBoard.Checked
-                )));
+                // Validación de entrada mejorada
+                var umbral = string.IsNullOrEmpty(tbRegionUmbral.Text) ? "0" : tbRegionUmbral.Text;
+                var inactUmbral = string.IsNullOrEmpty(tbRegionInactUmbral.Text) ? "0" : tbRegionInactUmbral.Text;
 
-                await LoadRegionTableMap();
+                if (!double.TryParse(umbral, out double regionUmbral) ||
+                    !double.TryParse(inactUmbral, out double regionInactUmbral) ||
+                    !int.TryParse(tbX.Text, out int x) ||
+                    !int.TryParse(tbY.Text, out int y) ||
+                    !int.TryParse(tbWidth.Text, out int width) ||
+                    !int.TryParse(tbHeight.Text, out int height) ||
+                    _selectedRegion == null)
+                {           
+                    LogInformation($"Error de validación: {umbral}, {inactUmbral}, {tbX.Text}, {tbY.Text}, {tbWidth.Text}, {tbHeight.Text}");
+                    return;
+                }
+
+                // Uso de Task.Run para operaciones asíncronas
+                await Task.Run(async () =>
+                {
+                    await _regionTableMapUseCases.UpdateRegionTableMap.ExecuteAsync(
+                        new UpdateRegionTableMapRequest(
+                            _selectedRegion.Category,
+                            _selectedRegion.Name,
+                            x, y, width, height,
+                            regionUmbral,
+                            regionInactUmbral,
+                            tbColor.Text,
+                            cbRegionColor.Checked,
+                            cbRegionHash.Checked,
+                            cbRegionNumber.Checked,
+                            cbRegionBoard.Checked
+                        )
+                    );
+                });
+
+                await LoadRegionTableMapAsync();
+                LogInformation($"Región actualizada: {_selectedRegion.Name}");
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Please enter valid numerical values.");
-            }
-        }
-
-
-        private void btnDelete_Click(object sender, EventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(twRegionsConfig.SelectedNode.Text))
-            {
-                var node = _regions.FirstOrDefault(x => x.Name == twRegionsConfig.SelectedNode.Text);
-
-                twRegionsConfig.Nodes.Remove(twRegionsConfig.SelectedNode);
-                _regions.Remove(node);
-
+                LogError($"Error al guardar la región: {ex.Message}");
             }
         }
 
         #endregion
 
+        /// <summary>
+        /// Captura y procesa la información de la mesa de póker
+        /// </summary>
         private async void btnCapture_Click(object sender, EventArgs e)
         {
-            lbAction.Text = string.Empty;
-            _executeCapture = true;
-            PotOddsResult potOddsResult = new PotOddsResult();
-
-            if (!cbTest.Checked)
+            try
             {
-                _frmOverlay.UpdateAction(string.Empty);
+                lbAction.Text = string.Empty;
+                _executeCapture = true;
+                var potOddsResult = new PotOddsResult();
 
-                if (cbMark.Checked)
-                    CreateLogWithMarkedHands();
-
-                GetImageWhilePlaying();
-                _formImage.WindowState = FormWindowState.Minimized;
-            }
-
-            if (cbTest.Checked)
-            {
-                _isFlop = rbFlop.Checked;
-                _isTurn = rbTurn.Checked;
-            }
-
-            SetTableHand();
-
-            if (_newHand)
-            {
-                _scrapeResult = new TableScrapeResult();
-                _responseAction = new ResponseAction();
-                _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-                _newHand = false;
-                _isFlop = false;
-
-                _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
-
-                _folderPath += $"\\{_session}";
-
-                if (!Directory.Exists(_folderPath))
+                if (!cbTest.Checked)
                 {
-                    Directory.CreateDirectory(_folderPath);
+                    _frmOverlay.UpdateAction(string.Empty);
 
+                    if (cbMark.Checked)
+                        CreateLogWithMarkedHands();
+
+                    GetImageWhilePlaying();
+                    _formImage.WindowState = FormWindowState.Minimized;
                 }
 
-                var path = _folderPath + @"\resume.txt";
+                if (cbTest.Checked)
+                {
+                    _isFlop = rbFlop.Checked;
+                    _isTurn = rbTurn.Checked;
+                    _isRiver = rbRiver.Checked;
+                }
 
-                File.AppendAllText(path, tbResume.Text + Environment.NewLine);
-                tbResume.Text = string.Empty;
+                SetTableHand();
+
+                if (_newHand)
+                {
+                    await HandleNewHandAsync();
+                }
+
+                if (_scrapeResult.Players.Count() == 0)
+                {
+                    await InitializePlayersAsync();
+                }
+
+                // Procesar la información de la mesa
+                await ProcessTableInfoAsync(potOddsResult);
+
+                // Actualizar la interfaz con los resultados
+                UpdateUIWithResults(potOddsResult);
             }
-
-            if (_scrapeResult.DataPlayer.Count() == 0)
+            catch (Exception ex)
             {
-                await ObtainCardsPlayer();
-                SetEmptyPlayer();
-                SetSitOutPlayer();
-                SetDealerPlayer();
-                SetVillainPosition(_scrapeResult.P0Position);
-                SetAliasVillain();
-
+                LogError($"Error durante la captura: {ex.Message}");
             }
+        }
 
-            //TODO: Comprobar second hand 
+        /// <summary>
+        /// Inicializa los datos de los jugadores
+        /// </summary>
+        private async Task InitializePlayersAsync()
+        {
+            await ObtainCardsPlayerAsync();
+            SetEmptyPlayer();
+            SetSitOutPlayer();
+            SetDealerPlayer();
+            SetVillainPosition(_scrapeResult.Position);
+            SetAliasVillain();
+        }
+
+        /// <summary>
+        /// Procesa la información de la mesa
+        /// </summary>
+        private async Task ProcessTableInfoAsync(PotOddsResult potOddsResult)
+        {
             SetBetPlayer();
-            //_scrapeResult.Pot += _scrapeResult.DataPlayer.Sum(s => s.Bet) + _scrapeResult.U0Bet;
             SetPotValue();
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            
-
             if (!_isFlop && !_isTurn && !_isRiver)
             {
-                _isPreflop = true;
-                var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest { ResponseAction = _responseAction, ScrapeResult = _scrapeResult, PreflopHeroPosition = _preflopHeroPosition });
-
-                _responseAction = responseFlop.ResponseAction;
-                _scrapeResult = responseFlop.ScrapeResult;
+                await ProcessPreflopAsync();
             }
             else
             {
-                //Si existe el flop, capturar las cartas del flop
-                if (_isFlop)
-                {
-                    _isFlop = false;
-                    var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), /*Regions = _regionsTableMap.FirstOrDefault(f => f.Id == "Board").Regions, ImageRegions = _images,*/ RegionsTableMap = _regionsTableMap });
-                    var dataBoard = flopResponse.DataBoard;
+                await ProcessPostFlopAsync(potOddsResult);
+            }
+        }
 
-                    _scrapeResult.DataBoard = dataBoard;
-                    var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult });
-                    _scrapeResult = setFlopForceBoardResponse.TableScrapeResult;
-                    _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
+        /// <summary>
+        /// Procesa la fase de preflop
+        /// </summary>
+        private async Task ProcessPreflopAsync()
+        {
+            _isPreflop = true;
+            var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
+            {
+                ResponseAction = _responseAction,
+                ScrapeResult = _scrapeResult,
+                PreflopHeroPosition = _preflopHeroPosition
+            });
 
-                    //_scrapeResult.DataBoard = dataBoard;
-                    //_scrapeFlopResult = _setFlopForceBoardUseCase.Execute(new SetFlopForceBoardUseCaseRequest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult }).TableScrapeFlopResult;
+            _responseAction = responseFlop.ResponseAction;
+            _scrapeResult = responseFlop.ScrapeResult;
+        }
 
-                    potOddsResult = GetPotOddsCalculator();
-
-                    _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOddsPercentage.ToString());
-                    _frmOverlay.UpdateEquityPercentage(potOddsResult.EquityPercentage.ToString());
-                    _frmOverlay.UpdateShouldCall(potOddsResult.ShouldCall);
-
-                    SetIsInPosition();
-
-                    var flopAnalyzerRequest = new FlopAnalyzerHelperReqest { TableScrapeResult = _scrapeResult, TableScrapeFlopResult = _scrapeFlopResult };
-
-                    switch (_scrapeResult.HandSituation)
-                    {
-                        case HandSituation.OpenRaise:
-
-                            if (_scrapeFlopResult.HaveTwoPairOnFlop ||
-                                _scrapeFlopResult.HaveOverPairOnFlop ||
-                                (_scrapeFlopResult.HaveTopPairOnFlop && !_scrapeFlopResult.HaveHighCardsOnHand) ||
-                                (_scrapeFlopResult.HaveHighCardsOnHand && _scrapeFlopResult.HaveBackdoorFlushDraw))
-                            {
-                                _responseAction.Action = "Bet 3/4";
-                            }
-                            else
-                            {
-                                _responseAction.Action = "Check";
-                            }
-
-                            if (_scrapeResult.U0InPosition)
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-                                    //_scrapeResult.
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.Call:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.RaiseOverLimper:
-                            //IP
-                            if (_scrapeResult.U0InPosition)
-                            {
-
-
-                            }
-                            //OOP
-                            else
-                            {
-                                if (FlopAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
-                                    _responseAction.Action = "Check/Call";
-                                else if (FlopAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
-                                    _responseAction.Action = "Check/Fold";
-                                else
-                                    _responseAction.Action = "Bet 1/3";
-                            }
-                            break;
-                        case HandSituation.ThreeBet:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.OpenRaiseVs3Bet:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.OpenRaiseVs3BetAndCall:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.FourBet:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.Cold4Bet:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.Squeeze:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-                        case HandSituation.VsSqueeze:
-                            if (_scrapeResult.U0InPosition)
-                            {
-                            }
-                            else
-                            {
-                                if (_scrapeFlopResult.FlopIsCoordinate)
-                                {
-
-                                }
-                                else
-                                {
-
-                                }
-                            }
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-
-                if (_isTurn)
-                {
-                    _isTurn = false;
-                    var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), RegionsTableMap = _regionsTableMap, DataBoard = _scrapeResult.DataBoard });
-                    _scrapeResult.DataBoard = turnResponse.DataBoard;
-                }
-
-                if(_isRiver)
-                {
-                    _isRiver = false;
-                    var riverResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest { Image = new Bitmap(_formImage.pbImagen.Image), RegionsTableMap = _regionsTableMap, DataBoard = _scrapeResult.DataBoard });
-                    _scrapeResult.DataBoard = riverResponse.DataBoard;
-                }
-
-
-                _responseAction.Action = string.IsNullOrEmpty(_responseAction.Action) ? "No Preflop action" : _responseAction.Action;
+        /// <summary>
+        /// Procesa las fases posteriores al flop (flop, turn, river)
+        /// </summary>
+        private async Task ProcessPostFlopAsync(PotOddsResult potOddsResult)
+        {
+            if (_isFlop)
+            {
+                await ProcessFlopAsync(potOddsResult);
             }
 
+            if (_isTurn)
+            {
+                await ProcessTurnAsync();
+            }
+
+            if (_isRiver)
+            {
+                await ProcessRiverAsync();
+            }
+
+            _responseAction.Action = string.IsNullOrEmpty(_responseAction.Action)
+                ? "No Preflop action"
+                : _responseAction.Action;
+        }
+
+        /// <summary>
+        /// Procesa la fase de flop
+        /// </summary>
+        private async Task ProcessFlopAsync(PotOddsResult potOddsResult)
+        {
+            _isFlop = false;
+
+            // Capturar cartas del flop
+            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
+            {
+                Image = bitmap,
+                RegionsTableMap = _regionsTableMap
+            });
+
+            var dataBoard = flopResponse.DataBoard;
+            _scrapeResult.BoardCards = dataBoard;
+
+            // Procesar el flop
+            var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(
+                new SetFlopForceBoardUseCaseRequest
+                {
+                    TableScrapeResult = _scrapeResult,
+                    TableScrapeFlopResult = _scrapeFlopResult
+                });
+
+            _scrapeResult = setFlopForceBoardResponse.TableScrapeResult;
+            _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
+
+            // Calcular odds y actualizar overlay
+            potOddsResult = GetPotOddsCalculator();
+            UpdateOverlayWithPotOdds(potOddsResult);
+
+            // Determinar si estamos en posición
+            SetIsInPosition();
+
+            // Analizar el flop y determinar acción
+            DetermineFlopAction();
+        }
+
+        /// <summary>
+        /// Actualiza el overlay con la información de pot odds
+        /// </summary>
+        private void UpdateOverlayWithPotOdds(PotOddsResult potOddsResult)
+        {
+            _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOddsPercentage.ToString());
+            _frmOverlay.UpdateEquityPercentage(potOddsResult.EquityPercentage.ToString());
+            _frmOverlay.UpdateShouldCall(potOddsResult.ShouldCall);
+        }
+
+        /// <summary>
+        /// Determina la acción a tomar en el flop según la situación de la mano
+        /// </summary>
+        private void DetermineFlopAction()
+        {
+            var flopAnalyzerRequest = new FlopAnalyzerHelperReqest
+            {
+                PlayerState = _scrapeResult,
+                TableScrapeFlopResult = _scrapeFlopResult
+            };
+
+            switch (_scrapeResult.HandSituation)
+            {
+                case HandSituation.OpenRaise:
+                    HandleOpenRaiseFlopAction();
+                    break;
+
+                case HandSituation.Call:
+                    HandleCallFlopAction();
+                    break;
+
+                case HandSituation.RaiseOverLimper:
+                    HandleRaiseOverLimperFlopAction(flopAnalyzerRequest);
+                    break;
+
+                case HandSituation.ThreeBet:
+                    HandleThreeBetFlopAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3Bet:
+                    HandleOpenRaiseVs3BetFlopAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3BetAndCall:
+                    HandleOpenRaiseVs3BetAndCallFlopAction();
+                    break;
+
+                case HandSituation.FourBet:
+                    HandleFourBetFlopAction();
+                    break;
+
+                case HandSituation.Cold4Bet:
+                    HandleCold4BetFlopAction();
+                    break;
+
+                case HandSituation.Squeeze:
+                    HandleSqueezeFlopAction();
+                    break;
+
+                case HandSituation.VsSqueeze:
+                    HandleVsSqueezeFlopAction();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        #region [Handle Flop Action]
+
+        private void HandleOpenRaiseFlopAction()
+        {
+            if (_scrapeFlopResult.HasTwoPair ||
+                _scrapeFlopResult.HasOverPair ||
+                (_scrapeFlopResult.HasTopPair && !_scrapeFlopResult.HaveHighCards) ||
+                (_scrapeFlopResult.HaveHighCards && _scrapeFlopResult.HaveBackdoorFlushDraw))
+            {
+                _responseAction.Action = "Bet 3/4";
+            }
+            else
+            {
+                _responseAction.Action = "Check";
+            }
+
+            if (_scrapeResult.IsInPosition)
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleCallFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
+        {
+            // IP
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            // OOP
+            else
+            {
+                if (FlopRaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                    _responseAction.Action = "Check/Call";
+                else if (FlopRaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
+                    _responseAction.Action = "Check/Fold";
+                else
+                    _responseAction.Action = "Bet 1/3";
+            }
+        }
+
+        private void HandleThreeBetFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleOpenRaiseVs3BetFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleOpenRaiseVs3BetAndCallFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleFourBetFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleCold4BetFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleSqueezeFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        private void HandleVsSqueezeFlopAction()
+        {
+            if (_scrapeResult.IsInPosition)
+            {
+                // Implementación pendiente
+            }
+            else
+            {
+                if (_scrapeFlopResult.IsCoordinated)
+                {
+                    // Implementación pendiente
+                }
+                else
+                {
+                    // Implementación pendiente
+                }
+            }
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Procesa la fase de turn
+        /// </summary>
+        private async Task ProcessTurnAsync()
+        {
+            _isTurn = false;
+            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+            {
+                Image = bitmap,
+                RegionsTableMap = _regionsTableMap,
+                DataBoard = _scrapeResult.BoardCards
+            });
+
+            _scrapeResult.BoardCards = turnResponse.DataBoard;
+        }
+
+        /// <summary>
+        /// Procesa la fase de river
+        /// </summary>
+        private async Task ProcessRiverAsync()
+        {
+            _isRiver = false;
+            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            var riverResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+            {
+                Image = bitmap,
+                RegionsTableMap = _regionsTableMap,
+                DataBoard = _scrapeResult.BoardCards
+            });
+
+            _scrapeResult.BoardCards = riverResponse.DataBoard;
+        }
+
+        /// <summary>
+        /// Maneja la inicialización de una nueva mano
+        /// </summary>
+        private async Task HandleNewHandAsync()
+        {
+            _scrapeResult = new PlayerGameState();
+            _responseAction = new ResponseAction();
+            _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
+            _newHand = false;
+            _isFlop = false;
+
+            // MOSTRAR CAMBIOS: Uso de Path.Combine para rutas
+            _folderPath = Path.Combine(
+                DEFAULT_RESOURCES_PATH,
+                "Games",
+                $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}",
+                _session);
+
+            if (!Directory.Exists(_folderPath))
+            {
+                Directory.CreateDirectory(_folderPath);
+            }
+
+            var path = Path.Combine(_folderPath, "resume.txt");
+            await File.AppendAllTextAsync(path, tbResume.Text + Environment.NewLine);
+            tbResume.Text = string.Empty;
+        }
+
+        /// <summary>
+        /// Actualiza la interfaz con los resultados del análisis
+        /// </summary>
+        private void UpdateUIWithResults(PotOddsResult potOddsResult)
+        {
             _scrapeResult.HandSituation = _responseAction.HandSituation;
 
             if (_scrapeResult != null)
             {
                 if (_isPreflop)
                 {
-                    var enMesa = _scrapeResult.DataPlayer.Count(e => !e.Empty) + 1;
-                    var sitout = _scrapeResult.DataPlayer.Count(s => s.SitOut);
-                    var playing = _scrapeResult.DataPlayer.Count(p => p.Active) + 1;
-
-                    tbResume.Text += $"Hand #{_tableHand}: Hold'em No Limit \r\n";
-                    tbResume.Text += $"#{_scrapeResult.DataPlayer.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer\r\n";
-                    tbResume.Text += $"{_scrapeResult.DataPlayer.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "Hero"}: posts small blind\r\n";
-                    tbResume.Text += $"{_scrapeResult.DataPlayer.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind\r\n";
-                    tbResume.Text += $"Pot: {_scrapeResult.Pot}\r\n";
-                    tbResume.Text += $"*** STATISTICS ***\r\n";
-                    tbResume.Text += $"PotOdds: {potOddsResult.PotOddsPercentage.ToString()}% \r\n";
-                    tbResume.Text += $"Equity: {potOddsResult.EquityPercentage.ToString()}% \r\n";
-                    tbResume.Text += $"Should Call: {potOddsResult.ShouldCall} \r\n";
-                    tbResume.Text += "*** HOLE CARDS ***\r\n";
-                    tbResume.Text += $"Dealt to Hero [{_scrapeResult.U0CardFace0} {_scrapeResult.U0CardFace1}]\r\n";
-
-                    foreach (TablePosition position in Enum.GetValues(typeof(TablePosition)))
-                    {
-                        if (position != TablePosition.None && position <= _scrapeResult.P0Position)
-                        {
-                            var player = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Position == position);
-                            string name = player?.Name ?? "Hero";
-                            string action = string.Empty;
-                            if (name != "Hero")
-                                action = player?.Bet == null ? "folds" : $"bets/calls {player.Bet}";
-                            else
-                            {
-                                if (position == _scrapeResult.P0Position)
-                                {
-                                    tbResume.Text += $"Hand Situation: {_scrapeResult.HandSituation}\r\n";
-                                    action = _responseAction?.Action ?? string.Empty;
-                                }
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(action))
-                                tbResume.Text += $"{name}: {action}\r\n";
-                        }
-                    }
-
+                    UpdateResumeTextForPreflop(potOddsResult);
                     _isPreflop = false;
                 }
 
                 if (_isFlop)
                 {
-                    tbResume.Text += "*** FLOP *** [";
-                    var countFlop = 0;
-                    foreach (var carta in _scrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop))
-                    {
-                        countFlop++;
-                        if (countFlop == 3)
-                            tbResume.Text += $"{carta.Name}]";
-                        else
-                            tbResume.Text += $"{carta.Name} ";
-                    }
+                    UpdateResumeTextForFlop();
                 }
 
-                pbbuttonPlayerOne.BackColor = Color.Transparent;
-                pbButtonPlayerTwo.BackColor = Color.Transparent;
-                pbButtonPlayerThree.BackColor = Color.Transparent;
-                pbButtonPlayerFour.BackColor = Color.Transparent;
-                pbButtonPlayerFive.BackColor = Color.Transparent;
-                pbButtonHero.BackColor = Color.Transparent;
-
-                lbNamePlayerOne.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Alias;
-                lbNamePlayerTwo.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Alias;
-                lbNamePlayerThree.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Alias;
-                lbNamePlayerFour.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Alias;
-                lbNamePlayerfive.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Alias;
-
-                lbBetPlayerOne.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
-                lbBetPlayerTwo.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
-                lbBetPlayerThree.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
-                lbBetPlayerFour.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
-                lbBetPlayerFive.Text = _scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
-
-                lbBetHero.Text = _scrapeResult.U0Bet.ToString();
-                pbHeroCard0.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace0))?.ImageBase64 ?? string.Empty) : null;
-                pbHeroCard1.Image = _scrapeResult.U0CardFace1 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace1))?.ImageBase64 ?? string.Empty) : null;
-
-                lbPot.Text = _scrapeResult.Pot.ToString();
-
-                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
-                    pbbuttonPlayerOne.BackColor = Color.Red;
-
-                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
-                    pbButtonPlayerTwo.BackColor = Color.Red;
-
-                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
-                    pbButtonPlayerThree.BackColor = Color.Red;
-
-                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
-                    pbButtonPlayerFour.BackColor = Color.Red;
-
-                if (_scrapeResult.DataPlayer.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
-                    pbButtonPlayerFive.BackColor = Color.Red;
-
-                if (_scrapeResult.P0Dealer == true)
-                    pbButtonHero.BackColor = Color.Red;
-
-                lbTableHand.Text = _tableHand;
-                lbTableName.Text = _tableName;
-
-                pbBoard1.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 1) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 1)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
-                pbBoard2.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 2) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 2)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
-                pbBoard3.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 3) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 3)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
-                
-                pbBoard4.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 4) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 4)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
-                
-                pbBoard5.Image = _scrapeResult.DataBoard.FirstOrDefault(f => f.Location == 5) != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult?.DataBoard?.FirstOrDefault(f => f.Location == 5)?.Name ?? string.Empty))?.ImageBase64 ?? string.Empty) : null;
+                UpdatePlayerIndicators();
+                UpdateCardImages();
             }
 
-            if (!_isFlop)
-            {
-
-            }
-
-            //SetBoardValues();
             lbAction.Text = _responseAction?.Action ?? string.Empty;
 
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
         }
 
-        private PotOddsResult GetPotOddsCalculator()
+        /// <summary>
+        /// Actualiza el texto de resumen para la fase de preflop
+        /// </summary>
+        private void UpdateResumeTextForPreflop(PotOddsResult potOddsResult)
         {
-            return _potOddsCalculator.Calculate(new List<CardDataOuts>
+            var enMesa = _scrapeResult.Players.Count(e => !e.Empty) + 1;
+            var sitout = _scrapeResult.Players.Count(s => s.SitOut);
+            var playing = _scrapeResult.Players.Count(p => p.Active) + 1;
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Hand #{_tableHand}: Hold'em No Limit");
+            sb.AppendLine($"#{_scrapeResult.Players.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer");
+            sb.AppendLine($"{_scrapeResult.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "Hero"}: posts small blind");
+            sb.AppendLine($"{_scrapeResult.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
+            sb.AppendLine($"Pot: {_scrapeResult.PotSize}");
+            sb.AppendLine($"*** STATISTICS ***");
+            sb.AppendLine($"PotOdds: {potOddsResult.PotOddsPercentage}%");
+            sb.AppendLine($"Equity: {potOddsResult.EquityPercentage}%");
+            sb.AppendLine($"Should Call: {potOddsResult.ShouldCall}");
+            sb.AppendLine("*** HOLE CARDS ***");
+            sb.AppendLine($"Dealt to Hero [{_scrapeResult.HoleCard1Face} {_scrapeResult.HoleCard2Face}]");
+
+            foreach (TablePosition position in Enum.GetValues(typeof(TablePosition)))
+            {
+                if (position != TablePosition.None && position <= _scrapeResult.Position)
+                {
+                    var player = _scrapeResult.Players.FirstOrDefault(f => f.Position == position);
+                    string name = player?.Name ?? "Hero";
+                    string action = string.Empty;
+
+                    if (name != "Hero")
+                        action = player?.Bet == null ? "folds" : $"bets/calls {player.Bet}";
+                    else
                     {
-                        new CardDataOuts
+                        if (position == _scrapeResult.Position)
                         {
-                            Rank = (Rank)_scrapeResult.U0CardForce0,
-                            Suit = (Suit)_scrapeResult.U0CardSuit0
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.U0CardForce1,
-                            Suit = (Suit)_scrapeResult.U0CardSuit1
+                            sb.AppendLine($"Hand Situation: {_scrapeResult.HandSituation}");
+                            action = _responseAction?.Action ?? string.Empty;
                         }
-                    },
-                    new List<CardDataOuts>
-                    {
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[0].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[0].Suit
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[1].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[1].Suit
-                        },
-                        new CardDataOuts
-                        {
-                            Rank = (Rank)_scrapeResult.DataBoard[2].Force,
-                            Suit = (Suit)_scrapeResult.DataBoard[2].Suit
-                        }
-                    },
-                    _scrapeResult.Pot,
-                    _scrapeResult.DataPlayer.Max(m => m.Bet));
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(action))
+                        sb.AppendLine($"{name}: {action}");
+                }
+            }
+
+            tbResume.Text = sb.ToString();
         }
 
+        /// <summary>
+        /// Actualiza el texto de resumen para la fase de flop
+        /// </summary>
+        private void UpdateResumeTextForFlop()
+        {
+            tbResume.Text += "*** FLOP *** [";
+            var countFlop = 0;
+            foreach (var carta in _scrapeResult.BoardCards.Where(w => w.Position == BoardPosition.Flop))
+            {
+                countFlop++;
+                if (countFlop == 3)
+                    tbResume.Text += $"{carta.Name}]";
+                else
+                    tbResume.Text += $"{carta.Name} ";
+            }
+        }
+
+        /// <summary>
+        /// Actualiza los indicadores visuales de los jugadores
+        /// </summary>
+        private void UpdatePlayerIndicators()
+        {
+            // Resetear colores de botones
+            pbbuttonPlayerOne.BackColor = Color.Transparent;
+            pbButtonPlayerTwo.BackColor = Color.Transparent;
+            pbButtonPlayerThree.BackColor = Color.Transparent;
+            pbButtonPlayerFour.BackColor = Color.Transparent;
+            pbButtonPlayerFive.BackColor = Color.Transparent;
+            pbButtonHero.BackColor = Color.Transparent;
+
+            // Actualizar nombres y apuestas
+            lbNamePlayerOne.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Alias;
+            lbNamePlayerTwo.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
+            lbNamePlayerThree.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
+            lbNamePlayerFour.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
+            lbNamePlayerfive.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
+
+            lbBetPlayerOne.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
+            lbBetPlayerTwo.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
+            lbBetPlayerThree.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
+            lbBetPlayerFour.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
+            lbBetPlayerFive.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
+
+            lbBetHero.Text = _scrapeResult.CurrentBet.ToString();
+            lbPot.Text = _scrapeResult.PotSize.ToString();
+
+            // Marcar el dealer
+            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
+                pbbuttonPlayerOne.BackColor = Color.Red;
+            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
+                pbButtonPlayerTwo.BackColor = Color.Red;
+            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
+                pbButtonPlayerThree.BackColor = Color.Red;
+            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
+                pbButtonPlayerFour.BackColor = Color.Red;
+            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
+                pbButtonPlayerFive.BackColor = Color.Red;
+            if (_scrapeResult.IsDealer == true)
+                pbButtonHero.BackColor = Color.Red;
+
+            lbTableHand.Text = _tableHand;
+            lbTableName.Text = _tableName;
+        }
+
+        /// <summary>
+        /// Actualiza las imágenes de las cartas
+        /// </summary>
+        private void UpdateCardImages()
+        {
+            // Cartas del héroe
+            pbHeroCard0.Image = GetCardImage(_scrapeResult.HoleCard1Face);
+            pbHeroCard1.Image = GetCardImage(_scrapeResult.HoleCard2Face);
+
+            // Cartas del tablero
+            pbBoard1.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 1)?.Name);
+            pbBoard2.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 2)?.Name);
+            pbBoard3.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 3)?.Name);
+            pbBoard4.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 4)?.Name);
+            pbBoard5.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 5)?.Name);
+        }
+
+        /// <summary>
+        /// Obtiene la imagen de una carta a partir de su nombre
+        /// </summary>
+        private Image? GetCardImage(string? cardName)
+        {
+            if (string.IsNullOrEmpty(cardName))
+                return null;
+
+            var card = _cards.FirstOrDefault(x => x.Id.Contains(cardName));
+            return card != null ? _imageCropperService.Base64ToImage(card.ImageBase64) : null;
+        }
+
+        /// <summary>
+        /// Calcula las pot odds y la equidad
+        /// </summary>
+        private PotOddsResult GetPotOddsCalculator()
+        {
+            // Uso de object initializers para mayor claridad
+            return _potOddsCalculator.Calculate(
+                new List<CardDataOuts>
+                {
+                    new CardDataOuts
+                    {
+                        Rank = (Rank)_scrapeResult.HoleCard1Rank,
+                        Suit = (Suit)_scrapeResult.HoleCard1Suit
+                    },
+                    new CardDataOuts
+                    {
+                        Rank = (Rank)_scrapeResult.HoleCard2Rank,
+                        Suit = (Suit)_scrapeResult.HoleCard2Suit
+                    }
+                },
+                new List<CardDataOuts>
+                {
+                    new CardDataOuts
+                    {
+                        Rank = (Rank)_scrapeResult.BoardCards[0].Force,
+                        Suit = (Suit)_scrapeResult.BoardCards[0].Suit
+                    },
+                    new CardDataOuts
+                    {
+                        Rank = (Rank)_scrapeResult.BoardCards[1].Force,
+                        Suit = (Suit)_scrapeResult.BoardCards[1].Suit
+                    },
+                    new CardDataOuts
+                    {
+                        Rank = (Rank)_scrapeResult.BoardCards[2].Force,
+                        Suit = (Suit)_scrapeResult.BoardCards[2].Suit
+                    }
+                },
+                _scrapeResult.PotSize,
+                _scrapeResult.Players.Max(m => m.Bet));
+        }
+
+        /// <summary>
+        /// Establece las apuestas de los jugadores
+        /// </summary>
         private void SetBetPlayer()
         {
+            // Uso de using para garantizar liberación de recursos
             using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _pictureUmbralBet));
-            var regionTableMap = _regionsTableMap.FirstOrDefault(f => f.Id == "Bets");
+            var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "Bets");
+
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
                 return;
 
@@ -913,29 +1163,43 @@ namespace OpenScrape.App
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
                 if (playerNumber == null) continue;
 
-                var betValue = SetBetValue(region.PosX, region.PosY, region.Width, region.Height, region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                var betValue = SetBetValue(region.PosX, region.PosY, region.Width, region.Height,
+                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
-                if (betValue.ToString().Length > 2 && !betValue.ToString().Contains(",") && !betValue.ToString().Contains(".") && betValue.ToString().Contains("88"))
+                // Validación y limpieza de valores
+                if (betValue.ToString().Length > 2 &&
+                    !betValue.ToString().Contains(",") &&
+                    !betValue.ToString().Contains(".") &&
+                    betValue.ToString().Contains("88"))
+                {
                     betValue = decimal.Parse(betValue.ToString().Replace("88", ""));
+                }
 
                 if (playerNumber == 0)
                 {
-                    _scrapeResult.U0Bet = betValue;
+                    _scrapeResult.CurrentBet = betValue;
                     continue;
                 }
 
-                var player = _scrapeResult.DataPlayer.First(f => f.Name == $"P{playerNumber}");
-                player.Bet = betValue;
+                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                if (player != null)
+                {
+                    player.Bet = betValue;
+                }
             }
         }
 
+        /// <summary>
+        /// Establece los jugadores vacíos
+        /// </summary>
         private void SetEmptyPlayer()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Empty");
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
                 return;
 
-            var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            // Uso de using para garantizar liberación de recursos
+            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
 
             foreach (var region in regionTableMap.Regions)
             {
@@ -945,20 +1209,24 @@ namespace OpenScrape.App
 
                 var color = bitmap.GetPixel(region.PosX, region.PosY);
 
-                _scrapeResult.DataPlayer.Add(CreatePlayerData(playerNumber.Value));
+                _scrapeResult.Players.Add(CreatePlayerData(playerNumber.Value));
 
                 // Verificamos si el jugador está vacío
                 if (region.Name.Contains("empty") && _colorEmpty.Contains(color.B))
                 {
-                    var player = _scrapeResult.DataPlayer.First(n => n.Name == $"P{playerNumber}");
-                    player.Empty = true;
-                    player.SitOut = true;
+                    var player = _scrapeResult.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+                    if (player != null)
+                    {
+                        player.Empty = true;
+                        player.SitOut = true;
+                    }
                 }
             }
-
-            bitmap.Dispose(); // Liberamos recursos
         }
 
+        /// <summary>
+        /// Establece los alias de los villanos
+        /// </summary>
         private void SetAliasVillain()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
@@ -970,16 +1238,20 @@ namespace OpenScrape.App
                 var playerNumber = GetPlayerNumber(region.Name, "Name");
                 if (playerNumber == null) continue;
 
-                var player = _scrapeResult.DataPlayer.First(f => f.Name == $"P{playerNumber}");
-
-                player.Alias = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height, region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
-
+                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                if (player != null)
+                {
+                    player.Alias = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                        region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                }
             }
-
         }
 
-        private PlayerData CreatePlayerData(int playerNumber) =>
-            new PlayerData
+        /// <summary>
+        /// Crea un objeto PlayerData con los datos básicos
+        /// </summary>
+        private Player CreatePlayerData(int playerNumber) =>
+            new Player
             {
                 Name = $"P{playerNumber}",
                 Active = false,
@@ -988,6 +1260,9 @@ namespace OpenScrape.App
                 ValuePosition = playerNumber
             };
 
+        /// <summary>
+        /// Extrae el número de jugador de un nombre de región
+        /// </summary>
         private int? GetPlayerNumber(string regionName, string extraText = "")
         {
             if (string.IsNullOrEmpty(regionName))
@@ -997,6 +1272,9 @@ namespace OpenScrape.App
             return match.Success ? int.Parse(match.Groups[1].Value) : null;
         }
 
+        /// <summary>
+        /// Establece el valor del bote
+        /// </summary>
         private void SetPotValue()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
@@ -1007,71 +1285,80 @@ namespace OpenScrape.App
             if (regionPot != null)
             {
                 decimal potValue = 0;
-                var pot = SetTextOCR(regionPot.PosX, regionPot.PosY, regionPot.Width, regionPot.Height, regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber);
+                var pot = SetTextOCR(regionPot.PosX, regionPot.PosY, regionPot.Width, regionPot.Height,
+                    regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber);
 
-                if (pot.Length == 4)
-                    if (!pot.Contains(".") && !pot.Contains(","))
-                        decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
-                    else
-                        potValue = decimal.Parse(pot);
+                // Mejorada la lógica de parsing
+                if (pot.Length == 4 && !pot.Contains(".") && !pot.Contains(","))
+                    decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
                 else
                     decimal.TryParse(pot, out potValue);
 
-                _scrapeResult.Pot = potValue;
+                _scrapeResult.PotSize = potValue;
             }
-
         }
 
+        /// <summary>
+        /// Establece el número de mano de la mesa
+        /// </summary>
         private void SetTableHand()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
-            if (regionTableMap != null)
-            {
-                var regionTableHand = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablehand");
-                if (regionTableHand != null)
-                {
-                    if (string.IsNullOrEmpty(_tableHand))
-                        _tableHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height, regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
-                    else
-                    {
-                        long.TryParse(_tableHand, out long oldTableHand);
-                        long.TryParse(SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height, regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber), out long newTableHand);
+            if (regionTableMap == null)
+                return;
 
+            var regionTableHand = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablehand");
+            if (regionTableHand != null)
+            {
+                if (string.IsNullOrEmpty(_tableHand))
+                {
+                    _tableHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
+                        regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
+                }
+                else
+                {
+                    // Uso de TryParse con out var para mayor claridad
+                    if (long.TryParse(_tableHand, out var oldTableHand) &&
+                        long.TryParse(SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
+                            regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber), out var newTableHand))
+                    {
                         if (oldTableHand != newTableHand)
                         {
                             _newHand = true;
                             _tableHand = newTableHand.ToString();
                         }
-                        else
+                        else if (newTableHand == 0)
                         {
-                            if (newTableHand == 0)
-                            {
-                                _newHand = true;
-                                _newTableHand++;
-                                _tableHand = _newTableHand.ToString();
-                            }
+                            _newHand = true;
+                            _newTableHand++;
+                            _tableHand = _newTableHand.ToString();
                         }
                     }
                 }
+            }
 
-                var regionTableName = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablename");
-                if (regionTableName != null)
-                {
-                    if (string.IsNullOrEmpty(_tableName))
-                        _tableName = SetTextOCR(regionTableName.PosX, regionTableName.PosY, regionTableName.Width, regionTableName.Height, regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
-                }
-
+            var regionTableName = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablename");
+            if (regionTableName != null && string.IsNullOrEmpty(_tableName))
+            {
+                _tableName = SetTextOCR(regionTableName.PosX, regionTableName.PosY, regionTableName.Width, regionTableName.Height,
+                    regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
             }
         }
+        #region [Dealer and Positions]
 
+        /// <summary>
+        /// Establece el dealer entre los jugadores
+        /// </summary>
         private void SetDealerPlayer()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
                 return;
 
+            // Uso de using para garantizar liberación de recursos
             using var bitmap = new Bitmap(_formImage.pbImagen.Image);
-            var emptyPositions = _scrapeResult.DataPlayer
+
+            var emptyPositions = _scrapeResult.Players
                 .Where(w => w.Empty || w.SitOut)
                 .Select(s => s.ValuePosition)
                 .ToList();
@@ -1090,48 +1377,71 @@ namespace OpenScrape.App
             }
         }
 
+        /// <summary>
+        /// Establece el dealer para un jugador específico
+        /// </summary>
+        /// <param name="playerNumber">Número del jugador</param>
+        /// <param name="emptyPositions">Lista de posiciones vacías</param>
         private void SetDealerForPlayer(int playerNumber, List<int> emptyPositions)
         {
+            // Validación de parámetros
+            if (emptyPositions == null)
+                throw new ArgumentNullException(nameof(emptyPositions));
+
             // Para P0 (caso especial)
             if (playerNumber == 0)
             {
-                _scrapeResult.P0Dealer = true;
-                _scrapeResult.P0Position = TablePosition.Button;
+                _scrapeResult.IsDealer = true;
+                _scrapeResult.Position = TablePosition.Button;
+                return;
+            }
+
+            // Uso de FirstOrDefault con validación
+            var player = _scrapeResult.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+            if (player == null)
+            {
+                LogError($"No se encontró el jugador P{playerNumber}");
                 return;
             }
 
             // Actualizar estado del jugador
-            var player = _scrapeResult.DataPlayer.First(n => n.Name == $"P{playerNumber}");
             player.Dealer = true;
             player.Empty = false;
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
-            _scrapeResult.P0Position = DetermineP0Position(playerNumber, emptyPositions);
+            _scrapeResult.Position = DetermineP0Position(playerNumber, emptyPositions);
         }
 
+        /// <summary>
+        /// Determina la posición de P0 basado en la posición del dealer y asientos vacíos
+        /// </summary>
+        /// <param name="dealerPosition">Posición del dealer</param>
+        /// <param name="emptyPositions">Lista de posiciones vacías</param>
+        /// <returns>Posición de la mesa para P0</returns>
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
             var positionMap = new Dictionary<int, (TablePosition defaultPosition, Dictionary<int, TablePosition> emptyPositions)>
-            {
-                { 1, (TablePosition.CutOff, new Dictionary<int, TablePosition>()) },
-                { 2, (TablePosition.Middle, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.CutOff },
-                    { 2, TablePosition.Early }
-                })},
-                { 3, (TablePosition.Early, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.Middle },
-                    { 2, TablePosition.CutOff }
-                })},
-                { 4, (TablePosition.BigBlind, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.SmallBlind }
-                })},
-                { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
-            };
+        {
+            { 1, (TablePosition.CutOff, new Dictionary<int, TablePosition>()) },
+            { 2, (TablePosition.Middle, new Dictionary<int, TablePosition> {
+                { 1, TablePosition.CutOff },
+                { 2, TablePosition.Early }
+            })},
+            { 3, (TablePosition.Early, new Dictionary<int, TablePosition> {
+                { 1, TablePosition.Middle },
+                { 2, TablePosition.CutOff }
+            })},
+            { 4, (TablePosition.BigBlind, new Dictionary<int, TablePosition> {
+                { 1, TablePosition.SmallBlind }
+            })},
+            { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
+        };
 
+            // Uso de TryGetValue con validación
             if (!positionMap.TryGetValue(dealerPosition, out var positionInfo))
                 return TablePosition.None;
 
-            // Contar asientos vacíos relevantes
+            // Uso de LINQ para contar asientos vacíos relevantes
             var relevantEmptySeats = emptyPositions.Count(pos =>
                 dealerPosition < 4 ? pos < dealerPosition : pos > dealerPosition);
 
@@ -1143,31 +1453,47 @@ namespace OpenScrape.App
             return positionInfo.defaultPosition;
         }
 
+        /// <summary>
+        /// Establece los jugadores que están en "sit out"
+        /// </summary>
         private void SetSitOutPlayer()
         {
+            // Validación temprana con return
             var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "SitOut");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap?.Regions == null || _formImage.pbImagen.Image == null)
                 return;
 
+            // Inicialización de diccionario con object initializer
             var colorSitOutMap = new Dictionary<string, int>
-            {
-                {"p1sitout", 0},
-                {"p2sitout", 0},
-                {"p3sitout", 2},
-                {"p4sitout", 1},
-                {"p5sitout", 1}
-            };
+        {
+            {"p1sitout", 0},
+            {"p2sitout", 0},
+            {"p3sitout", 2},
+            {"p4sitout", 1},
+            {"p5sitout", 1}
+        };
 
+            // Uso de foreach con validación
             foreach (var region in regionTableMap.Regions)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "sitout");
-                if (playerNumber == null) continue;
+                if (playerNumber == null)
+                    continue;
 
-                var player = _scrapeResult.DataPlayer.First(f => f.Name == $"P{playerNumber}");
-                var colorIndex = colorSitOutMap[region.Name];
+                // Uso de FirstOrDefault con validación
+                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                if (player == null)
+                    continue;
 
-                if (!player.Empty && !player.Active &&
-                    SetTextOCR(region.PosX, region.PosY, region.Width, region.Height, region.Umbral, region.InactiveUmbral, region.IsOnlyNumber).Contains("SIT"))
+                var colorIndex = colorSitOutMap.TryGetValue(region.Name, out var index) ? index : 0;
+
+                // Extracción de condición compleja a variable
+                bool isSittingOut = !player.Empty && !player.Active &&
+                    SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                               region.Umbral, region.InactiveUmbral, region.IsOnlyNumber)
+                    .Contains("SIT");
+
+                if (isSittingOut)
                 {
                     player.SitOut = true;
                     player.Empty = true;
@@ -1175,165 +1501,111 @@ namespace OpenScrape.App
             }
         }
 
+        /// <summary>
+        /// Determina si el jugador P0 está en posición
+        /// </summary>
         private void SetIsInPosition()
         {
-            foreach (var item in _scrapeResult.DataPlayer.Where(w => w.Active && w.ValuePosition != 5 && w.ValuePosition != 6))
+            // Uso de LINQ para simplificar lógica
+            var activePlayers = _scrapeResult.Players.Where(w => w.Active &&
+                                                                   w.ValuePosition != 5 &&
+                                                                   w.ValuePosition != 6);
+
+            // Por defecto, asumimos que está en posición
+            _scrapeResult.IsInPosition = true;
+
+            // Uso de Any para simplificar condiciones
+            if (activePlayers.Any(item => item.ValuePosition > (int)_scrapeResult.Position) ||
+                activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
             {
-                if (item.ValuePosition > (int)_scrapeResult.P0Position)
-                {
-                    _scrapeResult.U0InPosition = false;
-                    break;
-                }
-                else
-                    _scrapeResult.U0InPosition = true;
-
-                if (item.Position == TablePosition.Button && item.Active)
-                {
-                    _scrapeResult.U0InPosition = false;
-                    break;
-                }
-
+                _scrapeResult.IsInPosition = false;
             }
 
-            if (_scrapeResult.P0Position == TablePosition.BigBlind && (_scrapeResult.DataPlayer.Any(a => a.Active && a.Position != TablePosition.SmallBlind)))
-                _scrapeResult.U0InPosition = false;
-
-            if (_scrapeResult.P0Position == TablePosition.SmallBlind)
-                _scrapeResult.U0InPosition = false;
-
-            if (_scrapeResult.P0Position == TablePosition.BigBlind && (_scrapeResult.DataPlayer.Where(w => w.Active).Count() == 1 && _scrapeResult.DataPlayer.First(w => w.Active).Position == TablePosition.SmallBlind))
-                _scrapeResult.U0InPosition = true;
-        }
-
-        private void CreateLogWithMarkedHands()
-        {
-            DirectoryInfo directoryInfo = new DirectoryInfo(_folderPath);
-            FileInfo[] archivosPNG = directoryInfo.GetFiles("*.png")
-                                                .Where(file => file.Extension.ToLower() == ".png")
-                                                .ToArray();
-
-            if (archivosPNG.Length > 0)
+            // Simplificación de condiciones específicas
+            if (_scrapeResult.Position == TablePosition.BigBlind &&
+                _scrapeResult.Players.Any(a => a.Active && a.Position != TablePosition.SmallBlind))
             {
-                FileInfo ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
-                                                  .First();
-
-                string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
-                string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
-
-                if (!File.Exists(rutaArchivoTexto))
-                    File.WriteAllText(rutaArchivoTexto, ultimaImagen.Name);
-                else
-                    File.AppendAllText(rutaArchivoTexto, Environment.NewLine + ultimaImagen.Name);
+                _scrapeResult.IsInPosition = false;
             }
 
-            cbMark.Checked = false;
-        }
-
-        private string GetTextSitOutByPosition(int x, int y, int width, int height, int umbral)
-        {
-            var imgSitOut = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), umbral));
-
-            var tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory);
-            var ocrengine = new TesseractEngine(Path.Combine(tessdataPath, "tessdata"), "eng", EngineMode.Default);
-            Rect area = new Rect(x, y, width, height);
-
-            var res = ocrengine.Process(imgSitOut, area, PageSegMode.Auto);
-
-            //if (umbral == 168)
-            //{
-            //    pictureBox1.Image = CaptureWindowsHelper.BinaryImage(_getCropImageUseCase.Execute(new GetCropImageUseCaseRequest { Source = new Bitmap(_formImage.pbImagen.Image), Section = new Rectangle(x, y, width, height) }).Image, umbral);
-
-            //    label4.Text = res.GetText().Trim();
-            //}
-
-            return res.GetText().Trim();
-        }
-
-        private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> GetPreflopHeroPosition()
-        {
-            Dictionary<TablePosition, decimal> players = new Dictionary<TablePosition, decimal>();
-
-            foreach (var item in _scrapeResult.DataPlayer)
+            if (_scrapeResult.Position == TablePosition.SmallBlind)
             {
-                if (!item.Empty || !item.SitOut)
-                {
-                    if (item.Position != TablePosition.None)
-                        players[item.Position] = item.Bet;
-                }
+                _scrapeResult.IsInPosition = false;
             }
 
-            //Comprobar si llega la mano sin subir
-            var position = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-
-            foreach (var heroPosition in Enum.GetValues(typeof(TablePosition)).Cast<TablePosition>())
+            // Uso de LINQ para simplificar condición
+            if (_scrapeResult.Position == TablePosition.BigBlind &&
+                _scrapeResult.Players.Count(w => w.Active) == 1 &&
+                _scrapeResult.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
             {
-                if (heroPosition != TablePosition.None)
-                    position[heroPosition] = new Dictionary<TablePosition, decimal>(players);
+                _scrapeResult.IsInPosition = true;
             }
-
-            return position;
         }
 
-        private string GenerateRandomNumbers()
-        {
-            Random random = new Random();
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < 10; i++)
-            {
-                sb.Append(random.Next(0, 10));
-            }
-
-            return sb.ToString();
-        }
-
+        /// <summary>
+        /// Establece las posiciones de los villanos basado en la posición de P0
+        /// </summary>
+        /// <param name="p0Position">Posición de P0</param>
         private void SetVillainPosition(TablePosition p0Position)
         {
-            //string[] playerNames = { "P1", "P2", "P3", "P4", "P5" };
-            var playerNames = _scrapeResult.DataPlayer.ToList();
-            List<TablePosition> positions = new List<TablePosition>();
+            var playerNames = _scrapeResult.Players.ToList();
+            if (playerNames == null || !playerNames.Any())
+                return;
 
-            if (playerNames != null)
+            // MOSTRAR CAMBIOS: Uso de switch expression
+            var positions = p0Position switch
             {
-                switch (p0Position)
-                {
-                    case TablePosition.BigBlind:
-                        positions.AddRange(new List<TablePosition> { TablePosition.Early, TablePosition.Middle, TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    case TablePosition.SmallBlind:
-                        positions.AddRange(new List<TablePosition> { TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle, TablePosition.CutOff, TablePosition.Button });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    case TablePosition.Button:
-                        positions.AddRange(new List<TablePosition> { TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle, TablePosition.CutOff });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    case TablePosition.CutOff:
-                        positions.AddRange(new List<TablePosition> { TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    case TablePosition.Middle:
-                        positions.AddRange(new List<TablePosition> { TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    case TablePosition.Early:
-                        positions.AddRange(new List<TablePosition> { TablePosition.Middle, TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind });
-                        SetVillainPositionExtension(playerNames!, positions);
-                        break;
-                    default:
-                        break;
-                }
-            }
+                TablePosition.BigBlind => new List<TablePosition> {
+                TablePosition.Early, TablePosition.Middle, TablePosition.CutOff,
+                TablePosition.Button, TablePosition.SmallBlind
+            },
+                TablePosition.SmallBlind => new List<TablePosition> {
+                TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
+                TablePosition.CutOff, TablePosition.Button
+            },
+                TablePosition.Button => new List<TablePosition> {
+                TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
+                TablePosition.Middle, TablePosition.CutOff
+            },
+                TablePosition.CutOff => new List<TablePosition> {
+                TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
+                TablePosition.Early, TablePosition.Middle
+            },
+                TablePosition.Middle => new List<TablePosition> {
+                TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
+                TablePosition.BigBlind, TablePosition.Early
+            },
+                TablePosition.Early => new List<TablePosition> {
+                TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
+                TablePosition.SmallBlind, TablePosition.BigBlind
+            },
+                _ => new List<TablePosition>()
+            };
+
+            SetVillainPositionExtension(playerNames, positions);
         }
 
-        private void SetVillainPositionExtension(List<PlayerData>? players, List<TablePosition> positions)
+        /// <summary>
+        /// Extiende la funcionalidad de SetVillainPosition para asignar posiciones a los jugadores
+        /// </summary>
+        /// <param name="players">Lista de jugadores</param>
+        /// <param name="positions">Lista de posiciones a asignar</param>
+        private void SetVillainPositionExtension(List<Player> players, List<TablePosition> positions)
         {
+            // MOSTRAR CAMBIOS: Validación de parámetros
+            if (players == null || positions == null)
+                return;
+
             List<string> playerNames = new List<string> { "P1", "P2", "P3", "P4", "P5" };
+
             foreach (var position in positions)
             {
-                foreach (var player in players!)
+                foreach (var player in players)
                 {
+                    // MOSTRAR CAMBIOS: Validación de null
+                    if (player == null)
+                        continue;
+
                     if (playerNames.Contains(player.Name) && player.Empty)
                     {
                         playerNames.Remove(player.Name);
@@ -1341,7 +1613,9 @@ namespace OpenScrape.App
                             continue;
                     }
 
-                    if (player != null && (!player.Empty || !player.SitOut) && player.Position == TablePosition.None)
+                    // MOSTRAR CAMBIOS: Simplificación de condición
+                    bool shouldAssignPosition = !player.Empty || !player.SitOut;
+                    if (shouldAssignPosition && player.Position == TablePosition.None)
                     {
                         player.Position = position;
                         break;
@@ -1350,417 +1624,689 @@ namespace OpenScrape.App
             }
         }
 
-        private async Task ObtainCardsPlayer()
+        #endregion
+
+        #region [Image capture and process]
+
+        /// <summary>
+        /// Crea un archivo de log con las manos marcadas
+        /// </summary>
+        private void CreateLogWithMarkedHands()
         {
-            var session = _dataBase.LightweightSession();
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "User");
-            if (regionTableMap != null && regionTableMap.Regions != null)
+            // Uso de using para garantizar liberación de recursos
+            try
             {
-                foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
+                var directoryInfo = new DirectoryInfo(_folderPath);
+                if (!Directory.Exists(_folderPath))
                 {
-                    var imageToBase64 = _imageCropperService.CropImageToBase64(_formImage.pbImagen.Image, region.PosX, region.PosY, region.Width, region.Height);
+                    LogError($"El directorio {_folderPath} no existe");
+                    return;
+                }
 
-                    if (_cardsImages == null)
+                // Uso de LINQ para filtrar archivos
+                var archivosPNG = directoryInfo.GetFiles("*.png")
+                    .Where(file => file.Extension.ToLower() == ".png")
+                    .ToArray();
+
+                if (archivosPNG.Length > 0)
+                {
+                    // Uso de LINQ para ordenar
+                    var ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
+                        .First();
+
+                    string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
+                    string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
+
+                    // Uso de File.AppendAllText para simplificar
+                    string contenido = File.Exists(rutaArchivoTexto)
+                        ? Environment.NewLine + ultimaImagen.Name
+                        : ultimaImagen.Name;
+
+                    File.AppendAllText(rutaArchivoTexto, contenido);
+                }
+
+                cbMark.Checked = false;
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al crear log de manos marcadas: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene las posiciones de preflop para el héroe
+        /// </summary>
+        /// <returns>Diccionario con posiciones y apuestas</returns>
+        private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> GetPreflopHeroPosition()
+        {
+            // Inicialización de diccionario
+            var players = new Dictionary<TablePosition, decimal>();
+
+            // Uso de LINQ para filtrar y asignar
+            foreach (var item in _scrapeResult.Players.Where(p => !p.Empty || !p.SitOut))
+            {
+                if (item.Position != TablePosition.None)
+                    players[item.Position] = item.Bet;
+            }
+
+            // Inicialización de diccionario con posiciones
+            var position = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
+
+            // Uso de LINQ para generar posiciones
+            foreach (var heroPosition in Enum.GetValues(typeof(TablePosition))
+                                            .Cast<TablePosition>()
+                                            .Where(p => p != TablePosition.None))
+            {
+                position[heroPosition] = new Dictionary<TablePosition, decimal>(players);
+            }
+
+            return position;
+        }
+
+        /// <summary>
+        /// Genera una cadena de números aleatorios
+        /// </summary>
+        /// <returns>Cadena de 10 dígitos aleatorios</returns>
+        private string GenerateRandomNumbers()
+        {
+            var randomBytes = new byte[10];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(randomBytes);
+
+            // Convertir los bytes a una cadena de números
+            var sb = new StringBuilder(10);
+            foreach (var b in randomBytes)
+            {
+                sb.Append(b % 10); // Asegurarse de que cada byte se convierta en un dígito (0-9)
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Obtiene las cartas del jugador de forma asíncrona
+        /// </summary>
+        private async Task ObtainCardsPlayerAsync()
+        {
+            // Uso de using para garantizar liberación de recursos
+            using var session = _dataBase.LightweightSession();
+
+            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "User");
+            if (regionTableMap?.Regions == null || _formImage.pbImagen.Image == null)
+                return;
+
+            // Carga de cartas una sola vez
+            if (_cardsImages == null)
+            {
+                var cards = await session.Query<Card>().ToListAsync();
+                _cardsImages = cards.Select(item => item.ToDto()).ToList();
+            }
+
+            // Uso de LINQ para filtrar regiones
+            foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
+            {
+                var imageToBase64 = _imageCropperService.CropImageToBase64(
+                    _formImage.pbImagen.Image,
+                    region.PosX,
+                    region.PosY,
+                    region.Width,
+                    region.Height);
+
+                if (_cardsImages == null || !_cardsImages.Any())
+                    continue;
+
+                // Uso de LINQ para encontrar la mejor coincidencia
+                var bestMatch = _cardsImages
+                    .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
+                    .Select(item => new
                     {
-                        _cardsImages = [];
-                        var cards = await session.Query<Card>().ToListAsync();
-                        foreach (var item in cards)
-                        {
-                            _cardsImages.Add(item.ToDto());
-                        }
-                    }
+                        Card = item,
+                        Percentage = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64)
+                    })
+                    .OrderByDescending(x => x.Percentage)
+                    .FirstOrDefault();
 
-                    //await Task.Run(async () => await _cardUseCases.GetAllCards.ExecuteAsync());
+                if (bestMatch == null)
+                    continue;
 
-                    if (_cardsImages != null)
-                    {
-                        var maxPorcentaje = 0.0;
-                        var card = new CardDTO { Name = string.Empty };
-
-                        foreach (var item in _cardsImages)
-                        {
-                            if (!string.IsNullOrEmpty(item.ImageBase64))
-                            {
-                                var pocentaje = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64);
-
-                                if (pocentaje > maxPorcentaje)
-                                {
-                                    maxPorcentaje = pocentaje;
-                                    card = item;
-                                }
-                            }
-                        }
-
-                        switch (region.Name)
-                        {
-                            case "u0cardface0":
-                                _scrapeResult.U0CardFace0 = card.Name.Split(" ")[0];
-                                _scrapeResult.U0CardForce0 = card.Force;
-                                _scrapeResult.U0CardSuit0 = card.Suit;
-                                break;
-                            case "u0cardface1":
-                                _scrapeResult.U0CardFace1 = card.Name.Split(" ")[0];
-                                _scrapeResult.U0CardForce1 = card.Force;
-                                _scrapeResult.U0CardSuit1 = card.Suit;
-                                break;
-                            default:
-                                break;
-                        }
-
-                    }
+                // Uso de switch expression
+                switch (region.Name)
+                {
+                    case "u0cardface0":
+                        _scrapeResult.HoleCard1Face = bestMatch.Card.Name.Split(" ")[0];
+                        _scrapeResult.HoleCard1Rank = bestMatch.Card.Force;
+                        _scrapeResult.HoleCard1Suit = bestMatch.Card.Suit;
+                        break;
+                    case "u0cardface1":
+                        _scrapeResult.HoleCard2Face = bestMatch.Card.Name.Split(" ")[0];
+                        _scrapeResult.HoleCard2Rank = bestMatch.Card.Force;
+                        _scrapeResult.HoleCard2Suit = bestMatch.Card.Suit;
+                        break;
                 }
             }
         }
 
+        /// <summary>
+        /// Establece el valor de la apuesta para una región
+        /// </summary>
+        /// <returns>Valor decimal de la apuesta</returns>
         private decimal SetBetValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
+            // Validación de parámetros
+            if (_formImage.pbImagen.Image == null)
+                return 0;
+
             var ocr = new OcrResult();
 
+            // Uso de valores por defecto para parámetros nulos
             ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                        _formImage.pbImagen.Image,
-                        posX,
-                        posY,
-                        width,
-                        height,
-                        umbral.GetValueOrDefault(),
-                        isOnlyNumber.GetValueOrDefault());
+                _formImage.pbImagen.Image,
+                posX,
+                posY,
+                width,
+                height,
+                umbral ?? 0,
+                isOnlyNumber ?? false);
 
+            // Si no se obtiene texto, intentar con umbral inactivo
             if (string.IsNullOrEmpty(ocr.Text))
             {
                 ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                        _formImage.pbImagen.Image,
-                        posX,
-                        posY,
-                        width,
-                        height,
-                        inactiveUmbral.GetValueOrDefault(),
-                        isOnlyNumber.GetValueOrDefault());
+                    _formImage.pbImagen.Image,
+                    posX,
+                    posY,
+                    width,
+                    height,
+                    inactiveUmbral ?? 0,
+                    isOnlyNumber ?? false);
             }
 
-            decimal bet;
-            decimal.TryParse(ocr.Text, out bet);
-            return bet;
+            // Uso de TryParse con out variable
+            if (decimal.TryParse(ocr.Text, out var bet))
+                return bet;
+
+            return 0;
         }
 
+        /// <summary>
+        /// Extrae texto OCR de una región específica
+        /// </summary>
+        /// <returns>Texto extraído</returns>
         private string SetTextOCR(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
+            // Validación de parámetros
+            if (_formImage.pbImagen.Image == null)
+                return string.Empty;
+
             var ocr = new OcrResult();
 
+            // Uso de valores por defecto para parámetros nulos
             ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                        _formImage.pbImagen.Image,
-                        posX,
-                        posY,
-                        width,
-                        height,
-                        umbral.GetValueOrDefault(),
-                        isOnlyNumber.GetValueOrDefault());
+                _formImage.pbImagen.Image,
+                posX,
+                posY,
+                width,
+                height,
+                umbral ?? 0,
+                isOnlyNumber ?? false);
 
+            // Si no se obtiene texto, intentar con umbral inactivo
             if (string.IsNullOrEmpty(ocr.Text))
             {
                 ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                        _formImage.pbImagen.Image,
-                        posX,
-                        posY,
-                        width,
-                        height,
-                        inactiveUmbral.GetValueOrDefault(),
-                        isOnlyNumber.GetValueOrDefault());
+                    _formImage.pbImagen.Image,
+                    posX,
+                    posY,
+                    width,
+                    height,
+                    inactiveUmbral ?? 0,
+                    isOnlyNumber ?? false);
             }
 
             return ocr.Text ?? string.Empty;
         }
 
+        /// <summary>
+        /// Obtiene una imagen mientras se está jugando
+        /// </summary>
         private void GetImageWhilePlaying()
         {
-
-            //_folderPath = @"C:\Code\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
-
-
-            //portatil
-            _folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games\Game_" + new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_");
-
-            _folderPath += $"\\{_session}";
-
-            if (!Directory.Exists(_folderPath))
+            try
             {
-                Directory.CreateDirectory(_folderPath);
+                // Uso de Path.Combine para rutas
+                string baseFolder = Path.Combine(
+                    "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
+                    $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}");
 
+                _folderPath = Path.Combine(baseFolder, _session);
+
+                // Crear directorio si no existe
+                if (!Directory.Exists(_folderPath))
+                {
+                    Directory.CreateDirectory(_folderPath);
+                }
+
+                // Uso de Path.Combine para rutas
+                var path = Path.Combine(_folderPath, $"game_{DateTime.Now.Ticks}.png");
+
+                _useCase.ExecuteImage(path);
+
+                // Uso de using para garantizar liberación de recursos
+                using var windowImg = Image.FromFile(path);
+
+                // Ajuste de tamaño de formulario
+                _formImage.Width = windowImg.Width + _formImage.Width / 11;
+                _formImage.Height = windowImg.Height + _formImage.Height / 4;
+
+                _formImage.pbImagen.Width = windowImg.Width;
+                _formImage.pbImagen.Height = windowImg.Height;
+
+                // Clonar imagen para evitar problemas de acceso
+                _formImage.pbImagen.Image = new Bitmap(windowImg);
+                _formImage.pbImagen.Refresh();
+
+                // Uso de Task.Delay en lugar de Thread.Sleep
+                Task.Delay(100).Wait();
             }
-
-            var path = _folderPath + @"\game_" + DateTime.Now.Ticks + ".png";
-
-            _useCase.ExecuteImage(path);
-
-            var windowImg = Image.FromFile(path);
-
-            _formImage.Width = 461;
-            _formImage.Height = 327;
-
-            _formImage.Width = windowImg.Width + _formImage.Width / 11;
-            _formImage.Height = windowImg.Height + _formImage.Height / 4;
-
-            _formImage.pbImagen.Width = windowImg.Width;
-            _formImage.pbImagen.Height = windowImg.Height;
-
-            _formImage.pbImagen.Image = windowImg;
-            _formImage.pbImagen.Refresh();
-
-            Thread.Sleep(100);
+            catch (Exception ex)
+            {
+                LogError($"Error al obtener imagen: {ex.Message}", ex);
+            }
         }
 
+        #endregion
+
+        #region [UI Events]
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón de ventana
+        /// </summary>
         private void btnWindow_Click(object sender, EventArgs e)
         {
-
-            User32.RECT windowRect = new User32.RECT();
-
-            if (_handle == IntPtr.Zero)
+            try
             {
-                Thread.Sleep(2000);
-                _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+                User32.RECT windowRect = new User32.RECT();
 
-                User32.GetWindowRect(_handle, ref windowRect);
-
-                _locWindowRect = windowRect;
-
-                _frmOverlay = new FrmOverlay();
-                _frmOverlay.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)), windowRect.bottom - 150);
-                _frmOverlay.Show();
-
-                //_formAction = new FormAction();
-                //_formAction.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_formAction.Size.Width / 2)), windowRect.bottom - 50);
-                //_formAction.Show();
-            }
-
-            if (_handle != IntPtr.Zero)
-            {
-                User32.GetWindowRect(_handle, ref windowRect);
-                if (windowRect.left != _locWindowRect.left || windowRect.right != _locWindowRect.right || windowRect.top != _locWindowRect.top || windowRect.bottom != _locWindowRect.bottom)
+                if (_handle == IntPtr.Zero)
                 {
+                    // Uso de Task.Delay en lugar de Thread.Sleep
+                    Task.Delay(2000).Wait();
+                    _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+
+                    User32.GetWindowRect(_handle, ref windowRect);
                     _locWindowRect = windowRect;
-                    this.Invoke((MethodInvoker)delegate
+
+                    // Inicialización de overlay
+                    _frmOverlay = new FrmOverlay
                     {
-                        _frmOverlay.Location = new Point(windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)), windowRect.bottom - 50);
-                    });
+                        Location = new Point(
+                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)),
+                            windowRect.bottom - 150)
+                    };
+                    _frmOverlay.Show();
                 }
+
+                if (_handle != IntPtr.Zero)
+                {
+                    User32.GetWindowRect(_handle, ref windowRect);
+
+                    // Extracción de condición compleja a variable
+                    bool windowMoved = windowRect.left != _locWindowRect.left ||
+                                      windowRect.right != _locWindowRect.right ||
+                                      windowRect.top != _locWindowRect.top ||
+                                      windowRect.bottom != _locWindowRect.bottom;
+
+                    if (windowMoved)
+                    {
+                        _locWindowRect = windowRect;
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            if (_frmOverlay != null)
+                            {
+                                _frmOverlay.Location = new Point(
+                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)),
+                                    windowRect.bottom - 50);
+                            }
+                        });
+                    }
+                }
+
+                if (!_backgroundExecute)
+                    backgroundWorker1.RunWorkerAsync();
             }
-
-            if (!_backgroundExecute)
-                backgroundWorker1.RunWorkerAsync();
-
+            catch (Exception ex)
+            {
+                LogError($"Error en btnWindow_Click: {ex.Message}", ex);
+            }
         }
 
-
+        /// <summary>
+        /// Maneja el evento DoWork del BackgroundWorker
+        /// </summary>
         private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
-            _backgroundExecute = true;
-
-            User32.RECT windowRect = new User32.RECT();
-            User32.GetWindowRect(_handle, ref windowRect);
-
-            while (true)
+            try
             {
-                if (_frmOverlay != null && !_frmOverlay.Visible)
+                _backgroundExecute = true;
+
+                User32.RECT windowRect = new User32.RECT();
+                User32.GetWindowRect(_handle, ref windowRect);
+
+                while (true)
                 {
-                    e.Cancel = true;
-                    return;
+                    // Validación de overlay
+                    if (_frmOverlay == null || !_frmOverlay.Visible)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+
+                    // Uso de using para garantizar liberación de recursos
+                    using var img = _useCase.Execute(_handle);
+
+                    // Validación de regiones
+                    var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                    var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
+
+                    if (regionAction == null || flop == null)
+                    {
+                        Task.Delay(100).Wait();
+                        continue;
+                    }
+
+                    // Uso de using para garantizar liberación de recursos
+                    using var bitmap = new Bitmap(img);
+                    Color colorAction = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
+                    Color colorFlop = bitmap.GetPixel(flop.PosX, flop.PosY);
+
+                    this.Invoke((MethodInvoker)delegate
+                    {
+                        // Extracción de condiciones a variables
+                        bool shouldCaptureFlop = colorAction.B == 24 && !_executeCapture && colorFlop.B == 255;
+                        bool shouldCapture = colorAction.B == 24 && !_executeCapture;
+
+                        if (shouldCaptureFlop)
+                        {
+                            _isFlop = true;
+                        }
+
+                        if (shouldCapture)
+                        {
+                            btnCapture_Click(sender, e);
+                        }
+
+                        if (colorAction.B != 24)
+                            _executeCapture = false;
+                    });
+
+                    btnWindow_Click(sender, e);
                 }
-
-                var img = _useCase.Execute(_handle);
-
-                var regionAction = _regionsTableMap.FirstOrDefault(f => f.Id == "User")?.Regions?.First(x => x.Name == "uAction");
-                Color colorAction = new Bitmap(img).GetPixel(regionAction.PosX, regionAction.PosY);
-
-                var flop = _regionsTableMap.FirstOrDefault(f => f.Id == "Table")?.Regions?.First(x => x.Name == "isFlop");
-                Color colorFlop = new Bitmap(img).GetPixel(flop.PosX, flop.PosY);
-
-                this.Invoke((MethodInvoker)delegate
-                {
-                    if (colorAction.B == 24 && !_executeCapture && colorFlop.B == 255)
-                    {
-                        _isFlop = true;
-                        //btnCapture_Click(sender, e);
-                    }
-
-                    if (colorAction.B == 24 && !_executeCapture)
-                    {
-                        btnCapture_Click(sender, e);
-                    }
-
-                    if (colorAction.B != 24)
-                        _executeCapture = false;
-                });
-
-                btnWindow_Click(sender, e);
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error en BackgroundWorker1_DoWork: {ex.Message}", ex);
+                e.Cancel = true;
             }
         }
 
-
-        //private void SetBoardValues()
-        //{
-        //    if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace0))
-        //        pbCard0.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace0))?.ImageBase64 ?? string.Empty) : null;
-        //    else
-        //        pbCard0.Image = null;
-
-        //    if (!string.IsNullOrWhiteSpace(_scrapeResult.U0CardFace1))
-        //        pbCard1.Image = _scrapeResult.U0CardFace0 != null ? _imageCropperService.Base64ToImage(_cards.FirstOrDefault(x => x.Id.Contains(_scrapeResult.U0CardFace1))?.ImageBase64 ?? string.Empty) : null;
-        //    else
-        //        pbCard1.Image = null;
-        //}
-
+        /// <summary>
+        /// Habilita los botones de control
+        /// </summary>
         private void EnableButtons()
         {
-            btnPlusHeight.Enabled = true;
-            btnPlusWidth.Enabled = true;
-            btnMinusHeight.Enabled = true;
-            btnMinusWidth.Enabled = true;
-            btnUp.Enabled = true;
-            btnUpRight.Enabled = true;
-            btnRigth.Enabled = true;
-            btnDownRight.Enabled = true;
-            btnDown.Enabled = true;
-            btnDownLeft.Enabled = true;
-            btnLeft.Enabled = true;
-            btnUpLeft.Enabled = true;
+            // Uso de array y foreach para simplificar
+            var buttons = new[]
+            {
+                btnPlusHeight, btnPlusWidth, btnMinusHeight, btnMinusWidth,
+                btnUp, btnUpRight, btnRigth, btnDownRight, btnDown,
+                btnDownLeft, btnLeft, btnUpLeft
+            };
+
+            foreach (var button in buttons)
+            {
+                button.Enabled = true;
+            }
         }
 
-        #region Executes
+        #endregion
 
+
+        #region [Regions manipulation methods]
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para aumentar el ancho
+        /// </summary>
         private void btnPlusWidth_Click(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width + _speed };
                 _selectedRegion = updatedRegion;
                 tbWidth.Text = _selectedRegion.Width.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-
-                _selectedRegion = updatedRegion;
             }
 
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón para disminuir el ancho
+        /// </summary>
         private void btnMinusWidth_Click(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width - _speed };
+                using var lapiz = new Pen(Color.Red);
+
+                // MOSTRAR CAMBIOS: Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { Width = Math.Max(1, _selectedRegion.Width - _speed) };
                 _selectedRegion = updatedRegion;
                 tbWidth.Text = _selectedRegion.Width.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-
-                _selectedRegion = updatedRegion;
             }
 
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón para aumentar la altura
+        /// </summary>
         private void btnPlusHeight_Click(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height + _speed };
                 _selectedRegion = updatedRegion;
                 tbHeight.Text = _selectedRegion.Height.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-
-                _selectedRegion = updatedRegion;
             }
 
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón para disminuir la altura
+        /// </summary>
         private void btnMinusHeight_Click(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height - _speed };
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { Height = Math.Max(1, _selectedRegion.Height - _speed) };
                 _selectedRegion = updatedRegion;
                 tbHeight.Text = _selectedRegion.Height.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-
-                _selectedRegion = updatedRegion;
             }
 
             _img = _formImage.pbImagen.Image;
         }
 
-
-        #endregion
-
-        #region Movimiento Region
-
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover a la derecha
+        /// </summary>
         private void btnRigth_Click(object sender, EventArgs e)
         {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX + _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-
-                _img = _formImage.pbImagen.Image;
-            }
+            // Extracción a método común
+            MoveRegion(offsetX: _speed, offsetY: 0);
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover a la izquierda
+        /// </summary>
         private void btnLeft_Click(object sender, EventArgs e)
         {
-            if (_selectedRegion != null)
+            // Extracción a método común
+            MoveRegion(offsetX: -_speed, offsetY: 0);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia abajo
+        /// </summary>
+        private void btnDown_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: 0, offsetY: _speed);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia arriba
+        /// </summary>
+        private void btnUp_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: 0, offsetY: -_speed);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia arriba-izquierda
+        /// </summary>
+        private void btnUpLeft_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: -_speed, offsetY: -_speed);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia arriba-derecha
+        /// </summary>
+        private void btnUpRight_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: _speed, offsetY: -_speed);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia abajo-izquierda
+        /// </summary>
+        private void btnDownLeft_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: -_speed, offsetY: _speed);
+        }
+
+        /// <summary>
+        /// Maneja el evento de clic en el botón para mover hacia abajo-derecha
+        /// </summary>
+        private void btnDownRight_Click(object sender, EventArgs e)
+        {
+            // Extracción a método común
+            MoveRegion(offsetX: _speed, offsetY: _speed);
+        }
+
+        /// <summary>
+        /// Método común para mover la región seleccionada
+        /// </summary>
+        /// <param name="offsetX">Desplazamiento en X</param>
+        /// <param name="offsetY">Desplazamiento en Y</param>
+        private void MoveRegion(int offsetX, int offsetY)
+        {
+            // Método común para mover región
+            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+                return;
+
+            _formImage.pbImagen.Refresh();
+
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                _formImage.pbImagen.Refresh();
+                using var lapiz = new Pen(Color.Red);
 
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
+                // Obtener información de color
+                var rgbResponse = GetColorResponse();
 
-                var updateRegion = _selectedRegion with { PosX = _selectedRegion.PosX - _speed };
+                // Uso de with para crear copia con cambios
+                var updateRegion = _selectedRegion with
+                {
+                    PosX = _selectedRegion.PosX + offsetX,
+                    PosY = _selectedRegion.PosY + offsetY
+                };
+
+                // Actualizar UI
                 tbY.Text = updateRegion.PosY.ToString();
                 tbX.Text = updateRegion.PosX.ToString();
                 _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
 
+                // Actualizar color si es necesario
                 if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
+                {
+                    updateRegion = updateRegion with
+                    {
+                        Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}"
+                    };
+                }
 
                 _selectedRegion = updateRegion;
-
-                _img = _formImage.pbImagen.Image;
             }
+
+            _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Obtiene la respuesta de color RGB para la región seleccionada
+        /// </summary>
+        /// <returns>Respuesta con valores RGB</returns>
         private GetRGBColorResponse GetColorResponse()
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+                return new GetRGBColorResponse();
+
+            // Uso de object initializer
             var rgbRequest = new GetRGBColorRequest
             {
                 Image = (Bitmap)_formImage.pbImagen.Image,
@@ -1773,164 +2319,42 @@ namespace OpenScrape.App
 
             if (_selectedRegion.IsColor.GetValueOrDefault())
             {
-                tbColor.Text = rgbResponse.RColor + rgbResponse.GColor + rgbResponse.BColor;
+                tbColor.Text = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
             }
 
             return rgbResponse;
         }
 
-        private void btnDown_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
+        #endregion
 
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-
-                _img = _formImage.pbImagen.Image;
-            }
-        }
-
-        private void btnUp_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-
-                _img = _formImage.pbImagen.Image;
-            }
-        }
-
-        private void btnUpLeft_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX - _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-                _img = _formImage.pbImagen.Image;
-            }
-        }
-
-        private void btnUpRight_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY - _speed, PosX = _selectedRegion.PosX + _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-                _img = _formImage.pbImagen.Image;
-            }
-        }
-
-        private void btnDownLeft_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX - _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-                _img = _formImage.pbImagen.Image;
-            }
-        }
-
-        private void btnDownRight_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion != null)
-            {
-                _formImage.pbImagen.Refresh();
-
-                _papel = _formImage.pbImagen.CreateGraphics();
-                Pen lapiz = new Pen(Color.Red);
-                GetRGBColorResponse rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with { PosY = _selectedRegion.PosY + _speed, PosX = _selectedRegion.PosX + _speed };
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                if (updateRegion.IsColor.GetValueOrDefault())
-                    updateRegion = updateRegion with { Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}" };
-
-                _selectedRegion = updateRegion;
-                _img = _formImage.pbImagen.Image;
-            }
-        }
+        #region [TextBox Events]
 
 
-
+        /// <summary>
+        /// Maneja el evento de salida del textbox de ancho
+        /// </summary>
         private void tbWidth_Leave(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
+            // Validación de entrada
+            if (!int.TryParse(tbWidth.Text, out int width))
+            {
+                tbWidth.Text = _selectedRegion.Width.ToString();
+                return;
+            }
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { Width = int.Parse(tbWidth.Text) };
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { Width = Math.Max(1, width) };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -1938,16 +2362,31 @@ namespace OpenScrape.App
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de salida del textbox de altura
+        /// </summary>
         private void tbHeight_Leave(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
+            // Validación de entrada
+            if (!int.TryParse(tbHeight.Text, out int height))
+            {
+                tbHeight.Text = _selectedRegion.Height.ToString();
+                return;
+            }
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { Height = int.Parse(tbHeight.Text) };
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { Height = Math.Max(1, height) };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -1955,16 +2394,31 @@ namespace OpenScrape.App
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de salida del textbox de posición X
+        /// </summary>
         private void tbX_Leave(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
+            // Validación de entrada
+            if (!int.TryParse(tbX.Text, out int posX))
+            {
+                tbX.Text = _selectedRegion.PosX.ToString();
+                return;
+            }
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { PosX = int.Parse(tbX.Text) };
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { PosX = posX };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -1972,16 +2426,31 @@ namespace OpenScrape.App
             _img = _formImage.pbImagen.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de salida del textbox de posición Y
+        /// </summary>
         private void tbY_Leave(object sender, EventArgs e)
         {
+            // Validación de región seleccionada
+            if (_selectedRegion == null)
+                return;
+
+            // Validación de entrada
+            if (!int.TryParse(tbY.Text, out int posY))
+            {
+                tbY.Text = _selectedRegion.PosY.ToString();
+                return;
+            }
+
             _formImage.pbImagen.Refresh();
 
-            _papel = _formImage.pbImagen.CreateGraphics();
-            Pen lapiz = new Pen(Color.Red);
-
-            if (_selectedRegion != null)
+            // Uso de using para garantizar liberación de recursos
+            using (_papel = _formImage.pbImagen.CreateGraphics())
             {
-                var updatedRegion = _selectedRegion with { PosY = int.Parse(tbY.Text) };
+                using var lapiz = new Pen(Color.Red);
+
+                // Uso de with para crear copia con cambios
+                var updatedRegion = _selectedRegion with { PosY = posY };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -1991,10 +2460,16 @@ namespace OpenScrape.App
 
         #endregion
 
+        #region [Others UI Events]
+
+        /// <summary>
+        /// Maneja el evento de cambio del checkbox de prueba
+        /// </summary>
         private void cbTest_CheckedChanged(object sender, EventArgs e)
         {
             gbTest.Enabled = cbTest.Checked;
             gbTest.Visible = cbTest.Checked;
+
             if (!gbTest.Enabled)
             {
                 rbFlop.Checked = false;
@@ -2003,18 +2478,32 @@ namespace OpenScrape.App
             }
         }
 
+        /// <summary>
+        /// Maneja el evento de doble clic en el TreeView de tablas
+        /// </summary>
         private void twTables_DoubleClick(object sender, EventArgs e)
         {
             if (sender is TreeView treeView && treeView.SelectedNode != null)
             {
                 var manos = ObtenerManosActionNodo(treeView.SelectedNode);
+
+                // Uso de LINQ para ordenar
                 var manosOrder = manos?.OrderByDescending(o => o.Name).ToList();
                 dgvHands.DataSource = manosOrder;
             }
         }
 
+        /// <summary>
+        /// Obtiene las manos de acción para un nodo seleccionado
+        /// </summary>
+        /// <param name="selectedNode">Nodo seleccionado</param>
+        /// <returns>Lista de manos</returns>
         private List<Domain.ValueObjects.Hand> ObtenerManosActionNodo(TreeNode selectedNode)
         {
+            // Validación de nodo
+            if (selectedNode == null)
+                return new List<Domain.ValueObjects.Hand>();
+
             // Solo procesar si es un nodo hoja (último nivel)
             if (selectedNode.Nodes.Count == 0 &&
                 selectedNode.Parent != null &&
@@ -2029,11 +2518,11 @@ namespace OpenScrape.App
                 // Obtener el nombre de la tabla (nivel raíz)
                 string tableName = selectedNode.Parent.Parent.Text;
 
-                // Buscar la tabla correspondiente
+                // Uso de LINQ para buscar tabla
                 var table = _dataTables?.FirstOrDefault(f => f.Id == tableName);
                 if (table != null)
                 {
-                    // Buscar la posición específica
+                    // Uso de LINQ para buscar posición
                     var position = table.Positions?
                         .FirstOrDefault(p =>
                             p.Name == positionName &&
@@ -2046,25 +2535,21 @@ namespace OpenScrape.App
             return new List<Domain.ValueObjects.Hand>();
         }
 
+        /// <summary>
+        /// Maneja el evento antes de expandir un nodo del TreeView
+        /// </summary>
         private void twTables_BeforeExpand(object sender, TreeViewCancelEventArgs e)
         {
+            // Validación de nodo
+            if (e.Node == null)
+                return;
+
             TreeNode nodeToExpand = e.Node;
 
-            // Obtener todos los nodos del mismo nivel
-            IEnumerable<TreeNode> siblingNodes;
-
-            if (nodeToExpand.Parent == null)
-            {
-                // Nodos raíz
-                siblingNodes = twTables.Nodes.Cast<TreeNode>()
-                    .Where(node => node != nodeToExpand);
-            }
-            else
-            {
-                // Nodos hijo
-                siblingNodes = nodeToExpand.Parent.Nodes.Cast<TreeNode>()
-                    .Where(node => node != nodeToExpand);
-            }
+            // Uso de LINQ para obtener nodos del mismo nivel
+            IEnumerable<TreeNode> siblingNodes = nodeToExpand.Parent == null
+                ? twTables.Nodes.Cast<TreeNode>().Where(node => node != nodeToExpand)
+                : nodeToExpand.Parent.Nodes.Cast<TreeNode>().Where(node => node != nodeToExpand);
 
             // Colapsar todos los nodos hermanos que estén expandidos
             foreach (TreeNode sibling in siblingNodes)
@@ -2076,23 +2561,39 @@ namespace OpenScrape.App
             }
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón de prueba de color
+        /// </summary>
         private void btnTestColor_Click(object sender, EventArgs e)
         {
-            if (_formImage.pbImagen.Image != null)
-            {
-                var color = _colorDetectionService.GetPixelColor(_formImage.pbImagen.Image, _selectedRegion!.PosX, _selectedRegion.PosY);
-                pbColorDebug.BackColor = Color.FromArgb(color.Alpha, color.Red, color.Green, color.Blue);
-                tbTestColor.Text = $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
-            }
+            // Validación de región seleccionada
+            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+                return;
+
+            var color = _colorDetectionService.GetPixelColor(
+                _formImage.pbImagen.Image,
+                _selectedRegion.PosX,
+                _selectedRegion.PosY);
+
+            pbColorDebug.BackColor = Color.FromArgb(color.Alpha, color.Red, color.Green, color.Blue);
+            tbTestColor.Text = $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
         }
 
+        /// <summary>
+        /// Establece el color del PictureBox
+        /// </summary>
+        /// <param name="hexColor">Color en formato hexadecimal</param>
         private void SetPictureBoxColor(string hexColor)
         {
-            if (!string.IsNullOrEmpty(hexColor))
-            {
-                // Asegurarse que el valor hex tenga el formato correcto
-                hexColor = hexColor.Replace("#", "");
+            if (string.IsNullOrEmpty(hexColor))
+                return;
 
+            // Asegurarse que el valor hex tenga el formato correcto
+            hexColor = hexColor.Replace("#", "");
+
+            try
+            {
+                // Uso de using para garantizar liberación de recursos
                 Color color = ColorTranslator.FromHtml("#" + hexColor);
                 using (Bitmap bmp = new Bitmap(pbRegionColor.Width, pbRegionColor.Height))
                 {
@@ -2100,107 +2601,148 @@ namespace OpenScrape.App
                     {
                         g.Clear(color);
                     }
+                    pbRegionColor.Image?.Dispose();
                     pbRegionColor.Image = new Bitmap(bmp);
                 }
             }
+            catch (Exception ex)
+            {
+                LogError($"Error al establecer color: {ex.Message}", ex);
+            }
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón de prueba de texto
+        /// </summary>
         private void btnTestTexto_Click(object sender, EventArgs e)
         {
-            if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+            // Validación de región seleccionada
+            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+                return;
+
+            var ocr = new OcrResult();
+
+            // Uso de valores por defecto para parámetros nulos
+            ocr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImagen.Image,
+                _selectedRegion.PosX,
+                _selectedRegion.PosY,
+                _selectedRegion.Width,
+                _selectedRegion.Height,
+                _selectedRegion.Umbral ?? 0,
+                _selectedRegion.IsOnlyNumber ?? false);
+
+            if (string.IsNullOrEmpty(ocr.Text))
             {
-                var ocr = new OcrResult();
-
                 ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                            _formImage.pbImagen.Image,
-                            _selectedRegion.PosX,
-                            _selectedRegion.PosY,
-                            _selectedRegion.Width,
-                            _selectedRegion.Height,
-                            _selectedRegion.Umbral.GetValueOrDefault(),
-                            _selectedRegion.IsOnlyNumber.GetValueOrDefault());
-
-                if (string.IsNullOrEmpty(ocr.Text))
-                {
-                    ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                            _formImage.pbImagen.Image,
-                            _selectedRegion.PosX,
-                            _selectedRegion.PosY,
-                            _selectedRegion.Width,
-                            _selectedRegion.Height,
-                            _selectedRegion.InactiveUmbral.GetValueOrDefault(),
-                            _selectedRegion.IsOnlyNumber.GetValueOrDefault());
-                }
-
-                tbTestTexto.Text = !string.IsNullOrEmpty(ocr.Text) ? ocr.Text : "Sin resultado";
-                pictureBox1.Image = ocr.Image;
+                    _formImage.pbImagen.Image,
+                    _selectedRegion.PosX,
+                    _selectedRegion.PosY,
+                    _selectedRegion.Width,
+                    _selectedRegion.Height,
+                    _selectedRegion.InactiveUmbral ?? 0,
+                    _selectedRegion.IsOnlyNumber ?? false);
             }
+
+            tbTestTexto.Text = !string.IsNullOrEmpty(ocr.Text) ? ocr.Text : "Sin resultado";
+
+            // Liberar imagen anterior
+            pictureBox1.Image?.Dispose();
+            pictureBox1.Image = ocr.Image;
         }
 
+        /// <summary>
+        /// Maneja el evento de clic en el botón de prueba de carta
+        /// </summary>
         private async void btnTestCarta_Click(object sender, EventArgs e)
         {
-            if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+            // Validación de región seleccionada
+            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
             {
-                var imageToBase64 = _imageCropperService.CropImageToBase64(_formImage.pbImagen.Image, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
+                LogError("No se ha seleccionado una región o la imagen es nula.");
+                return;
+            }
 
+            try
+            {
+                var imageToBase64 = _imageCropperService.CropImageToBase64(
+                    _formImage.pbImagen.Image,
+                    _selectedRegion.PosX,
+                    _selectedRegion.PosY,
+                    _selectedRegion.Width,
+                    _selectedRegion.Height);
+
+                // Carga de cartas una sola vez
                 if (_cardsImages == null)
-                    _cardsImages = await Task.Run(async () => await _cardUseCases.GetAllCards.ExecuteAsync());
-
-                if (_cardsImages != null)
                 {
-                    var maxPorcentaje = 0.0;
+                    _cardsImages = await _cardUseCases.GetAllCards.ExecuteAsync();
+                }
 
-                    foreach (var item in _cardsImages)
-                    {
-
-                        if (!string.IsNullOrEmpty(item.ImageBase64))
+                if (_cardsImages?.Any() == true)
+                {
+                    // Uso de LINQ para encontrar la mejor coincidencia
+                    var bestMatch = _cardsImages
+                        .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
+                        .Select(item => new
                         {
-                            var pocentaje = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64);
+                            Card = item,
+                            Percentage = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64)
+                        })
+                        .OrderByDescending(x => x.Percentage)
+                        .FirstOrDefault();
 
-                            if (pocentaje > maxPorcentaje)
-                            {
-                                maxPorcentaje = pocentaje;
-                                pbTestCarta.Image = _imageCropperService.Base64ToImage(item.ImageBase64);
-                            }
-                        }
+                    if (bestMatch != null)
+                    {
+                        // Liberar imagen anterior
+                        pbTestCarta.Image?.Dispose();
+                        pbTestCarta.Image = _imageCropperService.Base64ToImage(bestMatch.Card.ImageBase64);
                     }
                 }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("No se ha seleccionado una región o la imagen es nula.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                LogError($"Error al probar carta: {ex.Message}", ex);
             }
         }
 
-        private void rbFlop_Click(object sender, EventArgs e)
-        {
-            RadioButton? rb = sender as RadioButton;
-
-            // Si el RadioButton ya está marcado
-            if (rb.Checked)
-            {
-                // Guarda una referencia
-                _lastChecked = rb;
-
-                // Usa BeginInvoke para ejecutar después del evento normal
-                this.BeginInvoke(new Action(() =>
-                {
-                    // Desmarca el RadioButton si sigue siendo el mismo
-                    if (_lastChecked == rb)
-                    {
-                        rb.Checked = false;
-                        _lastChecked = null;
-                    }
-                }));
-            }
-        }
-
+        /// <summary>
+        /// Maneja el evento de clic en el botón de limpiar
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void btnClear_Click(object sender, EventArgs e)
         {
             rbFlop.Checked = false;
             rbTurn.Checked = false;
             rbRiver.Checked = false;
         }
+
+        /// <summary>
+        /// Logs an error message to the output or a log file.
+        /// </summary>
+        /// <param name="message">The error message to log.</param>
+        /// <param name="exception">Optional exception details.</param>
+        private void LogError(string message, Exception? exception = null)
+        {
+            // Example implementation: Log to the console or a file
+            Console.WriteLine($"Error: {message}");
+            if (exception != null)
+            {
+                Console.WriteLine($"Exception: {exception.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Logs an informational message to the output or a log file.
+        /// </summary>
+        /// <param name="message"></param>
+        private void LogInformation(string message)
+        {
+            // Example implementation: Log to the console or a file
+            Console.WriteLine($"Info: {message}");
+        }
+
+        #endregion
     }
 
 

@@ -907,6 +907,7 @@ namespace OpenScrape.App
             cbSpeed.Name = "cbSpeed";
             cbSpeed.Size = new Size(42, 23);
             cbSpeed.TabIndex = 98;
+            cbSpeed.SelectedIndexChanged += cbSpeed_SelectedIndexChanged;
             // 
             // btnUpRight
             // 
@@ -1138,6 +1139,7 @@ namespace OpenScrape.App
             tbHeight.TabIndex = 38;
             tbHeight.Text = "0";
             tbHeight.TextAlign = HorizontalAlignment.Right;
+            tbHeight.Leave += tbHeight_Leave;
             // 
             // label2
             // 
@@ -1156,6 +1158,7 @@ namespace OpenScrape.App
             tbWidth.TabIndex = 36;
             tbWidth.Text = "0";
             tbWidth.TextAlign = HorizontalAlignment.Right;
+            tbWidth.Leave += tbWidth_Leave;
             // 
             // label1
             // 
@@ -1174,6 +1177,7 @@ namespace OpenScrape.App
             tbY.TabIndex = 33;
             tbY.Text = "0";
             tbY.TextAlign = HorizontalAlignment.Right;
+            tbY.Leave += tbY_Leave;
             // 
             // label3
             // 
@@ -1193,6 +1197,7 @@ namespace OpenScrape.App
             tbX.TabIndex = 30;
             tbX.Text = "0";
             tbX.TextAlign = HorizontalAlignment.Right;
+            tbX.Leave += tbX_Leave;
             // 
             // btnUpdateMap
             // 

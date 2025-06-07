@@ -1,9 +1,9 @@
 ﻿using OpenScrape.App.Entities;
 using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Helpers.FlopHelper
+namespace OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper
 {
-    public static class FlopAnalyzerHelper
+    public static class FlopRaiseOverLimperOOPAnalyzerHelper
     {
 
         #region CheckCall
@@ -18,43 +18,43 @@ namespace OpenScrape.App.Helpers.FlopHelper
 
         private static bool IsMediumLowPairVsOvercards(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HavePairOnHand) return false;
+            if (!request.PlayerState.HavePocketPair) return false;
 
-            int pairRank = request.TableScrapeResult.U0CardForce0;
+            int pairRank = request.PlayerState.HoleCard1Rank;
             if (pairRank >= 10) return false; // No es par medio/bajo
 
             // Verifica si hay sobrecartas en el flop
-            return request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).Any(card => card.Force > pairRank);
+            return request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).Any(card => card.Force > pairRank);
         }
 
         private static bool IsSuitedWithDraws(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HaveHandSuited) return false;
+            if (!request.PlayerState.IsSuited) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop);
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop);
 
             // Verifica si hay potencial de color o escalera
-            bool hasFlushDraw = flop.Count(c => c.Suit == request.TableScrapeResult.U0CardSuit0) >= 2;
-            bool hasConnectedCards = request.TableScrapeFlopResult.HaveHandConnected;
+            bool hasFlushDraw = flop.Count(c => c.Suit == request.PlayerState.HoleCard1Suit) >= 2;
+            bool hasConnectedCards = request.TableScrapeFlopResult.HandIsConnected;
 
             return hasFlushDraw || hasConnectedCards;
         }
 
         private static bool IsHighAceVsLowMediumBoard(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HasAce) return false;
+            if (!request.TableScrapeFlopResult.HaveAce) return false;
 
             // Verifica si el flop es bajo/medio (todas las cartas menores a Q)
-            return request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).All(card => card.Force < 12);
+            return request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).All(card => card.Force < 12);
         }
 
         private static bool IsConnectedWithPairVsDangerousBoard(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HaveHandConnected) return false;
+            if (!request.TableScrapeFlopResult.HandIsConnected) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop);
-            var pairRank0 = request.TableScrapeResult.U0CardForce0;
-            var pairRank1 = request.TableScrapeResult.U0CardForce1;
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop);
+            var pairRank0 = request.PlayerState.HoleCard1Rank;
+            var pairRank1 = request.PlayerState.HoleCard2Rank;
 
             // Verifica si tenemos par y hay cartas peligrosas (A, K, Q)
             bool hasPair = flop.Any(c =>
@@ -82,7 +82,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
             // Verifica si tenemos cartas altas (QJ+) y el flop es bajo (menor que 10)
             bool hasHighCards = request.TableScrapeFlopResult.GetLowestRank >= 11; // J o mayor
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             bool isLowFlop = flop.All(c => c.Force < 10);
             bool isUnconnectedFlop = IsUnconnectedBoard(flop);
@@ -92,12 +92,12 @@ namespace OpenScrape.App.Helpers.FlopHelper
 
         private static bool IsAceWeakKickerVsDangerousBoard(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HasAce) return false;
+            if (!request.TableScrapeFlopResult.HaveAce) return false;
 
             // Verifica si el kicker es débil (menor que T)
             bool hasWeakKicker = request.TableScrapeFlopResult.GetLowestRank < 10;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Verifica si el flop es peligroso (coordinado o con cartas altas)
             bool isDangerousFlop = IsCoordinatedBoard(flop) ||
@@ -108,9 +108,9 @@ namespace OpenScrape.App.Helpers.FlopHelper
 
         private static bool IsKingVsDifficultBoard(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HasKing) return false;
+            if (!request.TableScrapeFlopResult.HaveKing) return false;
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Verifica si hay una J o Q en el flop y el board está descoordinado
             bool hasJackOrQueen = flop.Any(c => c.Force == 11 || c.Force == 12);
@@ -121,12 +121,12 @@ namespace OpenScrape.App.Helpers.FlopHelper
 
         public static bool IsMediumPairVsMultipleOvercards(FlopAnalyzerHelperReqest request)
         {
-            if (!request.TableScrapeFlopResult.HavePairOnHand) return false;
+            if (!request.PlayerState.HavePocketPair) return false;
 
-            int pairRank = request.TableScrapeResult.U0CardForce0;
+            int pairRank = request.PlayerState.HoleCard1Rank;
             if (pairRank >= 10) return false; // No es par medio
 
-            var flop = request.TableScrapeResult.DataBoard.Where(w => w.Position == BoardPosition.Flop).ToList();
+            var flop = request.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop).ToList();
 
             // Cuenta las sobrecartas en el flop
             int overcardsCount = flop.Count(c => c.Force > pairRank);
@@ -139,7 +139,7 @@ namespace OpenScrape.App.Helpers.FlopHelper
             var ranks = flop.Select(c => c.Force).OrderBy(r => r).ToList();
             // Verifica si hay 3 cartas consecutivas o potencial de escalera
             return ranks[2] - ranks[0] <= 4 ||
-                   (ranks[1] - ranks[0] <= 3 && ranks[2] - ranks[1] <= 3);
+                   ranks[1] - ranks[0] <= 3 && ranks[2] - ranks[1] <= 3;
         }
 
         private static bool IsUnconnectedBoard(List<BoardData> flop)
@@ -152,10 +152,4 @@ namespace OpenScrape.App.Helpers.FlopHelper
         #endregion
     }
 
-
-    public class FlopAnalyzerHelperReqest
-    {
-        public TableScrapeResult TableScrapeResult { get; set; } = new TableScrapeResult();
-        public TableScrapeFlopResult TableScrapeFlopResult { get; set; } = new TableScrapeFlopResult();
-    }
 }
