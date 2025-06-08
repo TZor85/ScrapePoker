@@ -4,13 +4,13 @@ namespace OpenScrape.App.Aplication
 {
     public class SetFlopForceBoardUseCaseRequest
     {
-        public PlayerGameState TableScrapeResult { get; set; } = new PlayerGameState();
+        public PlayerGameState PlayerState { get; set; } = new PlayerGameState();
         public TableScrapeFlopResult TableScrapeFlopResult { get; set; } = new TableScrapeFlopResult();
     }
 
     public class SetFlopForceBoardUseCaseResponse
     {
-        public PlayerGameState TableScrapeResult { get; set; } = new PlayerGameState();
+        public PlayerGameState PlayerState { get; set; } = new PlayerGameState();
         public TableScrapeFlopResult TableScrapeFlopResult { get; set; } = new TableScrapeFlopResult();
     }
 

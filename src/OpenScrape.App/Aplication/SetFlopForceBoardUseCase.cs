@@ -28,19 +28,19 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
     {
 
         if (request == null) throw new ArgumentNullException(nameof(request));
-        if (request.TableScrapeResult == null) throw new ArgumentNullException(nameof(request.TableScrapeResult));
+        if (request.PlayerState == null) throw new ArgumentNullException(nameof(request.PlayerState));
         if (request.TableScrapeFlopResult == null) throw new ArgumentNullException(nameof(request.TableScrapeFlopResult));
-        if (request.TableScrapeResult.BoardCards == null) throw new ArgumentNullException(nameof(request.TableScrapeResult.BoardCards));
+        if (request.PlayerState.BoardCards == null) throw new ArgumentNullException(nameof(request.PlayerState.BoardCards));
 
-        IReadOnlyList<BoardData> boardCards = request.TableScrapeResult.BoardCards;
+        IReadOnlyList<BoardData> boardCards = request.PlayerState.BoardCards;
 
         if (boardCards.Count != 3)
         {
-            throw new ArgumentException("El flop (DataBoard) debe contener exactamente 3 cartas.", nameof(request.TableScrapeResult.BoardCards));
+            throw new ArgumentException("El flop (DataBoard) debe contener exactamente 3 cartas.", nameof(request.PlayerState.BoardCards));
         }
 
         var flopResult = request.TableScrapeFlopResult;
-        var tableResult = request.TableScrapeResult;   
+        var tableResult = request.PlayerState;   
 
         // --- 1. Análisis del Flop (Board) ---
         var cardsBySuitOnBoard = boardCards
@@ -73,12 +73,12 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         DetermineHeroHand(flopResult, boardCards, handCardForce0, handCardForce1, handCardSuit0, handCardSuit1);
 
         // Un flop es coordinado si no es "seco" (es decir, tiene potencial de proyecto o está emparejado).
-        flopResult.IsCoordinated = !flopResult.IsDry || flopResult.Hand >= HeroHand.ProyectoEscalera;
+        flopResult.BoardTexture.IsCoordinated = !flopResult.BoardTexture.IsDry || flopResult.HeroStrength.Hand >= HeroHand.ProyectoEscalera;
 
 
         return new SetFlopForceBoardUseCaseResponse
         {
-            TableScrapeResult = tableResult,
+            PlayerState = tableResult,
             TableScrapeFlopResult = flopResult
         };
 
@@ -95,8 +95,8 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         List<int> flopForcesOrdered,
         int maxHandCardForce)
     {
-        flopResult.HasHighCard = boardCards.Any(card => card.Force == AceForce || card.Force == KingForce);
-        flopResult.IsRainbow = cardsBySuitOnBoard.Count == 3; // Tres palos diferentes.
+        flopResult.HeroStrength.HasHighCard = boardCards.Any(card => card.Force == AceForce || card.Force == KingForce);
+        flopResult.BoardTexture.IsRainbow = cardsBySuitOnBoard.Count == 3; // Tres palos diferentes.
 
         // Un flop está conectado si dos cartas cualesquiera tienen una diferencia de 1 o 2,
         // o si las tres cartas forman un gutshot/OESD (ej. 5,7,9 -> gap de 2, gap de 2; 5,6,8 -> gap de 1, gap de 2).
@@ -112,23 +112,23 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         bool twoConsecutiveConnected = (gap1 > 0 && gap1 <= 2) || (gap2 > 0 && gap2 <= 2);
         bool threeCardSpreadConnected = outerGap > 0 && outerGap <= 4 && flopForcesOrdered.Distinct().Count() == 3; // Asegura 3 cartas distintas en el rango
 
-        flopResult.IsConnected = twoConsecutiveConnected || threeCardSpreadConnected;
+        flopResult.BoardTexture.IsConnected = twoConsecutiveConnected || threeCardSpreadConnected;
 
-        flopResult.IsPaired = cardsByForceOnBoard.Any(g => g.Count == 2); // Hay un par en el flop.
+        flopResult.BoardTexture.IsPaired = cardsByForceOnBoard.Any(g => g.Count == 2); // Hay un par en el flop.
                                                                               // cardsByForceOnBoard.Any(g => g.Count == 3) para trío en flop.
 
-        flopResult.IsDry = flopResult.IsRainbow && !flopResult.IsConnected && !flopResult.IsPaired && !cardsByForceOnBoard.Any(g => g.Count == 3);
+        flopResult.BoardTexture.IsDry = flopResult.BoardTexture.IsRainbow && !flopResult.BoardTexture.IsConnected && !flopResult.BoardTexture.IsPaired && !cardsByForceOnBoard.Any(g => g.Count == 3);
 
         // Original: !boardCards.All(a => a.Force > maxHandCardForce)
         // Esto significa: "No es verdad que TODAS las cartas del flop sean MÁS ALTAS que la carta más alta de la mano".
         // O, "Al menos una carta del flop es MENOR O IGUAL que la carta más alta de la mano".
         // Esto parece correcto si la intención es "El flop NO presenta solo overcards a mi mano".
-        flopResult.NoOverCards = boardCards.Any(card => card.Force <= maxHandCardForce);
+        flopResult.HeroStrength.HasNoOverCards = boardCards.Any(card => card.Force <= maxHandCardForce);
 
         // La lógica original `cartasMismoPalo.Count() != 3` es equivalente a `cardsBySuitOnBoard.Count < 3`.
         // Esto es cierto si hay dos o una carta del mismo palo.
         // Un "FlushDrawInFlop" más preciso sería si exactamente dos cartas son del mismo palo.
-        flopResult.FlushDrawInFlop = cardsBySuitOnBoard.Any(s => s.Count == 2);
+        flopResult.Draws.HasFlushDraw = cardsBySuitOnBoard.Any(s => s.Count == 2);
     }
 
     /// <summary>
@@ -148,22 +148,22 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 
         // La definición de "conectado" puede variar. Math.Abs == 1 es para conectores directos.
         int forceDiff = Math.Abs(handCardForce0 - handCardForce1);
-        flopResult.HandIsConnected = forceDiff == 1 || (forceDiff > 1 && forceDiff <= 4); // Incluye conectores y gappers
+        flopResult.HeroStrength.HandIsConnected = forceDiff == 1 || (forceDiff > 1 && forceDiff <= 4); // Incluye conectores y gappers
 
-        flopResult.HaveAce = handCardForce0 == AceForce || handCardForce1 == AceForce;
-        flopResult.HaveKing = handCardForce0 == KingForce || handCardForce1 == KingForce;
-        flopResult.GetHighestRank = Math.Max(handCardForce0, handCardForce1);
-        flopResult.GetLowestRank = Math.Min(handCardForce0, handCardForce1);
+        flopResult.BoardTexture.HasAce = handCardForce0 == AceForce || handCardForce1 == AceForce;
+        flopResult.BoardTexture.HasKing = handCardForce0 == KingForce || handCardForce1 == KingForce;
+        flopResult.BoardTexture.HighestRank = Math.Max(handCardForce0, handCardForce1);
+        flopResult.BoardTexture.LowestRank = Math.Min(handCardForce0, handCardForce1);
 
-        flopResult.HasOverCards = flopResult.GetHighestRank > maxBoardForce;
+        flopResult.HeroStrength.HasOverCards = flopResult.BoardTexture.HighestRank > maxBoardForce;
 
-        flopResult.HaveFlushDraw = CheckFlushDraw(boardCards, handCardSuit0, handCardSuit1);
-        flopResult.HaveStraightDraw = CheckStraightDraw(boardCards, handCardForce0, handCardForce1);
-        flopResult.HaveDrawingHand = flopResult.HaveFlushDraw || flopResult.HaveStraightDraw;
+        flopResult.Draws.HasFlushDraw = CheckFlushDraw(boardCards, handCardSuit0, handCardSuit1);
+        flopResult.Draws.HasStraightDraw = CheckStraightDraw(boardCards, handCardForce0, handCardForce1);
+        flopResult.Draws.HasDrawingHand = flopResult.Draws.HasFlushDraw || flopResult.Draws.HasStraightDraw;
 
         if (playerGameState.HavePocketPair)
         {
-            flopResult.HasOverPair = handCardForce0 > maxBoardForce;
+            flopResult.HeroStrength.HasOverPair = handCardForce0 > maxBoardForce;
         }
         else // No tiene par en mano
         {
@@ -178,14 +178,14 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
                 // Esta lógica puede ser compleja. Simplificando: si ambas cartas de mano encuentran un par en el board
                 // y las cartas de mano son diferentes, es two pair.
                 // Si las cartas de mano son iguales, sería un Set (Trio).
-                flopResult.HasTwoPair = true;
+                flopResult.HeroStrength.HasTwoPair = true;
             }
             else if (card0MakesPairWithBoard || card1MakesPairWithBoard) // Solo una carta de mano hace par
             {
                 int pairedHandCardForce = card0MakesPairWithBoard ? handCardForce0 : handCardForce1;
-                if (pairedHandCardForce == maxBoardForce) flopResult.HasTopPair = true;
-                else if (pairedHandCardForce == middleBoardForce) flopResult.HasMiddlePair = true;
-                else if (pairedHandCardForce == bottomBoardForce) flopResult.HasBottomPair = true;
+                if (pairedHandCardForce == maxBoardForce) flopResult.HeroStrength.HasTopPair = true;
+                else if (pairedHandCardForce == middleBoardForce) flopResult.HeroStrength.HasMiddlePair = true;
+                else if (pairedHandCardForce == bottomBoardForce) flopResult.HeroStrength.HasBottomPair = true;
                 // Si no es top, middle, o bottom, sigue siendo un par, pero estas flags son específicas.
             }
         }
@@ -193,7 +193,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         if (playerGameState.IsSuited)
         {
             // Necesita dos cartas más del mismo palo en turn y river.
-            flopResult.HaveBackdoorFlushDraw = cardsBySuitOnBoard.Any(sbg => sbg.Key == handCardSuit0 && sbg.Count == 1);
+            flopResult.Draws.HasBackdoorFlushDraw = cardsBySuitOnBoard.Any(sbg => sbg.Key == handCardSuit0 && sbg.Count == 1);
         }
 
         // Esto es diferente de HasOverCards, que solo considera la carta más alta de la mano.
@@ -201,7 +201,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         // Esto es para manos tipo AK en un flop J-7-2.
         if (handCardForce0 > maxBoardForce && handCardForce1 > maxBoardForce)
         {
-            flopResult.HaveHighCards = true;
+            flopResult.HeroStrength.HasHighCard = true;
         }
     }
 
@@ -236,7 +236,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         {
             // Aquí se necesitaría una lógica más detallada para confirmar que las mismas 5 cartas forman la escalera y el color.
             // Por ahora, una simplificación:
-            flopResult.Hand = HeroHand.EscaleraDeColor; // Podría ser EscaleraReal
+            flopResult.HeroStrength.Hand = HeroHand.EscaleraDeColor; // Podría ser EscaleraReal
             return;
         }
 
@@ -248,7 +248,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 
         if (forcesGrouped.Any(g => g.Count == 4))
         {
-            flopResult.Hand = HeroHand.Poker;
+            flopResult.HeroStrength.Hand = HeroHand.Poker;
             return;
         }
 
@@ -257,58 +257,58 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 
         if (hasTrio && pairCount >= 1)
         {
-            flopResult.Hand = HeroHand.Full;
+            flopResult.HeroStrength.Hand = HeroHand.Full;
             return;
         }
 
         if (isFlushPossible) // Ya verificado arriba, pero si no es EscaleraColor.
         {
-            flopResult.Hand = HeroHand.Color;
+            flopResult.HeroStrength.Hand = HeroHand.Color;
             return;
         }
 
         if (isStraightPossible) // Ya verificado arriba, pero si no es EscaleraColor.
         {
-            flopResult.Hand = HeroHand.Escalera;
+            flopResult.HeroStrength.Hand = HeroHand.Escalera;
             return;
         }
 
         if (hasTrio)
         {
-            flopResult.Hand = HeroHand.Trio;
+            flopResult.HeroStrength.Hand = HeroHand.Trio;
             return;
         }
 
         if (pairCount >= 2)
         {
-            flopResult.Hand = HeroHand.DoblePareja;
+            flopResult.HeroStrength.Hand = HeroHand.DoblePareja;
             return;
         }
 
         if (pairCount == 1)
         {
-            flopResult.Hand = HeroHand.Pareja;
+            flopResult.HeroStrength.Hand = HeroHand.Pareja;
             return;
         }
 
         // --- Si no hay mano hecha, comprobar proyectos ---
         // HasFlushDraw y HasStraightDraw ya se calcularon en PopulateHandProperties
         // y se refieren a proyectos de 4 cartas hacia un color/escalera.
-        if (flopResult.HaveFlushDraw && flopResult.HaveStraightDraw)
+        if (flopResult.Draws.HasFlushDraw && flopResult.Draws.HasStraightDraw)
         {
-            flopResult.Hand = HeroHand.ProyectoEscaleraColor;
+            flopResult.HeroStrength.Hand = HeroHand.ProyectoEscaleraColor;
         }
-        else if (flopResult.HaveFlushDraw)
+        else if (flopResult.Draws.HasFlushDraw)
         {
-            flopResult.Hand = HeroHand.ProyectoColor;
+            flopResult.HeroStrength.Hand = HeroHand.ProyectoColor;
         }
-        else if (flopResult.HaveStraightDraw)
+        else if (flopResult.Draws.HasStraightDraw)
         {
-            flopResult.Hand = HeroHand.ProyectoEscalera;
+            flopResult.HeroStrength.Hand = HeroHand.ProyectoEscalera;
         }
         else
         {
-            flopResult.Hand = HeroHand.Nada; // O CartaAlta, dependiendo de la definición de HeroHand.
+            flopResult.HeroStrength.Hand = HeroHand.Nada; // O CartaAlta, dependiendo de la definición de HeroHand.
         }
     }
 

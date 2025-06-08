@@ -14,10 +14,10 @@ public static class FlopRaiseOverLimperIPAnalyzerHelper
 
     private static bool HaveAnyPair(FlopAnalyzerHelperReqest request)
     {
-        if (!request.TableScrapeFlopResult.IsPaired &&
-            (request.TableScrapeFlopResult.HasBottomPair || request.TableScrapeFlopResult.HasMiddlePair ||
-            request.TableScrapeFlopResult.HasTopPair || request.PlayerState.HavePocketPair ||
-            request.TableScrapeFlopResult.HasOverPair))
+        if (!request.TableScrapeFlopResult.BoardTexture.IsPaired &&
+            (request.TableScrapeFlopResult.HeroStrength.HasBottomPair || request.TableScrapeFlopResult.HeroStrength.HasMiddlePair ||
+            request.TableScrapeFlopResult.HeroStrength.HasTopPair || request.PlayerState.HavePocketPair ||
+            request.TableScrapeFlopResult.HeroStrength.HasOverPair))
             return true;
 
         return false;
@@ -25,7 +25,7 @@ public static class FlopRaiseOverLimperIPAnalyzerHelper
 
     private static bool HaveAce(FlopAnalyzerHelperReqest request)
     {
-        if (request.TableScrapeFlopResult.HaveAce)
+        if (request.TableScrapeFlopResult.BoardTexture.HasAce)
             return true;
 
         return false;
@@ -44,14 +44,14 @@ public static class FlopRaiseOverLimperIPAnalyzerHelper
     
     private static bool HaveOvercards(FlopAnalyzerHelperReqest request)
     {
-        if (request.TableScrapeFlopResult.HaveHighCards || request.TableScrapeFlopResult.HasOverCards)
+        if (request.TableScrapeFlopResult.HeroStrength.HasHighCard || request.TableScrapeFlopResult.HeroStrength.HasOverCards)
             return true;
         return false;
     }
 
     private static bool HaveStrongHand(FlopAnalyzerHelperReqest request)
     {
-        if(request.TableScrapeFlopResult.HasTwoPair || request.TableScrapeFlopResult.StrongHand())
+        if(request.TableScrapeFlopResult.HeroStrength.HasTwoPair || request.TableScrapeFlopResult.HasStrongHand)
             return true;
 
         return false;

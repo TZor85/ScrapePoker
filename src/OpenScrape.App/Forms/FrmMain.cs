@@ -56,7 +56,7 @@ namespace OpenScrape.App
         private List<Card> _cards = new();
         private RadioButton? _lastChecked;
         private Image? _img;
-        private PlayerGameState _scrapeResult = new();
+        private PlayerGameState _playerGameState = new();
         private TableScrapeFlopResult _scrapeFlopResult = new();
         private ResponseAction _responseAction = new();
         private int _speed = 1;
@@ -458,7 +458,7 @@ namespace OpenScrape.App
                     await HandleNewHandAsync();
                 }
 
-                if (_scrapeResult.Players.Count() == 0)
+                if (_playerGameState.Players.Count() == 0)
                 {
                     await InitializePlayersAsync();
                 }
@@ -484,7 +484,7 @@ namespace OpenScrape.App
             SetEmptyPlayer();
             SetSitOutPlayer();
             SetDealerPlayer();
-            SetVillainPosition(_scrapeResult.Position);
+            SetVillainPosition(_playerGameState.Position);
             SetAliasVillain();
         }
 
@@ -516,12 +516,12 @@ namespace OpenScrape.App
             var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
             {
                 ResponseAction = _responseAction,
-                ScrapeResult = _scrapeResult,
+                PlayerState = _playerGameState,
                 PreflopHeroPosition = _preflopHeroPosition
             });
 
             _responseAction = responseFlop.ResponseAction;
-            _scrapeResult = responseFlop.ScrapeResult;
+            _playerGameState = responseFlop.PlayerState;
         }
 
         /// <summary>
@@ -565,17 +565,17 @@ namespace OpenScrape.App
             });
 
             var dataBoard = flopResponse.DataBoard;
-            _scrapeResult.BoardCards = dataBoard;
+            _playerGameState.BoardCards = dataBoard;
 
             // Procesar el flop
             var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(
                 new SetFlopForceBoardUseCaseRequest
                 {
-                    TableScrapeResult = _scrapeResult,
+                    PlayerState = _playerGameState,
                     TableScrapeFlopResult = _scrapeFlopResult
                 });
 
-            _scrapeResult = setFlopForceBoardResponse.TableScrapeResult;
+            _playerGameState = setFlopForceBoardResponse.PlayerState;
             _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
 
             // Calcular odds y actualizar overlay
@@ -606,11 +606,11 @@ namespace OpenScrape.App
         {
             var flopAnalyzerRequest = new FlopAnalyzerHelperReqest
             {
-                PlayerState = _scrapeResult,
+                PlayerState = _playerGameState,
                 TableScrapeFlopResult = _scrapeFlopResult
             };
 
-            switch (_scrapeResult.HandSituation)
+            switch (_playerGameState.HandSituation)
             {
                 case HandSituation.OpenRaise:
                     HandleOpenRaiseFlopAction();
@@ -661,10 +661,10 @@ namespace OpenScrape.App
 
         private void HandleOpenRaiseFlopAction()
         {
-            if (_scrapeFlopResult.HasTwoPair ||
-                _scrapeFlopResult.HasOverPair ||
-                (_scrapeFlopResult.HasTopPair && !_scrapeFlopResult.HaveHighCards) ||
-                (_scrapeFlopResult.HaveHighCards && _scrapeFlopResult.HaveBackdoorFlushDraw))
+            if (_scrapeFlopResult.HeroStrength.HasTwoPair ||
+                _scrapeFlopResult.HeroStrength.HasOverPair ||
+                (_scrapeFlopResult.HeroStrength.HasTopPair && !_scrapeFlopResult.HeroStrength.HasHighCard) ||
+                (_scrapeFlopResult.HeroStrength.HasHighCard && _scrapeFlopResult.Draws.HasBackdoorFlushDraw))
             {
                 _responseAction.Action = "Bet 3/4";
             }
@@ -673,9 +673,9 @@ namespace OpenScrape.App
                 _responseAction.Action = "Check";
             }
 
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -686,7 +686,7 @@ namespace OpenScrape.App
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -699,13 +699,13 @@ namespace OpenScrape.App
 
         private void HandleCallFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -719,7 +719,7 @@ namespace OpenScrape.App
         private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
         {
             // IP
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
@@ -737,13 +737,13 @@ namespace OpenScrape.App
 
         private void HandleThreeBetFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -756,13 +756,13 @@ namespace OpenScrape.App
 
         private void HandleOpenRaiseVs3BetFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -775,13 +775,13 @@ namespace OpenScrape.App
 
         private void HandleOpenRaiseVs3BetAndCallFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -794,13 +794,13 @@ namespace OpenScrape.App
 
         private void HandleFourBetFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -813,13 +813,13 @@ namespace OpenScrape.App
 
         private void HandleCold4BetFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -832,13 +832,13 @@ namespace OpenScrape.App
 
         private void HandleSqueezeFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -851,13 +851,13 @@ namespace OpenScrape.App
 
         private void HandleVsSqueezeFlopAction()
         {
-            if (_scrapeResult.IsInPosition)
+            if (_playerGameState.IsInPosition)
             {
                 // Implementación pendiente
             }
             else
             {
-                if (_scrapeFlopResult.IsCoordinated)
+                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
                 {
                     // Implementación pendiente
                 }
@@ -881,10 +881,10 @@ namespace OpenScrape.App
             {
                 Image = bitmap,
                 RegionsTableMap = _regionsTableMap,
-                DataBoard = _scrapeResult.BoardCards
+                DataBoard = _playerGameState.BoardCards
             });
 
-            _scrapeResult.BoardCards = turnResponse.DataBoard;
+            _playerGameState.BoardCards = turnResponse.DataBoard;
         }
 
         /// <summary>
@@ -898,10 +898,10 @@ namespace OpenScrape.App
             {
                 Image = bitmap,
                 RegionsTableMap = _regionsTableMap,
-                DataBoard = _scrapeResult.BoardCards
+                DataBoard = _playerGameState.BoardCards
             });
 
-            _scrapeResult.BoardCards = riverResponse.DataBoard;
+            _playerGameState.BoardCards = riverResponse.DataBoard;
         }
 
         /// <summary>
@@ -909,7 +909,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
-            _scrapeResult = new PlayerGameState();
+            _playerGameState = new PlayerGameState();
             _responseAction = new ResponseAction();
             _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
             _newHand = false;
@@ -937,9 +937,9 @@ namespace OpenScrape.App
         /// </summary>
         private void UpdateUIWithResults(PotOddsResult potOddsResult)
         {
-            _scrapeResult.HandSituation = _responseAction.HandSituation;
+            _playerGameState.HandSituation = _responseAction.HandSituation;
 
-            if (_scrapeResult != null)
+            if (_playerGameState != null)
             {
                 if (_isPreflop)
                 {
@@ -967,28 +967,28 @@ namespace OpenScrape.App
         /// </summary>
         private void UpdateResumeTextForPreflop(PotOddsResult potOddsResult)
         {
-            var enMesa = _scrapeResult.Players.Count(e => !e.Empty) + 1;
-            var sitout = _scrapeResult.Players.Count(s => s.SitOut);
-            var playing = _scrapeResult.Players.Count(p => p.Active) + 1;
+            var enMesa = _playerGameState.Players.Count(e => !e.Empty) + 1;
+            var sitout = _playerGameState.Players.Count(s => s.SitOut);
+            var playing = _playerGameState.Players.Count(p => p.Active) + 1;
 
             var sb = new StringBuilder();
             sb.AppendLine($"Hand #{_tableHand}: Hold'em No Limit");
-            sb.AppendLine($"#{_scrapeResult.Players.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer");
-            sb.AppendLine($"{_scrapeResult.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "Hero"}: posts small blind");
-            sb.AppendLine($"{_scrapeResult.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
-            sb.AppendLine($"Pot: {_scrapeResult.PotSize}");
+            sb.AppendLine($"#{_playerGameState.Players.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer");
+            sb.AppendLine($"{_playerGameState.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "Hero"}: posts small blind");
+            sb.AppendLine($"{_playerGameState.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
+            sb.AppendLine($"Pot: {_playerGameState.PotSize}");
             sb.AppendLine($"*** STATISTICS ***");
             sb.AppendLine($"PotOdds: {potOddsResult.PotOddsPercentage}%");
             sb.AppendLine($"Equity: {potOddsResult.EquityPercentage}%");
             sb.AppendLine($"Should Call: {potOddsResult.ShouldCall}");
             sb.AppendLine("*** HOLE CARDS ***");
-            sb.AppendLine($"Dealt to Hero [{_scrapeResult.HoleCard1Face} {_scrapeResult.HoleCard2Face}]");
+            sb.AppendLine($"Dealt to Hero [{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]");
 
             foreach (TablePosition position in Enum.GetValues(typeof(TablePosition)))
             {
-                if (position != TablePosition.None && position <= _scrapeResult.Position)
+                if (position != TablePosition.None && position <= _playerGameState.Position)
                 {
-                    var player = _scrapeResult.Players.FirstOrDefault(f => f.Position == position);
+                    var player = _playerGameState.Players.FirstOrDefault(f => f.Position == position);
                     string name = player?.Name ?? "Hero";
                     string action = string.Empty;
 
@@ -996,9 +996,9 @@ namespace OpenScrape.App
                         action = player?.Bet == null ? "folds" : $"bets/calls {player.Bet}";
                     else
                     {
-                        if (position == _scrapeResult.Position)
+                        if (position == _playerGameState.Position)
                         {
-                            sb.AppendLine($"Hand Situation: {_scrapeResult.HandSituation}");
+                            sb.AppendLine($"Hand Situation: {_playerGameState.HandSituation}");
                             action = _responseAction?.Action ?? string.Empty;
                         }
                     }
@@ -1018,7 +1018,7 @@ namespace OpenScrape.App
         {
             tbResume.Text += "*** FLOP *** [";
             var countFlop = 0;
-            foreach (var carta in _scrapeResult.BoardCards.Where(w => w.Position == BoardPosition.Flop))
+            foreach (var carta in _playerGameState.BoardCards.Where(w => w.Position == BoardPosition.Flop))
             {
                 countFlop++;
                 if (countFlop == 3)
@@ -1042,33 +1042,33 @@ namespace OpenScrape.App
             pbButtonHero.BackColor = Color.Transparent;
 
             // Actualizar nombres y apuestas
-            lbNamePlayerOne.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Alias;
-            lbNamePlayerTwo.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
-            lbNamePlayerThree.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
-            lbNamePlayerFour.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
-            lbNamePlayerfive.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
+            lbNamePlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Alias;
+            lbNamePlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
+            lbNamePlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
+            lbNamePlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
+            lbNamePlayerfive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
 
-            lbBetPlayerOne.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
-            lbBetPlayerTwo.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
-            lbBetPlayerThree.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
-            lbBetPlayerFour.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
-            lbBetPlayerFive.Text = _scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
+            lbBetPlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
+            lbBetPlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
+            lbBetPlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
+            lbBetPlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
+            lbBetPlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
 
-            lbBetHero.Text = _scrapeResult.CurrentBet.ToString();
-            lbPot.Text = _scrapeResult.PotSize.ToString();
+            lbBetHero.Text = _playerGameState.CurrentBet.ToString();
+            lbPot.Text = _playerGameState.PotSize.ToString();
 
             // Marcar el dealer
-            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
+            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
                 pbbuttonPlayerOne.BackColor = Color.Red;
-            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
+            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
                 pbButtonPlayerTwo.BackColor = Color.Red;
-            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
+            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
                 pbButtonPlayerThree.BackColor = Color.Red;
-            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
+            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
                 pbButtonPlayerFour.BackColor = Color.Red;
-            if (_scrapeResult.Players.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
+            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
                 pbButtonPlayerFive.BackColor = Color.Red;
-            if (_scrapeResult.IsDealer == true)
+            if (_playerGameState.IsDealer == true)
                 pbButtonHero.BackColor = Color.Red;
 
             lbTableHand.Text = _tableHand;
@@ -1081,15 +1081,15 @@ namespace OpenScrape.App
         private void UpdateCardImages()
         {
             // Cartas del héroe
-            pbHeroCard0.Image = GetCardImage(_scrapeResult.HoleCard1Face);
-            pbHeroCard1.Image = GetCardImage(_scrapeResult.HoleCard2Face);
+            pbHeroCard0.Image = GetCardImage(_playerGameState.HoleCard1Face);
+            pbHeroCard1.Image = GetCardImage(_playerGameState.HoleCard2Face);
 
             // Cartas del tablero
-            pbBoard1.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 1)?.Name);
-            pbBoard2.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 2)?.Name);
-            pbBoard3.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 3)?.Name);
-            pbBoard4.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 4)?.Name);
-            pbBoard5.Image = GetCardImage(_scrapeResult.BoardCards.FirstOrDefault(f => f.Location == 5)?.Name);
+            pbBoard1.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 1)?.Name);
+            pbBoard2.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 2)?.Name);
+            pbBoard3.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 3)?.Name);
+            pbBoard4.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 4)?.Name);
+            pbBoard5.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 5)?.Name);
         }
 
         /// <summary>
@@ -1115,35 +1115,35 @@ namespace OpenScrape.App
                 {
                     new CardDataOuts
                     {
-                        Rank = (Rank)_scrapeResult.HoleCard1Rank,
-                        Suit = (Suit)_scrapeResult.HoleCard1Suit
+                        Rank = (Rank)_playerGameState.HoleCard1Rank,
+                        Suit = (Suit)_playerGameState.HoleCard1Suit
                     },
                     new CardDataOuts
                     {
-                        Rank = (Rank)_scrapeResult.HoleCard2Rank,
-                        Suit = (Suit)_scrapeResult.HoleCard2Suit
+                        Rank = (Rank)_playerGameState.HoleCard2Rank,
+                        Suit = (Suit)_playerGameState.HoleCard2Suit
                     }
                 },
                 new List<CardDataOuts>
                 {
                     new CardDataOuts
                     {
-                        Rank = (Rank)_scrapeResult.BoardCards[0].Force,
-                        Suit = (Suit)_scrapeResult.BoardCards[0].Suit
+                        Rank = (Rank)_playerGameState.BoardCards[0].Force,
+                        Suit = (Suit)_playerGameState.BoardCards[0].Suit
                     },
                     new CardDataOuts
                     {
-                        Rank = (Rank)_scrapeResult.BoardCards[1].Force,
-                        Suit = (Suit)_scrapeResult.BoardCards[1].Suit
+                        Rank = (Rank)_playerGameState.BoardCards[1].Force,
+                        Suit = (Suit)_playerGameState.BoardCards[1].Suit
                     },
                     new CardDataOuts
                     {
-                        Rank = (Rank)_scrapeResult.BoardCards[2].Force,
-                        Suit = (Suit)_scrapeResult.BoardCards[2].Suit
+                        Rank = (Rank)_playerGameState.BoardCards[2].Force,
+                        Suit = (Suit)_playerGameState.BoardCards[2].Suit
                     }
                 },
-                _scrapeResult.PotSize,
-                _scrapeResult.Players.Max(m => m.Bet));
+                _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet));
         }
 
         /// <summary>
@@ -1177,11 +1177,11 @@ namespace OpenScrape.App
 
                 if (playerNumber == 0)
                 {
-                    _scrapeResult.CurrentBet = betValue;
+                    _playerGameState.CurrentBet = betValue;
                     continue;
                 }
 
-                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player != null)
                 {
                     player.Bet = betValue;
@@ -1209,12 +1209,12 @@ namespace OpenScrape.App
 
                 var color = bitmap.GetPixel(region.PosX, region.PosY);
 
-                _scrapeResult.Players.Add(CreatePlayerData(playerNumber.Value));
+                _playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
 
                 // Verificamos si el jugador está vacío
                 if (region.Name.Contains("empty") && _colorEmpty.Contains(color.B))
                 {
-                    var player = _scrapeResult.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+                    var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
                     if (player != null)
                     {
                         player.Empty = true;
@@ -1238,7 +1238,7 @@ namespace OpenScrape.App
                 var playerNumber = GetPlayerNumber(region.Name, "Name");
                 if (playerNumber == null) continue;
 
-                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player != null)
                 {
                     player.Alias = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
@@ -1294,7 +1294,7 @@ namespace OpenScrape.App
                 else
                     decimal.TryParse(pot, out potValue);
 
-                _scrapeResult.PotSize = potValue;
+                _playerGameState.PotSize = potValue;
             }
         }
 
@@ -1358,7 +1358,7 @@ namespace OpenScrape.App
             // Uso de using para garantizar liberación de recursos
             using var bitmap = new Bitmap(_formImage.pbImagen.Image);
 
-            var emptyPositions = _scrapeResult.Players
+            var emptyPositions = _playerGameState.Players
                 .Where(w => w.Empty || w.SitOut)
                 .Select(s => s.ValuePosition)
                 .ToList();
@@ -1391,13 +1391,13 @@ namespace OpenScrape.App
             // Para P0 (caso especial)
             if (playerNumber == 0)
             {
-                _scrapeResult.IsDealer = true;
-                _scrapeResult.Position = TablePosition.Button;
+                _playerGameState.IsDealer = true;
+                _playerGameState.Position = TablePosition.Button;
                 return;
             }
 
             // Uso de FirstOrDefault con validación
-            var player = _scrapeResult.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+            var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
             if (player == null)
             {
                 LogError($"No se encontró el jugador P{playerNumber}");
@@ -1409,7 +1409,7 @@ namespace OpenScrape.App
             player.Empty = false;
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
-            _scrapeResult.Position = DetermineP0Position(playerNumber, emptyPositions);
+            _playerGameState.Position = DetermineP0Position(playerNumber, emptyPositions);
         }
 
         /// <summary>
@@ -1481,7 +1481,7 @@ namespace OpenScrape.App
                     continue;
 
                 // Uso de FirstOrDefault con validación
-                var player = _scrapeResult.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player == null)
                     continue;
 
@@ -1507,38 +1507,38 @@ namespace OpenScrape.App
         private void SetIsInPosition()
         {
             // Uso de LINQ para simplificar lógica
-            var activePlayers = _scrapeResult.Players.Where(w => w.Active &&
+            var activePlayers = _playerGameState.Players.Where(w => w.Active &&
                                                                    w.ValuePosition != 5 &&
                                                                    w.ValuePosition != 6);
 
             // Por defecto, asumimos que está en posición
-            _scrapeResult.IsInPosition = true;
+            _playerGameState.IsInPosition = true;
 
             // Uso de Any para simplificar condiciones
-            if (activePlayers.Any(item => item.ValuePosition > (int)_scrapeResult.Position) ||
+            if (activePlayers.Any(item => item.ValuePosition > (int)_playerGameState.Position) ||
                 activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
             {
-                _scrapeResult.IsInPosition = false;
+                _playerGameState.IsInPosition = false;
             }
 
             // Simplificación de condiciones específicas
-            if (_scrapeResult.Position == TablePosition.BigBlind &&
-                _scrapeResult.Players.Any(a => a.Active && a.Position != TablePosition.SmallBlind))
+            if (_playerGameState.Position == TablePosition.BigBlind &&
+                _playerGameState.Players.Any(a => a.Active && a.Position != TablePosition.SmallBlind))
             {
-                _scrapeResult.IsInPosition = false;
+                _playerGameState.IsInPosition = false;
             }
 
-            if (_scrapeResult.Position == TablePosition.SmallBlind)
+            if (_playerGameState.Position == TablePosition.SmallBlind)
             {
-                _scrapeResult.IsInPosition = false;
+                _playerGameState.IsInPosition = false;
             }
 
             // Uso de LINQ para simplificar condición
-            if (_scrapeResult.Position == TablePosition.BigBlind &&
-                _scrapeResult.Players.Count(w => w.Active) == 1 &&
-                _scrapeResult.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
+            if (_playerGameState.Position == TablePosition.BigBlind &&
+                _playerGameState.Players.Count(w => w.Active) == 1 &&
+                _playerGameState.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
             {
-                _scrapeResult.IsInPosition = true;
+                _playerGameState.IsInPosition = true;
             }
         }
 
@@ -1548,7 +1548,7 @@ namespace OpenScrape.App
         /// <param name="p0Position">Posición de P0</param>
         private void SetVillainPosition(TablePosition p0Position)
         {
-            var playerNames = _scrapeResult.Players.ToList();
+            var playerNames = _playerGameState.Players.ToList();
             if (playerNames == null || !playerNames.Any())
                 return;
 
@@ -1683,7 +1683,7 @@ namespace OpenScrape.App
             var players = new Dictionary<TablePosition, decimal>();
 
             // Uso de LINQ para filtrar y asignar
-            foreach (var item in _scrapeResult.Players.Where(p => !p.Empty || !p.SitOut))
+            foreach (var item in _playerGameState.Players.Where(p => !p.Empty || !p.SitOut))
             {
                 if (item.Position != TablePosition.None)
                     players[item.Position] = item.Bet;
@@ -1772,14 +1772,14 @@ namespace OpenScrape.App
                 switch (region.Name)
                 {
                     case "u0cardface0":
-                        _scrapeResult.HoleCard1Face = bestMatch.Card.Name.Split(" ")[0];
-                        _scrapeResult.HoleCard1Rank = bestMatch.Card.Force;
-                        _scrapeResult.HoleCard1Suit = bestMatch.Card.Suit;
+                        _playerGameState.HoleCard1Face = bestMatch.Card.Name.Split(" ")[0];
+                        _playerGameState.HoleCard1Rank = bestMatch.Card.Force;
+                        _playerGameState.HoleCard1Suit = bestMatch.Card.Suit;
                         break;
                     case "u0cardface1":
-                        _scrapeResult.HoleCard2Face = bestMatch.Card.Name.Split(" ")[0];
-                        _scrapeResult.HoleCard2Rank = bestMatch.Card.Force;
-                        _scrapeResult.HoleCard2Suit = bestMatch.Card.Suit;
+                        _playerGameState.HoleCard2Face = bestMatch.Card.Name.Split(" ")[0];
+                        _playerGameState.HoleCard2Rank = bestMatch.Card.Force;
+                        _playerGameState.HoleCard2Suit = bestMatch.Card.Suit;
                         break;
                 }
             }

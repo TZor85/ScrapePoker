@@ -7,7 +7,7 @@ namespace OpenScrape.App.Aplication;
 public class SetPreflopActionUseCaseRequest
 {
     public ResponseAction ResponseAction { get; set; } = new ResponseAction();
-    public PlayerGameState ScrapeResult { get; set; } = new PlayerGameState();
+    public PlayerGameState PlayerState { get; set; } = new PlayerGameState();
 
     public Dictionary<TablePosition, Dictionary<TablePosition, decimal>> PreflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
 }
@@ -15,7 +15,7 @@ public class SetPreflopActionUseCaseRequest
 public class SetPreflopActionUseCaseResponse
 {
     public ResponseAction ResponseAction { get; set; } = new ResponseAction();
-    public PlayerGameState ScrapeResult { get; set; } = new PlayerGameState();
+    public PlayerGameState PlayerState { get; set; } = new PlayerGameState();
 }
 
 public interface ISetPreflopActionUseCase

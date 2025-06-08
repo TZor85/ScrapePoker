@@ -9,18 +9,7 @@ namespace OpenScrape.Domain.Enums
         OutOfPosition,
         InPosition
     }
-
-    public enum HeroPosition
-    {
-        None,
-        EarlyPosition,
-        MiddlePosition,
-        CutOff,
-        Button,
-        SmallBlind,
-        BigBlind
-    }
-
+    
     public enum TablePosition
     {
         None,
@@ -30,15 +19,6 @@ namespace OpenScrape.Domain.Enums
         Button,
         SmallBlind,
         BigBlind
-    }
-
-    public enum TypePreflop
-    {
-        HandClean,
-        LimpedPot,
-        RaisedPot,
-        ThreeBetPot,
-        FourBetPot
     }
 
     public enum HandSituation
@@ -107,7 +87,6 @@ namespace OpenScrape.Domain.Enums
         VsThreeBetAndCall
     }
 
-    
     // Método para obtener la descripción
     public static class EnumExtensions
     {
