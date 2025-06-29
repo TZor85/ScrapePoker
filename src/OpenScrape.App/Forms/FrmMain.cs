@@ -1,6 +1,5 @@
 using JasperFx.Core;
 using Marten;
-using Marten.Linq.SoftDeletes;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
@@ -20,7 +19,6 @@ using OpenScrape.Features.Card;
 using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.Update;
 using System.Data;
-using System.Drawing;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
@@ -84,6 +82,7 @@ namespace OpenScrape.App
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
         private readonly CancellationTokenSource _cancellationTokenSource = new(); // MOSTRAR CAMBIOS: Añadido para gestionar cancelación
+        private PokerHandEvaluator _handEvaluator = new();
         #endregion
 
         #region [Services and UseCases]
@@ -566,6 +565,11 @@ namespace OpenScrape.App
 
             var dataBoard = flopResponse.DataBoard;
             _playerGameState.BoardCards = dataBoard;
+
+            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Flop });
+            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard2Rank, Suit = _playerGameState.HoleCard2Suit, Position = BoardPosition.Flop });
+
+            _handEvaluator.EvaluateHand(dataBoard);
 
             // Procesar el flop
             var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(
