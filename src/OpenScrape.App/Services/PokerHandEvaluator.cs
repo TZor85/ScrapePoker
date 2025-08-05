@@ -277,6 +277,7 @@ namespace OpenScrape.App.Services
 
         private List<NormalizedCard> NormalizeCards(IReadOnlyList<BoardData> cards)
         {
+
             return cards.Select(c => new NormalizedCard
             {
                 OriginalCard = c,

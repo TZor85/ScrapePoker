@@ -52,6 +52,16 @@ namespace OpenScrape.App.Entities
 
         public bool HasAce { get; set; }
         public bool HasKing { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (LowestRank > HighestRank)
+            {
+                yield return new ValidationResult(
+                    "LowestRank no puede ser mayor que HighestRank",
+                    new[] { nameof(LowestRank), nameof(HighestRank) });
+            }
+        }
     }
 
     /// <summary>
@@ -68,6 +78,9 @@ namespace OpenScrape.App.Entities
         public bool HasBottomPair { get; set; }
         public bool HasOverPair { get; set; }
         public bool HasTwoPair { get; set; }
+        public bool HasSet { get; set; }
+        public bool HasFullHouse { get; set; }
+        public bool HasThreeOfAKind { get; set; }
         public bool HasOverCards { get; set; }
         public bool HasNoOverCards { get; set; }
         public bool HandIsConnected { get; set; }

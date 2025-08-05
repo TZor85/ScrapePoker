@@ -1,4 +1,5 @@
-﻿using OpenScrape.App.Entities;
+﻿using Emgu.CV.Dai;
+using OpenScrape.App.Entities;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Aplication;
@@ -13,459 +14,667 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 {
     private const int AceForce = 14;
     private const int KingForce = 13;
+    private const int QueenForce = 12;
+    private const int JackForce = 11;
+    private const int TenForce = 10;
+    private const int AceLowForce = 1;
+    private const int MinCardForce = 2;
+    private const int MaxCardForce = 14;
 
-    
+
+    private static readonly int[] RoyalFlushCards = { 10, 11, 12, 13, 14 };
+    private static readonly int[] WheelCards = { 1, 2, 3, 4, 5 };
+
+
     /// <summary>
     /// Ejecuta el caso de uso para analizar el flop y determinar las características del tablero y la mano.
     /// </summary>
-    /// <param name="request">Los datos de entrada con la información de las cartas en mesa y en mano.</param>
-    /// <returns>Una respuesta con los resultados del análisis del flop. 
-    /// El objeto TableScrapeFlopResult dentro del request es actualizado.</returns>
-    /// <exception cref="ArgumentNullException">Si <paramref name="request"/>, <paramref name="request.TableScrapeResult"/>,
-    /// o <paramref name="request.TableScrapeFlopResult"/> son nulos.</exception>
-    /// <exception cref="ArgumentException">Si <paramref name="request.TableScrapeResult.DataBoard"/> no contiene exactamente 3 cartas para el flop.</exception>
     public SetFlopForceBoardUseCaseResponse Execute(SetFlopForceBoardUseCaseRequest request)
     {
+        ValidateRequest(request);
 
-        if (request == null) throw new ArgumentNullException(nameof(request));
-        if (request.PlayerState == null) throw new ArgumentNullException(nameof(request.PlayerState));
-        if (request.TableScrapeFlopResult == null) throw new ArgumentNullException(nameof(request.TableScrapeFlopResult));
-        if (request.PlayerState.BoardCards == null) throw new ArgumentNullException(nameof(request.PlayerState.BoardCards));
-
-        IReadOnlyList<BoardData> boardCards = request.PlayerState.BoardCards;
-
-        if (boardCards.Count != 3)
-        {
-            throw new ArgumentException("El flop (DataBoard) debe contener exactamente 3 cartas.", nameof(request.PlayerState.BoardCards));
-        }
-
+        var boardCards = GetFlopCards(request.PlayerState.BoardCards);
         var flopResult = request.TableScrapeFlopResult;
-        var tableResult = request.PlayerState;   
+        var playerState = request.PlayerState;
 
-        // --- 1. Análisis del Flop (Board) ---
-        var cardsBySuitOnBoard = boardCards
-            .GroupBy(card => card.Suit)
-            .Select(group => new CardGroup<int>(group.Key, group.Count()))
-            .ToList();
+        // Análisis del board
+        var cardsBySuitOnBoard = GroupCardsBySuit(boardCards);
+        var cardsByForceOnBoard = GroupCardsByForce(boardCards);
+        var flopForcesOrdered = GetOrderedForces(boardCards);
 
-        var cardsByForceOnBoard = boardCards
-            .GroupBy(card => card.Force)
-            .Select(group => new CardGroup<int>(group.Key, group.Count()))
-            .ToList();
+        var (maxBoardForce, middleBoardForce, bottomBoardForce) = GetBoardForceRanking(flopForcesOrdered);
+        var (maxHandCardForce, minHandCardForce) = GetHandForceRanking(playerState);
 
-        var flopForcesOrdered = boardCards.Select(card => card.Force).OrderBy(force => force).ToList();
-        int maxBoardForce = flopForcesOrdered[2];
-        int middleBoardForce = flopForcesOrdered[1];
-        int bottomBoardForce = flopForcesOrdered[0];
+        // Poblar todas las propiedades
+        PopulateBoardTexture(flopResult, boardCards, cardsBySuitOnBoard, cardsByForceOnBoard, flopForcesOrdered);
+        PopulateHeroStrength(flopResult, playerState, boardCards, maxBoardForce, middleBoardForce, bottomBoardForce, maxHandCardForce, cardsByForceOnBoard);
+        PopulateDrawingOpportunities(flopResult, playerState, boardCards, cardsBySuitOnBoard);
+        DetermineOptimalHeroHand(flopResult, boardCards, playerState);
 
-        // --- 2. Análisis de la Mano del Jugador (Hole Cards) ---
-        int handCardForce0 = tableResult.HoleCard1Rank;
-        int handCardForce1 = tableResult.HoleCard2Rank;
-        int handCardSuit0 = tableResult.HoleCard1Suit;
-        int handCardSuit1 = tableResult.HoleCard2Suit;
-        int maxHandCardForce = Math.Max(handCardForce0, handCardForce1);
-
-        // --- 3. Poblar Propiedades del Flop y Mano ---
-        PopulateFlopProperties(flopResult, boardCards, cardsBySuitOnBoard, cardsByForceOnBoard, flopForcesOrdered, maxHandCardForce);
-        PopulateHandProperties(flopResult, tableResult, boardCards, maxBoardForce, middleBoardForce, bottomBoardForce, cardsBySuitOnBoard);
-
-        // --- 4. Determinar la Mano del Héroe ---
-        DetermineHeroHand(flopResult, boardCards, handCardForce0, handCardForce1, handCardSuit0, handCardSuit1);
-
-        // Un flop es coordinado si no es "seco" (es decir, tiene potencial de proyecto o está emparejado).
-        flopResult.BoardTexture.IsCoordinated = !flopResult.BoardTexture.IsDry || flopResult.HeroStrength.Hand >= HeroHand.ProyectoEscalera;
-
+        // Análisis avanzado
+        PerformAdvancedBoardAnalysis(flopResult, boardCards, playerState);
+        CalculateEquityFactors(flopResult, playerState, boardCards);
 
         return new SetFlopForceBoardUseCaseResponse
         {
-            PlayerState = tableResult,
+            PlayerState = playerState,
             TableScrapeFlopResult = flopResult
         };
-
     }
 
-    /// <summary>
-    /// Calcula y establece las propiedades generales del flop.
-    /// </summary>
-    private void PopulateFlopProperties(
+    #region [Validation Methods]
+
+    private static void ValidateRequest(SetFlopForceBoardUseCaseRequest request)
+    {
+        if (request == null)
+            throw new ArgumentNullException(nameof(request));
+        if (request.PlayerState == null)
+            throw new ArgumentNullException(nameof(request.PlayerState));
+        if (request.TableScrapeFlopResult == null)
+            throw new ArgumentNullException(nameof(request.TableScrapeFlopResult));
+        if (request.PlayerState.BoardCards == null)
+            throw new ArgumentNullException(nameof(request.PlayerState.BoardCards));
+
+        ValidateHoleCards(request.PlayerState);
+    }
+
+    private static void ValidateHoleCards(PlayerGameState playerState)
+    {
+        if (!IsValidCardForce(playerState.HoleCard1Rank) || !IsValidCardForce(playerState.HoleCard2Rank))
+            throw new ArgumentException("Las cartas de mano deben tener valores válidos (2-14)");
+
+        if (!IsValidSuit(playerState.HoleCard1Suit) || !IsValidSuit(playerState.HoleCard2Suit))
+            throw new ArgumentException("Los palos de las cartas deben ser válidos (0-3)");
+    }
+
+    private static bool IsValidCardForce(int force) => force >= MinCardForce && force <= MaxCardForce;
+    private static bool IsValidSuit(int suit) => suit >= 1 && suit <= 4;
+
+    private static IReadOnlyList<BoardData> GetFlopCards(List<BoardData> boardCards)
+    {
+        var flopCards = boardCards.Where(w => w.Position == BoardPosition.Flop).ToList();
+
+        if (flopCards.Count != 3)
+            throw new ArgumentException("El flop debe contener exactamente 3 cartas.", nameof(boardCards));
+
+        return flopCards;
+    }
+
+    #endregion
+
+    #region [Grouping and Ordering Methods]
+
+    private static List<CardGroup<int>> GroupCardsBySuit(IReadOnlyList<BoardData> boardCards) =>
+        boardCards.GroupBy(card => card.Suit)
+                  .Select(group => new CardGroup<int>(group.Key, group.Count()))
+                  .ToList();
+
+    private static List<CardGroup<int>> GroupCardsByForce(IReadOnlyList<BoardData> boardCards) =>
+        boardCards.GroupBy(card => card.Force)
+                  .Select(group => new CardGroup<int>(group.Key, group.Count()))
+                  .ToList();
+
+    private static List<int> GetOrderedForces(IReadOnlyList<BoardData> boardCards) =>
+        boardCards.Select(card => card.Force).OrderBy(force => force).ToList();
+
+    private static (int max, int middle, int bottom) GetBoardForceRanking(List<int> orderedForces) =>
+        (orderedForces[2], orderedForces[1], orderedForces[0]);
+
+    private static (int max, int min) GetHandForceRanking(PlayerGameState playerState) =>
+        (Math.Max(playerState.HoleCard1Rank, playerState.HoleCard2Rank),
+         Math.Min(playerState.HoleCard1Rank, playerState.HoleCard2Rank));
+
+    #endregion
+
+    #region [Board Texture Analysis]
+
+    private void PopulateBoardTexture(
         TableScrapeFlopResult flopResult,
         IReadOnlyList<BoardData> boardCards,
         List<CardGroup<int>> cardsBySuitOnBoard,
         List<CardGroup<int>> cardsByForceOnBoard,
-        List<int> flopForcesOrdered,
-        int maxHandCardForce)
+        List<int> flopForcesOrdered)
     {
-        flopResult.HeroStrength.HasHighCard = boardCards.Any(card => card.Force == AceForce || card.Force == KingForce);
-        flopResult.BoardTexture.IsRainbow = cardsBySuitOnBoard.Count == 3; // Tres palos diferentes.
+        var texture = flopResult.BoardTexture;
 
-        // Un flop está conectado si dos cartas cualesquiera tienen una diferencia de 1 o 2,
-        // o si las tres cartas forman un gutshot/OESD (ej. 5,7,9 -> gap de 2, gap de 2; 5,6,8 -> gap de 1, gap de 2).
-        // La lógica original era (ranks[1] - ranks[0] <= 2) || (ranks[2] - ranks[1] <= 2).
-        // Una definición más robusta podría ser más compleja, pero mantenemos la simplicidad.
-        int gap1 = flopForcesOrdered[1] - flopForcesOrdered[0];
-        int gap2 = flopForcesOrdered[2] - flopForcesOrdered[1];
-        int outerGap = flopForcesOrdered[2] - flopForcesOrdered[0]; // Gap entre la más alta y la más baja
+        // Características básicas del board
+        texture.IsRainbow = cardsBySuitOnBoard.Count == 3;
+        texture.IsPaired = cardsByForceOnBoard.Any(g => g.Count >= 2);
+        texture.IsConnected = IsConnectedBoard(flopForcesOrdered);
+        texture.IsDry = texture.IsRainbow && !texture.IsConnected && !texture.IsPaired;
+        texture.IsCoordinated = !texture.IsDry;
 
-        // Conectado si hay dos cartas consecutivas con gap <= 2 (y >0 para evitar pares)
-        // O si las tres cartas están dentro de un rango de 4 (ej. 5,7,9 -> 9-5=4; 2,3,4 -> 4-2=2)
-        // Esto cubre secuencias como A23, 567, TJQ, QKA, y también conectores con gaps como 578, 8TJ.
-        bool twoConsecutiveConnected = (gap1 > 0 && gap1 <= 2) || (gap2 > 0 && gap2 <= 2);
-        bool threeCardSpreadConnected = outerGap > 0 && outerGap <= 4 && flopForcesOrdered.Distinct().Count() == 3; // Asegura 3 cartas distintas en el rango
-
-        flopResult.BoardTexture.IsConnected = twoConsecutiveConnected || threeCardSpreadConnected;
-
-        flopResult.BoardTexture.IsPaired = cardsByForceOnBoard.Any(g => g.Count == 2); // Hay un par en el flop.
-                                                                              // cardsByForceOnBoard.Any(g => g.Count == 3) para trío en flop.
-
-        flopResult.BoardTexture.IsDry = flopResult.BoardTexture.IsRainbow && !flopResult.BoardTexture.IsConnected && !flopResult.BoardTexture.IsPaired && !cardsByForceOnBoard.Any(g => g.Count == 3);
-
-        // Original: !boardCards.All(a => a.Force > maxHandCardForce)
-        // Esto significa: "No es verdad que TODAS las cartas del flop sean MÁS ALTAS que la carta más alta de la mano".
-        // O, "Al menos una carta del flop es MENOR O IGUAL que la carta más alta de la mano".
-        // Esto parece correcto si la intención es "El flop NO presenta solo overcards a mi mano".
-        flopResult.HeroStrength.HasNoOverCards = boardCards.Any(card => card.Force <= maxHandCardForce);
-
-        // La lógica original `cartasMismoPalo.Count() != 3` es equivalente a `cardsBySuitOnBoard.Count < 3`.
-        // Esto es cierto si hay dos o una carta del mismo palo.
-        // Un "FlushDrawInFlop" más preciso sería si exactamente dos cartas son del mismo palo.
-        flopResult.Draws.HasFlushDraw = cardsBySuitOnBoard.Any(s => s.Count == 2);
+        // Rankings del board
+        texture.HighestRank = flopForcesOrdered[2];
+        texture.LowestRank = flopForcesOrdered[0];
+        texture.HasAce = boardCards.Any(card => card.Force == AceForce);
+        texture.HasKing = boardCards.Any(card => card.Force == KingForce);
     }
 
-    /// <summary>
-    /// Calcula y establece las propiedades de la mano del jugador en relación con el flop.
-    /// </summary>
-    private void PopulateHandProperties(
-        TableScrapeFlopResult flopResult,
-        PlayerGameState playerGameState,
-        IReadOnlyList<BoardData> boardCards, 
-        int maxBoardForce, int middleBoardForce, int bottomBoardForce,
-        List<CardGroup<int>> cardsBySuitOnBoard)
+    private static bool IsConnectedBoard(List<int> orderedForces)
     {
-        int handCardForce0 = playerGameState.HoleCard1Rank;
-        int handCardForce1 = playerGameState.HoleCard2Rank;
-        int handCardSuit0 = playerGameState.HoleCard1Suit;
-        int handCardSuit1 = playerGameState.HoleCard2Suit;
+        var gap1 = orderedForces[1] - orderedForces[0];
+        var gap2 = orderedForces[2] - orderedForces[1];
+        var totalSpread = orderedForces[2] - orderedForces[0];
 
-        // La definición de "conectado" puede variar. Math.Abs == 1 es para conectores directos.
-        int forceDiff = Math.Abs(handCardForce0 - handCardForce1);
-        flopResult.HeroStrength.HandIsConnected = forceDiff == 1 || (forceDiff > 1 && forceDiff <= 4); // Incluye conectores y gappers
+        // Conectado si hay cartas consecutivas o dentro de un rango de 4
+        var hasConsecutiveCards = (gap1 > 0 && gap1 <= 2) || (gap2 > 0 && gap2 <= 2);
+        var isWithinStraightRange = totalSpread <= 4 && orderedForces.Distinct().Count() == 3;
 
-        flopResult.BoardTexture.HasAce = handCardForce0 == AceForce || handCardForce1 == AceForce;
-        flopResult.BoardTexture.HasKing = handCardForce0 == KingForce || handCardForce1 == KingForce;
-        flopResult.BoardTexture.HighestRank = Math.Max(handCardForce0, handCardForce1);
-        flopResult.BoardTexture.LowestRank = Math.Min(handCardForce0, handCardForce1);
+        // Casos especiales para As
+        var hasAceConnector = CheckAceConnector(orderedForces);
 
-        flopResult.HeroStrength.HasOverCards = flopResult.BoardTexture.HighestRank > maxBoardForce;
-
-        flopResult.Draws.HasFlushDraw = CheckFlushDraw(boardCards, handCardSuit0, handCardSuit1);
-        flopResult.Draws.HasStraightDraw = CheckStraightDraw(boardCards, handCardForce0, handCardForce1);
-        flopResult.Draws.HasDrawingHand = flopResult.Draws.HasFlushDraw || flopResult.Draws.HasStraightDraw;
-
-        if (playerGameState.HavePocketPair)
-        {
-            flopResult.HeroStrength.HasOverPair = handCardForce0 > maxBoardForce;
-        }
-        else // No tiene par en mano
-        {
-            // Dos Pares: una carta de la mano hace par con el flop, y la otra carta de la mano hace otro par con el flop.
-            // O una carta de la mano hace par con una carta del flop, y la otra carta de la mano hace par con OTRA carta del flop.
-            bool card0MakesPairWithBoard = boardCards.Any(c => c.Force == handCardForce0);
-            bool card1MakesPairWithBoard = boardCards.Any(c => c.Force == handCardForce1);
-
-            if (card0MakesPairWithBoard && card1MakesPairWithBoard)
-            {
-                // Asegurarse de que los pares son con cartas diferentes del board o que las cartas de mano son diferentes
-                // Esta lógica puede ser compleja. Simplificando: si ambas cartas de mano encuentran un par en el board
-                // y las cartas de mano son diferentes, es two pair.
-                // Si las cartas de mano son iguales, sería un Set (Trio).
-                flopResult.HeroStrength.HasTwoPair = true;
-            }
-            else if (card0MakesPairWithBoard || card1MakesPairWithBoard) // Solo una carta de mano hace par
-            {
-                int pairedHandCardForce = card0MakesPairWithBoard ? handCardForce0 : handCardForce1;
-                if (pairedHandCardForce == maxBoardForce) flopResult.HeroStrength.HasTopPair = true;
-                else if (pairedHandCardForce == middleBoardForce) flopResult.HeroStrength.HasMiddlePair = true;
-                else if (pairedHandCardForce == bottomBoardForce) flopResult.HeroStrength.HasBottomPair = true;
-                // Si no es top, middle, o bottom, sigue siendo un par, pero estas flags son específicas.
-            }
-        }
-
-        if (playerGameState.IsSuited)
-        {
-            // Necesita dos cartas más del mismo palo en turn y river.
-            flopResult.Draws.HasBackdoorFlushDraw = cardsBySuitOnBoard.Any(sbg => sbg.Key == handCardSuit0 && sbg.Count == 1);
-        }
-
-        // Esto es diferente de HasOverCards, que solo considera la carta más alta de la mano.
-        // Y diferente de OverPair, que requiere un par en mano.
-        // Esto es para manos tipo AK en un flop J-7-2.
-        if (handCardForce0 > maxBoardForce && handCardForce1 > maxBoardForce)
-        {
-            flopResult.HeroStrength.HasHighCard = true;
-        }
+        return hasConsecutiveCards || isWithinStraightRange || hasAceConnector;
     }
 
-    /// <summary>
-    /// Determina la mano del héroe (mejor combinación de 5 cartas) usando las cartas de mano y el flop.
-    /// También establece proyectos si no hay una mano hecha fuerte.
-    /// </summary>
-    private void DetermineHeroHand(
+    private static bool CheckAceConnector(List<int> orderedForces)
+    {
+        if (!orderedForces.Contains(AceForce)) return false;
+
+        // A-2-3, A-2-4, A-2-5, A-3-4, A-3-5, A-4-5 (wheel connectors)
+        var lowCards = orderedForces.Where(f => f <= 5).ToList();
+        if (lowCards.Count >= 2) return true;
+
+        // A-K-Q, A-K-J, A-Q-J (broadway connectors)
+        var highCards = orderedForces.Where(f => f >= JackForce).ToList();
+        return highCards.Count >= 2;
+    }
+
+
+    #endregion
+
+    #region [Hero Strength Analysis]
+
+    private void PopulateHeroStrength(
         TableScrapeFlopResult flopResult,
+        PlayerGameState playerState,
         IReadOnlyList<BoardData> boardCards,
-        int handCardForce0, int handCardForce1,
-        int handCardSuit0, int handCardSuit1)
+        int maxBoardForce, int middleBoardForce, int bottomBoardForce,
+        int maxHandCardForce,
+        List<CardGroup<int>> cardsByForceOnBoard)
     {
-        var allFiveCards = new List<BoardData>(boardCards);
-        allFiveCards.Add(new BoardData { Force = handCardForce0, Suit = handCardSuit0, Name = "Hand0" }); // Name opcional para debug
-        allFiveCards.Add(new BoardData { Force = handCardForce1, Suit = handCardSuit1, Name = "Hand1" });
+        var strength = flopResult.HeroStrength;
+        var handForce0 = playerState.HoleCard1Rank;
+        var handForce1 = playerState.HoleCard2Rank;
 
-        var allForces = allFiveCards.Select(c => c.Force).ToList();
-        var allSuits = allFiveCards.Select(c => c.Suit).ToList();
+        // Características básicas de la mano
+        strength.HandIsConnected = IsHandConnected(handForce0, handForce1);
+        strength.HasHighCard = maxHandCardForce >= KingForce || boardCards.Any(c => c.Force >= KingForce);
+        strength.HasOverCards = maxHandCardForce > maxBoardForce;
+        strength.HasNoOverCards = boardCards.All(card => card.Force <= maxHandCardForce);
 
-        // --- Evaluación de Manos (de más fuerte a más débil) ---
-        // Esta es una evaluación simplificada para 5 cartas. Un evaluador completo de Hold'em consideraría las 7 cartas (board + mano).
-        // Aquí nos centramos en la mejor mano de 5 cartas posible con el flop.
-
-        // Check para Escalera de Color y Escalera Real
-        // (Lógica compleja, omitida para brevedad, pero un evaluador completo la tendría)
-        // Para simplificar, si hay Color y Escalera con las 5 cartas, lo marcamos como EscaleraColor.
-        bool isFlushPossible = allSuits.GroupBy(s => s).Any(g => g.Count() >= 5); // Con 5 cartas, esto significa todas del mismo palo.
-        bool isStraightPossible = CheckStraight(allForces.Distinct().OrderBy(f => f).ToList());
-
-        if (isFlushPossible && isStraightPossible)
+        if (playerState.HavePocketPair)
         {
-            // Aquí se necesitaría una lógica más detallada para confirmar que las mismas 5 cartas forman la escalera y el color.
-            // Por ahora, una simplificación:
-            flopResult.HeroStrength.Hand = HeroHand.EscaleraDeColor; // Podría ser EscaleraReal
-            return;
-        }
-
-        var forcesGrouped = allForces.GroupBy(f => f)
-                                     .Select(g => new { Force = g.Key, Count = g.Count() })
-                                     .OrderByDescending(x => x.Count)
-                                     .ThenByDescending(x => x.Force)
-                                     .ToList();
-
-        if (forcesGrouped.Any(g => g.Count == 4))
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Poker;
-            return;
-        }
-
-        bool hasTrio = forcesGrouped.Any(g => g.Count == 3);
-        int pairCount = forcesGrouped.Count(g => g.Count == 2);
-
-        if (hasTrio && pairCount >= 1)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Full;
-            return;
-        }
-
-        if (isFlushPossible) // Ya verificado arriba, pero si no es EscaleraColor.
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Color;
-            return;
-        }
-
-        if (isStraightPossible) // Ya verificado arriba, pero si no es EscaleraColor.
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Escalera;
-            return;
-        }
-
-        if (hasTrio)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Trio;
-            return;
-        }
-
-        if (pairCount >= 2)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.DoblePareja;
-            return;
-        }
-
-        if (pairCount == 1)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.Pareja;
-            return;
-        }
-
-        // --- Si no hay mano hecha, comprobar proyectos ---
-        // HasFlushDraw y HasStraightDraw ya se calcularon en PopulateHandProperties
-        // y se refieren a proyectos de 4 cartas hacia un color/escalera.
-        if (flopResult.Draws.HasFlushDraw && flopResult.Draws.HasStraightDraw)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.ProyectoEscaleraColor;
-        }
-        else if (flopResult.Draws.HasFlushDraw)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.ProyectoColor;
-        }
-        else if (flopResult.Draws.HasStraightDraw)
-        {
-            flopResult.HeroStrength.Hand = HeroHand.ProyectoEscalera;
+            AnalyzePocketPair(strength, playerState, boardCards, maxBoardForce, cardsByForceOnBoard);
         }
         else
         {
-            flopResult.HeroStrength.Hand = HeroHand.Nada; // O CartaAlta, dependiendo de la definición de HeroHand.
+            AnalyzeUnpairedHand(strength, playerState, boardCards, maxBoardForce, middleBoardForce, bottomBoardForce);
         }
     }
 
-    /// <summary>
-    /// Verifica si hay un proyecto de color (4 cartas del mismo palo) entre las cartas del flop y la mano.
-    /// </summary>
-    private bool CheckFlushDraw(IReadOnlyList<BoardData> boardCards, int handCardSuit0, int handCardSuit1)
+    private static bool IsHandConnected(int force0, int force1)
     {
-        var allSuits = new List<int> { handCardSuit0, handCardSuit1 };
+        var diff = Math.Abs(force0 - force1);
+
+        // Conectores directos
+        if (diff == 1) return true;
+
+        // Gappers (hasta 4 gaps)
+        if (diff <= 4) return true;
+
+        // Casos especiales con As
+        if ((force0 == AceForce && force1 <= 5) || (force1 == AceForce && force0 <= 5)) return true;
+        if ((force0 == AceForce && force1 >= TenForce) || (force1 == AceForce && force0 >= TenForce)) return true;
+
+        return false;
+    }
+
+
+    private void AnalyzePocketPair(
+        HeroHandStrength strength,
+        PlayerGameState playerState,
+        IReadOnlyList<BoardData> boardCards,
+        int maxBoardForce,
+        List<CardGroup<int>> cardsByForceOnBoard)
+    {
+        var pocketRank = playerState.HoleCard1Rank;
+        var boardPairs = cardsByForceOnBoard.Where(g => g.Count >= 2).ToList();
+        var boardTrips = cardsByForceOnBoard.Where(g => g.Count == 3).FirstOrDefault();
+
+        strength.HasOverPair = pocketRank > maxBoardForce;
+        strength.HasSet = boardCards.Any(c => c.Force == pocketRank);
+
+        if (strength.HasSet)
+        {
+            strength.HasFullHouse = boardPairs.Any(p => p.Key != pocketRank);
+        }
+        else if (boardPairs.Any())
+        {
+            var boardPairRank = boardPairs.First().Key;
+            strength.HasTwoPair = pocketRank != boardPairRank;
+            strength.HasFullHouse = boardTrips != null;
+        }
+    }
+
+    private void AnalyzeUnpairedHand(
+        HeroHandStrength strength,
+        PlayerGameState playerState,
+        IReadOnlyList<BoardData> boardCards,
+        int maxBoardForce, int middleBoardForce, int bottomBoardForce)
+    {
+        var handForce0 = playerState.HoleCard1Rank;
+        var handForce1 = playerState.HoleCard2Rank;
+
+        var card0MakesPair = boardCards.Any(c => c.Force == handForce0);
+        var card1MakesPair = boardCards.Any(c => c.Force == handForce1);
+
+        if (card0MakesPair && card1MakesPair)
+        {
+            strength.HasTwoPair = true;
+        }
+        else if (card0MakesPair || card1MakesPair)
+        {
+            var pairedCardForce = card0MakesPair ? handForce0 : handForce1;
+            playerState.Kicker = card0MakesPair ? handForce1 : handForce0;
+
+            strength.HasTopPair = pairedCardForce == maxBoardForce;
+            strength.HasMiddlePair = pairedCardForce == middleBoardForce;
+            strength.HasBottomPair = pairedCardForce == bottomBoardForce;
+        }
+        else
+        {
+            // Sin par - verificar si ambas cartas son overcards
+            strength.HasHighCard = handForce0 > maxBoardForce && handForce1 > maxBoardForce;
+        }
+    }
+
+    #endregion
+
+    #region Drawing Opportunities Analysis
+
+    private void PopulateDrawingOpportunities(
+        TableScrapeFlopResult flopResult,
+        PlayerGameState playerState,
+        IReadOnlyList<BoardData> boardCards,
+        List<CardGroup<int>> cardsBySuitOnBoard)
+    {
+        var draws = flopResult.Draws;
+
+        draws.HasFlushDraw = CheckFlushDrawOptimized(boardCards, playerState.HoleCard1Suit, playerState.HoleCard2Suit);
+        draws.HasStraightDraw = CheckStraightDrawOptimized(boardCards, playerState.HoleCard1Rank, playerState.HoleCard2Rank);
+        draws.HasBackdoorFlushDraw = CheckBackdoorFlushDraw(cardsBySuitOnBoard, playerState);
+        draws.HasDrawingHand = draws.HasFlushDraw || draws.HasStraightDraw;
+    }
+
+    private static bool CheckFlushDrawOptimized(IReadOnlyList<BoardData> boardCards, int handSuit0, int handSuit1)
+    {
+        var allSuits = new List<int> { handSuit0, handSuit1 };
         allSuits.AddRange(boardCards.Select(card => card.Suit));
 
         return allSuits.GroupBy(suit => suit).Any(group => group.Count() == 4);
     }
 
-    /// <summary>
-    /// Verifica si hay un proyecto de escalera (OESD o Gutshot) entre las cartas del flop y la mano.
-    /// Un proyecto de escalera necesita 4 cartas para formar una secuencia.
-    /// </summary>
-    private bool CheckStraightDraw(IReadOnlyList<BoardData> boardCards, int handCardForce0, int handCardForce1)
+    private static bool CheckStraightDrawOptimized(IReadOnlyList<BoardData> boardCards, int handForce0, int handForce1)
     {
-        var allForces = new List<int> { handCardForce0, handCardForce1 };
-        allForces.AddRange(boardCards.Select(card => card.Force));
+        var allForces = new HashSet<int> { handForce0, handForce1 };
 
-        // Considerar el As tanto como 1 (para A-2-3-4-5) como 14.
-        // Si hay un As (14), también añadimos un 1 para la evaluación de escaleras bajas.
-        var forcesForStraight = new HashSet<int>(); // Usar HashSet para manejar duplicados y As bajo.
-        foreach (var force in allForces)
+        foreach (var card in boardCards)
         {
-            forcesForStraight.Add(force);
-            if (force == AceForce) // As
-            {
-                forcesForStraight.Add(1); // As bajo
-            }
+            allForces.Add(card.Force);
+            if (card.Force == AceForce) allForces.Add(AceLowForce);
         }
 
-        var distinctOrderedForces = forcesForStraight.OrderBy(f => f).ToList();
+        if (handForce0 == AceForce) allForces.Add(AceLowForce);
+        if (handForce1 == AceForce) allForces.Add(AceLowForce);
 
-        if (distinctOrderedForces.Count < 4) return false; // No hay suficientes cartas distintas para un proyecto de 4 cartas.
+        var sortedForces = allForces.OrderBy(f => f).ToList();
 
-        // Verificar OESD (Open-Ended Straight Draw): 4 cartas consecutivas. Ej: 5-6-7-8
-        for (int i = 0; i <= distinctOrderedForces.Count - 4; i++)
+        return HasOpenEndedStraightDraw(sortedForces) || HasGutshotStraightDraw(sortedForces);
+    }
+
+    private static bool HasOpenEndedStraightDraw(List<int> sortedForces)
+    {
+        for (int i = 0; i <= sortedForces.Count - 4; i++)
         {
-            if (distinctOrderedForces[i + 3] - distinctOrderedForces[i] == 3) // Ej: 8-5 = 3
+            if (sortedForces[i + 3] - sortedForces[i] == 3)
             {
-                // Chequear que no sea ya una escalera de 5 cartas
-                if (distinctOrderedForces.Count == 4 || // Si solo hay 4 cartas distintas, es OESD
-                    (distinctOrderedForces.Count > 4 && // Si hay 5 o más, asegurar que no es ya escalera
-                     !(distinctOrderedForces[i + 4] - distinctOrderedForces[i] == 4 && distinctOrderedForces.Count >= 5)))
+                // Verificar que son exactamente 4 cartas consecutivas
+                var consecutiveCount = 1;
+                for (int j = i; j < i + 3; j++)
                 {
-                    return true; // OESD
+                    if (sortedForces[j + 1] - sortedForces[j] == 1)
+                        consecutiveCount++;
                 }
-            }
-        }
-
-        // Verificar Gutshot: 4 cartas donde falta una intermedia para la escalera. Ej: 5-6-8-9 (falta el 7)
-        // O una secuencia de 3 con una carta a un extremo y otra al otro. Ej: 5-7-8-9 (falta el 6)
-        // O una secuencia de 2 con dos cartas a los extremos. Ej: 5-6-9-T (faltan 7 u 8)
-        // Esta lógica puede ser compleja. Una forma común es verificar si 4 de 5 cartas están en un rango de 4.
-        // Ejemplo: 5,6,7,9 (rango 9-5=4). 5,6,8,9 (rango 9-5=4). 5,7,8,9 (rango 9-5=4).
-        for (int i = 0; i < distinctOrderedForces.Count - 3; i++) // Necesitamos al menos 4 cartas
-        {
-            // Si 4 cartas están dentro de un span de 4 y no son consecutivas (ya cubierto por OESD si fueran 4 consecutivas)
-            // Ej: 5,6,7,9 (span 4, 4 cartas) -> Gutshot
-            // Ej: 2,3,5,A(14) -> no es gutshot directo con esta lógica simple.
-            // Ej: T,J,Q,A (span 4, 4 cartas) -> Gutshot (necesita K)
-            if (distinctOrderedForces[i + 3] - distinctOrderedForces[i] == 4)
-            {
-                // Para evitar contar una escalera hecha de 5 cartas como gutshot si solo tomamos 4 de ellas.
-                // Si tenemos 5,6,7,8,9, entonces 5,6,7,9 NO es un gutshot, es parte de una escalera.
-                // Esta condición es suficiente para un proyecto de 4 cartas.
-                return true; // Gutshot
+                if (consecutiveCount == 4) return true;
             }
         }
         return false;
     }
 
-    /// <summary>
-    /// Verifica si una lista de 5 fuerzas de cartas forma una escalera.
-    /// </summary>
-    private bool CheckStraight(List<int> distinctSortedForces)
+    private static bool HasGutshotStraightDraw(List<int> sortedForces)
     {
-        if (distinctSortedForces.Count < 5) return false;
-
-        // Check normal
-        for (int i = 0; i <= distinctSortedForces.Count - 5; i++)
+        for (int i = 0; i <= sortedForces.Count - 4; i++)
         {
-            if (distinctSortedForces[i + 4] - distinctSortedForces[i] == 4) return true;
-        }
-
-        // Check para escalera A-5 (Wheel: A,2,3,4,5)
-        // Si As (14) está presente, y también 2,3,4,5.
-        // El distinctSortedForces ya contendría 1 si el As (14) estaba presente y se añadió.
-        // Entonces, solo necesitamos buscar la secuencia 1,2,3,4,5.
-        if (distinctSortedForces.Contains(1) && distinctSortedForces.Contains(2) && distinctSortedForces.Contains(3) &&
-            distinctSortedForces.Contains(4) && distinctSortedForces.Contains(5))
-        {
-            return true;
+            var span = sortedForces[i + 3] - sortedForces[i];
+            if (span == 4)
+            {
+                // Verificar que hay exactamente un gap
+                var gaps = 0;
+                for (int j = i; j < i + 3; j++)
+                {
+                    var diff = sortedForces[j + 1] - sortedForces[j];
+                    if (diff > 1) gaps += diff - 1;
+                }
+                if (gaps == 1) return true;
+            }
         }
         return false;
     }
 
+    private static bool CheckBackdoorFlushDraw(List<CardGroup<int>> cardsBySuitOnBoard, PlayerGameState playerState)
+    {
+        if (!playerState.IsSuited) return false;
 
+        var handSuit = playerState.HoleCard1Suit;
+        var suitGroup = cardsBySuitOnBoard.FirstOrDefault(g => g.Key == handSuit);
 
+        return suitGroup?.Count == 1; // Una carta del mismo palo en el board
+    }
 
+    #endregion
 
+    #region [Hand Evaluation]
 
+    private void DetermineOptimalHeroHand(
+        TableScrapeFlopResult flopResult,
+        IReadOnlyList<BoardData> boardCards,
+        PlayerGameState playerState)
+    {
+        var allCards = CreateAllCardsList(boardCards, playerState);
+        var handRanking = EvaluatePokerHand(allCards);
+
+        flopResult.HeroStrength.Hand = handRanking;
+
+        // Si no hay mano hecha, verificar proyectos
+        if (handRanking <= HeroHand.CartaAlta)
+        {
+            flopResult.HeroStrength.Hand = DetermineDrawHand(flopResult.Draws);
+        }
+    }
+
+    private static List<BoardData> CreateAllCardsList(IReadOnlyList<BoardData> boardCards, PlayerGameState playerState)
+    {
+        var allCards = new List<BoardData>(boardCards)
+        {
+            new() { Force = playerState.HoleCard1Rank, Suit = playerState.HoleCard1Suit, Name = "Hole1" },
+            new() { Force = playerState.HoleCard2Rank, Suit = playerState.HoleCard2Suit, Name = "Hole2" }
+        };
+        return allCards;
+    }
+
+    private static HeroHand EvaluatePokerHand(List<BoardData> allCards)
+    {
+        var forces = allCards.Select(c => c.Force).ToList();
+        var suits = allCards.Select(c => c.Suit).ToList();
+
+        // Evaluar de mayor a menor fuerza
+        if (IsRoyalFlush(forces, suits)) return HeroHand.EscaleraReal;
+        if (IsStraightFlush(forces, suits)) return HeroHand.EscaleraDeColor;
+        if (IsFourOfAKind(forces)) return HeroHand.Poker;
+        if (IsFullHouse(forces)) return HeroHand.Full;
+        if (IsFlush(suits)) return HeroHand.Color;
+        if (IsStraight(forces)) return HeroHand.Escalera;
+        if (IsThreeOfAKind(forces)) return HeroHand.Trio;
+        if (IsTwoPair(forces)) return HeroHand.DoblePareja;
+        if (IsOnePair(forces)) return HeroHand.Pareja;
+
+        return HeroHand.CartaAlta;
+    }
+
+    private static bool IsRoyalFlush(List<int> forces, List<int> suits)
+    {
+        return IsFlush(suits) && RoyalFlushCards.All(forces.Contains);
+    }
+
+    private static bool IsStraightFlush(List<int> forces, List<int> suits)
+    {
+        return IsFlush(suits) && IsStraight(forces);
+    }
+
+    private static bool IsFourOfAKind(List<int> forces)
+    {
+        return forces.GroupBy(f => f).Any(g => g.Count() >= 4);
+    }
+
+    private static bool IsFullHouse(List<int> forces)
+    {
+        var groups = forces.GroupBy(f => f).Select(g => g.Count()).OrderByDescending(c => c).ToList();
+        return groups.Count >= 2 && groups[0] >= 3 && groups[1] >= 2;
+    }
+
+    private static bool IsFlush(List<int> suits)
+    {
+        return suits.GroupBy(s => s).Any(g => g.Count() >= 5);
+    }
+
+    private static bool IsStraight(List<int> forces)
+    {
+        var uniqueForces = new HashSet<int>(forces);
+
+        // Agregar As bajo si hay As alto
+        if (uniqueForces.Contains(AceForce))
+            uniqueForces.Add(AceLowForce);
+
+        var sortedForces = uniqueForces.OrderBy(f => f).ToList();
+
+        // Buscar 5 cartas consecutivas
+        for (int i = 0; i <= sortedForces.Count - 5; i++)
+        {
+            if (sortedForces[i + 4] - sortedForces[i] == 4)
+            {
+                // Verificar que son realmente consecutivas
+                bool isConsecutive = true;
+                for (int j = i; j < i + 4; j++)
+                {
+                    if (sortedForces[j + 1] - sortedForces[j] != 1)
+                    {
+                        isConsecutive = false;
+                        break;
+                    }
+                }
+                if (isConsecutive) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsThreeOfAKind(List<int> forces)
+    {
+        return forces.GroupBy(f => f).Any(g => g.Count() >= 3);
+    }
+
+    private static bool IsTwoPair(List<int> forces)
+    {
+        return forces.GroupBy(f => f).Count(g => g.Count() >= 2) >= 2;
+    }
+
+    private static bool IsOnePair(List<int> forces)
+    {
+        return forces.GroupBy(f => f).Any(g => g.Count() >= 2);
+    }
+
+    private static HeroHand DetermineDrawHand(DrawingOpportunities draws)
+    {
+        if (draws.HasFlushDraw && draws.HasStraightDraw)
+            return HeroHand.ProyectoEscaleraColor;
+        if (draws.HasFlushDraw)
+            return HeroHand.ProyectoColor;
+        if (draws.HasStraightDraw)
+            return HeroHand.ProyectoEscalera;
+
+        return HeroHand.Nada;
+    }
+
+    #endregion
+
+    #region [Advanced Analysis]
+
+    private void PerformAdvancedBoardAnalysis(
+        TableScrapeFlopResult flopResult,
+        IReadOnlyList<BoardData> boardCards,
+        PlayerGameState playerState)
+    {
+        AnalyzeBoardDangerLevel(flopResult, boardCards);
+        AnalyzePositionalAdvantage(flopResult, playerState);
+        AnalyzeBluffingOpportunities(flopResult, boardCards, playerState);
+    }
+
+    private static void AnalyzeBoardDangerLevel(TableScrapeFlopResult flopResult, IReadOnlyList<BoardData> boardCards)
+    {
+        var texture = flopResult.BoardTexture;
+        var dangerFactors = 0;
+
+        if (!texture.IsRainbow) dangerFactors++; // Flush possible
+        if (texture.IsConnected) dangerFactors++; // Straight possible
+        if (texture.IsPaired) dangerFactors++; // Trips/Full House possible
+        if (boardCards.Any(c => c.Force >= JackForce)) dangerFactors++; // High cards
+
+        // Esta información podría agregarse a una nueva propiedad en BoardTexture
+        // texture.DangerLevel = dangerFactors switch
+        // {
+        //     0 => DangerLevel.Low,
+        //     1 => DangerLevel.Medium,
+        //     2 => DangerLevel.High,
+        //     _ => DangerLevel.Extreme
+        // };
+    }
+
+    private static void AnalyzePositionalAdvantage(TableScrapeFlopResult flopResult, PlayerGameState playerState)
+    {
+        // Análisis basado en posición para determinar agresividad recomendada
+        var inPosition = playerState.IsInPosition;
+        var hasStrongHand = flopResult.HasStrongHand;
+        var hasDraws = flopResult.Draws.HasDrawingHand;
+
+        // Esta lógica podría expandirse para incluir recomendaciones de acción
+        // basadas en posición, fuerza de mano y textura del board
+    }
+
+    private static void AnalyzeBluffingOpportunities(
+        TableScrapeFlopResult flopResult,
+        IReadOnlyList<BoardData> boardCards,
+        PlayerGameState playerState)
+    {
+        // Análisis de oportunidades de bluff basado en:
+        // - Board texture (boards secos favorecen bluffs)
+        // - Posición del jugador
+        // - Imagen en la mesa
+        // - Stack sizes relativos
+
+        var texture = flopResult.BoardTexture;
+        var canBluffEffectively = texture.IsDry && playerState.IsInPosition;
+
+        // Esta información podría agregarse como una nueva propiedad
+        // flopResult.BluffingOpportunity = canBluffEffectively;
+    }
+
+    private static void CalculateEquityFactors(
+        TableScrapeFlopResult flopResult,
+        PlayerGameState playerState,
+        IReadOnlyList<BoardData> boardCards)
+    {
+        // Cálculo aproximado de equity basado en:
+        // - Fuerza actual de la mano
+        // - Outs disponibles
+        // - Posición
+        // - Número de oponentes activos
+
+        var baseEquity = CalculateBaseEquity(flopResult.HeroStrength.Hand);
+        var drawEquity = CalculateDrawEquity(flopResult.Draws);
+        var positionalBonus = playerState.IsInPosition ? 0.05 : 0.0;
+
+        // var estimatedEquity = baseEquity + drawEquity + positionalBonus;
+        // flopResult.EstimatedEquity = Math.Min(1.0, estimatedEquity);
+    }
+
+    private static double CalculateBaseEquity(HeroHand hand)
+    {
+        return hand switch
+        {
+            HeroHand.EscaleraReal => 1.0,
+            HeroHand.EscaleraDeColor => 0.95,
+            HeroHand.Poker => 0.90,
+            HeroHand.Full => 0.85,
+            HeroHand.Color => 0.70,
+            HeroHand.Escalera => 0.65,
+            HeroHand.Trio => 0.60,
+            HeroHand.DoblePareja => 0.45,
+            HeroHand.Pareja => 0.25,
+            _ => 0.15
+        };
+    }
+
+    private static double CalculateDrawEquity(DrawingOpportunities draws)
+    {
+        var equity = 0.0;
+
+        if (draws.HasFlushDraw) equity += 0.35; // ~9 outs
+        if (draws.HasStraightDraw) equity += 0.32; // ~8 outs
+        if (draws.HasBackdoorFlushDraw) equity += 0.04; // ~1.5 outs
+
+        return Math.Min(0.50, equity); // Cap para evitar sobreestimación
+    }
+
+    #endregion
+
+    #region [Legacy Methods (Mantenidos para compatibilidad)]
+
+    [Obsolete("Use CheckStraightDrawOptimized instead")]
     private bool ProyectoEscalera(int card1, int card2, int card3, int card4, int card5)
     {
-        var listaForceCards = new List<int> { card1, card2, card3, card4, card5 };
+        var forces = new List<int> { card1, card2, card3, card4, card5 }.OrderBy(f => f).ToList();
+        var differences = new int[forces.Count - 1];
 
-        listaForceCards.Sort();
-
-        int[] diferencias = new int[listaForceCards.ToArray().Length - 1];
-        for (int i = 0; i < diferencias.Length; i++)
+        for (int i = 0; i < differences.Length; i++)
         {
-            diferencias[i] = listaForceCards[i + 1] - listaForceCards[i];
+            differences[i] = forces[i + 1] - forces[i];
         }
 
-        if (!diferencias.Any(d => d > 2))
-            return true;
-
-        return false;
+        return !differences.Any(d => d > 2);
     }
 
+    [Obsolete("Use IsStraight instead")]
     private bool ExisteEscalera(List<int> cards)
     {
         cards.Sort();
+        var differences = new int[cards.Count - 1];
 
-        int[] diferencias = new int[cards.ToArray().Length - 1];
-        for (int i = 0; i < diferencias.Length; i++)
+        for (int i = 0; i < differences.Length; i++)
         {
-            diferencias[i] = cards[i + 1] - cards[i];
+            differences[i] = cards[i + 1] - cards[i];
         }
 
-        // Verificar si todas las diferencias son iguales a 1 (correlativos)
-        if (diferencias.All(d => d == 1))
-            return true;
-
-        return false;
+        return differences.All(d => d == 1);
     }
 
+    [Obsolete("Use CheckFlushDrawOptimized instead")]
     private bool HasflushDraw(List<BoardData> boardData, int cardSuit0, int cardSuit1)
     {
         var allCards = new List<int> { cardSuit0, cardSuit1 };
         allCards.AddRange(boardData.Select(s => s.Suit));
 
-        return allCards
-            .GroupBy(g => g)
-            .Any(a => a.Count() >= 4);
+        return allCards.GroupBy(g => g).Any(a => a.Count() >= 4);
     }
 
+    [Obsolete("Use CheckStraightDrawOptimized instead")]
     private bool HasStraightDraw(List<BoardData> boardData, int cardForce0, int cardForce1)
     {
         var allCards = new List<int> { cardForce0, cardForce1 };
         allCards.AddRange(boardData.Select(s => s.Force));
 
-        var distinctRanks = allCards.Select(s => s).Distinct().OrderBy(o => o).ToList();
+        var distinctRanks = allCards.Distinct().OrderBy(o => o).ToList();
 
         for (int i = 0; i < distinctRanks.Count - 3; i++)
         {
@@ -475,4 +684,11 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
 
         return false;
     }
+
+    #endregion
+
 }
+
+
+
+

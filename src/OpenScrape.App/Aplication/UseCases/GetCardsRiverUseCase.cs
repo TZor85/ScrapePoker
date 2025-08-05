@@ -15,6 +15,11 @@ public class GetCardsRiverUseCase : IGetCardsRiverUseCase
     private readonly IDocumentStore _dataBase;
     private ImageCropperService _imageCropperService = new();
 
+    public GetCardsRiverUseCase(IDocumentStore database)
+    {
+        _dataBase = database;
+    }
+
     public async Task<GetCardsRiverUseCaseResponse> ExecuteAsync(GetCardsRiverUseCaseRequest request)
     {
         var response = new GetCardsRiverUseCaseResponse();
@@ -78,7 +83,7 @@ public class GetCardsRiverUseCase : IGetCardsRiverUseCase
                 {
                     response.DataBoard = request.DataBoard ?? new List<BoardData>(); ;
 
-                    if (response.DataBoard?.Count == 4)
+                    if (response.DataBoard?.Where(w => w.Position == BoardPosition.Turn).ToList().Count == 1)
                     {
                         response.DataBoard.Add(new BoardData
                         {

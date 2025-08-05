@@ -2,11 +2,11 @@
 
 public enum Rank : byte
 {
-    Two = 2, Three, Four, Five, Six, Seven, Eight, Nine, Ten,
+    Two = 2, Three = 3, Four = 4, Five = 5, Six = 6, Seven = 7, Eight = 8, Nine = 9, Ten = 10,
     Jack = 11, Queen = 12, King = 13, Ace = 14
 }
 
-public enum Suit : byte { Clubs, Hearts, Diamonds, Spades }
+public enum Suit : byte { Clubs = 1, Hearts = 2, Diamonds = 3, Spades = 4 }
 
 public enum HandRanking : byte
 {

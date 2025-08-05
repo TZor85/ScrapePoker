@@ -39,6 +39,7 @@ namespace OpenScrape.Domain.Enums
     public enum BoardPosition
     {
         None,
+        Hand,
         Flop,
         Turn,
         River

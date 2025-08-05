@@ -76,7 +76,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
                 if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper))
                 {
-                    var action = await GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.FirstOrDefault(w => w.Bet >= 1)?.Position ?? TablePosition.None, request.PlayerState);
+                    var action = await GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.FirstOrDefault(w => w.Bet >= 1 && w.Position != TablePosition.BigBlind)?.Position ?? TablePosition.None, request.PlayerState);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;

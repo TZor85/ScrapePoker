@@ -6,6 +6,7 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
+using OpenScrape.App.Helpers.FlopHelper.PreFlopRaiser;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
@@ -18,6 +19,7 @@ using OpenScrape.Features.ActionScenario;
 using OpenScrape.Features.Card;
 using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.Update;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text;
 using Tesseract;
@@ -99,6 +101,7 @@ namespace OpenScrape.App
         private static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
         private readonly IGetCardsFlopUseCase _getCardsFlopUseCase;
         private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
+        private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
         private readonly IPotOddsCalculator _potOddsCalculator;
         private readonly ColorDetectionService _colorDetectionService = new();
@@ -116,12 +119,16 @@ namespace OpenScrape.App
         {
             InitializeComponent();
 
-            // Inicialización de campos en constructor
+            // NUEVO: Aplicar estilos visuales ANTES de la inicialización
+            InitializeVisualStyles();
+
+            // Inicialización existente...
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
             _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
 
+            // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
             _sessionDB = _dataBase.LightweightSession();
             _lastChecked = new RadioButton();
@@ -129,9 +136,9 @@ namespace OpenScrape.App
             _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
             _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase);
             _getCardsTurnUseCase = new GetCardsTurnUseCase(_dataBase);
+            _getCardsRiverUseCase = new GetCardsRiverUseCase(_dataBase);
             _potOddsCalculator = new PotOddsCalculator(_outsCalculatorUseCase);
 
-            // Uso de Path.Combine para rutas
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
         }
@@ -308,7 +315,7 @@ namespace OpenScrape.App
                 LogError($"Error al seleccionar región: {ex.Message}");
             }
         }
-                
+
         /// <summary>
         /// Actualiza la visualización de la región seleccionada
         /// </summary>
@@ -386,7 +393,7 @@ namespace OpenScrape.App
                     !int.TryParse(tbWidth.Text, out int width) ||
                     !int.TryParse(tbHeight.Text, out int height) ||
                     _selectedRegion == null)
-                {           
+                {
                     LogInformation($"Error de validación: {umbral}, {inactUmbral}, {tbX.Text}, {tbY.Text}, {tbWidth.Text}, {tbHeight.Text}");
                     return;
                 }
@@ -500,7 +507,7 @@ namespace OpenScrape.App
             {
                 await ProcessPreflopAsync();
             }
-            else
+            else 
             {
                 await ProcessPostFlopAsync(potOddsResult);
             }
@@ -566,8 +573,8 @@ namespace OpenScrape.App
             var dataBoard = flopResponse.DataBoard;
             _playerGameState.BoardCards = dataBoard;
 
-            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Flop });
-            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard2Rank, Suit = _playerGameState.HoleCard2Suit, Position = BoardPosition.Flop });
+            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard1Face, Location = 0 });
+            dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard2Rank, Suit = _playerGameState.HoleCard2Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard2Face, Location = 0 });
 
             _handEvaluator.EvaluateHand(dataBoard);
 
@@ -679,13 +686,10 @@ namespace OpenScrape.App
 
             if (_playerGameState.IsInPosition)
             {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                if(_playerGameState.Position == TablePosition.Button || _playerGameState.Position == TablePosition.CutOff)
                 {
-                    // Implementación pendiente
-                }
-                else
-                {
-                    // Implementación pendiente
+                    _responseAction.Action = PreFlopRaiserIPAnalyzerHelper.AnalyzeBettingAction(_playerGameState, _scrapeFlopResult);
+                
                 }
             }
             else
@@ -725,14 +729,18 @@ namespace OpenScrape.App
             // IP
             if (_playerGameState.IsInPosition)
             {
-                // Implementación pendiente
+                var response = RaiseOverLimperIPAnalyzerHelper.DetermineContinuationBetSizing(flopAnalyzerRequest.TableScrapeFlopResult, flopAnalyzerRequest.PlayerState);
+                if(response != "Check")
+                    _responseAction.Action = $"Bet {response}";
+                else
+                    _responseAction.Action = response;
             }
             // OOP
             else
             {
-                if (FlopRaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
                     _responseAction.Action = "Check/Call";
-                else if (FlopRaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
+                else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
                     _responseAction.Action = "Check/Fold";
                 else
                     _responseAction.Action = "Bet 1/3";
@@ -898,7 +906,7 @@ namespace OpenScrape.App
         {
             _isRiver = false;
             using var bitmap = new Bitmap(_formImage.pbImagen.Image);
-            var riverResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+            var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
             {
                 Image = bitmap,
                 RegionsTableMap = _regionsTableMap,
@@ -2107,7 +2115,6 @@ namespace OpenScrape.App
         /// </summary>
         private void btnMinusWidth_Click(object sender, EventArgs e)
         {
-            // Validación de región seleccionada
             if (_selectedRegion == null)
                 return;
 
@@ -2133,7 +2140,6 @@ namespace OpenScrape.App
         /// </summary>
         private void btnPlusHeight_Click(object sender, EventArgs e)
         {
-            // Validación de región seleccionada
             if (_selectedRegion == null)
                 return;
 
@@ -2159,7 +2165,6 @@ namespace OpenScrape.App
         /// </summary>
         private void btnMinusHeight_Click(object sender, EventArgs e)
         {
-            // Validación de región seleccionada
             if (_selectedRegion == null)
                 return;
 
@@ -2744,6 +2749,274 @@ namespace OpenScrape.App
         {
             // Example implementation: Log to the console or a file
             Console.WriteLine($"Info: {message}");
+        }
+
+        #endregion
+
+        #region [Visual Styling Methods]
+
+        /// <summary>
+        /// Inicializa todos los estilos visuales
+        /// </summary>
+        private void InitializeVisualStyles()
+        {
+            this.SuspendLayout();
+
+            // Configuración del formulario principal
+            this.BackColor = AppThemeHelper.BackgroundMain;
+            this.Font = new Font("Segoe UI", 9F);
+
+            // Aplicar estilos
+            ApplyModernTabStyle();
+
+            // Configurar renderizado optimizado
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                          ControlStyles.UserPaint |
+                          ControlStyles.DoubleBuffer |
+                          ControlStyles.ResizeRedraw, true);
+
+            this.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno al TabControl
+        /// </summary>
+        private void ApplyModernTabStyle()
+        {
+            tbControl.SuspendLayout();
+
+            // Configuración del TabControl
+            tbControl.Appearance = TabAppearance.FlatButtons;
+            tbControl.BackColor = AppThemeHelper.BackgroundMain;
+            tbControl.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+
+            // Estilo de las pestañas
+            foreach (TabPage tab in tbControl.TabPages)
+            {
+                tab.BackColor = AppThemeHelper.BackgroundMain;
+                tab.Padding = new Padding(10);
+
+                // Aplicar estilo específico por pestaña
+                switch (tab.Name)
+                {
+                    case "tbJuego":
+                        ApplyGameTabStyle(tab);
+                        break;
+                    case "tbConfig":
+                        ApplyConfigTabStyle(tab);
+                        break;
+                    case "tbTables":
+                        ApplyTablesTabStyle(tab);
+                        break;
+                    case "tbLogs":
+                        ApplyLogsTabStyle(tab);
+                        break;
+                }
+            }
+
+            tbControl.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de juego
+        /// </summary>
+        private void ApplyGameTabStyle(TabPage gameTab)
+        {
+            gameTab.SuspendLayout();
+
+            // Mejorar visualización de cartas
+            var cardPictureBoxes = new[] { pbHeroCard0, pbHeroCard1, pbBoard1, pbBoard2, pbBoard3, pbBoard4, pbBoard5 };
+            foreach (var pb in cardPictureBoxes)
+            {
+                pb.BackColor = AppThemeHelper.BackgroundCard;
+                pb.BorderStyle = BorderStyle.None;
+                pb.SizeMode = PictureBoxSizeMode.StretchImage;
+
+                // Agregar borde redondeado visual
+                pb.Paint += (s, e) =>
+                {
+                    using var pen = new Pen(AppThemeHelper.BorderLight, 2f);
+                    e.Graphics.DrawRectangle(pen, 0, 0, pb.Width - 1, pb.Height - 1);
+                };
+            }
+
+            // Mejorar paneles de información
+            var infoPanels = new[] { panel1, panel2, panel3, panel4, panel5, panel6, panel7, panel8, panel9, panel10,
+                            pnNameHero, pnNamePlayerOne, pnNamePlayerTwo, pnNamePlayerThree, pnNamePlayerFour };
+
+            foreach (Panel panel in infoPanels)
+            {
+                panel.BackColor = AppThemeHelper.BackgroundCard;
+                panel.BorderStyle = BorderStyle.None;
+                panel.Padding = new Padding(5);
+
+                // Sombra sutil
+                panel.Paint += (s, e) =>
+                {
+                    using var brush = new SolidBrush(AppThemeHelper.BorderLight);
+                    e.Graphics.FillRectangle(brush, 0, panel.Height - 1, panel.Width, 1);
+                    e.Graphics.FillRectangle(brush, panel.Width - 1, 0, 1, panel.Height);
+                };
+            }
+
+            // Mejorar botones de acción
+            var actionButtons = new[] { btnCapture, btnWindow };
+            foreach (Button btn in actionButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.BackColor = AppThemeHelper.Accent;
+                btn.ForeColor = Color.White;
+                btn.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+                btn.Cursor = Cursors.Hand;
+
+                // Efecto hover
+                btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(0, 100, 160);
+                btn.MouseLeave += (s, e) => btn.BackColor = AppThemeHelper.Accent;
+            }
+
+            // Mejorar label de acción principal
+            lbAction.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lbAction.ForeColor = AppThemeHelper.PrimaryDark;
+            lbAction.BackColor = Color.Transparent;
+
+            gameTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de configuración
+        /// </summary>
+        private void ApplyConfigTabStyle(TabPage configTab)
+        {
+            configTab.SuspendLayout();
+
+            // Mejorar TreeView de regiones
+            twRegionsConfig.BackColor = AppThemeHelper.BackgroundCard;
+            twRegionsConfig.BorderStyle = BorderStyle.None;
+            twRegionsConfig.Font = new Font("Segoe UI", 9F);
+            twRegionsConfig.ForeColor = AppThemeHelper.PrimaryDark;
+            twRegionsConfig.LineColor = AppThemeHelper.BorderLight;
+
+            // Mejorar GroupBox de región
+            rgRegion.BackColor = AppThemeHelper.BackgroundCard;
+            rgRegion.ForeColor = AppThemeHelper.PrimaryDark;
+            rgRegion.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+
+            // Mejorar controles de movimiento
+            var movementButtons = new[] { btnUp, btnDown, btnLeft, btnRigth, btnUpLeft, btnUpRight, btnDownLeft, btnDownRight };
+            foreach (Button btn in movementButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 1;
+                btn.FlatAppearance.BorderColor = AppThemeHelper.BorderLight;
+                btn.BackColor = AppThemeHelper.BackgroundCard;
+                btn.ForeColor = AppThemeHelper.PrimaryDark;
+                btn.Font = new Font("Segoe UI", 10F);
+                btn.Cursor = Cursors.Hand;
+
+                // Efecto hover
+                btn.MouseEnter += (s, e) =>
+                {
+                    btn.BackColor = AppThemeHelper.PrimaryLight;
+                    btn.ForeColor = Color.White;
+                };
+                btn.MouseLeave += (s, e) =>
+                {
+                    btn.BackColor = AppThemeHelper.BackgroundCard;
+                    btn.ForeColor = AppThemeHelper.PrimaryDark;
+                };
+            }
+
+            // Mejorar botones de tamaño
+            var sizeButtons = new[] { btnPlusWidth, btnMinusWidth, btnPlusHeight, btnMinusHeight };
+            foreach (Button btn in sizeButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.BackColor = AppThemeHelper.Accent;
+                btn.ForeColor = Color.White;
+                btn.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                btn.Cursor = Cursors.Hand;
+            }
+
+            // Mejorar TextBoxes
+            var textBoxes = new[] { tbX, tbY, tbWidth, tbHeight, tbColor, tbRegionUmbral, tbRegionInactUmbral };
+            foreach (TextBox tb in textBoxes)
+            {
+                tb.BorderStyle = BorderStyle.FixedSingle;
+                tb.BackColor = AppThemeHelper.BackgroundCard;
+                tb.ForeColor = AppThemeHelper.PrimaryDark;
+                tb.Font = new Font("Segoe UI", 9F);
+            }
+
+            // Mejorar CheckBoxes
+            var checkBoxes = new[] { cbRegionColor, cbRegionHash, cbRegionBoard, cbRegionNumber };
+            foreach (CheckBox cb in checkBoxes)
+            {
+                cb.FlatStyle = FlatStyle.System;
+                cb.BackColor = Color.Transparent;
+                cb.ForeColor = AppThemeHelper.PrimaryDark;
+                cb.Font = new Font("Segoe UI", 9F);
+            }
+
+            configTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de tablas
+        /// </summary>
+        private void ApplyTablesTabStyle(TabPage tablesTab)
+        {
+            tablesTab.SuspendLayout();
+
+            // Mejorar TreeView de tablas
+            twTables.BackColor = AppThemeHelper.BackgroundCard;
+            twTables.BorderStyle = BorderStyle.None;
+            twTables.Font = new Font("Segoe UI", 9F);
+            twTables.ForeColor = AppThemeHelper.PrimaryDark;
+
+            // Mejorar DataGridView
+            dgvHands.EnableHeadersVisualStyles = false;
+            dgvHands.BackgroundColor = AppThemeHelper.BackgroundMain;
+            dgvHands.BorderStyle = BorderStyle.None;
+            dgvHands.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvHands.GridColor = AppThemeHelper.BorderLight;
+            dgvHands.Font = new Font("Segoe UI", 9F);
+
+            // Estilo de headers
+            dgvHands.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+            dgvHands.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvHands.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            dgvHands.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+            dgvHands.ColumnHeadersHeight = 35;
+
+            // Estilo de celdas
+            dgvHands.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+            dgvHands.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+            dgvHands.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+            dgvHands.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvHands.RowTemplate.Height = 28;
+
+            // Estilo alternado
+            dgvHands.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+
+            tablesTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de logs
+        /// </summary>
+        private void ApplyLogsTabStyle(TabPage logsTab)
+        {
+            logsTab.SuspendLayout();
+
+            // Mejorar TextBox de logs
+            tbResume.BackColor = AppThemeHelper.PrimaryDark;
+            tbResume.ForeColor = Color.FromArgb(220, 220, 220);
+            tbResume.Font = new Font("Consolas", 9F);
+            tbResume.BorderStyle = BorderStyle.None;
+
+            logsTab.ResumeLayout(true);
         }
 
         #endregion

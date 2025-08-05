@@ -17,6 +17,7 @@ namespace OpenScrape.App.Entities
         public int HoleCard2Rank { get; set; } = 0;
         public int HoleCard1Suit { get; set; } = 0;
         public int HoleCard2Suit { get; set; } = 0;
+        public int Kicker { get; set; } = 0;
 
         // Position information
         public bool IsInPosition { get; set; } = false;
