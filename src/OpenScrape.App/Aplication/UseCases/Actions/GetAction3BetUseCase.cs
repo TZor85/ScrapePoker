@@ -19,7 +19,7 @@ public class GetAction3BetUseCase : IGetAction3BetUseCase
         response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.ThreeBet, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             OpenRaiser = request.OpenRaiserPosition
         });

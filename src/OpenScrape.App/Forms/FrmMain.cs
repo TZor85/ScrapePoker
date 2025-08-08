@@ -66,7 +66,7 @@ namespace OpenScrape.App
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
-        private readonly List<int> _colorEmpty = new() { 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
+        private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
@@ -120,7 +120,7 @@ namespace OpenScrape.App
             InitializeComponent();
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
-            InitializeVisualStyles();
+            //InitializeVisualStyles();
 
             // Inicialización existente...
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
@@ -490,6 +490,7 @@ namespace OpenScrape.App
             SetEmptyPlayer();
             SetSitOutPlayer();
             SetDealerPlayer();
+            SetBetPlayer();
             SetVillainPosition(_playerGameState.Position);
             SetAliasVillain();
         }
@@ -499,7 +500,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTableInfoAsync(PotOddsResult potOddsResult)
         {
-            SetBetPlayer();
+            
             SetPotValue();
             _preflopHeroPosition = GetPreflopHeroPosition();
 
@@ -1326,6 +1327,7 @@ namespace OpenScrape.App
                 {
                     _tableHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
+                    _newHand = true;
                 }
                 else
                 {
@@ -1477,13 +1479,13 @@ namespace OpenScrape.App
 
             // Inicialización de diccionario con object initializer
             var colorSitOutMap = new Dictionary<string, int>
-        {
-            {"p1sitout", 0},
-            {"p2sitout", 0},
-            {"p3sitout", 2},
-            {"p4sitout", 1},
-            {"p5sitout", 1}
-        };
+            {
+                {"p1sitout", 0},
+                {"p2sitout", 0},
+                {"p3sitout", 2},
+                {"p4sitout", 1},
+                {"p5sitout", 1}
+            };
 
             // Uso de foreach con validación
             foreach (var region in regionTableMap.Regions)
@@ -1499,6 +1501,12 @@ namespace OpenScrape.App
 
                 var colorIndex = colorSitOutMap.TryGetValue(region.Name, out var index) ? index : 0;
 
+
+                var active = !player.Active;
+                var empty = !player.Empty;
+                var textoo = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+
                 // Extracción de condición compleja a variable
                 bool isSittingOut = !player.Empty && !player.Active &&
                     SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
@@ -1509,7 +1517,7 @@ namespace OpenScrape.App
                 {
                     player.SitOut = true;
                     player.Empty = true;
-                }
+                }                
             }
         }
 
@@ -1612,7 +1620,7 @@ namespace OpenScrape.App
 
             foreach (var position in positions)
             {
-                foreach (var player in players)
+                foreach (var player in players.OrderBy(o => o.ValuePosition))
                 {
                     // MOSTRAR CAMBIOS: Validación de null
                     if (player == null)
@@ -1807,10 +1815,13 @@ namespace OpenScrape.App
             if (_formImage.pbImagen.Image == null)
                 return 0;
 
-            var ocr = new OcrResult();
+            var firstOcr = new OcrResult();
+            var secondOcr = new OcrResult();
+
+            var result = string.Empty;
 
             // Uso de valores por defecto para parámetros nulos
-            ocr = _ocrService.ExtractTextFromRegionAndDebug(
+            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImagen.Image,
                 posX,
                 posY,
@@ -1819,21 +1830,35 @@ namespace OpenScrape.App
                 umbral ?? 0,
                 isOnlyNumber ?? false);
 
-            // Si no se obtiene texto, intentar con umbral inactivo
-            if (string.IsNullOrEmpty(ocr.Text))
+            
+            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImagen.Image,
+                posX,
+                posY,
+                width,
+                height,
+                inactiveUmbral ?? 0,
+                isOnlyNumber ?? false);
+
+            if (isOnlyNumber.HasValue == true)
             {
-                ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                    _formImage.pbImagen.Image,
-                    posX,
-                    posY,
-                    width,
-                    height,
-                    inactiveUmbral ?? 0,
-                    isOnlyNumber ?? false);
+                if (string.IsNullOrEmpty(firstOcr.Text))
+                    firstOcr.Text = "0";
+
+                if (string.IsNullOrEmpty(secondOcr.Text))
+                    secondOcr.Text = "0";
+
+                var ocr1 = decimal.Parse(firstOcr.Text);
+                var ocr2 = decimal.Parse(secondOcr.Text);
+
+                if (ocr2 >= ocr1)
+                    result = ocr2.ToString();
+                else
+                    result = ocr1.ToString();
             }
 
             // Uso de TryParse con out variable
-            if (decimal.TryParse(ocr.Text, out var bet))
+            if (decimal.TryParse(result, out var bet))
                 return bet;
 
             return 0;
@@ -2404,7 +2429,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de salida del textbox de posición X
+        /// Maneja el evento de clic en el textbox de posición X
         /// </summary>
         private void tbX_Leave(object sender, EventArgs e)
         {
@@ -2629,10 +2654,13 @@ namespace OpenScrape.App
             if (_selectedRegion == null || _formImage.pbImagen.Image == null)
                 return;
 
-            var ocr = new OcrResult();
+            var firstOcr = new OcrResult();
+            var secondOcr = new OcrResult();
+
+            var result = string.Empty;
 
             // Uso de valores por defecto para parámetros nulos
-            ocr = _ocrService.ExtractTextFromRegionAndDebug(
+            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImagen.Image,
                 _selectedRegion.PosX,
                 _selectedRegion.PosY,
@@ -2641,23 +2669,38 @@ namespace OpenScrape.App
                 _selectedRegion.Umbral ?? 0,
                 _selectedRegion.IsOnlyNumber ?? false);
 
-            if (string.IsNullOrEmpty(ocr.Text))
+            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImagen.Image,
+                _selectedRegion.PosX,
+                _selectedRegion.PosY,
+                _selectedRegion.Width,
+                _selectedRegion.Height,
+                _selectedRegion.InactiveUmbral ?? 0,
+                _selectedRegion.IsOnlyNumber ?? false);
+            
+            if(_selectedRegion.IsOnlyNumber.HasValue == true)
             {
-                ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                    _formImage.pbImagen.Image,
-                    _selectedRegion.PosX,
-                    _selectedRegion.PosY,
-                    _selectedRegion.Width,
-                    _selectedRegion.Height,
-                    _selectedRegion.InactiveUmbral ?? 0,
-                    _selectedRegion.IsOnlyNumber ?? false);
+                if(string.IsNullOrEmpty(firstOcr.Text))
+                    firstOcr.Text = "0";
+
+                if (string.IsNullOrEmpty(secondOcr.Text))
+                    secondOcr.Text = "0";
+
+                var ocr1 = decimal.Parse(firstOcr.Text);
+                var ocr2 = decimal.Parse(secondOcr.Text);
+
+                if (ocr2 >= ocr1)
+                    result = ocr2.ToString();
+                else
+                    result = ocr1.ToString();
             }
 
-            tbTestTexto.Text = !string.IsNullOrEmpty(ocr.Text) ? ocr.Text : "Sin resultado";
+
+            tbTestTexto.Text = !string.IsNullOrEmpty(result) ? result : "Sin resultado";
 
             // Liberar imagen anterior
             pictureBox1.Image?.Dispose();
-            pictureBox1.Image = ocr.Image;
+            pictureBox1.Image = firstOcr.Image;
         }
 
         /// <summary>
