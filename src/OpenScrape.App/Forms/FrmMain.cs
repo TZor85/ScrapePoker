@@ -461,7 +461,14 @@ namespace OpenScrape.App
 
                 if (_newHand)
                 {
-                    await HandleNewHandAsync();
+                    _playerGameState = new PlayerGameState();
+                    _responseAction = new ResponseAction();
+                    _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
+                    _newHand = false;
+                    _isFlop = false;
+
+                    if(!cbTest.Checked)
+                        await HandleNewHandAsync();
                 }
 
                 if (_playerGameState.Players.Count() == 0)
@@ -922,11 +929,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
-            _playerGameState = new PlayerGameState();
-            _responseAction = new ResponseAction();
-            _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-            _newHand = false;
-            _isFlop = false;
+            
 
             // MOSTRAR CAMBIOS: Uso de Path.Combine para rutas
             _folderPath = Path.Combine(

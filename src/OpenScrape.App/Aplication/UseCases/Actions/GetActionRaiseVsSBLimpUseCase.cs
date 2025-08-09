@@ -19,7 +19,7 @@ public class GetActionRaiseVsSBLimpUseCase : IGetActionRaiseVsSBLimpUseCase
         response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.BigBlindVsSmallBlind, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             Limper = request.LimperPosition,
             ThreeBetPosition = request.ThreeBetPosition

@@ -471,8 +471,9 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             (preflopTablePosition.ContainsKey(TablePosition.Middle) && preflopTablePosition[TablePosition.Middle] == 1) ||
             (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
         {
+
             if(playerState.Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
-                limperPosition = TablePosition.SmallBlind;
+                limperPosition = TablePosition.SmallBlind;            
 
             var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
             {
