@@ -465,28 +465,32 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         var responseAction = new GetActionRaiseOverLimperUseCaseResponse();
         TablePosition? limperPosition = null;
 
-        if ((preflopTablePosition.ContainsKey(TablePosition.SmallBlind) && preflopTablePosition[TablePosition.SmallBlind] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Button) && preflopTablePosition[TablePosition.Button] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.CutOff) && preflopTablePosition[TablePosition.CutOff] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Middle) && preflopTablePosition[TablePosition.Middle] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
+        if (!playerState.Players.Any(a => a.Bet > 1))
         {
-
-            if(playerState.Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
-                limperPosition = TablePosition.SmallBlind;            
-
-            var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
+            if ((preflopTablePosition.ContainsKey(TablePosition.SmallBlind) && preflopTablePosition[TablePosition.SmallBlind] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Button) && preflopTablePosition[TablePosition.Button] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.CutOff) && preflopTablePosition[TablePosition.CutOff] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Middle) && preflopTablePosition[TablePosition.Middle] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
             {
-                Hand = UserHandHelper.SetHandValue(playerState),
-                Position = playerState.Position,
-                LimperPosition = limperPosition
-            };
 
-            responseAction = await _raiseOverLimperUseCase.Execute(openRaiseCommand);
+                if (playerState.Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
+                    limperPosition = TablePosition.SmallBlind;
+
+                var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
+                {
+                    Hand = UserHandHelper.SetHandValue(playerState),
+                    Position = playerState.Position,
+                    LimperPosition = limperPosition
+                };
+
+                responseAction = await _raiseOverLimperUseCase.Execute(openRaiseCommand);
+            }
         }
 
         return responseAction.Action;
     }
+
     private async Task<string> Get3BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition villainPosition, PlayerGameState playerState)
     {
         var responseAction = new GetAction3BetUseCaseResponse();

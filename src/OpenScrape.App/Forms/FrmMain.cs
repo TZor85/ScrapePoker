@@ -436,6 +436,7 @@ namespace OpenScrape.App
             try
             {
                 lbAction.Text = string.Empty;
+                lbPositionAction.Text = string.Empty;
                 _executeCapture = true;
                 var potOddsResult = new PotOddsResult();
 
@@ -973,6 +974,7 @@ namespace OpenScrape.App
             }
 
             lbAction.Text = _responseAction?.Action ?? string.Empty;
+            lbPositionAction.Text = _playerGameState.HandSituation.ToString() ?? string.Empty;
 
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
