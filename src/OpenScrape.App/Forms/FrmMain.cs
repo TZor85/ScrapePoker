@@ -562,6 +562,8 @@ namespace OpenScrape.App
             _responseAction.Action = string.IsNullOrEmpty(_responseAction.Action)
                 ? "No Preflop action"
                 : _responseAction.Action;
+
+            _frmOverlay.UpdateAction(_responseAction.Action);
         }
 
         /// <summary>
@@ -975,6 +977,8 @@ namespace OpenScrape.App
 
             lbAction.Text = _responseAction?.Action ?? string.Empty;
             lbPositionAction.Text = _playerGameState.HandSituation.ToString() ?? string.Empty;
+
+            _frmOverlay.UpdateSituacion(lbPositionAction.Text);
 
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
@@ -2006,7 +2010,7 @@ namespace OpenScrape.App
                             {
                                 _frmOverlay.Location = new Point(
                                     windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)),
-                                    windowRect.bottom - 50);
+                                    windowRect.bottom - 150);
                             }
                         });
                     }

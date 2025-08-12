@@ -34,6 +34,7 @@ namespace OpenScrape.App
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tbJuego = new TabPage();
+            lbPositionAction = new Label();
             lbAction = new Label();
             gbTest = new GroupBox();
             btnClear = new Button();
@@ -137,7 +138,6 @@ namespace OpenScrape.App
             twTables = new TreeView();
             tbLogs = new TabPage();
             tbResume = new TextBox();
-            lbPositionAction = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
             gbTest.SuspendLayout();
@@ -195,7 +195,7 @@ namespace OpenScrape.App
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(677, 491);
+            tbControl.Size = new Size(578, 437);
             tbControl.TabIndex = 65;
             // 
             // tbJuego
@@ -236,16 +236,26 @@ namespace OpenScrape.App
             tbJuego.Controls.Add(pnNamePlayerOne);
             tbJuego.Location = new Point(4, 24);
             tbJuego.Name = "tbJuego";
-            tbJuego.Size = new Size(669, 463);
+            tbJuego.Size = new Size(570, 409);
             tbJuego.TabIndex = 2;
             tbJuego.Text = "Juego";
             tbJuego.UseVisualStyleBackColor = true;
+            // 
+            // lbPositionAction
+            // 
+            lbPositionAction.AutoSize = true;
+            lbPositionAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lbPositionAction.Location = new Point(204, 356);
+            lbPositionAction.Name = "lbPositionAction";
+            lbPositionAction.Size = new Size(57, 21);
+            lbPositionAction.TabIndex = 84;
+            lbPositionAction.Text = "label4";
             // 
             // lbAction
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lbAction.Location = new Point(280, 429);
+            lbAction.Location = new Point(202, 383);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(60, 21);
             lbAction.TabIndex = 83;
@@ -258,7 +268,7 @@ namespace OpenScrape.App
             gbTest.Controls.Add(rbTurn);
             gbTest.Controls.Add(rbFlop);
             gbTest.Enabled = false;
-            gbTest.Location = new Point(89, 361);
+            gbTest.Location = new Point(90, 300);
             gbTest.Name = "gbTest";
             gbTest.Size = new Size(98, 99);
             gbTest.TabIndex = 82;
@@ -311,7 +321,7 @@ namespace OpenScrape.App
             // 
             // btnWindow
             // 
-            btnWindow.Location = new Point(584, 400);
+            btnWindow.Location = new Point(480, 344);
             btnWindow.Name = "btnWindow";
             btnWindow.Size = new Size(80, 60);
             btnWindow.TabIndex = 81;
@@ -323,7 +333,7 @@ namespace OpenScrape.App
             // 
             cbTest.AutoSize = true;
             cbTest.CheckAlign = ContentAlignment.MiddleRight;
-            cbTest.Location = new Point(608, 9);
+            cbTest.Location = new Point(514, 9);
             cbTest.Name = "cbTest";
             cbTest.Size = new Size(46, 19);
             cbTest.TabIndex = 80;
@@ -365,7 +375,7 @@ namespace OpenScrape.App
             // 
             // btnCapture
             // 
-            btnCapture.Location = new Point(3, 400);
+            btnCapture.Location = new Point(4, 339);
             btnCapture.Name = "btnCapture";
             btnCapture.Size = new Size(80, 60);
             btnCapture.TabIndex = 77;
@@ -377,7 +387,7 @@ namespace OpenScrape.App
             // 
             panel8.BorderStyle = BorderStyle.FixedSingle;
             panel8.Controls.Add(lbPot);
-            panel8.Location = new Point(303, 150);
+            panel8.Location = new Point(247, 117);
             panel8.Name = "panel8";
             panel8.Size = new Size(55, 20);
             panel8.TabIndex = 76;
@@ -394,7 +404,7 @@ namespace OpenScrape.App
             // pbBoard5
             // 
             pbBoard5.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard5.Location = new Point(378, 195);
+            pbBoard5.Location = new Point(322, 162);
             pbBoard5.Name = "pbBoard5";
             pbBoard5.Size = new Size(20, 35);
             pbBoard5.TabIndex = 75;
@@ -403,7 +413,7 @@ namespace OpenScrape.App
             // pbBoard4
             // 
             pbBoard4.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard4.Location = new Point(348, 195);
+            pbBoard4.Location = new Point(292, 162);
             pbBoard4.Name = "pbBoard4";
             pbBoard4.Size = new Size(20, 35);
             pbBoard4.TabIndex = 74;
@@ -412,7 +422,7 @@ namespace OpenScrape.App
             // pbBoard3
             // 
             pbBoard3.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard3.Location = new Point(318, 195);
+            pbBoard3.Location = new Point(262, 162);
             pbBoard3.Name = "pbBoard3";
             pbBoard3.Size = new Size(20, 35);
             pbBoard3.TabIndex = 73;
@@ -421,7 +431,7 @@ namespace OpenScrape.App
             // pbBoard2
             // 
             pbBoard2.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard2.Location = new Point(288, 195);
+            pbBoard2.Location = new Point(232, 162);
             pbBoard2.Name = "pbBoard2";
             pbBoard2.Size = new Size(20, 35);
             pbBoard2.TabIndex = 72;
@@ -430,7 +440,7 @@ namespace OpenScrape.App
             // pbBoard1
             // 
             pbBoard1.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard1.Location = new Point(258, 195);
+            pbBoard1.Location = new Point(202, 162);
             pbBoard1.Name = "pbBoard1";
             pbBoard1.Size = new Size(20, 35);
             pbBoard1.TabIndex = 71;
@@ -439,7 +449,7 @@ namespace OpenScrape.App
             // pbHeroCard1
             // 
             pbHeroCard1.BorderStyle = BorderStyle.FixedSingle;
-            pbHeroCard1.Location = new Point(322, 318);
+            pbHeroCard1.Location = new Point(270, 284);
             pbHeroCard1.Name = "pbHeroCard1";
             pbHeroCard1.Size = new Size(20, 35);
             pbHeroCard1.TabIndex = 70;
@@ -448,7 +458,7 @@ namespace OpenScrape.App
             // pbHeroCard0
             // 
             pbHeroCard0.BorderStyle = BorderStyle.FixedSingle;
-            pbHeroCard0.Location = new Point(299, 318);
+            pbHeroCard0.Location = new Point(247, 284);
             pbHeroCard0.Name = "pbHeroCard0";
             pbHeroCard0.Size = new Size(20, 35);
             pbHeroCard0.TabIndex = 69;
@@ -457,7 +467,7 @@ namespace OpenScrape.App
             // pbButtonHero
             // 
             pbButtonHero.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonHero.Location = new Point(273, 338);
+            pbButtonHero.Location = new Point(221, 304);
             pbButtonHero.Name = "pbButtonHero";
             pbButtonHero.Size = new Size(15, 15);
             pbButtonHero.TabIndex = 18;
@@ -466,7 +476,7 @@ namespace OpenScrape.App
             // pbButtonPlayerFive
             // 
             pbButtonPlayerFive.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerFive.Location = new Point(460, 267);
+            pbButtonPlayerFive.Location = new Point(386, 226);
             pbButtonPlayerFive.Name = "pbButtonPlayerFive";
             pbButtonPlayerFive.Size = new Size(15, 15);
             pbButtonPlayerFive.TabIndex = 17;
@@ -475,7 +485,7 @@ namespace OpenScrape.App
             // pbButtonPlayerFour
             // 
             pbButtonPlayerFour.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerFour.Location = new Point(513, 120);
+            pbButtonPlayerFour.Location = new Point(402, 120);
             pbButtonPlayerFour.Name = "pbButtonPlayerFour";
             pbButtonPlayerFour.Size = new Size(15, 15);
             pbButtonPlayerFour.TabIndex = 16;
@@ -484,7 +494,7 @@ namespace OpenScrape.App
             // pbButtonPlayerThree
             // 
             pbButtonPlayerThree.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerThree.Location = new Point(268, 70);
+            pbButtonPlayerThree.Location = new Point(207, 53);
             pbButtonPlayerThree.Name = "pbButtonPlayerThree";
             pbButtonPlayerThree.Size = new Size(15, 15);
             pbButtonPlayerThree.TabIndex = 15;
@@ -502,7 +512,7 @@ namespace OpenScrape.App
             // pbbuttonPlayerOne
             // 
             pbbuttonPlayerOne.BorderStyle = BorderStyle.FixedSingle;
-            pbbuttonPlayerOne.Location = new Point(201, 267);
+            pbbuttonPlayerOne.Location = new Point(164, 228);
             pbbuttonPlayerOne.Name = "pbbuttonPlayerOne";
             pbbuttonPlayerOne.Size = new Size(15, 15);
             pbbuttonPlayerOne.TabIndex = 13;
@@ -512,7 +522,7 @@ namespace OpenScrape.App
             // 
             panel7.BorderStyle = BorderStyle.FixedSingle;
             panel7.Controls.Add(lbBetHero);
-            panel7.Location = new Point(348, 333);
+            panel7.Location = new Point(296, 299);
             panel7.Name = "panel7";
             panel7.Size = new Size(55, 20);
             panel7.TabIndex = 12;
@@ -530,7 +540,7 @@ namespace OpenScrape.App
             // 
             panel6.BorderStyle = BorderStyle.FixedSingle;
             panel6.Controls.Add(lbBetPlayerFive);
-            panel6.Location = new Point(428, 297);
+            panel6.Location = new Point(354, 256);
             panel6.Name = "panel6";
             panel6.Size = new Size(55, 20);
             panel6.TabIndex = 11;
@@ -548,7 +558,7 @@ namespace OpenScrape.App
             // 
             panel5.BorderStyle = BorderStyle.FixedSingle;
             panel5.Controls.Add(lbBetPlayerFour);
-            panel5.Location = new Point(474, 150);
+            panel5.Location = new Point(363, 150);
             panel5.Name = "panel5";
             panel5.Size = new Size(55, 20);
             panel5.TabIndex = 10;
@@ -566,7 +576,7 @@ namespace OpenScrape.App
             // 
             panel4.BorderStyle = BorderStyle.FixedSingle;
             panel4.Controls.Add(lbBetPlayerThree);
-            panel4.Location = new Point(303, 65);
+            panel4.Location = new Point(242, 48);
             panel4.Name = "panel4";
             panel4.Size = new Size(55, 20);
             panel4.TabIndex = 9;
@@ -602,7 +612,7 @@ namespace OpenScrape.App
             // 
             panel2.BorderStyle = BorderStyle.FixedSingle;
             panel2.Controls.Add(lbBetPlayerOne);
-            panel2.Location = new Point(195, 297);
+            panel2.Location = new Point(158, 258);
             panel2.Name = "panel2";
             panel2.Size = new Size(55, 20);
             panel2.TabIndex = 7;
@@ -620,7 +630,7 @@ namespace OpenScrape.App
             // 
             panel1.BorderStyle = BorderStyle.FixedSingle;
             panel1.Controls.Add(lbNamePlayerfive);
-            panel1.Location = new Point(481, 267);
+            panel1.Location = new Point(407, 226);
             panel1.Name = "panel1";
             panel1.Size = new Size(120, 25);
             panel1.TabIndex = 6;
@@ -637,7 +647,7 @@ namespace OpenScrape.App
             // 
             pnNameHero.BorderStyle = BorderStyle.FixedSingle;
             pnNameHero.Controls.Add(lbNameHero);
-            pnNameHero.Location = new Point(273, 359);
+            pnNameHero.Location = new Point(221, 325);
             pnNameHero.Name = "pnNameHero";
             pnNameHero.Size = new Size(120, 25);
             pnNameHero.TabIndex = 5;
@@ -655,7 +665,7 @@ namespace OpenScrape.App
             // 
             pnNamePlayerFour.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerFour.Controls.Add(lbNamePlayerFour);
-            pnNamePlayerFour.Location = new Point(534, 120);
+            pnNamePlayerFour.Location = new Point(423, 120);
             pnNamePlayerFour.Name = "pnNamePlayerFour";
             pnNamePlayerFour.Size = new Size(120, 25);
             pnNamePlayerFour.TabIndex = 4;
@@ -672,7 +682,7 @@ namespace OpenScrape.App
             // 
             pnNamePlayerThree.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerThree.Controls.Add(lbNamePlayerThree);
-            pnNamePlayerThree.Location = new Point(268, 35);
+            pnNamePlayerThree.Location = new Point(207, 18);
             pnNamePlayerThree.Name = "pnNamePlayerThree";
             pnNamePlayerThree.Size = new Size(120, 25);
             pnNamePlayerThree.TabIndex = 3;
@@ -706,7 +716,7 @@ namespace OpenScrape.App
             // 
             pnNamePlayerOne.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerOne.Controls.Add(lbNamePlayerOne);
-            pnNamePlayerOne.Location = new Point(75, 267);
+            pnNamePlayerOne.Location = new Point(38, 228);
             pnNamePlayerOne.Name = "pnNamePlayerOne";
             pnNamePlayerOne.Size = new Size(120, 25);
             pnNamePlayerOne.TabIndex = 1;
@@ -732,7 +742,7 @@ namespace OpenScrape.App
             tbConfig.Location = new Point(4, 24);
             tbConfig.Name = "tbConfig";
             tbConfig.Padding = new Padding(3);
-            tbConfig.Size = new Size(669, 463);
+            tbConfig.Size = new Size(570, 409);
             tbConfig.TabIndex = 0;
             tbConfig.Text = "Configurar";
             tbConfig.UseVisualStyleBackColor = true;
@@ -746,7 +756,7 @@ namespace OpenScrape.App
             groupBox1.Controls.Add(pbColorDebug);
             groupBox1.Controls.Add(tbTestColor);
             groupBox1.Controls.Add(btnTestColor);
-            groupBox1.Location = new Point(384, 4);
+            groupBox1.Location = new Point(352, 4);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(200, 129);
             groupBox1.TabIndex = 85;
@@ -818,7 +828,7 @@ namespace OpenScrape.App
             // 
             // pictureBox1
             // 
-            pictureBox1.Location = new Point(384, 193);
+            pictureBox1.Location = new Point(352, 193);
             pictureBox1.Name = "pictureBox1";
             pictureBox1.Size = new Size(212, 83);
             pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
@@ -857,7 +867,7 @@ namespace OpenScrape.App
             rgRegion.Controls.Add(tbY);
             rgRegion.Controls.Add(label3);
             rgRegion.Controls.Add(tbX);
-            rgRegion.Location = new Point(176, 4);
+            rgRegion.Location = new Point(144, 4);
             rgRegion.Name = "rgRegion";
             rgRegion.Size = new Size(200, 342);
             rgRegion.TabIndex = 84;
@@ -1203,7 +1213,7 @@ namespace OpenScrape.App
             // 
             // btnUpdateMap
             // 
-            btnUpdateMap.Location = new Point(382, 144);
+            btnUpdateMap.Location = new Point(350, 144);
             btnUpdateMap.Name = "btnUpdateMap";
             btnUpdateMap.Size = new Size(75, 23);
             btnUpdateMap.TabIndex = 74;
@@ -1223,7 +1233,7 @@ namespace OpenScrape.App
             // 
             // btnCapture4Bet
             // 
-            btnCapture4Bet.Location = new Point(208, 394);
+            btnCapture4Bet.Location = new Point(438, 290);
             btnCapture4Bet.Name = "btnCapture4Bet";
             btnCapture4Bet.Size = new Size(80, 60);
             btnCapture4Bet.TabIndex = 71;
@@ -1232,7 +1242,7 @@ namespace OpenScrape.App
             // 
             // btnCapture3bet
             // 
-            btnCapture3bet.Location = new Point(122, 394);
+            btnCapture3bet.Location = new Point(352, 290);
             btnCapture3bet.Name = "btnCapture3bet";
             btnCapture3bet.Size = new Size(80, 60);
             btnCapture3bet.TabIndex = 70;
@@ -1243,7 +1253,7 @@ namespace OpenScrape.App
             // 
             twRegionsConfig.Location = new Point(6, 4);
             twRegionsConfig.Name = "twRegionsConfig";
-            twRegionsConfig.Size = new Size(159, 342);
+            twRegionsConfig.Size = new Size(132, 342);
             twRegionsConfig.TabIndex = 45;
             twRegionsConfig.DoubleClick += twRegions_DoubleClick;
             // 
@@ -1253,7 +1263,7 @@ namespace OpenScrape.App
             tbTables.Controls.Add(twTables);
             tbTables.Location = new Point(4, 24);
             tbTables.Name = "tbTables";
-            tbTables.Size = new Size(669, 463);
+            tbTables.Size = new Size(570, 409);
             tbTables.TabIndex = 3;
             tbTables.Text = "Tablas";
             tbTables.UseVisualStyleBackColor = true;
@@ -1264,7 +1274,7 @@ namespace OpenScrape.App
             dgvHands.Dock = DockStyle.Fill;
             dgvHands.Location = new Point(205, 0);
             dgvHands.Name = "dgvHands";
-            dgvHands.Size = new Size(464, 463);
+            dgvHands.Size = new Size(365, 409);
             dgvHands.TabIndex = 1;
             // 
             // twTables
@@ -1272,7 +1282,7 @@ namespace OpenScrape.App
             twTables.Dock = DockStyle.Left;
             twTables.Location = new Point(0, 0);
             twTables.Name = "twTables";
-            twTables.Size = new Size(205, 463);
+            twTables.Size = new Size(205, 409);
             twTables.TabIndex = 0;
             twTables.BeforeExpand += twTables_BeforeExpand;
             twTables.DoubleClick += twTables_DoubleClick;
@@ -1283,7 +1293,7 @@ namespace OpenScrape.App
             tbLogs.Location = new Point(4, 24);
             tbLogs.Name = "tbLogs";
             tbLogs.Padding = new Padding(3);
-            tbLogs.Size = new Size(669, 463);
+            tbLogs.Size = new Size(570, 409);
             tbLogs.TabIndex = 1;
             tbLogs.Text = "Logs";
             tbLogs.UseVisualStyleBackColor = true;
@@ -1296,24 +1306,14 @@ namespace OpenScrape.App
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(663, 457);
+            tbResume.Size = new Size(564, 403);
             tbResume.TabIndex = 1;
-            // 
-            // lbPositionAction
-            // 
-            lbPositionAction.AutoSize = true;
-            lbPositionAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lbPositionAction.Location = new Point(282, 402);
-            lbPositionAction.Name = "lbPositionAction";
-            lbPositionAction.Size = new Size(57, 21);
-            lbPositionAction.TabIndex = 84;
-            lbPositionAction.Text = "label4";
             // 
             // FrmMain
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(677, 491);
+            ClientSize = new Size(578, 437);
             Controls.Add(tbControl);
             Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
