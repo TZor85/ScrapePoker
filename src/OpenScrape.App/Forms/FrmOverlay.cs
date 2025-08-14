@@ -32,17 +32,35 @@ namespace OpenScrape.App.Forms
 
         public void UpdatePotOddsPercentage(string potOdds)
         {
+            if(string.IsNullOrEmpty(potOdds))
+            {
+                lbPotOdds.Text = string.Empty;
+                return;
+            }
+
             lbPotOdds.Text = $"PotOdds: {Math.Round(decimal.Parse(potOdds), 2)}%";
         }
 
         public void UpdateEquityPercentage(string equity)
         {
+            if(string.IsNullOrEmpty(equity))
+            {
+                lbEquity.Text = string.Empty;
+                return;
+            }
+
             lbEquity.Text = $"Equity: {equity}%";
         }
 
-        public void UpdateShouldCall(bool shouldCall)
+        public void UpdateShouldCall(bool? shouldCall)
         {
-            lbShouldCall.Text = shouldCall ? "Pagar" : "No Pagar";
+            if (shouldCall == null)
+            {
+                lbShouldCall.Text = string.Empty;
+                return;
+            }
+
+            lbShouldCall.Text = shouldCall.HasValue == true ? "Pagar" : "No Pagar";
         }
 
         public void UpdateSituacion(string situacion)

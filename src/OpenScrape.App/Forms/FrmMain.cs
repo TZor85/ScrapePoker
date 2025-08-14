@@ -436,6 +436,9 @@ namespace OpenScrape.App
             try
             {
                 lbAction.Text = string.Empty;
+                _frmOverlay.UpdateEquityPercentage(string.Empty);
+                _frmOverlay.UpdatePotOddsPercentage(string.Empty);
+                _frmOverlay.UpdateShouldCall(null);
                 lbPositionAction.Text = string.Empty;
                 _executeCapture = true;
                 var potOddsResult = new PotOddsResult();
