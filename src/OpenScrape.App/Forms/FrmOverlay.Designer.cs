@@ -74,10 +74,10 @@
             panel2.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             panel2.BackColor = Color.Black;
             panel2.Controls.Add(lbShouldCall);
-            panel2.Location = new Point(120, 0);
+            panel2.Location = new Point(135, 0);
             panel2.Margin = new Padding(0);
             panel2.Name = "panel2";
-            panel2.Size = new Size(53, 19);
+            panel2.Size = new Size(56, 19);
             panel2.TabIndex = 7;
             // 
             // lbShouldCall
@@ -86,7 +86,7 @@
             lbShouldCall.BackColor = Color.Transparent;
             lbShouldCall.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lbShouldCall.ForeColor = SystemColors.MenuHighlight;
-            lbShouldCall.Location = new Point(0, 0);
+            lbShouldCall.Location = new Point(3, 0);
             lbShouldCall.Name = "lbShouldCall";
             lbShouldCall.Size = new Size(50, 19);
             lbShouldCall.TabIndex = 7;
@@ -175,7 +175,7 @@
             Controls.Add(panel3);
             Controls.Add(panel2);
             Controls.Add(panel1);
-            FormBorderStyle = FormBorderStyle.FixedToolWindow;
+            FormBorderStyle = FormBorderStyle.None;
             Name = "FrmOverlay";
             Opacity = 0.7D;
             StartPosition = FormStartPosition.Manual;

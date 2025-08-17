@@ -1988,8 +1988,8 @@ namespace OpenScrape.App
                     _frmOverlay = new FrmOverlay
                     {
                         Location = new Point(
-                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)),
-                            windowRect.bottom - 150)
+                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 165)),
+                            windowRect.bottom - 125)
                     };
                     _frmOverlay.Show();
                 }
@@ -2012,8 +2012,8 @@ namespace OpenScrape.App
                             if (_frmOverlay != null)
                             {
                                 _frmOverlay.Location = new Point(
-                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - (_frmOverlay.Size.Width / 2)),
-                                    windowRect.bottom - 150);
+                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 165)),
+                                    windowRect.bottom - 125);
                             }
                         });
                     }
