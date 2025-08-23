@@ -31,6 +31,7 @@ namespace OpenScrape.App
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tbJuego = new TabPage();
@@ -76,7 +77,7 @@ namespace OpenScrape.App
             panel2 = new Panel();
             lbBetPlayerOne = new Label();
             panel1 = new Panel();
-            lbNamePlayerfive = new Label();
+            lbNamePlayerFive = new Label();
             pnNameHero = new Panel();
             lbNameHero = new Label();
             pnNamePlayerFour = new Panel();
@@ -110,7 +111,7 @@ namespace OpenScrape.App
             btnUp = new Button();
             btnDown = new Button();
             btnLeft = new Button();
-            btnRigth = new Button();
+            btnRight = new Button();
             btnPlusWidth = new Button();
             btnMinusWidth = new Button();
             btnPlusHeight = new Button();
@@ -629,7 +630,7 @@ namespace OpenScrape.App
             // panel1
             // 
             panel1.BorderStyle = BorderStyle.FixedSingle;
-            panel1.Controls.Add(lbNamePlayerfive);
+            panel1.Controls.Add(lbNamePlayerFive);
             panel1.Location = new Point(407, 186);
             panel1.Name = "panel1";
             panel1.Size = new Size(120, 25);
@@ -637,11 +638,11 @@ namespace OpenScrape.App
             // 
             // lbNamePlayerfive
             // 
-            lbNamePlayerfive.AutoSize = true;
-            lbNamePlayerfive.Location = new Point(1, 5);
-            lbNamePlayerfive.Name = "lbNamePlayerfive";
-            lbNamePlayerfive.Size = new Size(0, 15);
-            lbNamePlayerfive.TabIndex = 1;
+            lbNamePlayerFive.AutoSize = true;
+            lbNamePlayerFive.Location = new Point(1, 5);
+            lbNamePlayerFive.Name = "lbNamePlayerfive";
+            lbNamePlayerFive.Size = new Size(0, 15);
+            lbNamePlayerFive.TabIndex = 1;
             // 
             // pnNameHero
             // 
@@ -849,7 +850,7 @@ namespace OpenScrape.App
             rgRegion.Controls.Add(btnUp);
             rgRegion.Controls.Add(btnDown);
             rgRegion.Controls.Add(btnLeft);
-            rgRegion.Controls.Add(btnRigth);
+            rgRegion.Controls.Add(btnRight);
             rgRegion.Controls.Add(btnPlusWidth);
             rgRegion.Controls.Add(btnMinusWidth);
             rgRegion.Controls.Add(btnPlusHeight);
@@ -1013,15 +1014,15 @@ namespace OpenScrape.App
             // 
             // btnRigth
             // 
-            btnRigth.Enabled = false;
-            btnRigth.Location = new Point(90, 165);
-            btnRigth.Name = "btnRigth";
-            btnRigth.Size = new Size(25, 25);
-            btnRigth.TabIndex = 90;
-            btnRigth.Text = "→";
-            btnRigth.TextAlign = ContentAlignment.TopCenter;
-            btnRigth.UseVisualStyleBackColor = true;
-            btnRigth.Click += btnRigth_Click;
+            btnRight.Enabled = false;
+            btnRight.Location = new Point(90, 165);
+            btnRight.Name = "btnRigth";
+            btnRight.Size = new Size(25, 25);
+            btnRight.TabIndex = 90;
+            btnRight.Text = "→";
+            btnRight.TextAlign = ContentAlignment.TopCenter;
+            btnRight.UseVisualStyleBackColor = true;
+            btnRight.Click += btnRigth_Click;
             // 
             // btnPlusWidth
             // 
@@ -1263,7 +1264,7 @@ namespace OpenScrape.App
             tbTables.Controls.Add(twTables);
             tbTables.Location = new Point(4, 24);
             tbTables.Name = "tbTables";
-            tbTables.Size = new Size(570, 409);
+            tbTables.Size = new Size(570, 372);
             tbTables.TabIndex = 3;
             tbTables.Text = "Tablas";
             tbTables.UseVisualStyleBackColor = true;
@@ -1274,7 +1275,7 @@ namespace OpenScrape.App
             dgvHands.Dock = DockStyle.Fill;
             dgvHands.Location = new Point(205, 0);
             dgvHands.Name = "dgvHands";
-            dgvHands.Size = new Size(365, 409);
+            dgvHands.Size = new Size(365, 372);
             dgvHands.TabIndex = 1;
             // 
             // twTables
@@ -1282,7 +1283,7 @@ namespace OpenScrape.App
             twTables.Dock = DockStyle.Left;
             twTables.Location = new Point(0, 0);
             twTables.Name = "twTables";
-            twTables.Size = new Size(205, 409);
+            twTables.Size = new Size(205, 372);
             twTables.TabIndex = 0;
             twTables.BeforeExpand += twTables_BeforeExpand;
             twTables.DoubleClick += twTables_DoubleClick;
@@ -1293,7 +1294,7 @@ namespace OpenScrape.App
             tbLogs.Location = new Point(4, 24);
             tbLogs.Name = "tbLogs";
             tbLogs.Padding = new Padding(3);
-            tbLogs.Size = new Size(570, 409);
+            tbLogs.Size = new Size(570, 372);
             tbLogs.TabIndex = 1;
             tbLogs.Text = "Logs";
             tbLogs.UseVisualStyleBackColor = true;
@@ -1306,7 +1307,7 @@ namespace OpenScrape.App
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(564, 403);
+            tbResume.Size = new Size(564, 366);
             tbResume.TabIndex = 1;
             // 
             // FrmMain
@@ -1315,6 +1316,7 @@ namespace OpenScrape.App
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(578, 400);
             Controls.Add(tbControl);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "FrmMain";
             StartPosition = FormStartPosition.Manual;
             Text = "Dealytics";
@@ -1427,7 +1429,7 @@ namespace OpenScrape.App
         private Button btnUp;
         private Button btnDown;
         private Button btnLeft;
-        private Button btnRigth;
+        private Button btnRight;
         private Button btnPlusWidth;
         private Button btnMinusWidth;
         private Button btnPlusHeight;
@@ -1446,7 +1448,7 @@ namespace OpenScrape.App
         private Panel pnNamePlayerTwo;
         private Label lbNamePlayerTwo;
         private Panel panel1;
-        private Label lbNamePlayerfive;
+        private Label lbNamePlayerFive;
         private Panel pnNameHero;
         private Label lbNameHero;
         private Panel pnNamePlayerFour;

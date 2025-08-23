@@ -85,6 +85,8 @@ namespace OpenScrape.App
         private List<Table>? _dataTables;
         private readonly CancellationTokenSource _cancellationTokenSource = new(); // MOSTRAR CAMBIOS: Añadido para gestionar cancelación
         private PokerHandEvaluator _handEvaluator = new();
+
+        private readonly ConcurrentDictionary<string, object> _playerCache = new();
         #endregion
 
         #region [Services and UseCases]
@@ -179,7 +181,6 @@ namespace OpenScrape.App
                 var regions = new List<Domain.ValueObjects.Region>();
                 var regionsTableMap = await _sessionDB.Query<RegionTableMap>().ToListAsync();
 
-                // Uso de LINQ para simplificar código
                 var categories = regionsTableMap
                     .Where(x => x.Regions != null)
                     .SelectMany(x => x.Regions!)
@@ -228,7 +229,6 @@ namespace OpenScrape.App
 
                 if (table.Positions != null && table.Positions.Any())
                 {
-                    // Uso de LINQ para agrupar y procesar datos
                     var positionGroups = table.Positions
                         .GroupBy(p => p.HeroPosition)
                         .ToDictionary(g => g.Key, g => g.ToList());
@@ -280,14 +280,14 @@ namespace OpenScrape.App
         #region [Event Handlers]
 
         /// <summary>
-        /// Maneja el doble clic en el TreeView de regiones
+        /// Handles double-click event on the regions TreeView.
         /// </summary>
         private void twRegions_DoubleClick(object sender, EventArgs e)
         {
             try
             {
                 EnableButtons();
-                _formImage.pbImagen.Refresh();
+                _formImage.pbImage.Refresh();
 
                 // Colapsar nodos no relacionados
                 if (twRegionsConfig?.SelectedNode?.Parent != null)
@@ -303,8 +303,8 @@ namespace OpenScrape.App
 
                 if (twRegionsConfig?.SelectedNode != null)
                 {
-                    _selectedRegion = ObtenerRegionDelNodo(twRegionsConfig.SelectedNode);
-                    if (_selectedRegion != null && _formImage.pbImagen.Image != null)
+                    _selectedRegion = GetRegionFromNode(twRegionsConfig.SelectedNode);
+                    if (_selectedRegion != null && _formImage.pbImage.Image != null)
                     {
                         UpdateRegionDisplay();
                     }
@@ -312,7 +312,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al seleccionar región: {ex.Message}");
+                LogError($"Error selecting region: {ex.Message}");
             }
         }
 
@@ -323,7 +323,7 @@ namespace OpenScrape.App
         {
             using (var lapiz = new Pen(Color.Red))
             {
-                _papel = _formImage.pbImagen.CreateGraphics();
+                _papel = _formImage.pbImage.CreateGraphics();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY,
                     _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -355,9 +355,8 @@ namespace OpenScrape.App
         /// <summary>
         /// Obtiene la región correspondiente al nodo seleccionado
         /// </summary>
-        private Domain.ValueObjects.Region? ObtenerRegionDelNodo(TreeNode node)
+        private Domain.ValueObjects.Region? GetRegionFromNode(TreeNode node)
         {
-            // Uso de LINQ para simplificar código y null-conditional operators
             return _regionsTableMap?
                 .SelectMany(c => c.Regions ?? new List<Domain.ValueObjects.Region>())
                 .FirstOrDefault(r => r.Name == node.Text);
@@ -368,7 +367,6 @@ namespace OpenScrape.App
         /// </summary>
         private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Uso de TryParse con out var para mayor claridad
             if (int.TryParse(cbSpeed.Text, out var speed))
             {
                 _speed = speed;
@@ -398,7 +396,6 @@ namespace OpenScrape.App
                     return;
                 }
 
-                // Uso de Task.Run para operaciones asíncronas
                 await Task.Run(async () =>
                 {
                     await _regionTableMapUseCases.UpdateRegionTableMap.ExecuteAsync(
@@ -450,7 +447,7 @@ namespace OpenScrape.App
                     if (cbMark.Checked)
                         CreateLogWithMarkedHands();
 
-                    GetImageWhilePlaying();
+                    await GetImageWhilePlaying();
                     _formImage.WindowState = FormWindowState.Minimized;
                 }
 
@@ -497,13 +494,22 @@ namespace OpenScrape.App
         /// </summary>
         private async Task InitializePlayersAsync()
         {
-            await ObtainCardsPlayerAsync();
-            SetEmptyPlayer();
-            SetSitOutPlayer();
-            SetDealerPlayer();
-            SetBetPlayer();
-            SetVillainPosition(_playerGameState.Position);
-            SetAliasVillain();
+            try
+            {
+                await ObtainCardsPlayerAsync();
+                SetEmptyPlayer();
+                SetSitOutPlayer();
+                SetDealerPlayer();
+                SetBetPlayer();
+                SetVillainPosition(_playerGameState.Position);
+                SetAliasVillain();
+            }
+            catch (Exception ex)
+            {
+                // Log del error específico
+                LogError($"Error en InitializePlayersAsync: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -577,7 +583,7 @@ namespace OpenScrape.App
             _isFlop = false;
 
             // Capturar cartas del flop
-            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
             {
                 Image = bitmap,
@@ -902,7 +908,7 @@ namespace OpenScrape.App
         private async Task ProcessTurnAsync()
         {
             _isTurn = false;
-            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
             {
                 Image = bitmap,
@@ -919,7 +925,7 @@ namespace OpenScrape.App
         private async Task ProcessRiverAsync()
         {
             _isRiver = false;
-            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
             {
                 Image = bitmap,
@@ -935,9 +941,6 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
-            
-
-            // MOSTRAR CAMBIOS: Uso de Path.Combine para rutas
             _folderPath = Path.Combine(
                 DEFAULT_RESOURCES_PATH,
                 "Games",
@@ -1071,7 +1074,7 @@ namespace OpenScrape.App
             lbNamePlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
             lbNamePlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
             lbNamePlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
-            lbNamePlayerfive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
+            lbNamePlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
 
             lbBetPlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
             lbBetPlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
@@ -1134,7 +1137,6 @@ namespace OpenScrape.App
         /// </summary>
         private PotOddsResult GetPotOddsCalculator()
         {
-            // Uso de object initializers para mayor claridad
             return _potOddsCalculator.Calculate(
                 new List<CardDataOuts>
                 {
@@ -1176,11 +1178,10 @@ namespace OpenScrape.App
         /// </summary>
         private void SetBetPlayer()
         {
-            // Uso de using para garantizar liberación de recursos
-            using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImagen.Image), _pictureUmbralBet));
+            using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImage.Image), _pictureUmbralBet));
             var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "Bets");
 
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
             foreach (var region in regionTableMap.Regions)
@@ -1220,11 +1221,10 @@ namespace OpenScrape.App
         private void SetEmptyPlayer()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Empty");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
-            // Uso de using para garantizar liberación de recursos
-            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
             foreach (var region in regionTableMap.Regions)
             {
@@ -1255,7 +1255,7 @@ namespace OpenScrape.App
         private void SetAliasVillain()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
             foreach (var region in regionTableMap.Regions)
@@ -1303,7 +1303,7 @@ namespace OpenScrape.App
         private void SetPotValue()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
             var regionPot = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "pot");
@@ -1343,7 +1343,6 @@ namespace OpenScrape.App
                 }
                 else
                 {
-                    // Uso de TryParse con out var para mayor claridad
                     if (long.TryParse(_tableHand, out var oldTableHand) &&
                         long.TryParse(SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
                             regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber), out var newTableHand))
@@ -1378,11 +1377,10 @@ namespace OpenScrape.App
         private void SetDealerPlayer()
         {
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
-            // Uso de using para garantizar liberación de recursos
-            using var bitmap = new Bitmap(_formImage.pbImagen.Image);
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
             var emptyPositions = _playerGameState.Players
                 .Where(w => w.Empty || w.SitOut)
@@ -1422,7 +1420,6 @@ namespace OpenScrape.App
                 return;
             }
 
-            // Uso de FirstOrDefault con validación
             var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
             if (player == null)
             {
@@ -1463,11 +1460,9 @@ namespace OpenScrape.App
             { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
         };
 
-            // Uso de TryGetValue con validación
             if (!positionMap.TryGetValue(dealerPosition, out var positionInfo))
                 return TablePosition.None;
 
-            // Uso de LINQ para contar asientos vacíos relevantes
             var relevantEmptySeats = emptyPositions.Count(pos =>
                 dealerPosition < 4 ? pos < dealerPosition : pos > dealerPosition);
 
@@ -1486,7 +1481,7 @@ namespace OpenScrape.App
         {
             // Validación temprana con return
             var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "SitOut");
-            if (regionTableMap?.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap?.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
             // Inicialización de diccionario con object initializer
@@ -1499,20 +1494,17 @@ namespace OpenScrape.App
                 {"p5sitout", 1}
             };
 
-            // Uso de foreach con validación
             foreach (var region in regionTableMap.Regions)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "sitout");
                 if (playerNumber == null)
                     continue;
-
-                // Uso de FirstOrDefault con validación
+                
                 var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player == null)
                     continue;
 
                 var colorIndex = colorSitOutMap.TryGetValue(region.Name, out var index) ? index : 0;
-
 
                 var active = !player.Active;
                 var empty = !player.Empty;
@@ -1538,7 +1530,6 @@ namespace OpenScrape.App
         /// </summary>
         private void SetIsInPosition()
         {
-            // Uso de LINQ para simplificar lógica
             var activePlayers = _playerGameState.Players.Where(w => w.Active &&
                                                                    w.ValuePosition != 5 &&
                                                                    w.ValuePosition != 6);
@@ -1546,7 +1537,6 @@ namespace OpenScrape.App
             // Por defecto, asumimos que está en posición
             _playerGameState.IsInPosition = true;
 
-            // Uso de Any para simplificar condiciones
             if (activePlayers.Any(item => item.ValuePosition > (int)_playerGameState.Position) ||
                 activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
             {
@@ -1565,7 +1555,6 @@ namespace OpenScrape.App
                 _playerGameState.IsInPosition = false;
             }
 
-            // Uso de LINQ para simplificar condición
             if (_playerGameState.Position == TablePosition.BigBlind &&
                 _playerGameState.Players.Count(w => w.Active) == 1 &&
                 _playerGameState.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
@@ -1584,7 +1573,6 @@ namespace OpenScrape.App
             if (playerNames == null || !playerNames.Any())
                 return;
 
-            // MOSTRAR CAMBIOS: Uso de switch expression
             var positions = p0Position switch
             {
                 TablePosition.BigBlind => new List<TablePosition> {
@@ -1665,7 +1653,6 @@ namespace OpenScrape.App
         /// </summary>
         private void CreateLogWithMarkedHands()
         {
-            // Uso de using para garantizar liberación de recursos
             try
             {
                 var directoryInfo = new DirectoryInfo(_folderPath);
@@ -1675,21 +1662,18 @@ namespace OpenScrape.App
                     return;
                 }
 
-                // Uso de LINQ para filtrar archivos
                 var archivosPNG = directoryInfo.GetFiles("*.png")
                     .Where(file => file.Extension.ToLower() == ".png")
                     .ToArray();
 
                 if (archivosPNG.Length > 0)
                 {
-                    // Uso de LINQ para ordenar
                     var ultimaImagen = archivosPNG.OrderByDescending(file => file.LastWriteTime)
                         .First();
 
                     string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
                     string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
 
-                    // Uso de File.AppendAllText para simplificar
                     string contenido = File.Exists(rutaArchivoTexto)
                         ? Environment.NewLine + ultimaImagen.Name
                         : ultimaImagen.Name;
@@ -1714,7 +1698,6 @@ namespace OpenScrape.App
             // Inicialización de diccionario
             var players = new Dictionary<TablePosition, decimal>();
 
-            // Uso de LINQ para filtrar y asignar
             foreach (var item in _playerGameState.Players.Where(p => !p.Empty || !p.SitOut))
             {
                 if (item.Position != TablePosition.None)
@@ -1724,7 +1707,6 @@ namespace OpenScrape.App
             // Inicialización de diccionario con posiciones
             var position = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
 
-            // Uso de LINQ para generar posiciones
             foreach (var heroPosition in Enum.GetValues(typeof(TablePosition))
                                             .Cast<TablePosition>()
                                             .Where(p => p != TablePosition.None))
@@ -1759,11 +1741,10 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ObtainCardsPlayerAsync()
         {
-            // Uso de using para garantizar liberación de recursos
             using var session = _dataBase.LightweightSession();
 
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "User");
-            if (regionTableMap?.Regions == null || _formImage.pbImagen.Image == null)
+            if (regionTableMap?.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
             // Carga de cartas una sola vez
@@ -1773,11 +1754,10 @@ namespace OpenScrape.App
                 _cardsImages = cards.Select(item => item.ToDto()).ToList();
             }
 
-            // Uso de LINQ para filtrar regiones
             foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
             {
                 var imageToBase64 = _imageCropperService.CropImageToBase64(
-                    _formImage.pbImagen.Image,
+                    _formImage.pbImage.Image,
                     region.PosX,
                     region.PosY,
                     region.Width,
@@ -1786,7 +1766,6 @@ namespace OpenScrape.App
                 if (_cardsImages == null || !_cardsImages.Any())
                     continue;
 
-                // Uso de LINQ para encontrar la mejor coincidencia
                 var bestMatch = _cardsImages
                     .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
                     .Select(item => new
@@ -1800,7 +1779,6 @@ namespace OpenScrape.App
                 if (bestMatch == null)
                     continue;
 
-                // Uso de switch expression
                 switch (region.Name)
                 {
                     case "u0cardface0":
@@ -1824,7 +1802,7 @@ namespace OpenScrape.App
         private decimal SetBetValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
             // Validación de parámetros
-            if (_formImage.pbImagen.Image == null)
+            if (_formImage.pbImage.Image == null)
                 return 0;
 
             var firstOcr = new OcrResult();
@@ -1832,9 +1810,8 @@ namespace OpenScrape.App
 
             var result = string.Empty;
 
-            // Uso de valores por defecto para parámetros nulos
             firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 posX,
                 posY,
                 width,
@@ -1844,7 +1821,7 @@ namespace OpenScrape.App
 
             
             secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 posX,
                 posY,
                 width,
@@ -1869,7 +1846,6 @@ namespace OpenScrape.App
                     result = ocr1.ToString();
             }
 
-            // Uso de TryParse con out variable
             if (decimal.TryParse(result, out var bet))
                 return bet;
 
@@ -1883,14 +1859,13 @@ namespace OpenScrape.App
         private string SetTextOCR(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
             // Validación de parámetros
-            if (_formImage.pbImagen.Image == null)
+            if (_formImage.pbImage.Image == null)
                 return string.Empty;
 
             var ocr = new OcrResult();
 
-            // Uso de valores por defecto para parámetros nulos
             ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 posX,
                 posY,
                 width,
@@ -1902,7 +1877,7 @@ namespace OpenScrape.App
             if (string.IsNullOrEmpty(ocr.Text))
             {
                 ocr = _ocrService.ExtractTextFromRegionAndDebug(
-                    _formImage.pbImagen.Image,
+                    _formImage.pbImage.Image,
                     posX,
                     posY,
                     width,
@@ -1917,11 +1892,10 @@ namespace OpenScrape.App
         /// <summary>
         /// Obtiene una imagen mientras se está jugando
         /// </summary>
-        private void GetImageWhilePlaying()
+        private async Task GetImageWhilePlaying()
         {
             try
             {
-                // Uso de Path.Combine para rutas
                 string baseFolder = Path.Combine(
                     "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
                     $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}");
@@ -1934,27 +1908,24 @@ namespace OpenScrape.App
                     Directory.CreateDirectory(_folderPath);
                 }
 
-                // Uso de Path.Combine para rutas
                 var path = Path.Combine(_folderPath, $"game_{DateTime.Now.Ticks}.png");
 
                 _useCase.ExecuteImage(path);
 
-                // Uso de using para garantizar liberación de recursos
                 using var windowImg = Image.FromFile(path);
 
                 // Ajuste de tamaño de formulario
                 _formImage.Width = windowImg.Width + _formImage.Width / 11;
                 _formImage.Height = windowImg.Height + _formImage.Height / 4;
 
-                _formImage.pbImagen.Width = windowImg.Width;
-                _formImage.pbImagen.Height = windowImg.Height;
+                _formImage.pbImage.Width = windowImg.Width;
+                _formImage.pbImage.Height = windowImg.Height;
 
                 // Clonar imagen para evitar problemas de acceso
-                _formImage.pbImagen.Image = new Bitmap(windowImg);
-                _formImage.pbImagen.Refresh();
+                _formImage.pbImage.Image = new Bitmap(windowImg);
+                _formImage.pbImage.Refresh();
 
-                // Uso de Task.Delay en lugar de Thread.Sleep
-                Task.Delay(100).Wait();
+                await Task.Delay(100);
             }
             catch (Exception ex)
             {
@@ -1977,7 +1948,6 @@ namespace OpenScrape.App
 
                 if (_handle == IntPtr.Zero)
                 {
-                    // Uso de Task.Delay en lugar de Thread.Sleep
                     Task.Delay(2000).Wait();
                     _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
 
@@ -2049,7 +2019,6 @@ namespace OpenScrape.App
                         return;
                     }
 
-                    // Uso de using para garantizar liberación de recursos
                     using var img = _useCase.Execute(_handle);
 
                     // Validación de regiones
@@ -2062,7 +2031,6 @@ namespace OpenScrape.App
                         continue;
                     }
 
-                    // Uso de using para garantizar liberación de recursos
                     using var bitmap = new Bitmap(img);
                     Color colorAction = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
                     Color colorFlop = bitmap.GetPixel(flop.PosX, flop.PosY);
@@ -2102,11 +2070,10 @@ namespace OpenScrape.App
         /// </summary>
         private void EnableButtons()
         {
-            // Uso de array y foreach para simplificar
             var buttons = new[]
             {
                 btnPlusHeight, btnPlusWidth, btnMinusHeight, btnMinusWidth,
-                btnUp, btnUpRight, btnRigth, btnDownRight, btnDown,
+                btnUp, btnUpRight, btnRight, btnDownRight, btnDown,
                 btnDownLeft, btnLeft, btnUpLeft
             };
 
@@ -2130,21 +2097,19 @@ namespace OpenScrape.App
             if (_selectedRegion == null)
                 return;
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width + _speed };
                 _selectedRegion = updatedRegion;
                 tbWidth.Text = _selectedRegion.Width.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2155,21 +2120,19 @@ namespace OpenScrape.App
             if (_selectedRegion == null)
                 return;
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // MOSTRAR CAMBIOS: Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Width = Math.Max(1, _selectedRegion.Width - _speed) };
                 _selectedRegion = updatedRegion;
                 tbWidth.Text = _selectedRegion.Width.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2180,21 +2143,19 @@ namespace OpenScrape.App
             if (_selectedRegion == null)
                 return;
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height + _speed };
                 _selectedRegion = updatedRegion;
                 tbHeight.Text = _selectedRegion.Height.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2205,25 +2166,23 @@ namespace OpenScrape.App
             if (_selectedRegion == null)
                 return;
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Height = Math.Max(1, _selectedRegion.Height - _speed) };
                 _selectedRegion = updatedRegion;
                 tbHeight.Text = _selectedRegion.Height.ToString();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover a la derecha
+        /// Handles the click event for the move right button
         /// </summary>
         private void btnRigth_Click(object sender, EventArgs e)
         {
@@ -2232,7 +2191,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover a la izquierda
+        /// Handles the click event for the move left button
         /// </summary>
         private void btnLeft_Click(object sender, EventArgs e)
         {
@@ -2241,7 +2200,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia abajo
+        /// Handles the click event for the move down button
         /// </summary>
         private void btnDown_Click(object sender, EventArgs e)
         {
@@ -2250,7 +2209,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia arriba
+        /// Handles the click event for the move up button
         /// </summary>
         private void btnUp_Click(object sender, EventArgs e)
         {
@@ -2259,7 +2218,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia arriba-izquierda
+        /// Handles the click event for the move up-left button
         /// </summary>
         private void btnUpLeft_Click(object sender, EventArgs e)
         {
@@ -2268,7 +2227,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia arriba-derecha
+        /// Handles the click event for the move up-right button
         /// </summary>
         private void btnUpRight_Click(object sender, EventArgs e)
         {
@@ -2277,7 +2236,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia abajo-izquierda
+        /// Handles the click event for the move down-left button
         /// </summary>
         private void btnDownLeft_Click(object sender, EventArgs e)
         {
@@ -2286,7 +2245,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento de clic en el botón para mover hacia abajo-derecha
+        /// Handles the click event for the move down-right button
         /// </summary>
         private void btnDownRight_Click(object sender, EventArgs e)
         {
@@ -2302,20 +2261,18 @@ namespace OpenScrape.App
         private void MoveRegion(int offsetX, int offsetY)
         {
             // Método común para mover región
-            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+            if (_selectedRegion == null || _formImage.pbImage.Image == null)
                 return;
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
                 // Obtener información de color
                 var rgbResponse = GetColorResponse();
 
-                // Uso de with para crear copia con cambios
                 var updateRegion = _selectedRegion with
                 {
                     PosX = _selectedRegion.PosX + offsetX,
@@ -2339,7 +2296,7 @@ namespace OpenScrape.App
                 _selectedRegion = updateRegion;
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2349,13 +2306,12 @@ namespace OpenScrape.App
         private GetRGBColorResponse GetColorResponse()
         {
             // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+            if (_selectedRegion == null || _formImage.pbImage.Image == null)
                 return new GetRGBColorResponse();
 
-            // Uso de object initializer
             var rgbRequest = new GetRGBColorRequest
             {
-                Image = (Bitmap)_formImage.pbImagen.Image,
+                Image = (Bitmap)_formImage.pbImage.Image,
                 X = _selectedRegion.PosX,
                 Y = _selectedRegion.PosY,
                 IsColor = _selectedRegion.IsColor.GetValueOrDefault()
@@ -2392,20 +2348,18 @@ namespace OpenScrape.App
                 return;
             }
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Width = Math.Max(1, width) };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2424,20 +2378,18 @@ namespace OpenScrape.App
                 return;
             }
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { Height = Math.Max(1, height) };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2456,20 +2408,18 @@ namespace OpenScrape.App
                 return;
             }
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { PosX = posX };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         /// <summary>
@@ -2488,20 +2438,18 @@ namespace OpenScrape.App
                 return;
             }
 
-            _formImage.pbImagen.Refresh();
+            _formImage.pbImage.Refresh();
 
-            // Uso de using para garantizar liberación de recursos
-            using (_papel = _formImage.pbImagen.CreateGraphics())
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
                 using var lapiz = new Pen(Color.Red);
 
-                // Uso de with para crear copia con cambios
                 var updatedRegion = _selectedRegion with { PosY = posY };
                 _selectedRegion = updatedRegion;
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
             }
 
-            _img = _formImage.pbImagen.Image;
+            _img = _formImage.pbImage.Image;
         }
 
         #endregion
@@ -2531,9 +2479,8 @@ namespace OpenScrape.App
         {
             if (sender is TreeView treeView && treeView.SelectedNode != null)
             {
-                var manos = ObtenerManosActionNodo(treeView.SelectedNode);
+                var manos = GetHandsFromActionNode(treeView.SelectedNode);
 
-                // Uso de LINQ para ordenar
                 var manosOrder = manos?.OrderByDescending(o => o.Name).ToList();
                 dgvHands.DataSource = manosOrder;
             }
@@ -2544,11 +2491,11 @@ namespace OpenScrape.App
         /// </summary>
         /// <param name="selectedNode">Nodo seleccionado</param>
         /// <returns>Lista de manos</returns>
-        private List<Domain.ValueObjects.Hand> ObtenerManosActionNodo(TreeNode selectedNode)
+        private List<Hand> GetHandsFromActionNode(TreeNode selectedNode)
         {
             // Validación de nodo
             if (selectedNode == null)
-                return new List<Domain.ValueObjects.Hand>();
+                return new List<Hand>();
 
             // Solo procesar si es un nodo hoja (último nivel)
             if (selectedNode.Nodes.Count == 0 &&
@@ -2564,11 +2511,9 @@ namespace OpenScrape.App
                 // Obtener el nombre de la tabla (nivel raíz)
                 string tableName = selectedNode.Parent.Parent.Text;
 
-                // Uso de LINQ para buscar tabla
                 var table = _dataTables?.FirstOrDefault(f => f.Id == tableName);
                 if (table != null)
                 {
-                    // Uso de LINQ para buscar posición
                     var position = table.Positions?
                         .FirstOrDefault(p =>
                             p.Name == positionName &&
@@ -2592,7 +2537,6 @@ namespace OpenScrape.App
 
             TreeNode nodeToExpand = e.Node;
 
-            // Uso de LINQ para obtener nodos del mismo nivel
             IEnumerable<TreeNode> siblingNodes = nodeToExpand.Parent == null
                 ? twTables.Nodes.Cast<TreeNode>().Where(node => node != nodeToExpand)
                 : nodeToExpand.Parent.Nodes.Cast<TreeNode>().Where(node => node != nodeToExpand);
@@ -2613,11 +2557,11 @@ namespace OpenScrape.App
         private void btnTestColor_Click(object sender, EventArgs e)
         {
             // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+            if (_selectedRegion == null || _formImage.pbImage.Image == null)
                 return;
 
             var color = _colorDetectionService.GetPixelColor(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 _selectedRegion.PosX,
                 _selectedRegion.PosY);
 
@@ -2639,7 +2583,6 @@ namespace OpenScrape.App
 
             try
             {
-                // Uso de using para garantizar liberación de recursos
                 Color color = ColorTranslator.FromHtml("#" + hexColor);
                 using (Bitmap bmp = new Bitmap(pbRegionColor.Width, pbRegionColor.Height))
                 {
@@ -2663,7 +2606,7 @@ namespace OpenScrape.App
         private void btnTestTexto_Click(object sender, EventArgs e)
         {
             // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+            if (_selectedRegion == null || _formImage.pbImage.Image == null)
                 return;
 
             var firstOcr = new OcrResult();
@@ -2671,9 +2614,8 @@ namespace OpenScrape.App
 
             var result = string.Empty;
 
-            // Uso de valores por defecto para parámetros nulos
             firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 _selectedRegion.PosX,
                 _selectedRegion.PosY,
                 _selectedRegion.Width,
@@ -2682,7 +2624,7 @@ namespace OpenScrape.App
                 _selectedRegion.IsOnlyNumber ?? false);
 
             secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImagen.Image,
+                _formImage.pbImage.Image,
                 _selectedRegion.PosX,
                 _selectedRegion.PosY,
                 _selectedRegion.Width,
@@ -2721,7 +2663,7 @@ namespace OpenScrape.App
         private async void btnTestCarta_Click(object sender, EventArgs e)
         {
             // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImagen.Image == null)
+            if (_selectedRegion == null || _formImage.pbImage.Image == null)
             {
                 LogError("No se ha seleccionado una región o la imagen es nula.");
                 return;
@@ -2730,7 +2672,7 @@ namespace OpenScrape.App
             try
             {
                 var imageToBase64 = _imageCropperService.CropImageToBase64(
-                    _formImage.pbImagen.Image,
+                    _formImage.pbImage.Image,
                     _selectedRegion.PosX,
                     _selectedRegion.PosY,
                     _selectedRegion.Width,
@@ -2744,7 +2686,6 @@ namespace OpenScrape.App
 
                 if (_cardsImages?.Any() == true)
                 {
-                    // Uso de LINQ para encontrar la mejor coincidencia
                     var bestMatch = _cardsImages
                         .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
                         .Select(item => new
@@ -2958,7 +2899,7 @@ namespace OpenScrape.App
             rgRegion.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
 
             // Mejorar controles de movimiento
-            var movementButtons = new[] { btnUp, btnDown, btnLeft, btnRigth, btnUpLeft, btnUpRight, btnDownLeft, btnDownRight };
+            var movementButtons = new[] { btnUp, btnDown, btnLeft, btnRight, btnUpLeft, btnUpRight, btnDownLeft, btnDownRight };
             foreach (Button btn in movementButtons)
             {
                 btn.FlatStyle = FlatStyle.Flat;

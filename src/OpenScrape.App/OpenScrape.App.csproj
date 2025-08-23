@@ -7,11 +7,16 @@
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
+		<ApplicationIcon>imagen_2025-08-19_153143860.ico</ApplicationIcon>
 	</PropertyGroup>
 
   <ItemGroup>
     <None Remove="Resources\tessdata\eng.traineddata" />
     <None Remove="tessdata\eng.traineddata" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="imagen_2025-08-19_153143860.ico" />
   </ItemGroup>
 
   <ItemGroup>

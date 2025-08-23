@@ -45,7 +45,7 @@ namespace OpenScrape.App
 
         private void lbApps_SelectedIndexChanged(object sender, EventArgs e)
         {
-            btnAceptar.Enabled = true;
+            btnAccept.Enabled = true;
         }
 
         private void btnAceptar_Click(object sender, EventArgs e)
