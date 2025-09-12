@@ -1,3 +1,4 @@
+using Emgu.CV.Dnn;
 using JasperFx.Core;
 using Marten;
 using OpenScrape.App.Aplication;
@@ -1444,27 +1445,27 @@ namespace OpenScrape.App
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
             var positionMap = new Dictionary<int, (TablePosition defaultPosition, Dictionary<int, TablePosition> emptyPositions)>
-        {
-            { 1, (TablePosition.CutOff, new Dictionary<int, TablePosition>()) },
-            { 2, (TablePosition.Middle, new Dictionary<int, TablePosition> {
-                { 1, TablePosition.CutOff },
-                { 2, TablePosition.Early }
-            })},
-            { 3, (TablePosition.Early, new Dictionary<int, TablePosition> {
-                { 1, TablePosition.Middle },
-                { 2, TablePosition.CutOff }
-            })},
-            { 4, (TablePosition.BigBlind, new Dictionary<int, TablePosition> {
-                { 1, TablePosition.SmallBlind }
-            })},
-            { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
-        };
+            {
+                { 1, (TablePosition.CutOff, new Dictionary<int, TablePosition>()) },
+                { 2, (TablePosition.Middle, new Dictionary<int, TablePosition> {
+                    { 1, TablePosition.Early },
+                    { 2, TablePosition.BigBlind }
+                })},
+                { 3, (TablePosition.Early, new Dictionary<int, TablePosition> {
+                    { 1, TablePosition.BigBlind },
+                    { 2, TablePosition.SmallBlind }
+                })},
+                { 4, (TablePosition.BigBlind, new Dictionary<int, TablePosition> {
+                    { 1, TablePosition.SmallBlind }
+                })},
+                { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
+            };
 
             if (!positionMap.TryGetValue(dealerPosition, out var positionInfo))
                 return TablePosition.None;
 
-            var relevantEmptySeats = emptyPositions.Count(pos =>
-                dealerPosition < 4 ? pos < dealerPosition : pos > dealerPosition);
+            // Contar asientos vacíos que afectan la posición de P0
+            var relevantEmptySeats = emptyPositions.Count(pos => pos > dealerPosition);
 
             // Si hay una regla específica para el número de asientos vacíos, úsala
             if (positionInfo.emptyPositions.TryGetValue(relevantEmptySeats, out var specialPosition))
@@ -1573,6 +1574,9 @@ namespace OpenScrape.App
             if (playerNames == null || !playerNames.Any())
                 return;
 
+            var playersNotPlaying = playerNames.Where(w => w.SitOut || w.Empty).Count();
+            //
+            
             var positions = p0Position switch
             {
                 TablePosition.BigBlind => new List<TablePosition> {
@@ -1626,7 +1630,12 @@ namespace OpenScrape.App
                     if (player == null)
                         continue;
 
-                    if (playerNames.Contains(player.Name) && player.Empty)
+                    if ((position == TablePosition.SmallBlind || position == TablePosition.BigBlind) && player.Bet == 0 && player.Position == TablePosition.None)
+                    {
+                        playerNames.Remove(player.Name);
+                        continue;
+                    }
+                    else if (playerNames.Contains(player.Name) && player.Empty)
                     {
                         playerNames.Remove(player.Name);
                         if (position != TablePosition.SmallBlind && position != TablePosition.BigBlind)

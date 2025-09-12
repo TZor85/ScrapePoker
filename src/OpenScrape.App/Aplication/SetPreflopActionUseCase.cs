@@ -324,7 +324,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         var betsPosition = preflopTablePosition
                             .Where(w => w.Key != TablePosition.BigBlind && w.Key != TablePosition.None)
-                            .Select(s => s.Key).ToList();
+                            .Select(s => s.Key).ToList().OrderBy(o => o);
 
         foreach (var item in betsPosition)
         {
@@ -405,7 +405,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         var cont = 0;
         var betsPosition = preflopTablePosition
                             .Where(w => w.Key != TablePosition.BigBlind && w.Key != TablePosition.SmallBlind && w.Key != TablePosition.None)
-                            .Select(s => s.Key).ToList();
+                            .Select(s => s.Key).ToList().OrderBy(o => o);
 
         foreach (var item in betsPosition)
         {
