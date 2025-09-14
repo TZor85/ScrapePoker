@@ -32,7 +32,7 @@ namespace OpenScrape.App.Helpers
             var apuesta = 0m;
             var cont = 0;
 
-            foreach (var item in playerState.Players.Where(w => w.Bet > 1))
+            foreach (var item in playerState.Players.Where(w => w.Bet > 1).OrderBy(o => o.Position))
             {
                 if (item.Bet > apuesta)
                 {

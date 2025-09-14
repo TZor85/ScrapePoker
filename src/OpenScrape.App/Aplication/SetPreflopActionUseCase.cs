@@ -44,7 +44,6 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         {
             if (request.ResponseAction.IsSecondAction)
             {
-                var pp = request.PlayerState;
                 if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.Call)
                 {
                     var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
@@ -365,7 +364,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         var threeBetValue = 0m;
         var threeBetPosition = TablePosition.None;
 
-        foreach (var item in dictionary)
+        foreach (var item in dictionary.OrderBy(o => o.Key))
         {
             if (item.Value > 1 && openRaiseValue == 0)
             {

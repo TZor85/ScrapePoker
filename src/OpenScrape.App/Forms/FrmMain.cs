@@ -1570,85 +1570,128 @@ namespace OpenScrape.App
         /// <param name="p0Position">Posición de P0</param>
         private void SetVillainPosition(TablePosition p0Position)
         {
-            var playerNames = _playerGameState.Players.ToList();
-            if (playerNames == null || !playerNames.Any())
+            // Obtener copia de jugadores y filtrar activos (no vacíos ni sitout)
+            var allPlayers = _playerGameState.Players.ToList();
+            if (allPlayers == null || allPlayers.Count == 0)
                 return;
 
-            var playersNotPlaying = playerNames.Where(w => w.SitOut || w.Empty).Count();
-            //
-            
-            var positions = p0Position switch
+            var activePlayers = allPlayers
+                .Where(p => p != null && !p.Empty && !p.SitOut)
+                .OrderBy(p => p.ValuePosition)
+                .ToList();
+
+            if (!activePlayers.Any())
+                return;
+
+            // Orden base de posiciones según la posición de P0 (héroe) para mesa 6-max
+            var positionsOrder = p0Position switch
             {
-                TablePosition.BigBlind => new List<TablePosition> {
-                TablePosition.Early, TablePosition.Middle, TablePosition.CutOff,
-                TablePosition.Button, TablePosition.SmallBlind
-            },
-                TablePosition.SmallBlind => new List<TablePosition> {
-                TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
-                TablePosition.CutOff, TablePosition.Button
-            },
-                TablePosition.Button => new List<TablePosition> {
-                TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
-                TablePosition.Middle, TablePosition.CutOff
-            },
-                TablePosition.CutOff => new List<TablePosition> {
-                TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
-                TablePosition.Early, TablePosition.Middle
-            },
-                TablePosition.Middle => new List<TablePosition> {
-                TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
-                TablePosition.BigBlind, TablePosition.Early
-            },
-                TablePosition.Early => new List<TablePosition> {
-                TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
-                TablePosition.SmallBlind, TablePosition.BigBlind
-            },
+                TablePosition.BigBlind => new List<TablePosition>
+                {
+                    TablePosition.Early, TablePosition.Middle, TablePosition.CutOff,
+                    TablePosition.Button, TablePosition.SmallBlind
+                },
+                TablePosition.SmallBlind => new List<TablePosition>
+                {
+                    TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
+                    TablePosition.CutOff, TablePosition.Button
+                },
+                TablePosition.Button => new List<TablePosition>
+                {
+                    TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
+                    TablePosition.Middle, TablePosition.CutOff
+                },
+                TablePosition.CutOff => new List<TablePosition>
+                {
+                    TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
+                    TablePosition.Early, TablePosition.Middle
+                },
+                TablePosition.Middle => new List<TablePosition>
+                {
+                    TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
+                    TablePosition.BigBlind, TablePosition.Early
+                },
+                TablePosition.Early => new List<TablePosition>
+                {
+                    TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
+                    TablePosition.SmallBlind, TablePosition.BigBlind
+                },
                 _ => new List<TablePosition>()
             };
 
-            SetVillainPositionExtension(playerNames, positions);
+            if (activePlayers.Count() == 4)
+                positionsOrder.Remove(TablePosition.Middle);
+
+            if(activePlayers.Count() == 3)
+            {
+                positionsOrder.Remove(TablePosition.Middle);
+                positionsOrder.Remove(TablePosition.Early);
+            }
+
+            if (activePlayers.Count() == 2)
+            {
+                positionsOrder.Remove(TablePosition.Middle);
+                positionsOrder.Remove(TablePosition.Early);
+                positionsOrder.Remove(TablePosition.CutOff);
+            }
+
+            // Limpiar posiciones previas de jugadores activos
+            foreach (var p in activePlayers)
+            {
+                p.Position = TablePosition.None;
+            }
+
+            SetVillainPositionExtension(activePlayers, positionsOrder);
         }
 
         /// <summary>
         /// Extiende la funcionalidad de SetVillainPosition para asignar posiciones a los jugadores
         /// </summary>
-        /// <param name="players">Lista de jugadores</param>
-        /// <param name="positions">Lista de posiciones a asignar</param>
+        /// <param name="players">Lista de jugadores (ordenados por ValuePosition) a considerar</param>
+        /// <param name="positions">Lista de posiciones a asignar (ya recortada a jugadores activos)</param>
         private void SetVillainPositionExtension(List<Player> players, List<TablePosition> positions)
         {
-            // MOSTRAR CAMBIOS: Validación de parámetros
-            if (players == null || positions == null)
+            // Validación de parámetros
+            if (players == null || players.Count == 0 || positions == null || positions.Count == 0)
                 return;
 
-            List<string> playerNames = new List<string> { "P1", "P2", "P3", "P4", "P5" };
-
+            // Asignación secuencial respetando blinds cuando sea posible
             foreach (var position in positions)
             {
+                Player? assigned = null;
+
                 foreach (var player in players.OrderBy(o => o.ValuePosition))
                 {
-                    // MOSTRAR CAMBIOS: Validación de null
                     if (player == null)
                         continue;
 
-                    if ((position == TablePosition.SmallBlind || position == TablePosition.BigBlind) && player.Bet == 0 && player.Position == TablePosition.None)
-                    {
-                        playerNames.Remove(player.Name);
+                    // Elegibles solamente jugadores activos
+                    bool shouldAssignPosition = !player.Empty && !player.SitOut && player.Position == TablePosition.None;
+                    if (!shouldAssignPosition)
                         continue;
-                    }
-                    else if (playerNames.Contains(player.Name) && player.Empty)
+
+                    // Para blinds, preferir quien muestre apuesta (> 0) si está disponible
+                    if (position == TablePosition.SmallBlind || position == TablePosition.BigBlind)
                     {
-                        playerNames.Remove(player.Name);
-                        if (position != TablePosition.SmallBlind && position != TablePosition.BigBlind)
+                        // Si no tiene apuesta, intentar encontrar otro con apuesta para blind
+                        if (player.Bet <= 0)
                             continue;
                     }
 
-                    // MOSTRAR CAMBIOS: Simplificación de condición
-                    bool shouldAssignPosition = !player.Empty || !player.SitOut;
-                    if (shouldAssignPosition && player.Position == TablePosition.None)
-                    {
-                        player.Position = position;
-                        break;
-                    }
+                    assigned = player;
+                    break;
+                }
+
+                // Si no se pudo respetar la preferencia de apuesta en blinds, asignar el siguiente disponible
+                if (assigned == null)
+                {
+                    assigned = players.OrderBy(o => o.ValuePosition)
+                                      .FirstOrDefault(p => p != null && !p.Empty && !p.SitOut && p.Position == TablePosition.None);
+                }
+
+                if (assigned != null)
+                {
+                    assigned.Position = position;
                 }
             }
         }
@@ -1840,7 +1883,7 @@ namespace OpenScrape.App
 
             if (isOnlyNumber.HasValue == true)
             {
-                if (string.IsNullOrEmpty(firstOcr.Text))
+                if(string.IsNullOrEmpty(firstOcr.Text))
                     firstOcr.Text = "0";
 
                 if (string.IsNullOrEmpty(secondOcr.Text))
@@ -1854,6 +1897,7 @@ namespace OpenScrape.App
                 else
                     result = ocr1.ToString();
             }
+
 
             if (decimal.TryParse(result, out var bet))
                 return bet;
