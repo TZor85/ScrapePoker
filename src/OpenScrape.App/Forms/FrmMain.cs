@@ -9,6 +9,7 @@ using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.PreFlopRaiser;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
+using OpenScrape.App.Helpers.MLHelper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Dtos;
@@ -747,6 +748,16 @@ namespace OpenScrape.App
 
         private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
         {
+            var rolOopEngine = new RolOopHelper();
+            var heroCardsName = $"{flopAnalyzerRequest.PlayerState.HoleCard1Face}{flopAnalyzerRequest.PlayerState.HoleCard2Face}";
+            var flopCardsName = string.Empty;
+
+            foreach (var item in flopAnalyzerRequest.PlayerState.BoardCards.Where(w => w.Position == BoardPosition.Flop))
+            {
+                flopCardsName += item.Name;
+            }
+
+
             // IP
             if (_playerGameState.IsInPosition)
             {
@@ -759,12 +770,15 @@ namespace OpenScrape.App
             // OOP
             else
             {
-                if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
-                    _responseAction.Action = "Check/Call";
-                else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
-                    _responseAction.Action = "Check/Fold";
-                else
-                    _responseAction.Action = "Bet 1/3";
+                rolOopEngine.LoadModel();
+                _responseAction.Action = rolOopEngine.PredictAction(heroCardsName,flopCardsName, out var probs);
+
+                //if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                //    _responseAction.Action = "Check/Call";
+                //else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
+                //    _responseAction.Action = "Check/Fold";
+                //else
+                //    _responseAction.Action = "Bet 1/3";
             }
         }
 
@@ -1313,13 +1327,18 @@ namespace OpenScrape.App
                 decimal potValue = 0;
                 var pot = SetTextOCR(regionPot.PosX, regionPot.PosY, regionPot.Width, regionPot.Height,
                     regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber);
-
-                // Mejorada la lógica de parsing
-                if (pot.Length == 4 && !pot.Contains(".") && !pot.Contains(","))
-                    decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
-                else
-                    decimal.TryParse(pot, out potValue);
-
+                try
+                {
+                    // Mejorada la lógica de parsing
+                    if (pot.Length == 4 && !pot.Contains(".") && !pot.Contains(","))
+                        decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
+                    else
+                        decimal.TryParse(pot, out potValue);
+                }
+                catch(Exception ex)
+                {
+                    var pp = ex.Message;
+                }
                 _playerGameState.PotSize = potValue;
             }
         }
