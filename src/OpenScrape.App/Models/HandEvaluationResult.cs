@@ -9,7 +9,7 @@ namespace OpenScrape.App.Models;
 public sealed record HandEvaluationResult
 {
     [Required]
-    public HandRanking HandRanking { get; init; }
+    public HandRank HandRanking { get; init; }
 
     [Required]
     public List<NormalizedCard> BestFiveCards { get; init; } = [];

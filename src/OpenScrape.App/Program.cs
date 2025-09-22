@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 
@@ -30,6 +33,13 @@ namespace OpenScrape.App
                     //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
 
                     //services.AddScoped<OcrService>();
+
+                    // Register equity calculation components
+                    services.AddSingleton<MonteCarloSimulator>();
+                    services.AddSingleton<HandEvaluator>();
+                    services.AddSingleton<OutsCalculator>();
+                    services.AddSingleton<PreflopEquityCalculator>();
+                    services.AddSingleton<EquityCalculatorService>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

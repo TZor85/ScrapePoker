@@ -164,7 +164,7 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
             {
                 if (!existingRanks.Contains(rank))
                 {
-                    var card = new CardDataOuts { Suit = suit, Rank = rank };
+                    var card = new CardDataOuts(suit, rank);
                     if (!IsCardKnown(card, knownCards))
                         flushOuts.Add(card);
                 }
@@ -256,7 +256,7 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         {
             var remaining = Enum.GetValues(typeof(Suit))
             .Cast<Suit>()
-            .Select(s => new CardDataOuts { Suit = s, Rank = rank })
+            .Select(s => new CardDataOuts(s, rank))
             .Where(c => !IsCardKnown(c, knownCards));
 
             setOuts.AddRange(remaining);
@@ -495,7 +495,7 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
     {
         return Enum.GetValues(typeof(Suit))
         .Cast<Suit>()
-        .Select(s => new CardDataOuts { Suit = s, Rank = rank })
+        .Select(s => new CardDataOuts(s, rank))
         .Where(c => !IsCardKnown(c, knownCards))
         .ToList();
     }

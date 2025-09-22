@@ -1,11 +1,5 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.Data;
-using OpenScrape.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OpenScrape.App.Helpers.MLHelper
 {

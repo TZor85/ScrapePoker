@@ -69,33 +69,33 @@ namespace OpenScrape.App.Services
 
             // Verificar en orden de fuerza (de mayor a menor)
             if (IsRoyalFlush(sortedCards, out var royalFlushCards))
-                return new BestHandResult(HandRanking.RoyalFlush, royalFlushCards, []);
+                return new BestHandResult(HandRank.RoyalFlush, royalFlushCards, []);
 
             if (IsStraightFlush(sortedCards, out var straightFlushCards))
-                return new BestHandResult(HandRanking.StraightFlush, straightFlushCards, []);
+                return new BestHandResult(HandRank.StraightFlush, straightFlushCards, []);
 
             if (IsFourOfAKind(sortedCards, out var fourKindCards, out var fourKindKickers))
-                return new BestHandResult(HandRanking.FourOfAKind, fourKindCards, fourKindKickers);
+                return new BestHandResult(HandRank.FourOfAKind, fourKindCards, fourKindKickers);
 
             if (IsFullHouse(sortedCards, out var fullHouseCards))
-                return new BestHandResult(HandRanking.FullHouse, fullHouseCards, []);
+                return new BestHandResult(HandRank.FullHouse, fullHouseCards, []);
 
             if (IsFlush(sortedCards, out var flushCards))
-                return new BestHandResult(HandRanking.Flush, flushCards, []);
+                return new BestHandResult(HandRank.Flush, flushCards, []);
 
             if (IsStraight(sortedCards, out var straightCards))
-                return new BestHandResult(HandRanking.Straight, straightCards, []);
+                return new BestHandResult(HandRank.Straight, straightCards, []);
 
             if (IsThreeOfAKind(sortedCards, out var threeKindCards, out var threeKindKickers))
-                return new BestHandResult(HandRanking.ThreeOfAKind, threeKindCards, threeKindKickers);
+                return new BestHandResult(HandRank.ThreeOfAKind, threeKindCards, threeKindKickers);
 
             if (IsTwoPair(sortedCards, out var twoPairCards, out var twoPairKickers))
-                return new BestHandResult(HandRanking.TwoPair, twoPairCards, twoPairKickers);
+                return new BestHandResult(HandRank.TwoPair, twoPairCards, twoPairKickers);
 
             if (IsOnePair(sortedCards, out var onePairCards, out var onePairKickers))
-                return new BestHandResult(HandRanking.OnePair, onePairCards, onePairKickers);
+                return new BestHandResult(HandRank.OnePair, onePairCards, onePairKickers);
 
-            return new BestHandResult(HandRanking.HighCard, sortedCards, []);
+            return new BestHandResult(HandRank.HighCard, sortedCards, []);
         }
 
         #region Validadores de Jugadas
@@ -351,34 +351,34 @@ namespace OpenScrape.App.Services
         {
             return hand.Ranking switch
             {
-                HandRanking.RoyalFlush => "Escalera Real",
-                HandRanking.StraightFlush => "Escalera de Color",
-                HandRanking.FourOfAKind => "Poker",
-                HandRanking.FullHouse => "Full House",
-                HandRanking.Flush => "Color",
-                HandRanking.Straight => "Escalera",
-                HandRanking.ThreeOfAKind => "Trío",
-                HandRanking.TwoPair => "Doble Pareja",
-                HandRanking.OnePair => "Pareja",
-                HandRanking.HighCard => "Carta Alta",
+                HandRank.RoyalFlush => "Escalera Real",
+                HandRank.StraightFlush => "Escalera de Color",
+                HandRank.FourOfAKind => "Poker",
+                HandRank.FullHouse => "Full House",
+                HandRank.Flush => "Color",
+                HandRank.Straight => "Escalera",
+                HandRank.ThreeOfAKind => "Trío",
+                HandRank.TwoPair => "Doble Pareja",
+                HandRank.OnePair => "Pareja",
+                HandRank.HighCard => "Carta Alta",
                 _ => "Desconocido"
             };
         }
 
-        private double CalculateHandStrength(HandRanking ranking)
+        private double CalculateHandStrength(HandRank ranking)
         {
             return ranking switch
             {
-                HandRanking.RoyalFlush => 1.0,
-                HandRanking.StraightFlush => 0.95,
-                HandRanking.FourOfAKind => 0.90,
-                HandRanking.FullHouse => 0.85,
-                HandRanking.Flush => 0.75,
-                HandRanking.Straight => 0.65,
-                HandRanking.ThreeOfAKind => 0.55,
-                HandRanking.TwoPair => 0.45,
-                HandRanking.OnePair => 0.25,
-                HandRanking.HighCard => 0.10,
+                HandRank.RoyalFlush => 1.0,
+                HandRank.StraightFlush => 0.95,
+                HandRank.FourOfAKind => 0.90,
+                HandRank.FullHouse => 0.85,
+                HandRank.Flush => 0.75,
+                HandRank.Straight => 0.65,
+                HandRank.ThreeOfAKind => 0.55,
+                HandRank.TwoPair => 0.45,
+                HandRank.OnePair => 0.25,
+                HandRank.HighCard => 0.10,
                 _ => 0.0
             };
         }

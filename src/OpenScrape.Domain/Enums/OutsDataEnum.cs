@@ -8,7 +8,7 @@ public enum Rank : byte
 
 public enum Suit : byte { Clubs = 1, Hearts = 2, Diamonds = 3, Spades = 4 }
 
-public enum HandRanking : byte
+public enum HandRank : byte
 {
     HighCard = 1,
     OnePair = 2,

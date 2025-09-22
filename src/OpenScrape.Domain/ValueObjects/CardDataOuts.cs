@@ -4,9 +4,15 @@ namespace OpenScrape.Domain.ValueObjects;
 
 public class CardDataOuts
 {
-    public required Suit Suit { get; set; }
-    public required Rank Rank { get; set; }
+    public Suit Suit { get; set; }
+    public Rank Rank { get; set; }
     public string Id => $"{Rank}_{Suit}";
+
+    public CardDataOuts(Suit suit, Rank rank)
+    {
+        Suit = suit;
+        Rank = rank;
+    }
 
 }
 

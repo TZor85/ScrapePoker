@@ -11,7 +11,7 @@ namespace OpenScrape.App.Models;
 /// Resultado interno de evaluación
 /// </summary>
 internal sealed record BestHandResult(
-    HandRanking Ranking,
+    HandRank Ranking,
     List<NormalizedCard> Cards,
     List<NormalizedCard> Kickers
 );

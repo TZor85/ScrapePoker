@@ -12,6 +12,8 @@ using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Helpers.MLHelper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -26,6 +28,7 @@ using System.Data;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
+using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
 using Image = System.Drawing.Image;
 
 namespace OpenScrape.App
@@ -36,9 +39,6 @@ namespace OpenScrape.App
     public partial class FrmMain : Form, IDisposable
     {
         #region [Constants]
-        private const int BUTTON_SIZE = 40;
-        private const int MARGIN = 5;
-        private const int MATRIX_SIZE = 13;
         private const string DEFAULT_RESOURCES_PATH = @"C:\Code\Poker\ScrapePoker\resources";
         #endregion
 
@@ -69,6 +69,7 @@ namespace OpenScrape.App
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
         private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
+        private readonly List<int> _colorPlaying = new() { 33 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
@@ -479,6 +480,9 @@ namespace OpenScrape.App
                     await InitializePlayersAsync();
                 }
 
+                SetActivePlayer();
+                SetBetPlayer();
+
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
 
@@ -501,8 +505,9 @@ namespace OpenScrape.App
                 await ObtainCardsPlayerAsync();
                 SetEmptyPlayer();
                 SetSitOutPlayer();
+                //SetActivePlayer();
                 SetDealerPlayer();
-                SetBetPlayer();
+                //SetBetPlayer();
                 SetVillainPosition(_playerGameState.Position);
                 SetAliasVillain();
             }
@@ -582,6 +587,12 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessFlopAsync(PotOddsResult potOddsResult)
         {
+            // Crear el servicio
+            var equityService = new EquityCalculatorService(
+                new MonteCarloSimulator(),
+                new OutsCalculator(),
+                new PreflopEquityCalculator());
+
             _isFlop = false;
 
             // Capturar cartas del flop
@@ -612,24 +623,48 @@ namespace OpenScrape.App
             _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
 
             // Calcular odds y actualizar overlay
-            potOddsResult = GetPotOddsCalculator();
-            UpdateOverlayWithPotOdds(potOddsResult);
+            //potOddsResult = GetPotOddsCalculator();
+
+            var myCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
+                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
+            };
+
+            var communityCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
+                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
+                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force)
+            };
+
+            var analysis = equityService.CalculateFullEquity(
+                            myCards,
+                            communityCards,
+                            numOpponents: _playerGameState.Players.Count(c => c.Active),
+                            potSize: (double)_playerGameState.PotSize,
+                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
+                            monteCarloIterations: 10000);
+
+
+            UpdateOverlayWithPotOdds(analysis);
 
             // Determinar si estamos en posición
-            SetIsInPosition();
+            //SetIsInPosition();
 
             // Analizar el flop y determinar acción
-            DetermineFlopAction();
+            //DetermineFlopAction();
+            _responseAction.Action = analysis.RecommendedAction;
         }
 
         /// <summary>
         /// Actualiza el overlay con la información de pot odds
         /// </summary>
-        private void UpdateOverlayWithPotOdds(PotOddsResult potOddsResult)
+        private void UpdateOverlayWithPotOdds(FullEquityAnalysis potOddsResult)
         {
-            _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOddsPercentage.ToString());
-            _frmOverlay.UpdateEquityPercentage(potOddsResult.EquityPercentage.ToString());
-            _frmOverlay.UpdateShouldCall(potOddsResult.ShouldCall);
+            _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOdds.ToString());
+            _frmOverlay.UpdateEquityPercentage(potOddsResult.OverallEquity.ToString());
+            //_frmOverlay.UpdateShouldCall(potOddsResult.ShouldCall);
         }
 
         /// <summary>
@@ -922,7 +957,14 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
+            // Crear el servicio
+            var equityService = new EquityCalculatorService(
+                new MonteCarloSimulator(),
+                new OutsCalculator(),
+                new PreflopEquityCalculator());
+
             _isTurn = false;
+
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
             {
@@ -931,7 +973,34 @@ namespace OpenScrape.App
                 DataBoard = _playerGameState.BoardCards
             });
 
+            var dataBoard = turnResponse.DataBoard;
             _playerGameState.BoardCards = turnResponse.DataBoard;
+
+            var myCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
+                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
+            };
+
+            var communityCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
+                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
+                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force),
+                new CardDataOuts((Suit)dataBoard[3].Suit, (Rank)dataBoard[3].Force)
+            };
+
+            var analysis = equityService.CalculateFullEquity(
+                            myCards,
+                            communityCards,
+                            numOpponents: _playerGameState.Players.Count(c => c.Active),
+                            potSize: (double)_playerGameState.PotSize,
+                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
+                            monteCarloIterations: 10000);
+
+            UpdateOverlayWithPotOdds(analysis);
+
+            _responseAction.Action = analysis.RecommendedAction;
         }
 
         /// <summary>
@@ -939,6 +1008,12 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
+            // Crear el servicio
+            var equityService = new EquityCalculatorService(
+                new MonteCarloSimulator(),
+                new OutsCalculator(),
+                new PreflopEquityCalculator());
+
             _isRiver = false;
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
@@ -948,7 +1023,37 @@ namespace OpenScrape.App
                 DataBoard = _playerGameState.BoardCards
             });
 
+            var dataBoard = riverResponse.DataBoard;
             _playerGameState.BoardCards = riverResponse.DataBoard;
+
+
+            var myCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
+                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
+            };
+
+            var communityCards = new List<CardDataOuts>
+            {
+                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
+                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
+                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force),
+                new CardDataOuts((Suit)dataBoard[3].Suit, (Rank)dataBoard[3].Force),
+                new CardDataOuts((Suit)dataBoard[4].Suit, (Rank)dataBoard[4].Force)
+            };
+
+            var analysis = equityService.CalculateFullEquity(
+                            myCards,
+                            communityCards,
+                            numOpponents: _playerGameState.Players.Count(c => c.Active),
+                            potSize: (double)_playerGameState.PotSize,
+                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
+                            monteCarloIterations: 10000);
+
+            UpdateOverlayWithPotOdds(analysis);
+
+            _responseAction.Action = analysis.RecommendedAction;
+
         }
 
         /// <summary>
@@ -1155,34 +1260,14 @@ namespace OpenScrape.App
             return _potOddsCalculator.Calculate(
                 new List<CardDataOuts>
                 {
-                    new CardDataOuts
-                    {
-                        Rank = (Rank)_playerGameState.HoleCard1Rank,
-                        Suit = (Suit)_playerGameState.HoleCard1Suit
-                    },
-                    new CardDataOuts
-                    {
-                        Rank = (Rank)_playerGameState.HoleCard2Rank,
-                        Suit = (Suit)_playerGameState.HoleCard2Suit
-                    }
+                    new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
+                    new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
                 },
                 new List<CardDataOuts>
                 {
-                    new CardDataOuts
-                    {
-                        Rank = (Rank)_playerGameState.BoardCards[0].Force,
-                        Suit = (Suit)_playerGameState.BoardCards[0].Suit
-                    },
-                    new CardDataOuts
-                    {
-                        Rank = (Rank)_playerGameState.BoardCards[1].Force,
-                        Suit = (Suit)_playerGameState.BoardCards[1].Suit
-                    },
-                    new CardDataOuts
-                    {
-                        Rank = (Rank)_playerGameState.BoardCards[2].Force,
-                        Suit = (Suit)_playerGameState.BoardCards[2].Suit
-                    }
+                    new CardDataOuts((Suit)_playerGameState.BoardCards[0].Suit, (Rank)_playerGameState.BoardCards[0].Force),
+                    new CardDataOuts((Suit)_playerGameState.BoardCards[1].Suit, (Rank)_playerGameState.BoardCards[1].Force),
+                    new CardDataOuts((Suit)_playerGameState.BoardCards[2].Suit, (Rank)_playerGameState.BoardCards[2].Force)
                 },
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet));
@@ -1263,6 +1348,44 @@ namespace OpenScrape.App
                 }
             }
         }
+
+        private void SetActivePlayer()
+        {
+            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Playing");
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+                return;
+
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
+            
+            foreach (var region in regionTableMap.Regions)
+            {
+                var playerNumber = GetPlayerNumber(region.Name, "playing");
+                if (playerNumber == null)
+                    continue;
+
+                var color = bitmap.GetPixel(region.PosX, region.PosY);
+
+                //_playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
+
+                // Verificamos si el jugador está vacío
+                var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+                if (region.Name.Contains("playing") && _colorPlaying.Contains(color.B))
+                {                    
+                    if (player != null)
+                    {
+                        player.Active = true;
+                    }
+                }
+                else
+                {
+                    if (player != null)
+                    {
+                        player.Active = false;
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// Establece los alias de los villanos
