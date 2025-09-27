@@ -142,7 +142,7 @@ public class SetFlopForceBoardUseCase : ISetFlopForceBoardUseCase
         texture.IsPaired = cardsByForceOnBoard.Any(g => g.Count >= 2);
         texture.IsConnected = IsConnectedBoard(flopForcesOrdered);
         texture.IsDry = texture.IsRainbow && !texture.IsConnected && !texture.IsPaired;
-        texture.IsCoordinated = !texture.IsDry;
+        texture.IsCoordinated = !texture.IsDry && !texture.IsPaired;
 
         // Rankings del board
         texture.HighestRank = flopForcesOrdered[2];

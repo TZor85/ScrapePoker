@@ -84,6 +84,8 @@ namespace OpenScrape.App.Entities
         public bool HasOverCards { get; set; }
         public bool HasNoOverCards { get; set; }
         public bool HandIsConnected { get; set; }
+
+        public bool HasTopPairOrBetter => HasTwoPair || Hand >= HeroHand.DoblePareja;
     }
 
     /// <summary>

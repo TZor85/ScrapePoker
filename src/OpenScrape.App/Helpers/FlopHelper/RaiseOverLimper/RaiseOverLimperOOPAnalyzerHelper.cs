@@ -6,12 +6,39 @@ namespace OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 public static class RaiseOverLimperOOPAnalyzerHelper
 {
 
+    #region 1/3Bet
+
+    public static bool IsActionTo13Bet(FlopAnalyzerHelperReqest request)
+    {
+        if(request.TableScrapeFlopResult.HeroStrength.HasTopPair || request.TableScrapeFlopResult.HeroStrength.HasOverPair)
+            return true;
+
+        return false;
+    }
+
+    #endregion
+
+    #region 3/4Bet
+
+    public static bool IsActionTo34Bet(FlopAnalyzerHelperReqest request)
+    {
+        if (request.TableScrapeFlopResult.HeroStrength.HasTopPair && request.TableScrapeFlopResult.HeroStrength.HasOverPair || request.TableScrapeFlopResult.Draws.HasStrongDraw)
+            return true;
+
+        return false;
+    }
+
+    #endregion
+
     #region CheckCall
 
     public static bool IsActionToCheckCall(FlopAnalyzerHelperReqest request)
     {
-        if (IsMediumLowPairVsOvercards(request) && IsSuitedWithDraws(request) && IsHighAceVsLowMediumBoard(request) && IsConnectedWithPairVsDangerousBoard(request))
+        if(request.TableScrapeFlopResult.HeroStrength.HasMiddlePair || request.TableScrapeFlopResult.Draws.HasWeakDraw)
             return true;
+
+        //if (IsMediumLowPairVsOvercards(request) && IsSuitedWithDraws(request) && IsHighAceVsLowMediumBoard(request) && IsConnectedWithPairVsDangerousBoard(request))
+        //    return true;
 
         return false;
     }
@@ -71,8 +98,8 @@ public static class RaiseOverLimperOOPAnalyzerHelper
 
     public static bool IsActionToCheckFold(FlopAnalyzerHelperReqest request)
     {
-        if (IsHighCardsVsLowFlop(request) && IsAceWeakKickerVsDangerousBoard(request) && IsKingVsDifficultBoard(request) && IsMediumPairVsMultipleOvercards(request))
-            return true;
+        //if (IsHighCardsVsLowFlop(request) && IsAceWeakKickerVsDangerousBoard(request) && IsKingVsDifficultBoard(request) && IsMediumPairVsMultipleOvercards(request))
+        //    return true;
 
         return false;
     }
@@ -150,4 +177,5 @@ public static class RaiseOverLimperOOPAnalyzerHelper
     }
 
     #endregion
+
 }

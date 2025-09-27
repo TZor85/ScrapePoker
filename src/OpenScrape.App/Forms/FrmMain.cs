@@ -1,4 +1,3 @@
-using Emgu.CV.Dnn;
 using JasperFx.Core;
 using Marten;
 using OpenScrape.App.Aplication;
@@ -7,7 +6,6 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
-using OpenScrape.App.Helpers.FlopHelper.PreFlopRaiser;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Helpers.MLHelper;
 using OpenScrape.App.Models;
@@ -650,11 +648,11 @@ namespace OpenScrape.App
             UpdateOverlayWithPotOdds(analysis);
 
             // Determinar si estamos en posición
-            //SetIsInPosition();
+            SetIsInPosition();
 
             // Analizar el flop y determinar acción
-            //DetermineFlopAction();
-            _responseAction.Action = analysis.RecommendedAction;
+            DetermineFlopAction();
+            //_responseAction.Action = analysis.RecommendedAction;
         }
 
         /// <summary>
@@ -729,56 +727,78 @@ namespace OpenScrape.App
 
         private void HandleOpenRaiseFlopAction()
         {
-            if (_scrapeFlopResult.HeroStrength.HasTwoPair ||
-                _scrapeFlopResult.HeroStrength.HasOverPair ||
-                (_scrapeFlopResult.HeroStrength.HasTopPair && !_scrapeFlopResult.HeroStrength.HasHighCard) ||
-                (_scrapeFlopResult.HeroStrength.HasHighCard && _scrapeFlopResult.Draws.HasBackdoorFlushDraw))
-            {
-                _responseAction.Action = "Bet 3/4";
-            }
-            else
-            {
-                _responseAction.Action = "Check";
-            }
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
 
-            if (_playerGameState.IsInPosition)
+            _responseAction.Action = board switch
             {
-                if(_playerGameState.Position == TablePosition.Button || _playerGameState.Position == TablePosition.CutOff)
+                { IsDry: true } => hero switch
                 {
-                    _responseAction.Action = PreFlopRaiserIPAnalyzerHelper.AnalyzeBettingAction(_playerGameState, _scrapeFlopResult);
-                
-                }
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                    { HasTopPairOrBetter: true } => "Bet 2/3 (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Valor)",
+                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Proteger)" : "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+
+                { IsCoordinated: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-                else
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition ? "Bet 1/2 (Semibluff)" : "Check (Fold)"
+                },
+
+                { IsPaired: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-            }
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleCallFlopAction()
         {
-            if (_playerGameState.IsInPosition)
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            _responseAction.Action = board switch
             {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                { IsDry: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-                else
+                    { HasTopPairOrBetter: true } => "Bet 2/3 (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Valor)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+
+                { IsCoordinated: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-            }
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition ? "Bet 2/3 (Proyecto muy Fuerte)" : "Check (Fold)"
+                },
+
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
@@ -792,7 +812,6 @@ namespace OpenScrape.App
                 flopCardsName += item.Name;
             }
 
-
             // IP
             if (_playerGameState.IsInPosition)
             {
@@ -805,149 +824,146 @@ namespace OpenScrape.App
             // OOP
             else
             {
-                rolOopEngine.LoadModel();
-                _responseAction.Action = rolOopEngine.PredictAction(heroCardsName,flopCardsName, out var probs);
+                //rolOopEngine.LoadModel();
+                //_responseAction.Action = rolOopEngine.PredictAction(heroCardsName,flopCardsName, out var probs);
 
-                //if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
-                //    _responseAction.Action = "Check/Call";
-                //else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckFold(flopAnalyzerRequest))
-                //    _responseAction.Action = "Check/Fold";
-                //else
-                //    _responseAction.Action = "Bet 1/3";
+                if (RaiseOverLimperOOPAnalyzerHelper.IsActionTo13Bet(flopAnalyzerRequest))
+                    _responseAction.Action = "Bet 1/3";
+                else if (RaiseOverLimperOOPAnalyzerHelper.IsActionTo34Bet(flopAnalyzerRequest))
+                    _responseAction.Action = "Bet 3/4";
+                else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
+                    _responseAction.Action = "Check/Call";
+                else
+                    _responseAction.Action = "Check/Fold";
             }
         }
 
         private void HandleThreeBetFlopAction()
         {
-            if (_playerGameState.IsInPosition)
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            _responseAction.Action = board switch
             {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                { IsDry: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-                else
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                { IsCoordinated: true} => hero switch
                 {
-                    // Implementación pendiente
-                }
-            }
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition ? "Check (Fold)" : "Bet 2/3 (Draw muy Fuerte)"
+                },
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleOpenRaiseVs3BetFlopAction()
         {
-            if (_playerGameState.IsInPosition)
-            {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
-                {
-                    // Implementación pendiente
-                }
-                else
-                {
-                    // Implementación pendiente
-                }
-            }
+            _responseAction.Action = "Not implemented";
         }
 
         private void HandleOpenRaiseVs3BetAndCallFlopAction()
         {
-            if (_playerGameState.IsInPosition)
-            {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
-                {
-                    // Implementación pendiente
-                }
-                else
-                {
-                    // Implementación pendiente
-                }
-            }
+            _responseAction.Action = "Not implemented";
         }
 
         private void HandleFourBetFlopAction()
         {
-            if (_playerGameState.IsInPosition)
-            {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
-                {
-                    // Implementación pendiente
-                }
-                else
-                {
-                    // Implementación pendiente
-                }
-            }
+            _responseAction.Action = "Not implemented";
         }
 
         private void HandleCold4BetFlopAction()
         {
-            if (_playerGameState.IsInPosition)
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            _responseAction.Action = board switch
             {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                { IsDry: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-                else
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                { IsCoordinated: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-            }
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet Pot (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition ? "Check (Fold)" : "Bet 2/3 (Draw muy Fuerte)"
+                },
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleSqueezeFlopAction()
         {
-            if (_playerGameState.IsInPosition)
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            _responseAction.Action = board switch
             {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
+                { IsDry: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-                else
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Proteger)",
+                    { HasBottomPair: true } => "1/2 (Bluff)",
+                    _ => inPosition ? "Check (Fold)" : "Bet 2/3 (Semibluff)"
+                },
+                { IsCoordinated: true } => hero switch
                 {
-                    // Implementación pendiente
-                }
-            }
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet Pot (Proteger)",
+                    { HasBottomPair: true } => "Bet 1/2 (Bluff)",
+                    _ => inPosition ? "Check (Fold)" : "Bet Pot (Semibluff)"
+                },
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Proteger)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleVsSqueezeFlopAction()
         {
-            if (_playerGameState.IsInPosition)
-            {
-                // Implementación pendiente
-            }
-            else
-            {
-                if (_scrapeFlopResult.BoardTexture.IsCoordinated)
-                {
-                    // Implementación pendiente
-                }
-                else
-                {
-                    // Implementación pendiente
-                }
-            }
+            _responseAction.Action = "Not implemented";
         }
 
         #endregion
@@ -1680,7 +1696,7 @@ namespace OpenScrape.App
             // Por defecto, asumimos que está en posición
             _playerGameState.IsInPosition = true;
 
-            if (activePlayers.Any(item => item.ValuePosition > (int)_playerGameState.Position) ||
+            if (activePlayers.Any(item => (int)_playerGameState.Position > item.ValuePosition) ||
                 activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
             {
                 _playerGameState.IsInPosition = false;

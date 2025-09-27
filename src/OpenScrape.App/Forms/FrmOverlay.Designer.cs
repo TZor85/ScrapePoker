@@ -67,6 +67,7 @@
             lbPotOdds.Size = new Size(50, 19);
             lbPotOdds.TabIndex = 2;
             lbPotOdds.Text = "label1";
+            lbPotOdds.Visible = false;
             // 
             // panel2
             // 
@@ -91,6 +92,7 @@
             lbShouldCall.Size = new Size(50, 19);
             lbShouldCall.TabIndex = 7;
             lbShouldCall.Text = "label1";
+            lbShouldCall.Visible = false;
             // 
             // panel3
             // 
@@ -114,6 +116,7 @@
             lbEquity.Size = new Size(50, 19);
             lbEquity.TabIndex = 3;
             lbEquity.Text = "label2";
+            lbEquity.Visible = false;
             // 
             // panel4
             // 
