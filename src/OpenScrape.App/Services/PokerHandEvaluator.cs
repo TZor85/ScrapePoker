@@ -317,7 +317,7 @@ namespace OpenScrape.App.Services
         {
             if (hand1.Ranking != hand2.Ranking)
                 return hand1.Ranking > hand2.Ranking;
-                
+
             // Comparar kickers si es la misma jugada
             return CompareKickers(hand1, hand2);
         }
@@ -326,7 +326,7 @@ namespace OpenScrape.App.Services
         {
             var kickers1 = hand1.Cards.Concat(hand1.Kickers).OrderByDescending(c => c.Rank);
             var kickers2 = hand2.Cards.Concat(hand2.Kickers).OrderByDescending(c => c.Rank);
-            
+
             return kickers1.Zip(kickers2, (k1, k2) => k1.Rank.CompareTo(k2.Rank))
                           .FirstOrDefault(comparison => comparison != 0) > 0;
         }

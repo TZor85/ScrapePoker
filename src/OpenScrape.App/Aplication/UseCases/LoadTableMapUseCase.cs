@@ -12,7 +12,7 @@ namespace OpenScrape.App.Aplication.UseCases
             LoadTableMapUseCaseResponse response = new LoadTableMapUseCaseResponse();
 
             //theDialog.InitialDirectory = @"C:\Code\ScrapePoker\resources";
-            
+
             //portatil
             theDialog.InitialDirectory = @"C:\Code\Poker\ScrapePoker\resources";
             theDialog.Title = "Open Text File";
@@ -97,17 +97,17 @@ namespace OpenScrape.App.Aplication.UseCases
                                 }
                                 else if (nodo == "Nodo2")
                                 {
-                                    name = text.Split('$')[1].Split("-")[0].Trim();                                    
+                                    name = text.Split('$')[1].Split("-")[0].Trim();
                                     var force = int.Parse(text.Split("-")[1].Trim());
                                     var suit = int.Parse(text.Split("-")[2].Trim());
-                                    var valueImage = text.Split("-")[3].Trim();                                    
+                                    var valueImage = text.Split("-")[3].Trim();
                                     var hashImage = text.Split("-")[4].Trim();
                                     var image = EncrypterHelper.GetImageDecrypted(hashImage, secret);
 
                                     response.Images.Add(new ImageRegion { Name = name, Image = (Bitmap)image, Value = valueImage, Force = force, Suit = suit });
                                     response.Tree.Add(new KeyValuePair<string, string>(nodo, name));
                                 }
-                                else if(nodo == "Nodo3")
+                                else if (nodo == "Nodo3")
                                 {
                                     name = text.Split('$')[1].Split("-")[0].Trim();
                                     var valueFont = text.Split("-")[1].Trim();

@@ -10,7 +10,7 @@ public static class RaiseOverLimperOOPAnalyzerHelper
 
     public static bool IsActionTo13Bet(FlopAnalyzerHelperReqest request)
     {
-        if(request.TableScrapeFlopResult.HeroStrength.HasTopPair || request.TableScrapeFlopResult.HeroStrength.HasOverPair)
+        if (request.TableScrapeFlopResult.HeroStrength.HasTopPair || request.TableScrapeFlopResult.HeroStrength.HasOverPair)
             return true;
 
         return false;
@@ -34,7 +34,7 @@ public static class RaiseOverLimperOOPAnalyzerHelper
 
     public static bool IsActionToCheckCall(FlopAnalyzerHelperReqest request)
     {
-        if(request.TableScrapeFlopResult.HeroStrength.HasMiddlePair || request.TableScrapeFlopResult.Draws.HasWeakDraw)
+        if (request.TableScrapeFlopResult.HeroStrength.HasMiddlePair || request.TableScrapeFlopResult.Draws.HasWeakDraw)
             return true;
 
         //if (IsMediumLowPairVsOvercards(request) && IsSuitedWithDraws(request) && IsHighAceVsLowMediumBoard(request) && IsConnectedWithPairVsDangerousBoard(request))

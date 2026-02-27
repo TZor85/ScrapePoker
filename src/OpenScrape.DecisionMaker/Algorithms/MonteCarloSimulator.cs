@@ -35,7 +35,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int numOpponents, int? iterations = null)
         {
             int simulationCount = iterations ?? _defaultIterations;
-                        
+
             var wins = 0;
             var ties = 0;
             var handDistribution = new ConcurrentDictionary<HandRank, int>();

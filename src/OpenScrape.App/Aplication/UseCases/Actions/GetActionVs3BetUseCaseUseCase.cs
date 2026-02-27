@@ -24,7 +24,7 @@ public class GetActionVs3BetUseCaseUseCase : IGetActionVs3BetUseCaseUseCase
             ThreeBetPosition = request.ThreeBetPosition,
             OpenRaiser = request.Position
         });
-                
+
         return response;
     }
 }

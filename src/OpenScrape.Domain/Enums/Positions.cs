@@ -9,7 +9,7 @@ namespace OpenScrape.Domain.Enums
         OutOfPosition,
         InPosition
     }
-    
+
     public enum TablePosition
     {
         None,

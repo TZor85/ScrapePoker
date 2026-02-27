@@ -25,7 +25,7 @@ public class GetActionHero3BetAndOpenRaiser4BetUseCase : IGetActionHero3BetAndOp
             ThreeBetPosition = request.Position,
             IsGreater = request.IsGreater,
         });
-        
+
         return response;
     }
 }

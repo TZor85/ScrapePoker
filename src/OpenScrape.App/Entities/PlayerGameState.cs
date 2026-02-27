@@ -48,12 +48,12 @@ namespace OpenScrape.App.Entities
 
     public class BoardData
     {
-        public string? Name { get; set;}
+        public string? Name { get; set; }
         public int Force { get; set; }
         public int Suit { get; set; }
         public BoardPosition Position { get; set; }
         public int Location { get; set; }
     }
 
-    
+
 }

@@ -216,6 +216,6 @@ namespace OpenScrape.App.Helpers
             return target;
         }
 
-        
+
     }
 }

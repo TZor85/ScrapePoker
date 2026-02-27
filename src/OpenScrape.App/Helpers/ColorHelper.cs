@@ -19,7 +19,7 @@ namespace OpenScrape.App.Helpers
         public Bitmap Image { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public bool IsColor { get; set; }   
+        public bool IsColor { get; set; }
     }
 
     public static class ColorHelper

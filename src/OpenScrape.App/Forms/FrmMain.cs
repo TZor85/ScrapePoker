@@ -106,7 +106,7 @@ namespace OpenScrape.App
         private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
-        private readonly IPotOddsCalculator _potOddsCalculator;
+        private readonly IPokerCalculator _pokerCalculator;
         private readonly ColorDetectionService _colorDetectionService = new();
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
@@ -118,7 +118,8 @@ namespace OpenScrape.App
         public FrmMain(IDocumentStore dataBase,
                         ActionScenarioUseCases actionScenarioUseCases,
                         CardUseCases cardUseCases,
-                        RegionTableMapUseCases regionTableMapUseCases)
+                        RegionTableMapUseCases regionTableMapUseCases,
+                        IPokerCalculator pokerCalculator)
         {
             InitializeComponent();
 
@@ -140,7 +141,6 @@ namespace OpenScrape.App
             _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase);
             _getCardsTurnUseCase = new GetCardsTurnUseCase(_dataBase);
             _getCardsRiverUseCase = new GetCardsRiverUseCase(_dataBase);
-            _potOddsCalculator = new PotOddsCalculator(_outsCalculatorUseCase);
 
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
@@ -469,7 +469,7 @@ namespace OpenScrape.App
                     _newHand = false;
                     _isFlop = false;
 
-                    if(!cbTest.Checked)
+                    if (!cbTest.Checked)
                         await HandleNewHandAsync();
                 }
 
@@ -522,7 +522,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTableInfoAsync(PotOddsResult potOddsResult)
         {
-            
+
             SetPotValue();
             _preflopHeroPosition = GetPreflopHeroPosition();
 
@@ -530,7 +530,7 @@ namespace OpenScrape.App
             {
                 await ProcessPreflopAsync();
             }
-            else 
+            else
             {
                 await ProcessPostFlopAsync(potOddsResult);
             }
@@ -636,16 +636,13 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force)
             };
 
-            var analysis = equityService.CalculateFullEquity(
-                            myCards,
-                            communityCards,
-                            numOpponents: _playerGameState.Players.Count(c => c.Active),
-                            potSize: (double)_playerGameState.PotSize,
-                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
-                            monteCarloIterations: 10000);
+            var result = _pokerCalculator.Calculate(
+                myCards,
+                communityCards,
+                _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet));
 
-
-            UpdateOverlayWithPotOdds(analysis);
+            UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
             SetIsInPosition();
@@ -658,11 +655,9 @@ namespace OpenScrape.App
         /// <summary>
         /// Actualiza el overlay con la información de pot odds
         /// </summary>
-        private void UpdateOverlayWithPotOdds(FullEquityAnalysis potOddsResult)
+        private void UpdateOverlayWithPotOdds(PokerCalculationResult potOddsResult)
         {
-            _frmOverlay.UpdatePotOddsPercentage(potOddsResult.PotOdds.ToString());
-            _frmOverlay.UpdateEquityPercentage(potOddsResult.OverallEquity.ToString());
-            //_frmOverlay.UpdateShouldCall(potOddsResult.ShouldCall);
+            _frmOverlay.UpdateWithCalculationResult(potOddsResult);
         }
 
         /// <summary>
@@ -816,7 +811,7 @@ namespace OpenScrape.App
             if (_playerGameState.IsInPosition)
             {
                 var response = RaiseOverLimperIPAnalyzerHelper.DetermineContinuationBetSizing(flopAnalyzerRequest.TableScrapeFlopResult, flopAnalyzerRequest.PlayerState);
-                if(response != "Check")
+                if (response != "Check")
                     _responseAction.Action = $"Bet {response}";
                 else
                     _responseAction.Action = response;
@@ -854,7 +849,7 @@ namespace OpenScrape.App
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"
                 },
-                { IsCoordinated: true} => hero switch
+                { IsCoordinated: true } => hero switch
                 {
                     { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
                     { HasTopPair: true } or { HasOverPair: true } => "Bet Pot (Valor)",
@@ -973,12 +968,6 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
-            // Crear el servicio
-            var equityService = new EquityCalculatorService(
-                new MonteCarloSimulator(),
-                new OutsCalculator(),
-                new PreflopEquityCalculator());
-
             _isTurn = false;
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
@@ -1006,17 +995,15 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)dataBoard[3].Suit, (Rank)dataBoard[3].Force)
             };
 
-            var analysis = equityService.CalculateFullEquity(
-                            myCards,
-                            communityCards,
-                            numOpponents: _playerGameState.Players.Count(c => c.Active),
-                            potSize: (double)_playerGameState.PotSize,
-                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
-                            monteCarloIterations: 10000);
+            var result = _pokerCalculator.Calculate(
+                myCards,
+                communityCards,
+                _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet));
 
-            UpdateOverlayWithPotOdds(analysis);
+            UpdateOverlayWithPotOdds(result);
 
-            _responseAction.Action = analysis.RecommendedAction;
+            _responseAction.Action = "Turn action not implemented"; // Placeholder
         }
 
         /// <summary>
@@ -1024,12 +1011,6 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
-            // Crear el servicio
-            var equityService = new EquityCalculatorService(
-                new MonteCarloSimulator(),
-                new OutsCalculator(),
-                new PreflopEquityCalculator());
-
             _isRiver = false;
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
             var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
@@ -1058,18 +1039,15 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)dataBoard[4].Suit, (Rank)dataBoard[4].Force)
             };
 
-            var analysis = equityService.CalculateFullEquity(
-                            myCards,
-                            communityCards,
-                            numOpponents: _playerGameState.Players.Count(c => c.Active),
-                            potSize: (double)_playerGameState.PotSize,
-                            callAmount: (double)(_playerGameState.Players.FirstOrDefault(w => w.Bet > 0)?.Bet ?? 0),
-                            monteCarloIterations: 10000);
+            var result = _pokerCalculator.Calculate(
+                myCards,
+                communityCards,
+                _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet));
 
-            UpdateOverlayWithPotOdds(analysis);
+            UpdateOverlayWithPotOdds(result);
 
-            _responseAction.Action = analysis.RecommendedAction;
-
+            _responseAction.Action = "River action not implemented"; // Placeholder
         }
 
         /// <summary>
@@ -1273,7 +1251,7 @@ namespace OpenScrape.App
         /// </summary>
         private PotOddsResult GetPotOddsCalculator()
         {
-            return _potOddsCalculator.Calculate(
+            var result = _pokerCalculator.Calculate(
                 new List<CardDataOuts>
                 {
                     new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
@@ -1287,6 +1265,14 @@ namespace OpenScrape.App
                 },
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet));
+
+            return new PotOddsResult
+            {
+                PotOddsPercentage = (decimal)result.PotOddsPercentage,
+                EquityPercentage = (decimal)result.EquityPercentage,
+                ShouldCall = result.ShouldCall,
+                Street = result.Street
+            };
         }
 
         /// <summary>
@@ -1372,7 +1358,7 @@ namespace OpenScrape.App
                 return;
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            
+
             foreach (var region in regionTableMap.Regions)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "playing");
@@ -1386,7 +1372,7 @@ namespace OpenScrape.App
                 // Verificamos si el jugador está vacío
                 var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
                 if (region.Name.Contains("playing") && _colorPlaying.Contains(color.B))
-                {                    
+                {
                     if (player != null)
                     {
                         player.Active = true;
@@ -1474,7 +1460,7 @@ namespace OpenScrape.App
                     else
                         decimal.TryParse(pot, out potValue);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     var pp = ex.Message;
                 }
@@ -1658,7 +1644,7 @@ namespace OpenScrape.App
                 var playerNumber = GetPlayerNumber(region.Name, "sitout");
                 if (playerNumber == null)
                     continue;
-                
+
                 var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player == null)
                     continue;
@@ -1680,7 +1666,7 @@ namespace OpenScrape.App
                 {
                     player.SitOut = true;
                     player.Empty = true;
-                }                
+                }
             }
         }
 
@@ -1780,7 +1766,7 @@ namespace OpenScrape.App
             if (activePlayers.Count() == 4)
                 positionsOrder.Remove(TablePosition.Middle);
 
-            if(activePlayers.Count() == 3)
+            if (activePlayers.Count() == 3)
             {
                 positionsOrder.Remove(TablePosition.Middle);
                 positionsOrder.Remove(TablePosition.Early);
@@ -2029,7 +2015,7 @@ namespace OpenScrape.App
                 umbral ?? 0,
                 isOnlyNumber ?? false);
 
-            
+
             secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
                 posX,
@@ -2041,7 +2027,7 @@ namespace OpenScrape.App
 
             if (isOnlyNumber.HasValue == true)
             {
-                if(string.IsNullOrEmpty(firstOcr.Text))
+                if (string.IsNullOrEmpty(firstOcr.Text))
                     firstOcr.Text = "0";
 
                 if (string.IsNullOrEmpty(secondOcr.Text))
@@ -2842,10 +2828,10 @@ namespace OpenScrape.App
                 _selectedRegion.Height,
                 _selectedRegion.InactiveUmbral ?? 0,
                 _selectedRegion.IsOnlyNumber ?? false);
-            
-            if(_selectedRegion.IsOnlyNumber.HasValue == true)
+
+            if (_selectedRegion.IsOnlyNumber.HasValue == true)
             {
-                if(string.IsNullOrEmpty(firstOcr.Text))
+                if (string.IsNullOrEmpty(firstOcr.Text))
                     firstOcr.Text = "0";
 
                 if (string.IsNullOrEmpty(secondOcr.Text))

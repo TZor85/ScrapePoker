@@ -82,7 +82,7 @@ public class GetCardsTurnUseCase : IGetCardsTurnUseCase
                 if (region.Name == "Card4")
                 {
                     response.DataBoard = request.DataBoard ?? new List<BoardData>();
-                    
+
                     if (response.DataBoard?.Where(w => w.Position == BoardPosition.Flop).ToList().Count == 3)
                     {
                         response.DataBoard.Add(new BoardData

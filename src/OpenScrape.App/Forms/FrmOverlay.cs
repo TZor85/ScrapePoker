@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
+using OpenScrape.App.Aplication.UseCases;
 
 namespace OpenScrape.App.Forms
 {
@@ -32,7 +33,7 @@ namespace OpenScrape.App.Forms
 
         public void UpdatePotOddsPercentage(string potOdds)
         {
-            if(string.IsNullOrEmpty(potOdds))
+            if (string.IsNullOrEmpty(potOdds))
             {
                 lbPotOdds.Text = string.Empty;
                 return;
@@ -43,7 +44,7 @@ namespace OpenScrape.App.Forms
 
         public void UpdateEquityPercentage(string equity)
         {
-            if(string.IsNullOrEmpty(equity))
+            if (string.IsNullOrEmpty(equity))
             {
                 lbEquity.Text = string.Empty;
                 return;
@@ -68,6 +69,37 @@ namespace OpenScrape.App.Forms
             lbSituacion.Text = situacion;
         }
 
+        // Nuevo método para actualizar con el resultado unificado
+        public void UpdateWithCalculationResult(PokerCalculationResult result)
+        {
+            UpdatePotOddsPercentage(result.PotOddsPercentage.ToString("F1"));
+            UpdateEquityPercentage(result.EquityPercentage.ToString("F1"));
+            UpdateShouldCall(result.ShouldCall);
+            UpdateAction(result.RecommendedAction);
+
+            // Actualizar situación con información adicional
+            string situacionText = result.Street;
+            if (result.TotalOuts > 0)
+            {
+                situacionText += $" | Outs: {result.TotalOuts}";
+            }
+            if (result.DrawTypes.Any())
+            {
+                situacionText += $" | {string.Join(", ", result.DrawTypes)}";
+            }
+            UpdateSituacion(situacionText);
+        }
+
+        // Método para limpiar todos los datos
+        public void ClearAll()
+        {
+            lbPotOdds.Text = string.Empty;
+            lbEquity.Text = string.Empty;
+            lbShouldCall.Text = string.Empty;
+            lbAction.Text = string.Empty;
+            lbSituacion.Text = "Esperando datos...";
+        }
+
         private void FrmOverlay_MouseDown(object? sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -75,7 +107,6 @@ namespace OpenScrape.App.Forms
                 ReleaseCapture();
                 SendMessage(this.Handle, WM_NCLBUTTONDOWN, HTCAPTION, 0);
             }
-        }        
+        }
     }
-
 }
