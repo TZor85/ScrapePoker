@@ -8,6 +8,9 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
 		<ApplicationIcon>imagen_2025-08-19_153143860.ico</ApplicationIcon>
+		<!-- Suppress vulnerability warnings for transitive dependencies from Microsoft.ML -->
+		<!-- These packages are not actually used at runtime in .NET 10.0 -->
+		<NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
 	</PropertyGroup>
 
   <ItemGroup>

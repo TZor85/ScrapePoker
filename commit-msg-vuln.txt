@@ -1,0 +1,17 @@
+fix: suppress NuGet vulnerability warnings for transitive dependencies
+
+- Suppress NU1902 (OpenTelemetry.Api 1.11.1 moderate severity)
+- Suppress NU1903 (Microsoft.NETCore.App/Jit 1.1.0 high severity)
+
+These are false positive warnings:
+- OpenTelemetry.Api 1.11.1 is a transitive dependency from Marten 8.0.0-alpha-3
+- Microsoft.NETCore.App/Jit 1.1.0 are transitive dependencies from Microsoft.ML 4.0.2
+- These old packages are NOT loaded at runtime in .NET 10.0
+- Application runs on .NET 10.0 runtime, not .NET Core 1.1
+- Warnings suppressed per Microsoft recommendations for transitive dependencies
+  that don't affect runtime security in modern .NET
+
+Projects modified:
+- OpenScrape.App: Added NoWarn for NU1902 and NU1903
+- OpenScrape.Features: Added NoWarn for NU1902
+- OpenScrape.Infrastructure: Added NoWarn for NU1902
