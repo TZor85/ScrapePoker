@@ -2,17 +2,6 @@
 
 This document provides coding guidelines, build commands, and development practices for the OpenScrape poker bot codebase. Follow these guidelines when making changes to ensure consistency and maintainability.
 
-## Table of Contents
-1. [Build Commands](#build-commands)
-2. [Test Commands](#test-commands)
-3. [Lint/Format Commands](#lintformat-commands)
-4. [Code Style Guidelines](#code-style-guidelines)
-5. [Architecture Patterns](#architecture-patterns)
-6. [Naming Conventions](#naming-conventions)
-7. [Error Handling](#error-handling)
-8. [Dependency Injection](#dependency-injection)
-9. [File Organization](#file-organization)
-
 ## Build Commands
 
 ### Full Build
@@ -27,8 +16,7 @@ dotnet build OpenScrape.sln --configuration Release
 
 ### Clean Build
 ```bash
-dotnet clean OpenScrape.sln
-dotnet build OpenScrape.sln
+dotnet clean OpenScrape.sln && dotnet build OpenScrape.sln
 ```
 
 ### Build Specific Project
@@ -36,8 +24,6 @@ dotnet build OpenScrape.sln
 dotnet build src/OpenScrape.App/OpenScrape.App.csproj
 dotnet build src/OpenScrape.DecisionMaker/OpenScrape.DecisionMaker.csproj
 dotnet build src/OpenScrape.Domain/OpenScrape.Domain.csproj
-dotnet build src/OpenScrape.Features/OpenScrape.Features.csproj
-dotnet build src/OpenScrape.Infrastructure/OpenScrape.Infrastructure.csproj
 ```
 
 ### Publish Application
@@ -59,11 +45,11 @@ dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --collect:"XPlat Co
 
 ### Run Single Test
 ```bash
-# Run a specific test method
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~TestNamespace.TestClass.TestMethod"
+# Run specific test method
+dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests.TestHacenEscalera"
 
-# Run all tests in a specific class
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.TestClass"
+# Run all tests in a class
+dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests"
 
 # Run tests by name pattern
 dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~TestHacenEscalera"
@@ -72,11 +58,6 @@ dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~Test
 ### Run Tests in Watch Mode
 ```bash
 dotnet watch test OpenScrape.App.Tests
-```
-
-### Run Tests in Specific Project
-```bash
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj
 ```
 
 ## Lint/Format Commands
@@ -103,56 +84,50 @@ dotnet format --verify-no-changes OpenScrape.sln
 - **Primary Constructors**: Use for simple dependency injection
 
 ### Formatting
-- **Indentation**: 4 spaces (follow existing code)
-- **Line Length**: Keep lines under 120 characters when possible
+- **Indentation**: 4 spaces
+- **Line Length**: Keep under 120 characters
 - **Braces**: Allman style (braces on new lines)
-- **Blank Lines**: Use sparingly, only where it improves readability
-- **String Interpolation**: Prefer `$""` over `string.Format()` or concatenation
+- **Blank Lines**: Use sparingly for readability
+- **String Interpolation**: Prefer `$""` over `string.Format()`
 
 ### Imports and Using Statements
-- Group using statements by namespace origin:
-  1. System namespaces first
-  2. Third-party libraries (Marten, MediatR, Emgu.CV, etc.)
-  3. Project namespaces (OpenScrape.*)
-- Remove unused imports
-- Use implicit usings feature where applicable
-- Sort using statements alphabetically within each group
+Group using statements by namespace origin:
+1. System namespaces
+2. Third-party libraries (Marten, MediatR, Emgu.CV, etc.)
+3. Project namespaces (OpenScrape.*)
 
-### Example Code Style
-```csharp
-using System.Linq;
-using Marten;
-using MediatR;
-using OpenScrape.Domain.Entities;
-using OpenScrape.Domain.ValueObjects;
+Remove unused imports, use implicit usings where applicable, sort alphabetically within groups.
 
-namespace OpenScrape.Domain.ValueObjects;
+### Naming Conventions
 
-public record Hand(string Name, bool? Suited, string Action, int Percentage);
+#### Classes and Types
+- **PascalCase**: All class names, interfaces, structs, enums, records
+- **Interface Prefix**: `I` (e.g., `ITableRepository`, `IPokerCalculator`)
+- **Generic Parameters**: Single uppercase letters (e.g., `TEntity`, `TResult`)
+- **Records**: Descriptive names (e.g., `Hand`, `TableDto`)
 
-public class TableService
-{
-    private readonly IDocumentStore _documentStore;
+#### Methods and Properties
+- **PascalCase**: All methods and properties
+- **Private Fields**: camelCase with underscore (e.g., `_documentStore`)
+- **Constants**: PascalCase (e.g., `MaxRetries`)
+- **Events**: PascalCase with `EventHandler` suffix
 
-    public TableService(IDocumentStore documentStore)
-    {
-        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
-    }
+#### Variables and Parameters
+- **camelCase**: Local variables and parameters
+- **Descriptive Names**: Prefer clarity over brevity
+- **Boolean Prefixes**: `is`, `has`, `can`, `should` (e.g., `isValid`, `hasData`)
 
-    public async Task<List<Table>> GetAllTablesAsync()
-    {
-        using var session = _documentStore.LightweightSession();
-        return await session.Query<Table>().ToListAsync();
-    }
-}
-```
+#### Files and Namespaces
+- **File Names**: Match class/record name (e.g., `TableService.cs`)
+- **Namespace Structure**: Follow directory structure
+- **Partial Classes**: Descriptive suffixes (e.g., `FrmMain.Designer.cs`)
 
 ## Architecture Patterns
 
 ### Clean Architecture Layers
 1. **Domain**: Core business entities, value objects, enums (OpenScrape.Domain)
 2. **Features**: Application use cases and CQRS handlers (OpenScrape.Features)
-3. **Infrastructure**: External concerns (database, file system, APIs) (OpenScrape.Infrastructure)
+3. **Infrastructure**: External concerns (database, APIs) (OpenScrape.Infrastructure)
 4. **App**: UI layer and composition root (OpenScrape.App)
 5. **DecisionMaker**: Poker decision algorithms (OpenScrape.DecisionMaker)
 
@@ -166,37 +141,6 @@ public class TableService
 - Use Marten for document database operations
 - Implement repository interfaces in Infrastructure layer
 - Inject repositories via dependency injection
-
-### Service Registration
-- Register services in `Program.cs` or dedicated extension methods
-- Use appropriate lifetimes: Singleton, Scoped, Transient
-- Group related registrations in extension methods
-
-## Naming Conventions
-
-### Classes and Types
-- **PascalCase**: All class names, interfaces, structs, enums, records
-- **Interface Prefix**: `I` (e.g., `ITableRepository`, `IPokerCalculator`)
-- **Generic Parameters**: Single uppercase letters (e.g., `TEntity`, `TResult`)
-- **Records**: Use descriptive names ending with purpose (e.g., `Hand`, `TableDto`)
-
-### Methods and Properties
-- **PascalCase**: All methods and properties
-- **Private Fields**: camelCase with underscore prefix (e.g., `_documentStore`, `_calculator`)
-- **Constants**: PascalCase (e.g., `MaxRetries`, `DefaultTimeout`)
-- **Events**: PascalCase with `EventHandler` suffix where applicable
-
-### Variables and Parameters
-- **camelCase**: Local variables and parameters
-- **Descriptive Names**: Prefer clarity over brevity
-- **Avoid Abbreviations**: Use `tableRepository` not `tblRepo`, `documentStore` not `docStore`
-- **Boolean Prefixes**: Use `is`, `has`, `can`, `should` (e.g., `isValid`, `hasData`)
-
-### Files and Namespaces
-- **File Names**: Match class/record name (e.g., `TableService.cs`, `Hand.cs`)
-- **Namespace Structure**: Follow directory structure
-- **Example**: `OpenScrape.Domain.Entities.Table` in `src/OpenScrape.Domain/Entities/Table.cs`
-- **Partial Classes**: Use descriptive suffixes (e.g., `FrmMain.Designer.cs`)
 
 ## Error Handling
 
@@ -221,11 +165,11 @@ public class TableService
 ## Dependency Injection
 
 ### Service Registration
-- Register services in `Program.cs` using the Host builder pattern
+- Register services in `Program.cs` using Host builder pattern
 - Use appropriate lifetimes:
-  - **Singleton**: Services that should be instantiated once (e.g., calculators, simulators)
-  - **Scoped**: Services that should be instantiated per request/scope
-  - **Transient**: Services that should be instantiated each time they're requested
+  - **Singleton**: Services instantiated once (calculators, simulators)
+  - **Scoped**: Services per request/scope
+  - **Transient**: Services instantiated each time
 
 ### Constructor Injection
 - Prefer constructor injection over property injection
@@ -284,6 +228,35 @@ src/
 - **DTOs**: `TableDto.cs`, `CardDto.cs`
 - **Extensions**: `ServiceCollectionExtensions.cs`
 - **Records**: `Hand.cs`, `Region.cs`
+
+### Example Code Style
+```csharp
+using System.Linq;
+using Marten;
+using MediatR;
+using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.ValueObjects;
+
+namespace OpenScrape.Domain.ValueObjects;
+
+public record Hand(string Name, bool? Suited, string Action, int Percentage);
+
+public class TableService
+{
+    private readonly IDocumentStore _documentStore;
+
+    public TableService(IDocumentStore documentStore)
+    {
+        _documentStore = documentStore ?? throw new ArgumentNullException(nameof(documentStore));
+    }
+
+    public async Task<List<Table>> GetAllTablesAsync()
+    {
+        using var session = _documentStore.LightweightSession();
+        return await session.Query<Table>().ToListAsync();
+    }
+}
+```
 
 This document should be updated as the codebase evolves. When adding new patterns or changing existing guidelines, update this file accordingly.</content>
 <parameter name="filePath">C:\Code\Poker\ScrapePoker\AGENTS.md

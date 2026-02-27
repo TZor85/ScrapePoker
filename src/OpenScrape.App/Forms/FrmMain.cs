@@ -457,6 +457,7 @@ namespace OpenScrape.App
                     _isFlop = rbFlop.Checked;
                     _isTurn = rbTurn.Checked;
                     _isRiver = rbRiver.Checked;
+                    _frmOverlay.Show();
                 }
 
                 SetTableHand();
@@ -640,7 +641,11 @@ namespace OpenScrape.App
                 myCards,
                 communityCards,
                 _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet));
+                _playerGameState.Players.Max(m => m.Bet),
+                isInPosition: _playerGameState.IsInPosition,
+                heroStack: 0,
+                villainStack: 0,
+                handSituation: _playerGameState.HandSituation.ToString());
 
             UpdateOverlayWithPotOdds(result);
 
@@ -999,7 +1004,11 @@ namespace OpenScrape.App
                 myCards,
                 communityCards,
                 _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet));
+                _playerGameState.Players.Max(m => m.Bet),
+                isInPosition: _playerGameState.IsInPosition,
+                heroStack: 0,
+                villainStack: 0,
+                handSituation: _playerGameState.HandSituation.ToString());
 
             UpdateOverlayWithPotOdds(result);
 
@@ -1043,7 +1052,11 @@ namespace OpenScrape.App
                 myCards,
                 communityCards,
                 _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet));
+                _playerGameState.Players.Max(m => m.Bet),
+                isInPosition: _playerGameState.IsInPosition,
+                heroStack: 0,
+                villainStack: 0,
+                handSituation: _playerGameState.HandSituation.ToString());
 
             UpdateOverlayWithPotOdds(result);
 
@@ -1264,7 +1277,11 @@ namespace OpenScrape.App
                     new CardDataOuts((Suit)_playerGameState.BoardCards[2].Suit, (Rank)_playerGameState.BoardCards[2].Force)
                 },
                 _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet));
+                _playerGameState.Players.Max(m => m.Bet),
+                isInPosition: _playerGameState.IsInPosition,
+                heroStack: 0,
+                villainStack: 0,
+                handSituation: _playerGameState.HandSituation.ToString());
 
             return new PotOddsResult
             {

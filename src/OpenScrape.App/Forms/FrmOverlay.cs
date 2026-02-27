@@ -14,6 +14,11 @@ namespace OpenScrape.App.Forms
         // Alto del header arrastrable en píxeles lógicos (96 DPI)
         private const int HEADER_HEIGHT = 12;
 
+        // Additional labels for enhanced metrics
+        private Label lbFoldEquity;
+        private Label lbEVWithFoldEquity;
+        private Label lbSuggestedBetSize;
+
         [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
 
@@ -24,6 +29,9 @@ namespace OpenScrape.App.Forms
         {
             InitializeComponent();
             this.MouseDown += FrmOverlay_MouseDown;
+
+            // Add new labels for enhanced metrics
+            InitializeAdditionalLabels();
         }
 
         public void UpdateAction(string action)
@@ -69,6 +77,45 @@ namespace OpenScrape.App.Forms
             lbSituacion.Text = situacion;
         }
 
+        public void UpdateFoldEquity(double foldEquity)
+        {
+            if (foldEquity <= 0)
+            {
+                lbFoldEquity.Text = string.Empty;
+                lbFoldEquity.Visible = false;
+                return;
+            }
+
+            lbFoldEquity.Text = $"Fold Eq: {foldEquity:F1}%";
+            lbFoldEquity.Visible = true;
+        }
+
+        public void UpdateEVWithFoldEquity(double ev)
+        {
+            if (ev == 0)
+            {
+                lbEVWithFoldEquity.Text = string.Empty;
+                lbEVWithFoldEquity.Visible = false;
+                return;
+            }
+
+            lbEVWithFoldEquity.Text = $"EV: {ev:F1}";
+            lbEVWithFoldEquity.Visible = true;
+        }
+
+        public void UpdateSuggestedBetSize(double? betSize)
+        {
+            if (!betSize.HasValue || betSize <= 0)
+            {
+                lbSuggestedBetSize.Text = string.Empty;
+                lbSuggestedBetSize.Visible = false;
+                return;
+            }
+
+            lbSuggestedBetSize.Text = $"Bet: {betSize:F1}x";
+            lbSuggestedBetSize.Visible = true;
+        }
+
         // Nuevo método para actualizar con el resultado unificado
         public void UpdateWithCalculationResult(PokerCalculationResult result)
         {
@@ -88,6 +135,11 @@ namespace OpenScrape.App.Forms
                 situacionText += $" | {string.Join(", ", result.DrawTypes)}";
             }
             UpdateSituacion(situacionText);
+
+            // Nuevas métricas avanzadas
+            UpdateFoldEquity(result.FoldEquity);
+            UpdateEVWithFoldEquity(result.EVWithFoldEquity);
+            UpdateSuggestedBetSize(result.SuggestedBetSize);
         }
 
         // Método para limpiar todos los datos
@@ -98,6 +150,93 @@ namespace OpenScrape.App.Forms
             lbShouldCall.Text = string.Empty;
             lbAction.Text = string.Empty;
             lbSituacion.Text = "Esperando datos...";
+            lbFoldEquity.Text = string.Empty;
+            lbEVWithFoldEquity.Text = string.Empty;
+            lbSuggestedBetSize.Text = string.Empty;
+        }
+
+        private void InitializeAdditionalLabels()
+        {
+            // Create panels for new metrics
+            var panel6 = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.Black,
+                Location = new Point(0, 92), // Below existing panels
+                Name = "panel6"
+            };
+
+            lbFoldEquity = new Label
+            {
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.Orange,
+                Location = new Point(0, 0),
+                Name = "lbFoldEquity",
+                Size = new Size(50, 19),
+                TabIndex = 11,
+                Text = string.Empty,
+                Visible = false
+            };
+            panel6.Controls.Add(lbFoldEquity);
+
+            var panel7 = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.Black,
+                Location = new Point(0, 111),
+                Name = "panel7"
+            };
+
+            lbEVWithFoldEquity = new Label
+            {
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.Green,
+                Location = new Point(0, 0),
+                Name = "lbEVWithFoldEquity",
+                Size = new Size(50, 19),
+                TabIndex = 12,
+                Text = string.Empty,
+                Visible = false
+            };
+            panel7.Controls.Add(lbEVWithFoldEquity);
+
+            var panel8 = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.Black,
+                Location = new Point(0, 130),
+                Name = "panel8"
+            };
+
+            lbSuggestedBetSize = new Label
+            {
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.Yellow,
+                Location = new Point(0, 0),
+                Name = "lbSuggestedBetSize",
+                Size = new Size(50, 19),
+                TabIndex = 13,
+                Text = string.Empty,
+                Visible = false
+            };
+            panel8.Controls.Add(lbSuggestedBetSize);
+
+            // Add panels to form
+            this.Controls.Add(panel6);
+            this.Controls.Add(panel7);
+            this.Controls.Add(panel8);
+
+            // Increase form height to accommodate new panels
+            this.ClientSize = new Size(214, 150);
         }
 
         private void FrmOverlay_MouseDown(object? sender, MouseEventArgs e)
