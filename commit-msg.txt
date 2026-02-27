@@ -1,0 +1,15 @@
+chore: upgrade OpenScrape solution to .NET 10.0
+
+- Update all 6 projects from net9.0 to net10.0
+- Update Microsoft.Extensions.* packages from preview to stable 10.0.3
+- Remove deprecated Microsoft.NETCore.App package
+- Remove framework-included System.Text.RegularExpressions package
+- All builds successful, all tests passing
+
+Projects upgraded:
+- OpenScrape.Domain to net10.0
+- OpenScrape.Infrastructure to net10.0
+- OpenScrape.DecisionMaker to net10.0
+- OpenScrape.Features to net10.0
+- OpenScrape.App to net10.0-windows
+- OpenScrape.App.Tests to net10.0
