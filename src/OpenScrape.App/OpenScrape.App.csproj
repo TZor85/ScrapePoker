@@ -24,7 +24,9 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\tessdata\eng.traineddata" />
-    <EmbeddedResource Include="tessdata\eng.traineddata" />
+    <EmbeddedResource Include="tessdata\eng.traineddata">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

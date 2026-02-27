@@ -1,7 +1,4 @@
-﻿using Emgu.CV.Aruco;
-using OpenScrape.App.Models;
-
-namespace OpenScrape.App
+﻿namespace OpenScrape.App
 {
     partial class FrmMain
     {
