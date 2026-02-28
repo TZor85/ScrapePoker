@@ -28,6 +28,7 @@ using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
 using Image = System.Drawing.Image;
+using System.Drawing.Drawing2D;
 
 namespace OpenScrape.App
 {
@@ -439,7 +440,7 @@ namespace OpenScrape.App
                 _frmOverlay.UpdateShouldCall(null);
                 lbPositionAction.Text = string.Empty;
                 _executeCapture = true;
-                var potOddsResult = new PotOddsResult();
+                var potOddsResult = new PokerCalculationResult();
 
                 if (!cbTest.Checked)
                 {
@@ -521,7 +522,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa la información de la mesa
         /// </summary>
-        private async Task ProcessTableInfoAsync(PotOddsResult potOddsResult)
+        private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
         {
 
             SetPotValue();
@@ -557,7 +558,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa las fases posteriores al flop (flop, turn, river)
         /// </summary>
-        private async Task ProcessPostFlopAsync(PotOddsResult potOddsResult)
+        private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
             if (_isFlop)
             {
@@ -584,7 +585,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa la fase de flop
         /// </summary>
-        private async Task ProcessFlopAsync(PotOddsResult potOddsResult)
+        private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
             // Crear el servicio
             var equityService = new EquityCalculatorService(
@@ -658,11 +659,13 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Actualiza el overlay con la información de pot odds
+        /// Actualiza el panel de métricas con los resultados del cálculo
         /// </summary>
-        private void UpdateOverlayWithPotOdds(PokerCalculationResult potOddsResult)
+        private void UpdateMetricsPanel(PokerCalculationResult result)
         {
-            _frmOverlay.UpdateWithCalculationResult(potOddsResult);
+            lblEV.Text = $"EV: {result.ExpectedValue:F2}";
+            lblFoldEquity.Text = $"Fold Eq: {result.FoldEquity:F1}%";
+            lblBetSize.Text = result.SuggestedBetSize.HasValue ? $"Bet: {result.SuggestedBetSize.Value:F1}x" : "Bet: N/A";
         }
 
         /// <summary>
@@ -1085,9 +1088,18 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Actualiza el overlay con la información de pot odds
+        /// </summary>
+        private void UpdateOverlayWithPotOdds(PokerCalculationResult potOddsResult)
+        {
+            _frmOverlay.UpdateWithCalculationResult(potOddsResult);
+            UpdateMetricsPanel(potOddsResult);
+        }
+
+        /// <summary>
         /// Actualiza la interfaz con los resultados del análisis
         /// </summary>
-        private void UpdateUIWithResults(PotOddsResult potOddsResult)
+        private void UpdateUIWithResults(PokerCalculationResult potOddsResult)
         {
             _playerGameState.HandSituation = _responseAction.HandSituation;
 
@@ -1115,12 +1127,14 @@ namespace OpenScrape.App
 
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
+
+            UpdateMetricsPanel(potOddsResult);
         }
 
         /// <summary>
         /// Actualiza el texto de resumen para la fase de preflop
         /// </summary>
-        private void UpdateResumeTextForPreflop(PotOddsResult potOddsResult)
+        private void UpdateResumeTextForPreflop(PokerCalculationResult potOddsResult)
         {
             var enMesa = _playerGameState.Players.Count(e => !e.Empty) + 1;
             var sitout = _playerGameState.Players.Count(s => s.SitOut);
@@ -1133,8 +1147,8 @@ namespace OpenScrape.App
             sb.AppendLine($"{_playerGameState.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
             sb.AppendLine($"Pot: {_playerGameState.PotSize}");
             sb.AppendLine($"*** STATISTICS ***");
-            sb.AppendLine($"PotOdds: {potOddsResult.PotOddsPercentage}%");
-            sb.AppendLine($"Equity: {potOddsResult.EquityPercentage}%");
+            sb.AppendLine($"PotOdds: {(decimal)potOddsResult.PotOddsPercentage}%");
+            sb.AppendLine($"Equity: {(decimal)potOddsResult.EquityPercentage}%");
             sb.AppendLine($"Should Call: {potOddsResult.ShouldCall}");
             sb.AppendLine("*** HOLE CARDS ***");
             sb.AppendLine($"Dealt to Hero [{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]");
@@ -1262,7 +1276,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Calcula las pot odds y la equidad
         /// </summary>
-        private PotOddsResult GetPotOddsCalculator()
+        private PokerCalculationResult GetPotOddsCalculator()
         {
             var result = _pokerCalculator.Calculate(
                 new List<CardDataOuts>
@@ -1283,13 +1297,7 @@ namespace OpenScrape.App
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
-            return new PotOddsResult
-            {
-                PotOddsPercentage = (decimal)result.PotOddsPercentage,
-                EquityPercentage = (decimal)result.EquityPercentage,
-                ShouldCall = result.ShouldCall,
-                Street = result.Street
-            };
+            return result;
         }
 
         /// <summary>
@@ -3227,6 +3235,14 @@ namespace OpenScrape.App
             tbResume.BorderStyle = BorderStyle.None;
 
             logsTab.ResumeLayout(true);
+        }
+
+        private void pnMetrics_Paint(object sender, PaintEventArgs e)
+        {
+            using (LinearGradientBrush brush = new LinearGradientBrush(pnMetrics.ClientRectangle, Color.LightBlue, Color.White, LinearGradientMode.Vertical))
+            {
+                e.Graphics.FillRectangle(brush, pnMetrics.ClientRectangle);
+            }
         }
 
         #endregion

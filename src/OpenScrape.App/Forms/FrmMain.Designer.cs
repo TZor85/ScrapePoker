@@ -7,6 +7,12 @@
         /// </summary>
         private System.ComponentModel.IContainer components = null;
 
+        private System.Windows.Forms.Panel pnMetrics;
+        private System.Windows.Forms.Label lblEV;
+        private System.Windows.Forms.Label lblFoldEquity;
+        private System.Windows.Forms.Label lblBetSize;
+        private System.Windows.Forms.Label labelMetricsTitle;
+
         /// <summary>
         ///  Clean up any resources being used.
         /// </summary>
@@ -85,6 +91,16 @@
             lbNamePlayerTwo = new Label();
             pnNamePlayerOne = new Panel();
             lbNamePlayerOne = new Label();
+            pnMetrics = new Panel();
+            lblEV = new Label();
+            lblFoldEquity = new Label();
+            lblBetSize = new Label();
+            labelMetricsTitle = new Label();
+            pnMetrics = new Panel();
+            lblEV = new Label();
+            lblFoldEquity = new Label();
+            lblBetSize = new Label();
+            labelMetricsTitle = new Label();
             tbConfig = new TabPage();
             groupBox1 = new GroupBox();
             pbTestCarta = new PictureBox();
@@ -167,6 +183,7 @@
             pnNamePlayerThree.SuspendLayout();
             pnNamePlayerTwo.SuspendLayout();
             pnNamePlayerOne.SuspendLayout();
+            pnMetrics.SuspendLayout();
             tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)pbTestCarta).BeginInit();
@@ -232,6 +249,7 @@
             tbJuego.Controls.Add(pnNamePlayerThree);
             tbJuego.Controls.Add(pnNamePlayerTwo);
             tbJuego.Controls.Add(pnNamePlayerOne);
+            tbJuego.Controls.Add(pnMetrics);
             tbJuego.Location = new Point(4, 24);
             tbJuego.Name = "tbJuego";
             tbJuego.Size = new Size(668, 392);
@@ -708,14 +726,62 @@
             lbNamePlayerTwo.Size = new Size(0, 15);
             lbNamePlayerTwo.TabIndex = 1;
             // 
-            // pnNamePlayerOne
+            // pnMetrics
             // 
-            pnNamePlayerOne.BorderStyle = BorderStyle.FixedSingle;
-            pnNamePlayerOne.Controls.Add(lbNamePlayerOne);
-            pnNamePlayerOne.Location = new Point(90, 171);
-            pnNamePlayerOne.Name = "pnNamePlayerOne";
-            pnNamePlayerOne.Size = new Size(120, 25);
-            pnNamePlayerOne.TabIndex = 1;
+            pnMetrics = new Panel();
+            pnMetrics.BackColor = Color.LightGray;
+            pnMetrics.BorderStyle = BorderStyle.FixedSingle;
+            pnMetrics.Controls.Add(lblBetSize);
+            pnMetrics.Controls.Add(lblFoldEquity);
+            pnMetrics.Controls.Add(lblEV);
+            pnMetrics.Controls.Add(labelMetricsTitle);
+            pnMetrics.Dock = DockStyle.Right;
+            pnMetrics.Location = new Point(476, 0);
+            pnMetrics.Name = "pnMetrics";
+            pnMetrics.Size = new Size(200, 392);
+            pnMetrics.TabIndex = 85;
+            pnMetrics.Paint += pnMetrics_Paint;
+            // 
+            // lblBetSize
+            // 
+            lblBetSize.AutoSize = true;
+            lblBetSize.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblBetSize.Location = new Point(10, 120);
+            lblBetSize.Name = "lblBetSize";
+            lblBetSize.Size = new Size(80, 19);
+            lblBetSize.TabIndex = 3;
+            lblBetSize.Text = "Bet Size: --";
+            // 
+            // lblFoldEquity
+            // 
+            lblFoldEquity.AutoSize = true;
+            lblFoldEquity.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblFoldEquity.Location = new Point(10, 80);
+            lblFoldEquity.Name = "lblFoldEquity";
+            lblFoldEquity.Size = new Size(90, 19);
+            lblFoldEquity.TabIndex = 2;
+            lblFoldEquity.Text = "Fold Eq: --";
+            // 
+            // lblEV
+            // 
+            lblEV.AutoSize = true;
+            lblEV.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblEV.Location = new Point(10, 40);
+            lblEV.Name = "lblEV";
+            lblEV.Size = new Size(40, 19);
+            lblEV.TabIndex = 1;
+            lblEV.Text = "EV: --";
+            // 
+            // labelMetricsTitle
+            // 
+            labelMetricsTitle.AutoSize = true;
+            labelMetricsTitle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            labelMetricsTitle.Location = new Point(50, 10);
+            labelMetricsTitle.Name = "labelMetricsTitle";
+            labelMetricsTitle.Size = new Size(100, 21);
+            labelMetricsTitle.TabIndex = 0;
+            labelMetricsTitle.Text = "📊 Metrics";
+            labelMetricsTitle.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lbNamePlayerOne
             // 
@@ -1364,6 +1430,8 @@
             pnNamePlayerTwo.PerformLayout();
             pnNamePlayerOne.ResumeLayout(false);
             pnNamePlayerOne.PerformLayout();
+            pnMetrics.ResumeLayout(false);
+            pnMetrics.PerformLayout();
             tbConfig.ResumeLayout(false);
             tbConfig.PerformLayout();
             groupBox1.ResumeLayout(false);
