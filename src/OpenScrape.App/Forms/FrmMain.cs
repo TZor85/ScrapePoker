@@ -23,6 +23,7 @@ using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.Update;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Diagnostics;
 using System.Text;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
@@ -432,6 +433,7 @@ namespace OpenScrape.App
         /// </summary>
         private async void btnCapture_Click(object sender, EventArgs e)
         {
+            var stopwatch = Stopwatch.StartNew();
             try
             {
                 lbAction.Text = string.Empty;
@@ -488,6 +490,12 @@ namespace OpenScrape.App
 
                 // Actualizar la interfaz con los resultados
                 UpdateUIWithResults(potOddsResult);
+
+                stopwatch.Stop();
+                if (cbTest.Checked)
+                {
+                    tbResume.Text += $"\nProcessing time: {stopwatch.ElapsedMilliseconds} ms";
+                }
             }
             catch (Exception ex)
             {
@@ -2854,7 +2862,7 @@ namespace OpenScrape.App
                 _selectedRegion.InactiveUmbral ?? 0,
                 _selectedRegion.IsOnlyNumber ?? false);
 
-            if (_selectedRegion.IsOnlyNumber.HasValue == true)
+            if (_selectedRegion.IsOnlyNumber == true)
             {
                 if (string.IsNullOrEmpty(firstOcr.Text))
                     firstOcr.Text = "0";

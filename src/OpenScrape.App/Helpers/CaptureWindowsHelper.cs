@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Drawing.Imaging;
 
 namespace OpenScrape.App.Helpers
 {
@@ -40,10 +41,10 @@ namespace OpenScrape.App.Helpers
             Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight);
             using (Graphics g = Graphics.FromImage(scaledBitmap))
             {
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
                 g.DrawImage(bitmap, 0, 0, scaledWidth, scaledHeight);
             }
 
@@ -189,29 +190,52 @@ namespace OpenScrape.App.Helpers
 
         public static Bitmap BinaryImage(Bitmap source, int umb)
         {
-            // Bitmap con la imagen binaria
-            Bitmap target = new Bitmap(source.Width, source.Height, source.PixelFormat);
-            // Recorrer pixel de la imagen
-            for (int i = 0; i < source.Width; i++)
-            {
-                for (int e = 0; e < source.Height; e++)
-                {
-                    // Color del pixel
-                    Color col = source.GetPixel(i, e);
-                    // Escala de grises
-                    byte gray = (byte)(col.R * 0.3f + col.G * 0.59f + col.B * 0.11f);
-                    // Blanco o negro
-                    byte value = 0;
-                    if (gray > umb)
-                    {
-                        value = 255;
-                    }
-                    // Asginar nuevo color
-                    Color newColor = System.Drawing.Color.FromArgb(value, value, value);
-                    target.SetPixel(i, e, newColor);
+            // Crear bitmap de destino en formato 32bpp para consistencia
+            Bitmap target = new Bitmap(source.Width, source.Height, PixelFormat.Format32bppArgb);
+            Rectangle rect = new Rectangle(0, 0, source.Width, source.Height);
 
+            // Bloquear bits para acceso directo
+            BitmapData sourceData = source.LockBits(rect, ImageLockMode.ReadOnly, source.PixelFormat);
+            BitmapData targetData = target.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+
+            int sourceBytesPerPixel = Image.GetPixelFormatSize(source.PixelFormat) / 8;
+            int targetBytesPerPixel = 4; // 32bpp
+
+            unsafe
+            {
+                byte* sourcePtr = (byte*)sourceData.Scan0;
+                byte* targetPtr = (byte*)targetData.Scan0;
+
+                for (int y = 0; y < source.Height; y++)
+                {
+                    for (int x = 0; x < source.Width; x++)
+                    {
+                        int sourceOffset = y * sourceData.Stride + x * sourceBytesPerPixel;
+                        int targetOffset = y * targetData.Stride + x * targetBytesPerPixel;
+
+                        // Obtener componentes RGB (manejar 24 y 32 bpp)
+                        byte b = sourcePtr[sourceOffset];
+                        byte g = sourcePtr[sourceOffset + 1];
+                        byte r = sourcePtr[sourceOffset + 2];
+
+                        // Escala de grises
+                        byte gray = (byte)(r * 0.3f + g * 0.59f + b * 0.11f);
+
+                        // Blanco o negro
+                        byte value = gray > umb ? (byte)255 : (byte)0;
+
+                        // Asignar al destino (BGRA)
+                        targetPtr[targetOffset] = value;     // B
+                        targetPtr[targetOffset + 1] = value; // G
+                        targetPtr[targetOffset + 2] = value; // R
+                        targetPtr[targetOffset + 3] = 255;   // A
+                    }
                 }
             }
+
+            // Desbloquear bits
+            source.UnlockBits(sourceData);
+            target.UnlockBits(targetData);
 
             return target;
         }
