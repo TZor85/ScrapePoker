@@ -134,6 +134,7 @@ namespace OpenScrape.App
             _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
+            _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -641,11 +642,20 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
             };
 
+            // Verificar que hay suficientes cartas del flop
+            if (dataBoard.Count(d => d.Position == BoardPosition.Flop) < 3)
+            {
+                LogError("No se detectaron suficientes cartas del flop. Se requieren al menos 3 cartas.");
+                _responseAction.Action = "Error: No se pudieron detectar cartas del flop";
+                UpdateOverlayWithPotOdds(new PokerCalculationResult());
+                return;
+            }
+
             var communityCards = new List<CardDataOuts>
             {
-                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
-                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
-                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force)
+                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 1).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 1).Force),
+                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 2).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 2).Force),
+                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 3).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 3).Force)
             };
 
             var result = _pokerCalculator.Calculate(
