@@ -79,7 +79,7 @@
             lbBetPlayerTwo = new Label();
             panel2 = new Panel();
             lbBetPlayerOne = new Label();
-            panel1 = new Panel();
+            pnNamePlayerFive = new Panel();
             lbNamePlayerFive = new Label();
             pnNameHero = new Panel();
             lbNameHero = new Label();
@@ -90,16 +90,10 @@
             pnNamePlayerTwo = new Panel();
             lbNamePlayerTwo = new Label();
             pnNamePlayerOne = new Panel();
-            lbNamePlayerOne = new Label();
             pnMetrics = new Panel();
-            lblEV = new Label();
-            lblFoldEquity = new Label();
             lblBetSize = new Label();
-            labelMetricsTitle = new Label();
-            pnMetrics = new Panel();
-            lblEV = new Label();
             lblFoldEquity = new Label();
-            lblBetSize = new Label();
+            lblEV = new Label();
             labelMetricsTitle = new Label();
             tbConfig = new TabPage();
             groupBox1 = new GroupBox();
@@ -152,6 +146,7 @@
             twTables = new TreeView();
             tbLogs = new TabPage();
             tbResume = new TextBox();
+            lbNamePlayerOne = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
             gbTest.SuspendLayout();
@@ -177,12 +172,11 @@
             panel4.SuspendLayout();
             panel3.SuspendLayout();
             panel2.SuspendLayout();
-            panel1.SuspendLayout();
+            pnNamePlayerFive.SuspendLayout();
             pnNameHero.SuspendLayout();
             pnNamePlayerFour.SuspendLayout();
             pnNamePlayerThree.SuspendLayout();
             pnNamePlayerTwo.SuspendLayout();
-            pnNamePlayerOne.SuspendLayout();
             pnMetrics.SuspendLayout();
             tbConfig.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -243,7 +237,7 @@
             tbJuego.Controls.Add(panel4);
             tbJuego.Controls.Add(panel3);
             tbJuego.Controls.Add(panel2);
-            tbJuego.Controls.Add(panel1);
+            tbJuego.Controls.Add(pnNamePlayerFive);
             tbJuego.Controls.Add(pnNameHero);
             tbJuego.Controls.Add(pnNamePlayerFour);
             tbJuego.Controls.Add(pnNamePlayerThree);
@@ -256,6 +250,7 @@
             tbJuego.TabIndex = 2;
             tbJuego.Text = "Juego";
             tbJuego.UseVisualStyleBackColor = true;
+            tbJuego.Click += tbJuego_Click;
             // 
             // lbPositionAction
             // 
@@ -316,7 +311,7 @@
             rbTurn.AutoSize = true;
             rbTurn.Location = new Point(7, 44);
             rbTurn.Name = "rbTurn";
-            rbTurn.Size = new Size(49, 19);
+            rbTurn.Size = new Size(50, 19);
             rbTurn.TabIndex = 49;
             rbTurn.TabStop = true;
             rbTurn.Text = "Turn";
@@ -349,7 +344,7 @@
             cbTest.CheckAlign = ContentAlignment.MiddleRight;
             cbTest.Location = new Point(614, 9);
             cbTest.Name = "cbTest";
-            cbTest.Size = new Size(46, 19);
+            cbTest.Size = new Size(47, 19);
             cbTest.TabIndex = 80;
             cbTest.Text = "Test";
             cbTest.UseVisualStyleBackColor = true;
@@ -401,7 +396,7 @@
             // 
             panel8.BorderStyle = BorderStyle.FixedSingle;
             panel8.Controls.Add(lbPot);
-            panel8.Location = new Point(301, 179);
+            panel8.Location = new Point(229, 179);
             panel8.Name = "panel8";
             panel8.Size = new Size(55, 20);
             panel8.TabIndex = 76;
@@ -418,7 +413,7 @@
             // pbBoard5
             // 
             pbBoard5.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard5.Location = new Point(376, 138);
+            pbBoard5.Location = new Point(304, 138);
             pbBoard5.Name = "pbBoard5";
             pbBoard5.Size = new Size(20, 35);
             pbBoard5.TabIndex = 75;
@@ -427,7 +422,7 @@
             // pbBoard4
             // 
             pbBoard4.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard4.Location = new Point(346, 138);
+            pbBoard4.Location = new Point(274, 138);
             pbBoard4.Name = "pbBoard4";
             pbBoard4.Size = new Size(20, 35);
             pbBoard4.TabIndex = 74;
@@ -436,7 +431,7 @@
             // pbBoard3
             // 
             pbBoard3.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard3.Location = new Point(316, 138);
+            pbBoard3.Location = new Point(244, 138);
             pbBoard3.Name = "pbBoard3";
             pbBoard3.Size = new Size(20, 35);
             pbBoard3.TabIndex = 73;
@@ -445,7 +440,7 @@
             // pbBoard2
             // 
             pbBoard2.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard2.Location = new Point(286, 138);
+            pbBoard2.Location = new Point(214, 138);
             pbBoard2.Name = "pbBoard2";
             pbBoard2.Size = new Size(20, 35);
             pbBoard2.TabIndex = 72;
@@ -454,7 +449,7 @@
             // pbBoard1
             // 
             pbBoard1.BorderStyle = BorderStyle.FixedSingle;
-            pbBoard1.Location = new Point(256, 138);
+            pbBoard1.Location = new Point(184, 138);
             pbBoard1.Name = "pbBoard1";
             pbBoard1.Size = new Size(20, 35);
             pbBoard1.TabIndex = 71;
@@ -463,7 +458,7 @@
             // pbHeroCard1
             // 
             pbHeroCard1.BorderStyle = BorderStyle.FixedSingle;
-            pbHeroCard1.Location = new Point(327, 222);
+            pbHeroCard1.Location = new Point(255, 222);
             pbHeroCard1.Name = "pbHeroCard1";
             pbHeroCard1.Size = new Size(20, 35);
             pbHeroCard1.TabIndex = 70;
@@ -472,7 +467,7 @@
             // pbHeroCard0
             // 
             pbHeroCard0.BorderStyle = BorderStyle.FixedSingle;
-            pbHeroCard0.Location = new Point(304, 222);
+            pbHeroCard0.Location = new Point(232, 222);
             pbHeroCard0.Name = "pbHeroCard0";
             pbHeroCard0.Size = new Size(20, 35);
             pbHeroCard0.TabIndex = 69;
@@ -481,7 +476,7 @@
             // pbButtonHero
             // 
             pbButtonHero.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonHero.Location = new Point(278, 242);
+            pbButtonHero.Location = new Point(206, 242);
             pbButtonHero.Name = "pbButtonHero";
             pbButtonHero.Size = new Size(15, 15);
             pbButtonHero.TabIndex = 18;
@@ -490,7 +485,7 @@
             // pbButtonPlayerFive
             // 
             pbButtonPlayerFive.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerFive.Location = new Point(440, 171);
+            pbButtonPlayerFive.Location = new Point(368, 171);
             pbButtonPlayerFive.Name = "pbButtonPlayerFive";
             pbButtonPlayerFive.Size = new Size(15, 15);
             pbButtonPlayerFive.TabIndex = 17;
@@ -499,7 +494,7 @@
             // pbButtonPlayerFour
             // 
             pbButtonPlayerFour.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerFour.Location = new Point(440, 70);
+            pbButtonPlayerFour.Location = new Point(368, 70);
             pbButtonPlayerFour.Name = "pbButtonPlayerFour";
             pbButtonPlayerFour.Size = new Size(15, 15);
             pbButtonPlayerFour.TabIndex = 16;
@@ -508,7 +503,7 @@
             // pbButtonPlayerThree
             // 
             pbButtonPlayerThree.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerThree.Location = new Point(275, 53);
+            pbButtonPlayerThree.Location = new Point(203, 53);
             pbButtonPlayerThree.Name = "pbButtonPlayerThree";
             pbButtonPlayerThree.Size = new Size(15, 15);
             pbButtonPlayerThree.TabIndex = 15;
@@ -517,7 +512,7 @@
             // pbButtonPlayerTwo
             // 
             pbButtonPlayerTwo.BorderStyle = BorderStyle.FixedSingle;
-            pbButtonPlayerTwo.Location = new Point(216, 70);
+            pbButtonPlayerTwo.Location = new Point(144, 70);
             pbButtonPlayerTwo.Name = "pbButtonPlayerTwo";
             pbButtonPlayerTwo.Size = new Size(15, 15);
             pbButtonPlayerTwo.TabIndex = 14;
@@ -526,7 +521,7 @@
             // pbbuttonPlayerOne
             // 
             pbbuttonPlayerOne.BorderStyle = BorderStyle.FixedSingle;
-            pbbuttonPlayerOne.Location = new Point(216, 171);
+            pbbuttonPlayerOne.Location = new Point(144, 171);
             pbbuttonPlayerOne.Name = "pbbuttonPlayerOne";
             pbbuttonPlayerOne.Size = new Size(15, 15);
             pbbuttonPlayerOne.TabIndex = 13;
@@ -536,7 +531,7 @@
             // 
             panel7.BorderStyle = BorderStyle.FixedSingle;
             panel7.Controls.Add(lbBetHero);
-            panel7.Location = new Point(353, 237);
+            panel7.Location = new Point(281, 237);
             panel7.Name = "panel7";
             panel7.Size = new Size(55, 20);
             panel7.TabIndex = 12;
@@ -554,7 +549,7 @@
             // 
             panel6.BorderStyle = BorderStyle.FixedSingle;
             panel6.Controls.Add(lbBetPlayerFive);
-            panel6.Location = new Point(408, 201);
+            panel6.Location = new Point(336, 201);
             panel6.Name = "panel6";
             panel6.Size = new Size(55, 20);
             panel6.TabIndex = 11;
@@ -572,7 +567,7 @@
             // 
             panel5.BorderStyle = BorderStyle.FixedSingle;
             panel5.Controls.Add(lbBetPlayerFour);
-            panel5.Location = new Point(401, 100);
+            panel5.Location = new Point(329, 100);
             panel5.Name = "panel5";
             panel5.Size = new Size(55, 20);
             panel5.TabIndex = 10;
@@ -590,7 +585,7 @@
             // 
             panel4.BorderStyle = BorderStyle.FixedSingle;
             panel4.Controls.Add(lbBetPlayerThree);
-            panel4.Location = new Point(350, 49);
+            panel4.Location = new Point(278, 49);
             panel4.Name = "panel4";
             panel4.Size = new Size(55, 20);
             panel4.TabIndex = 9;
@@ -608,7 +603,7 @@
             // 
             panel3.BorderStyle = BorderStyle.FixedSingle;
             panel3.Controls.Add(lbBetPlayerTwo);
-            panel3.Location = new Point(210, 100);
+            panel3.Location = new Point(138, 100);
             panel3.Name = "panel3";
             panel3.Size = new Size(55, 20);
             panel3.TabIndex = 8;
@@ -626,7 +621,7 @@
             // 
             panel2.BorderStyle = BorderStyle.FixedSingle;
             panel2.Controls.Add(lbBetPlayerOne);
-            panel2.Location = new Point(210, 201);
+            panel2.Location = new Point(138, 201);
             panel2.Name = "panel2";
             panel2.Size = new Size(55, 20);
             panel2.TabIndex = 7;
@@ -640,14 +635,14 @@
             lbBetPlayerOne.Size = new Size(0, 13);
             lbBetPlayerOne.TabIndex = 0;
             // 
-            // panel1
+            // pnNamePlayerFive
             // 
-            panel1.BorderStyle = BorderStyle.FixedSingle;
-            panel1.Controls.Add(lbNamePlayerFive);
-            panel1.Location = new Point(461, 171);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(120, 25);
-            panel1.TabIndex = 6;
+            pnNamePlayerFive.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerFive.Controls.Add(lbNamePlayerFive);
+            pnNamePlayerFive.Location = new Point(389, 171);
+            pnNamePlayerFive.Name = "pnNamePlayerFive";
+            pnNamePlayerFive.Size = new Size(120, 25);
+            pnNamePlayerFive.TabIndex = 6;
             // 
             // lbNamePlayerFive
             // 
@@ -661,7 +656,7 @@
             // 
             pnNameHero.BorderStyle = BorderStyle.FixedSingle;
             pnNameHero.Controls.Add(lbNameHero);
-            pnNameHero.Location = new Point(278, 263);
+            pnNameHero.Location = new Point(206, 263);
             pnNameHero.Name = "pnNameHero";
             pnNameHero.Size = new Size(120, 25);
             pnNameHero.TabIndex = 5;
@@ -671,7 +666,7 @@
             lbNameHero.AutoSize = true;
             lbNameHero.Location = new Point(1, 5);
             lbNameHero.Name = "lbNameHero";
-            lbNameHero.Size = new Size(31, 15);
+            lbNameHero.Size = new Size(32, 15);
             lbNameHero.TabIndex = 1;
             lbNameHero.Text = "TZor";
             // 
@@ -679,7 +674,7 @@
             // 
             pnNamePlayerFour.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerFour.Controls.Add(lbNamePlayerFour);
-            pnNamePlayerFour.Location = new Point(461, 70);
+            pnNamePlayerFour.Location = new Point(389, 70);
             pnNamePlayerFour.Name = "pnNamePlayerFour";
             pnNamePlayerFour.Size = new Size(120, 25);
             pnNamePlayerFour.TabIndex = 4;
@@ -696,7 +691,7 @@
             // 
             pnNamePlayerThree.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerThree.Controls.Add(lbNamePlayerThree);
-            pnNamePlayerThree.Location = new Point(275, 18);
+            pnNamePlayerThree.Location = new Point(203, 18);
             pnNamePlayerThree.Name = "pnNamePlayerThree";
             pnNamePlayerThree.Size = new Size(120, 25);
             pnNamePlayerThree.TabIndex = 3;
@@ -713,7 +708,7 @@
             // 
             pnNamePlayerTwo.BorderStyle = BorderStyle.FixedSingle;
             pnNamePlayerTwo.Controls.Add(lbNamePlayerTwo);
-            pnNamePlayerTwo.Location = new Point(90, 70);
+            pnNamePlayerTwo.Location = new Point(18, 70);
             pnNamePlayerTwo.Name = "pnNamePlayerTwo";
             pnNamePlayerTwo.Size = new Size(120, 25);
             pnNamePlayerTwo.TabIndex = 2;
@@ -726,9 +721,16 @@
             lbNamePlayerTwo.Size = new Size(0, 15);
             lbNamePlayerTwo.TabIndex = 1;
             // 
+            // pnNamePlayerOne
+            // 
+            pnNamePlayerOne.BorderStyle = BorderStyle.FixedSingle;
+            pnNamePlayerOne.Location = new Point(18, 171);
+            pnNamePlayerOne.Name = "pnNamePlayerOne";
+            pnNamePlayerOne.Size = new Size(120, 25);
+            pnNamePlayerOne.TabIndex = 85;
+            // 
             // pnMetrics
             // 
-            pnMetrics = new Panel();
             pnMetrics.BackColor = Color.LightGray;
             pnMetrics.BorderStyle = BorderStyle.FixedSingle;
             pnMetrics.Controls.Add(lblBetSize);
@@ -736,9 +738,9 @@
             pnMetrics.Controls.Add(lblEV);
             pnMetrics.Controls.Add(labelMetricsTitle);
             pnMetrics.Dock = DockStyle.Right;
-            pnMetrics.Location = new Point(476, 0);
+            pnMetrics.Location = new Point(515, 0);
             pnMetrics.Name = "pnMetrics";
-            pnMetrics.Size = new Size(200, 392);
+            pnMetrics.Size = new Size(153, 392);
             pnMetrics.TabIndex = 85;
             pnMetrics.Paint += pnMetrics_Paint;
             // 
@@ -746,9 +748,9 @@
             // 
             lblBetSize.AutoSize = true;
             lblBetSize.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblBetSize.Location = new Point(10, 120);
+            lblBetSize.Location = new Point(10, 197);
             lblBetSize.Name = "lblBetSize";
-            lblBetSize.Size = new Size(80, 19);
+            lblBetSize.Size = new Size(82, 19);
             lblBetSize.TabIndex = 3;
             lblBetSize.Text = "Bet Size: --";
             // 
@@ -756,9 +758,9 @@
             // 
             lblFoldEquity.AutoSize = true;
             lblFoldEquity.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblFoldEquity.Location = new Point(10, 80);
+            lblFoldEquity.Location = new Point(10, 157);
             lblFoldEquity.Name = "lblFoldEquity";
-            lblFoldEquity.Size = new Size(90, 19);
+            lblFoldEquity.Size = new Size(78, 19);
             lblFoldEquity.TabIndex = 2;
             lblFoldEquity.Text = "Fold Eq: --";
             // 
@@ -766,9 +768,9 @@
             // 
             lblEV.AutoSize = true;
             lblEV.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            lblEV.Location = new Point(10, 40);
+            lblEV.Location = new Point(10, 117);
             lblEV.Name = "lblEV";
-            lblEV.Size = new Size(40, 19);
+            lblEV.Size = new Size(45, 19);
             lblEV.TabIndex = 1;
             lblEV.Text = "EV: --";
             // 
@@ -776,20 +778,12 @@
             // 
             labelMetricsTitle.AutoSize = true;
             labelMetricsTitle.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            labelMetricsTitle.Location = new Point(50, 10);
+            labelMetricsTitle.Location = new Point(29, 69);
             labelMetricsTitle.Name = "labelMetricsTitle";
-            labelMetricsTitle.Size = new Size(100, 21);
+            labelMetricsTitle.Size = new Size(93, 21);
             labelMetricsTitle.TabIndex = 0;
             labelMetricsTitle.Text = "📊 Metrics";
             labelMetricsTitle.TextAlign = ContentAlignment.MiddleCenter;
-            // 
-            // lbNamePlayerOne
-            // 
-            lbNamePlayerOne.AutoSize = true;
-            lbNamePlayerOne.Location = new Point(1, 5);
-            lbNamePlayerOne.Name = "lbNamePlayerOne";
-            lbNamePlayerOne.Size = new Size(0, 15);
-            lbNamePlayerOne.TabIndex = 1;
             // 
             // tbConfig
             // 
@@ -804,7 +798,7 @@
             tbConfig.Location = new Point(4, 24);
             tbConfig.Name = "tbConfig";
             tbConfig.Padding = new Padding(3);
-            tbConfig.Size = new Size(668, 448);
+            tbConfig.Size = new Size(668, 392);
             tbConfig.TabIndex = 0;
             tbConfig.Text = "Configurar";
             tbConfig.UseVisualStyleBackColor = true;
@@ -1325,7 +1319,7 @@
             tbTables.Controls.Add(twTables);
             tbTables.Location = new Point(4, 24);
             tbTables.Name = "tbTables";
-            tbTables.Size = new Size(668, 448);
+            tbTables.Size = new Size(668, 392);
             tbTables.TabIndex = 3;
             tbTables.Text = "Tablas";
             tbTables.UseVisualStyleBackColor = true;
@@ -1336,7 +1330,7 @@
             dgvHands.Dock = DockStyle.Fill;
             dgvHands.Location = new Point(205, 0);
             dgvHands.Name = "dgvHands";
-            dgvHands.Size = new Size(463, 448);
+            dgvHands.Size = new Size(463, 392);
             dgvHands.TabIndex = 1;
             // 
             // twTables
@@ -1344,7 +1338,7 @@
             twTables.Dock = DockStyle.Left;
             twTables.Location = new Point(0, 0);
             twTables.Name = "twTables";
-            twTables.Size = new Size(205, 448);
+            twTables.Size = new Size(205, 392);
             twTables.TabIndex = 0;
             twTables.BeforeExpand += twTables_BeforeExpand;
             twTables.DoubleClick += twTables_DoubleClick;
@@ -1355,7 +1349,7 @@
             tbLogs.Location = new Point(4, 24);
             tbLogs.Name = "tbLogs";
             tbLogs.Padding = new Padding(3);
-            tbLogs.Size = new Size(668, 448);
+            tbLogs.Size = new Size(668, 392);
             tbLogs.TabIndex = 1;
             tbLogs.Text = "Logs";
             tbLogs.UseVisualStyleBackColor = true;
@@ -1368,8 +1362,16 @@
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(662, 442);
+            tbResume.Size = new Size(662, 386);
             tbResume.TabIndex = 1;
+            // 
+            // lbNamePlayerOne
+            // 
+            lbNamePlayerOne.AutoSize = true;
+            lbNamePlayerOne.Location = new Point(1, 5);
+            lbNamePlayerOne.Name = "lbNamePlayerOne";
+            lbNamePlayerOne.Size = new Size(0, 15);
+            lbNamePlayerOne.TabIndex = 1;
             // 
             // FrmMain
             // 
@@ -1418,8 +1420,8 @@
             panel3.PerformLayout();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
-            panel1.ResumeLayout(false);
-            panel1.PerformLayout();
+            pnNamePlayerFive.ResumeLayout(false);
+            pnNamePlayerFive.PerformLayout();
             pnNameHero.ResumeLayout(false);
             pnNameHero.PerformLayout();
             pnNamePlayerFour.ResumeLayout(false);
@@ -1428,8 +1430,6 @@
             pnNamePlayerThree.PerformLayout();
             pnNamePlayerTwo.ResumeLayout(false);
             pnNamePlayerTwo.PerformLayout();
-            pnNamePlayerOne.ResumeLayout(false);
-            pnNamePlayerOne.PerformLayout();
             pnMetrics.ResumeLayout(false);
             pnMetrics.PerformLayout();
             tbConfig.ResumeLayout(false);
@@ -1510,7 +1510,7 @@
         private Label lbNamePlayerOne;
         private Panel pnNamePlayerTwo;
         private Label lbNamePlayerTwo;
-        private Panel panel1;
+        private Panel pnNamePlayerFive;
         private Label lbNamePlayerFive;
         private Panel pnNameHero;
         private Label lbNameHero;

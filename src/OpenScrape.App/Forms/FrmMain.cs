@@ -25,6 +25,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
@@ -440,6 +441,7 @@ namespace OpenScrape.App
                 _frmOverlay.UpdateEquityPercentage(string.Empty);
                 _frmOverlay.UpdatePotOddsPercentage(string.Empty);
                 _frmOverlay.UpdateShouldCall(null);
+                _frmOverlay.UpdateTableName(_tableName);
                 lbPositionAction.Text = string.Empty;
                 _executeCapture = true;
                 var potOddsResult = new PokerCalculationResult();
@@ -1545,6 +1547,8 @@ namespace OpenScrape.App
             {
                 _tableName = SetTextOCR(regionTableName.PosX, regionTableName.PosY, regionTableName.Width, regionTableName.Height,
                     regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
+                // Remove numbers from table name
+                _tableName = Regex.Replace(_tableName, @"\d", "");
             }
         }
         #region [Dealer and Positions]
@@ -3067,7 +3071,7 @@ namespace OpenScrape.App
             }
 
             // Mejorar paneles de información
-            var infoPanels = new[] { panel1, panel2, panel3, panel4, panel5, panel6, panel7, panel8, panel9, panel10,
+            var infoPanels = new[] { pnNamePlayerFive, panel2, panel3, panel4, panel5, panel6, panel7, panel8, panel9, panel10,
                             pnNameHero, pnNamePlayerOne, pnNamePlayerTwo, pnNamePlayerThree, pnNamePlayerFour };
 
             foreach (Panel panel in infoPanels)
@@ -3254,6 +3258,11 @@ namespace OpenScrape.App
         }
 
         #endregion
+
+        private void tbJuego_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 
 

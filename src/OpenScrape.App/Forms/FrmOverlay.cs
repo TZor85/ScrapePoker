@@ -19,6 +19,7 @@ namespace OpenScrape.App.Forms
         private Label lbFoldEquity;
         private Label lbEVWithFoldEquity;
         private Label lbSuggestedBetSize;
+        private Label lbTableName;
 
         // Animation timer for smooth updates
         private System.Windows.Forms.Timer animationTimer;
@@ -173,15 +174,20 @@ namespace OpenScrape.App.Forms
 
         public void UpdateSuggestedBetSize(double? betSize)
         {
-            if (!betSize.HasValue || betSize <= 0)
+            if (!betSize.HasValue)
             {
                 lbSuggestedBetSize.Text = string.Empty;
                 lbSuggestedBetSize.Visible = false;
                 return;
             }
 
-            lbSuggestedBetSize.Text = $"🎯 Bet: {betSize:F1}x";
+            lbSuggestedBetSize.Text = $"Bet: {Math.Round(betSize.Value, 2)}";
             lbSuggestedBetSize.Visible = true;
+        }
+
+        public void UpdateTableName(string tableName)
+        {
+            lbTableName.Text = tableName ?? string.Empty;
         }
 
         // Nuevo método para actualizar con el resultado unificado
@@ -307,8 +313,34 @@ namespace OpenScrape.App.Forms
             this.Controls.Add(panel7);
             this.Controls.Add(panel8);
 
+            // Add table name panel
+            var panel9 = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.Black,
+                Location = new Point(0, 149), // Below panel8
+                Name = "panel9"
+            };
+
+            lbTableName = new Label
+            {
+                AutoSize = true,
+                BackColor = Color.Transparent,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(0, 0),
+                Name = "lbTableName",
+                Size = new Size(50, 19),
+                TabIndex = 14,
+                Text = string.Empty
+            };
+            panel9.Controls.Add(lbTableName);
+
+            this.Controls.Add(panel9);
+
             // Increase form height to accommodate new panels
-            this.ClientSize = new Size(214, 150);
+            this.ClientSize = new Size(214, 170);
         }
 
         private void AnimationTimer_Tick(object? sender, EventArgs e)
