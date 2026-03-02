@@ -14,11 +14,11 @@ namespace OpenScrape.App.Forms
             set
             {
                 datoRecibido = value;
-                ActualizarDatosEnInterfaz(); 
+                ActualizarDatosEnInterfaz();
             }
         }
 
-        
+
 
         private void ActualizarDatosEnInterfaz()
         {

@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<UseWindowsForms>true</UseWindowsForms>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
 		<ApplicationIcon>imagen_2025-08-19_153143860.ico</ApplicationIcon>
 		<!-- Suppress vulnerability warnings for transitive dependencies from Microsoft.ML -->

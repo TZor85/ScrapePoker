@@ -28,5 +28,5 @@
             return new GetHashImageUseCaseResponse { Hash = textHash };
         }
     }
-    
+
 }

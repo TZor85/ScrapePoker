@@ -66,10 +66,10 @@ namespace OpenScrape.App.Aplication.UseCases
                             }
                         }
                     }
-                    
+
                     switch (region.Name)
                     {
-                        case "Card1":                            
+                        case "Card1":
                             name = card.Name.Split(" ")[0];
                             force = card.Force;
                             suit = card.Suit;

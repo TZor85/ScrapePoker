@@ -1,4 +1,4 @@
-﻿using OpenScrape.App.Helpers;
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using System.Diagnostics;
 

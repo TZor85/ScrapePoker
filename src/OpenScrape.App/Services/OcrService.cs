@@ -2,6 +2,7 @@
 
 using SkiaSharp;
 using System.Collections.Concurrent;
+using System.Drawing.Imaging;
 using Tesseract;
 
 
@@ -14,6 +15,7 @@ public class OcrService
 
     private TesseractEngine _engine;
     private readonly ConcurrentDictionary<string, SKBitmap> _bitmapCache = new();
+    private readonly ConcurrentDictionary<ulong, string> _ocrCache = new();
     private static readonly object _lock = new object();
 
     private void InitializeEngine()
@@ -61,15 +63,15 @@ public class OcrService
     }
 
     // Método general para texto normal
-    public string ExtractTextFromRegion(string imagePath, int x, int y, int width, int height)
+    public async Task<string> ExtractTextFromRegionAsync(string imagePath, int x, int y, int width, int height)
     {
-        return ExtractTextFromRegion(imagePath, x, y, width, height, OcrMode.Normal);
+        return await ExtractTextFromRegionAsync(imagePath, x, y, width, height, OcrMode.Normal);
     }
 
     // Método específico para detectar BB (Big Blinds)
-    public string ExtractBBFromRegion(string imagePath, int x, int y, int width, int height)
+    public async Task<string> ExtractBBFromRegionAsync(string imagePath, int x, int y, int width, int height)
     {
-        return ExtractTextFromRegion(imagePath, x, y, width, height, OcrMode.BB);
+        return await ExtractTextFromRegionAsync(imagePath, x, y, width, height, OcrMode.BB);
     }
 
     private enum OcrMode
@@ -78,59 +80,69 @@ public class OcrService
         BB
     }
 
-    private string ExtractTextFromRegion(string imagePath, int x, int y, int width, int height, OcrMode mode)
+    private async Task<string> ExtractTextFromRegionAsync(string imagePath, int x, int y, int width, int height, OcrMode mode)
     {
-        try
+        return await Task.Run(() =>
         {
-            using var originalBitmap = SKBitmap.Decode(imagePath);
-            using var croppedBitmap = new SKBitmap(width, height);
-            using var canvas = new SKCanvas(croppedBitmap);
-
-            var sourceRect = new SKRectI(x, y, x + width, y + height);
-            canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
-
-            // Aplicar efectos según el modo
-            if (mode == OcrMode.BB)
+            lock (_lock)
             {
-                using var paint = new SKPaint();
-                paint.ColorFilter = SKColorFilter.CreateColorMatrix(new float[]
+                try
                 {
-                        2.0f, 0, 0, 0, -0.2f,
-                        0, 2.0f, 0, 0, -0.2f,
-                        0, 0, 2.0f, 0, -0.2f,
-                        0, 0, 0, 1.0f, 0
-                });
-                canvas.DrawBitmap(croppedBitmap, new SKPoint(0, 0), paint);
+                    // Asegurarse de que el engine está disponible
+                    if (_engine == null || _engine.IsDisposed)
+                    {
+                        InitializeEngine();
+                    }
+
+                    using var originalBitmap = SKBitmap.Decode(imagePath);
+                    using var croppedBitmap = new SKBitmap(width, height);
+                    using var canvas = new SKCanvas(croppedBitmap);
+
+                    var sourceRect = new SKRectI(x, y, x + width, y + height);
+                    canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
+
+                    // Aplicar efectos según el modo
+                    if (mode == OcrMode.BB)
+                    {
+                        using var paint = new SKPaint();
+                        paint.ColorFilter = SKColorFilter.CreateColorMatrix(new float[]
+                        {
+                            2.0f, 0, 0, 0, -0.2f,
+                            0, 2.0f, 0, 0, -0.2f,
+                            0, 0, 2.0f, 0, -0.2f,
+                            0, 0, 0, 1.0f, 0
+                        });
+                        canvas.DrawBitmap(croppedBitmap, new SKPoint(0, 0), paint);
+                    }
+
+                    using var processedMs = new MemoryStream();
+                    using var image = SKImage.FromBitmap(croppedBitmap);
+                    using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+                    data.SaveTo(processedMs);
+                    processedMs.Position = 0;
+
+                    // Configurar Tesseract según el modo
+                    if (mode == OcrMode.BB)
+                    {
+                        _engine.SetVariable("tessedit_char_whitelist", "0123456789.BB");
+                        _engine.SetVariable("classify_bln_numeric_mode", "1");
+                    }
+                    else
+                    {
+                        _engine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-/ ");
+                    }
+
+                    using var img = Pix.LoadFromMemory(processedMs.ToArray());
+                    using var page = _engine.Process(img);
+
+                    return page.GetText().Trim();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Error en OCR: {ex.Message}");
+                }
             }
-
-            using var processedMs = new MemoryStream();
-            using var image = SKImage.FromBitmap(croppedBitmap);
-            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-            data.SaveTo(processedMs);
-            processedMs.Position = 0;
-
-            using var engine = new TesseractEngine(Path.Combine(_tessdataPath, "tessdata"), "eng", EngineMode.Default);
-
-            // Configurar Tesseract según el modo
-            if (mode == OcrMode.BB)
-            {
-                engine.SetVariable("tessedit_char_whitelist", "0123456789.BB");
-                engine.SetVariable("classify_bln_numeric_mode", "1");
-            }
-            else
-            {
-                engine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-/ ");
-            }
-
-            using var img = Pix.LoadFromMemory(processedMs.ToArray());
-            using var page = engine.Process(img);
-
-            return page.GetText().Trim();
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error en OCR: {ex.Message}");
-        }
+        });
     }
 
     //public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double porcentaje = 0, bool onlyNumber = false)
@@ -210,67 +222,94 @@ public class OcrService
                 OcrResult result = null;
 
                 using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
-                using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, umbral))
-                using (var debugMs = new MemoryStream())
                 {
-                    // Procesar la imagen
-                    using (var debugImage = SKImage.FromBitmap(processedBitmap))
+                    // Compute dHash for cache
+                    ulong hash = ComputeDHash(croppedBitmap);
+                    if (_ocrCache.TryGetValue(hash, out var cachedText))
                     {
-                        var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
-                        encoded.SaveTo(debugMs);
-                        encoded.Dispose(); // Asegurar que se libera el encoded
+                    // Cache hit: create result with cached text
+                    using var ms = new MemoryStream();
+                    using var skImage = SKImage.FromBitmap(croppedBitmap);
+                    using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
+                    encoded.SaveTo(ms);
+                    ms.Position = 0;
+                    result = new OcrResult
+                    {
+                        Text = cachedText,
+                        Image = new Bitmap(ms)
+                    };
+                    return result;
                     }
 
-                    // Configurar Tesseract
-                    ConfigureTesseract(onlyNumber);
-
-                    // Convertir a array una sola vez
-                    byte[] imageData = debugMs.ToArray();
-
-                    // Invertir colores en la imagen (si es necesario)
-                    using (var ms = new MemoryStream(imageData))
-                    using (var invertedMs = new MemoryStream())
+                    using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, umbral))
+                    using (var debugMs = new MemoryStream())
                     {
-                        using (var bitmap = new Bitmap(ms))
+                        // Procesar la imagen
+                        using (var debugImage = SKImage.FromBitmap(processedBitmap))
                         {
-                            // Invertir colores
-                            for (int py = 0; py < bitmap.Height; py++)
-                            {
-                                for (int px = 0; px < bitmap.Width; px++)
-                                {
-                                    Color pixel = bitmap.GetPixel(px, py);
-                                    Color inverted = Color.FromArgb(
-                                        pixel.A,
-                                        255 - pixel.R,
-                                        255 - pixel.G,
-                                        255 - pixel.B
-                                    );
-                                    bitmap.SetPixel(px, py, inverted);
-                                }
-                            }
-
-                            // Guardar la imagen invertida
-                            bitmap.Save(invertedMs, System.Drawing.Imaging.ImageFormat.Png);
+                            var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
+                            encoded.SaveTo(debugMs);
+                            encoded.Dispose(); // Asegurar que se libera el encoded
                         }
 
-                        // Usar la imagen invertida para OCR
-                        imageData = invertedMs.ToArray();
-                    }
+                        // Configurar Tesseract
+                        ConfigureTesseract(onlyNumber);
 
-                    // Procesar OCR
-                    using (var img = Pix.LoadFromMemory(imageData))
-                    using (var page = _engine.Process(img))
-                    {
-                        var text = ProcessText(page.GetText().Trim());
+                        // Convertir a array una sola vez
+                        byte[] imageData = debugMs.ToArray();
 
-                        // Crear el bitmap para el resultado
+                        // Invertir colores en la imagen (si es necesario)
                         using (var ms = new MemoryStream(imageData))
+                        using (var invertedMs = new MemoryStream())
                         {
-                            result = new OcrResult
+                            using (var bitmap = new Bitmap(ms))
                             {
-                                Text = text,
-                                Image = new Bitmap(ms)
-                            };
+                                Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+                                BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+                                int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+
+                                unsafe
+                                {
+                                    byte* ptr = (byte*)data.Scan0;
+                                    int totalBytes = bitmap.Height * data.Stride;
+
+                                    for (int i = 0; i < totalBytes; i += bytesPerPixel)
+                                    {
+                                        ptr[i] = (byte)(255 - ptr[i]);     // B
+                                        ptr[i + 1] = (byte)(255 - ptr[i + 1]); // G
+                                        ptr[i + 2] = (byte)(255 - ptr[i + 2]); // R
+                                        // Alpha se mantiene si existe
+                                    }
+                                }
+
+                                bitmap.UnlockBits(data);
+
+                                // Guardar la imagen invertida
+                                bitmap.Save(invertedMs, System.Drawing.Imaging.ImageFormat.Png);
+                            }
+
+                            // Usar la imagen invertida para OCR
+                            imageData = invertedMs.ToArray();
+                        }
+
+                        // Procesar OCR
+                        using (var img = Pix.LoadFromMemory(imageData))
+                        using (var page = _engine.Process(img))
+                        {
+                            var text = ProcessText(page.GetText().Trim());
+
+                            // Cache the result
+                            _ocrCache[hash] = text;
+
+                            // Crear el bitmap para el resultado
+                            using (var ms = new MemoryStream(imageData))
+                            {
+                                result = new OcrResult
+                                {
+                                    Text = text,
+                                    Image = new Bitmap(ms)
+                                };
+                            }
                         }
                     }
                 }
@@ -368,10 +407,32 @@ public class OcrService
         return text;
     }
 
-    public void Dispose()
+    private ulong ComputeDHash(SKBitmap bitmap)
     {
-        ClearBitmapCache();
-        _engine?.Dispose();
+        // First, resize to 64x64 for normalization
+        var normalized = bitmap.Resize(new SKImageInfo(64, 64), SKFilterQuality.Medium);
+        
+        // Then resize to 9x8 for dHash
+        var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), SKFilterQuality.None);
+        
+        ulong hash = 0;
+        int bitIndex = 0;
+        for (int y = 0; y < 8; y++)
+        {
+            for (int x = 0; x < 8; x++)
+            {
+                var pixel1 = hashBitmap.GetPixel(x, y);
+                var pixel2 = hashBitmap.GetPixel(x + 1, y);
+                var gray1 = (pixel1.Red + pixel1.Green + pixel1.Blue) / 3;
+                var gray2 = (pixel2.Red + pixel2.Green + pixel2.Blue) / 3;
+                if (gray1 > gray2)
+                {
+                    hash |= (1UL << bitIndex);
+                }
+                bitIndex++;
+            }
+        }
+        return hash;
     }
 
     public void ClearBitmapCache()

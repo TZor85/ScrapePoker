@@ -23,7 +23,7 @@ public class GetActionRaiseOverLimperUseCase : IGetActionRaiseOverLimperUseCase
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             Limper = request.LimperPosition
         });
-         
+
         return response;
     }
 }

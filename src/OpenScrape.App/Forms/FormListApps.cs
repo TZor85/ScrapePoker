@@ -14,7 +14,7 @@ namespace OpenScrape.App
         public IAddImage AddImage { get; set; }
 
         public IntPtr handle;
-        
+
         public FormListApps()
         {
             InitializeComponent();
@@ -33,7 +33,7 @@ namespace OpenScrape.App
                 {
                     lbApps.Items.Add(item.Key);
                 }
-                
+
             }
 
         }

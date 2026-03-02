@@ -63,7 +63,7 @@ public class PotOddsCalculator : IPotOddsCalculator
         return cardsToCome switch
         {
             2 => allOuts.Count * 4m,   // Regla del 4% (flop a river)
-            1 => allOuts.Count * 2.17m,   // Regla del 2%
+            1 => allOuts.Count * 2m,   // Regla del 2% (turn a river)
             _ => 0m    // Pre-flop o River
         };
     }

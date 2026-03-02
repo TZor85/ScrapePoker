@@ -35,12 +35,12 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         _threeBetUseCase = new GetAction3BetUseCase(_actionScenarioUseCases);
         _raiseVsSBLimpUseCase = new GetActionRaiseVsSBLimpUseCase(_actionScenarioUseCases);
         _cold4BetUseCase = new GetActionCold4BetUseCase(_actionScenarioUseCases);
-        
+
     }
 
     public async Task<SetPreflopActionUseCaseResponse> Execute(SetPreflopActionUseCaseRequest request)
     {
-        if(request.PlayerState != null)
+        if (request.PlayerState != null)
         {
             if (request.ResponseAction.IsSecondAction)
             {
@@ -58,7 +58,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                         request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
 
                 if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.ThreeBet)
@@ -70,7 +70,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                         request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
 
                 if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper))
@@ -82,7 +82,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                         request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3Bet;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
 
                 if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.PlayerState))
@@ -94,7 +94,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                         request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3BetAndCall;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
             }
         }
@@ -109,7 +109,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.Squeeze;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
 
@@ -122,7 +123,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.OpenRaise;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //COLD 4BET
@@ -134,7 +136,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.Cold4Bet;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //GET RAISE OVER LIMPER
@@ -146,7 +149,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.RaiseOverLimper;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //GET 3BET
@@ -160,7 +164,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                     request.ResponseAction.Action = action;
                     request.ResponseAction.HandSituation = HandSituation.ThreeBet;
                     request.ResponseAction.IsSecondAction = true;
-                };
+                }
+                ;
             }
         }
 
@@ -303,7 +308,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             {
                 Hand = UserHandHelper.SetHandValue(playerState),
                 Position = playerState.Position,
-                ThreeBetPosition = preflopTablePosition.First(f => f.Value >  playerState.CurrentBet).Key,
+                ThreeBetPosition = preflopTablePosition.First(f => f.Value > playerState.CurrentBet).Key,
                 CallerPosition = preflopTablePosition.Last(l => l.Value > playerState.CurrentBet).Key
             };
 
@@ -344,7 +349,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             var getSqueezeRequest = new GetActionSqueezeRequest
             {
                 Hand = UserHandHelper.SetHandValue(playerState),
-                Position =  playerState.Position,
+                Position = playerState.Position,
                 OpenRaiserPosition = raiser,
                 CallerPosition = caller
             };

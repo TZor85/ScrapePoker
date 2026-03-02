@@ -6,6 +6,7 @@ using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
+using OpenScrape.App.Aplication.UseCases;
 
 namespace OpenScrape.App
 {
@@ -27,7 +28,7 @@ namespace OpenScrape.App
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    // Agregar configuración de base de datos
+                    // Agregar configuraciï¿½n de base de datos
                     services.AddDataBase(context.Configuration, true);
                     services.AddUseCases();
                     //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
@@ -40,6 +41,9 @@ namespace OpenScrape.App
                     services.AddSingleton<OutsCalculator>();
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
+
+                    // Register unified calculator
+                    services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();
