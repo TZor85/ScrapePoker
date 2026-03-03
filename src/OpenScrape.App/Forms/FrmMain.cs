@@ -90,6 +90,20 @@ namespace OpenScrape.App
         private string _tableName = string.Empty;
         private long _newTableHand;
         private bool _newHand;
+        private string _dealerPosition = "";
+        private string _previousDealerPlayerName = "";
+        private string _previousSBPlayerName = "";
+        private string _previousBBPlayerName = "";
+        private BetSize GetOpponentBetSize(decimal maxBet, decimal potSize)
+        {
+            if (maxBet == 0)
+                return BetSize.NoBet;
+            if (maxBet <= potSize * 0.3m)
+                return BetSize.Small;
+            if (maxBet <= potSize * 0.7m)
+                return BetSize.Medium;
+            return BetSize.Large;
+        }
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -483,7 +497,7 @@ namespace OpenScrape.App
                     _frmOverlay.Show();
                 }
 
-                SetTableHand();
+                await SetTableHand();
 
                 if (_newHand)
                 {
@@ -1497,14 +1511,52 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Determina el tamaño de la apuesta de los contrarios
+        /// Detecta si se ha iniciado una nueva mano usando múltiples indicadores
         /// </summary>
-        private BetSize GetOpponentBetSize(decimal maxBet, decimal potSize)
+        private bool DetectNewHand(bool handNumberChanged, string currentHand)
         {
-            if (maxBet == 0) return BetSize.NoBet;
-            if (maxBet < potSize / 3) return BetSize.Small;
-            if (maxBet < potSize * 2 / 3) return BetSize.Medium;
-            return BetSize.Large;
+            // Indicador 1: Número de mano cambió
+            bool indicator1 = handNumberChanged;
+
+            // Indicador 2: Hole cards detectadas (nueva mano)
+            bool indicator2 = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                              !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+            // Indicador 3: Bote bajo (reset típico de nueva mano)
+            bool indicator3 = _playerGameState != null && _playerGameState.PotSize < 10; // Ajustar umbral según blinds
+
+            // Indicador 4: Board vacío o solo preflop
+            bool indicator4 = _playerGameState != null &&
+                              _playerGameState.BoardCards.Count(c => c.Position != BoardPosition.Hand) == 0;
+
+            // Indicador 5: Dealer cambió (nueva ronda)
+            string currentDealerPlayerName = _playerGameState?.Players.FirstOrDefault(d => d.Dealer == true)?.Name ?? "";
+            bool indicator5 = !string.IsNullOrEmpty(currentDealerPlayerName) && currentDealerPlayerName != _previousDealerPlayerName;
+
+            // Indicador 6: SB cambió
+            string currentSBPlayerName = _playerGameState?.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "";
+            bool indicator6 = !string.IsNullOrEmpty(currentSBPlayerName) && currentSBPlayerName != _previousSBPlayerName;
+
+            // Indicador 7: BB cambió
+            string currentBBPlayerName = _playerGameState?.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "";
+            bool indicator7 = !string.IsNullOrEmpty(currentBBPlayerName) && currentBBPlayerName != _previousBBPlayerName;
+
+            // Log indicadores para debugging
+            LogError($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
+
+            // Lógica: Al menos 1 indicador positivo para confirmar nueva mano
+            int indicatorsCount = (indicator1 ? 1 : 0) + (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
+            bool isNewHand = indicatorsCount >= 1;
+
+            // Actualizar nombres previos si se detectó nueva mano
+            if (isNewHand)
+            {
+                _previousDealerPlayerName = currentDealerPlayerName;
+                _previousSBPlayerName = currentSBPlayerName;
+                _previousBBPlayerName = currentBBPlayerName;
+            }
+
+            return isNewHand;
         }
 
         /// <summary>
@@ -2199,6 +2251,8 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
+            LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
+
             _folderPath = Path.Combine(
                 DEFAULT_RESOURCES_PATH,
                 "Games",
@@ -2622,8 +2676,15 @@ namespace OpenScrape.App
         /// <summary>
         /// Establece el número de mano de la mesa
         /// </summary>
-        private void SetTableHand()
+        private async Task SetTableHand()
         {
+            if (_playerGameState == null)
+                _playerGameState = new PlayerGameState();
+
+            SetPotValue();
+            await ObtainCardsPlayerAsync();
+            SetDealerPlayer();
+
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
             if (regionTableMap == null)
                 return;
@@ -2639,20 +2700,24 @@ namespace OpenScrape.App
                 }
                 else
                 {
+                    var currentHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
+                        regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     if (long.TryParse(_tableHand, out var oldTableHand) &&
-                        long.TryParse(SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
-                            regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber), out var newTableHand))
+                        long.TryParse(currentHand, out var newTableHand))
                     {
-                        if (oldTableHand != newTableHand)
+                        if (oldTableHand != newTableHand || _previousDealerPlayerName != _dealerPosition)
                         {
-                            _newHand = true;
-                            _tableHand = newTableHand.ToString();
+                            _newHand = DetectNewHand(oldTableHand != newTableHand, currentHand);
+                            if (_newHand) _tableHand = newTableHand.ToString();
                         }
                         else if (newTableHand == 0)
                         {
-                            _newHand = true;
-                            _newTableHand++;
-                            _tableHand = _newTableHand.ToString();
+                            _newHand = DetectNewHand(true, currentHand);
+                            if (_newHand)
+                            {
+                                _newTableHand++;
+                                _tableHand = _newTableHand.ToString();
+                            }
                         }
                     }
                 }
@@ -2731,6 +2796,8 @@ namespace OpenScrape.App
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
             _playerGameState.Position = DetermineP0Position(playerNumber, emptyPositions);
+            _previousDealerPlayerName = _dealerPosition;
+            _dealerPosition = player.Name;
         }
 
         /// <summary>
