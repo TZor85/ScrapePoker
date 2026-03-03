@@ -43,6 +43,12 @@ namespace OpenScrape.App
         private const string DEFAULT_RESOURCES_PATH = @"C:\Code\Poker\ScrapePoker\resources";
         #endregion
 
+        #region [Enums]
+        internal enum TurnBoardTexture { Dry, Coordinated, Paired }
+        internal enum RiverBoardTexture { Dry, Coordinated, Paired }
+        internal enum BetSize { NoBet, Small, Medium, Large }
+        #endregion
+
         #region [Forms]
         FormImage _formImage;
         Graphics _papel;
@@ -87,10 +93,12 @@ namespace OpenScrape.App
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
-        private readonly CancellationTokenSource _cancellationTokenSource = new(); // MOSTRAR CAMBIOS: Añadido para gestionar cancelación
-        private PokerHandEvaluator _handEvaluator = new();
-
-        private readonly ConcurrentDictionary<string, object> _playerCache = new();
+        private double _flopBluffFrequency = 0.15;
+        private double _turnBluffFrequency = 0.15;
+        private PokerCalculationResult _turnResult;
+        private TurnBoardTexture _turnBoardTexture;
+        private PokerCalculationResult _riverResult;
+        private RiverBoardTexture _riverBoardTexture;
         #endregion
 
         #region [Services and UseCases]
@@ -129,7 +137,16 @@ namespace OpenScrape.App
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
 
-            // Inicialización existente...
+            // Load config
+            var pokerStrategy = Program.Configuration?.GetSection("PokerStrategy");
+            if (pokerStrategy != null && double.TryParse(pokerStrategy["FlopBluffFrequency"], out var flopFreq))
+            {
+                _flopBluffFrequency = flopFreq;
+            }
+            if (pokerStrategy != null && double.TryParse(pokerStrategy["TurnBluffFrequency"], out var turnFreq))
+            {
+                _turnBluffFrequency = turnFreq;
+            }
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
             _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
@@ -593,8 +610,905 @@ namespace OpenScrape.App
             _frmOverlay.UpdateAction(_responseAction.Action);
         }
 
+        #region [Handle Turn Action]
+
+        private void HandleOpenRaiseTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            // Default check/fold for low equity (increased threshold for less aggression)
+            if (equity < 45)
+            {
+                if (inPosition && _turnBoardTexture == TurnBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Semibluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            // Adjust bet sizing based on board texture (reduced sizes)
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/2",
+                TurnBoardTexture.Coordinated => "Bet 1/2",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/2"
+            };
+
+            // Reduce sizing for large opponent bets
+            if (betSize == BetSize.Large)
+            {
+                baseBet = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3");
+            }
+
+            // Position adjustments (more conservative OOP)
+            if (!inPosition)
+            {
+                baseBet = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3");
+            }
+
+            if (equity > 80)
+                _responseAction.Action = baseBet.Replace("1/2", "3/4") + " (Value)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = inPosition ? baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleCallTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/3",
+                TurnBoardTexture.Coordinated => "Bet 1/2",
+                TurnBoardTexture.Paired => "Bet 1/2",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("1/2", "1/3");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("1/2", "1/3");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2") + " (Value)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = inPosition ? baseBet + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleRaiseOverLimperTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+
+            if (inPosition)
+            {
+                if (equity > 70)
+                    _responseAction.Action = "Bet 1/2 (Value)";
+                else if (equity > 45)
+                    _responseAction.Action = "Bet 1/3 (Thin Value)";
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+            else
+            {
+                if (equity > 75)
+                    _responseAction.Action = "Bet 3/4 (Value)";
+                else if (equity > 55)
+                    _responseAction.Action = "Bet 1/2 (Value)";
+                else if (equity > 40)
+                    _responseAction.Action = "Bet 1/3 (Thin Value)";
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+        }
+
+        private void HandleThreeBetTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/2",
+                TurnBoardTexture.Coordinated => "Bet 3/4",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/2"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleOpenRaiseVs3BetTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/2",
+                TurnBoardTexture.Coordinated => "Bet 3/4",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/2"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet + " (Value vs 3bet)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = inPosition ? baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleOpenRaiseVs3BetAndCallTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (Random.Shared.NextDouble() < 0.01)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/3",
+                TurnBoardTexture.Coordinated => "Bet 1/2",
+                TurnBoardTexture.Paired => "Bet 1/2",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("1/2", "1/3");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("1/2", "1/3");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2") + " (Value vs Called 3bet)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = inPosition ? baseBet + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Call");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+        }
+
+        private void HandleFourBetTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/3",
+                TurnBoardTexture.Coordinated => "Bet 1/2",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 85)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2").Replace("1/2", "3/4") + " (Value after 4bet)";
+            else if (equity > 65)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2") + " (Value)";
+            else if (equity > 50)
+                _responseAction.Action = baseBet + " (Thin Value)";
+            else
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleCold4BetTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/2",
+                TurnBoardTexture.Coordinated => "Bet 3/4",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/2"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet + " (Value Cold 4bet)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleSqueezeTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/2 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/2",
+                TurnBoardTexture.Coordinated => "Bet 3/4",
+                TurnBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/2"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value Squeeze)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2") + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)";
+            else
+            {
+                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/2 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleVsSqueezeTurnAction()
+        {
+            var equity = _turnResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _turnBoardTexture switch
+            {
+                TurnBoardTexture.Dry => "Bet 1/3",
+                TurnBoardTexture.Coordinated => "Bet 1/2",
+                TurnBoardTexture.Paired => "Bet 1/2",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("1/2", "1/3");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2") + " (Value vs Squeeze)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        #endregion
+
+        private void DetermineRiverAction()
+        {
+            switch (_playerGameState.HandSituation)
+            {
+                case HandSituation.OpenRaise:
+                    HandleOpenRaiseRiverAction();
+                    break;
+
+                case HandSituation.Call:
+                    HandleCallRiverAction();
+                    break;
+
+                case HandSituation.RaiseOverLimper:
+                    HandleRaiseOverLimperRiverAction();
+                    break;
+
+                case HandSituation.ThreeBet:
+                    HandleThreeBetRiverAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3Bet:
+                    HandleOpenRaiseVs3BetRiverAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3BetAndCall:
+                    HandleOpenRaiseVs3BetAndCallRiverAction();
+                    break;
+
+                case HandSituation.FourBet:
+                    HandleFourBetRiverAction();
+                    break;
+
+                case HandSituation.Cold4Bet:
+                    HandleCold4BetRiverAction();
+                    break;
+
+                case HandSituation.Squeeze:
+                    HandleSqueezeRiverAction();
+                    break;
+
+                case HandSituation.VsSqueeze:
+                    HandleVsSqueezeRiverAction();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        #region [Handle River Action]
+
+        private void HandleOpenRaiseRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            // Default check/fold for low equity (higher threshold for river)
+            if (equity < 40)
+            {
+                if (inPosition && _riverBoardTexture == RiverBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Semibluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            // Adjust bet sizing based on board texture
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 2/3",
+                RiverBoardTexture.Coordinated => "Bet Pot",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 2/3"
+            };
+
+            // Reduce sizing for large opponent bets
+            if (betSize == BetSize.Large)
+            {
+                baseBet = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2").Replace("1/2", "1/3");
+            }
+
+            // Position adjustments (more conservative OOP)
+            if (!inPosition)
+            {
+                baseBet = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2");
+            }
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4") + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = inPosition ? baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleCallRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 1/2",
+                RiverBoardTexture.Coordinated => "Bet 3/4",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 1/2"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = inPosition ? baseBet + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleRaiseOverLimperRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+
+            if (inPosition)
+            {
+                if (equity > 65)
+                    _responseAction.Action = "Bet 3/4 (Value)";
+                else if (equity > 45)
+                    _responseAction.Action = "Bet 1/2 (Thin Value)";
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+            else
+            {
+                if (equity > 75)
+                    _responseAction.Action = "Bet Pot (Value)";
+                else if (equity > 55)
+                    _responseAction.Action = "Bet 3/4 (Value)";
+                else if (equity > 40)
+                    _responseAction.Action = "Bet 1/2 (Thin Value)";
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+        }
+
+        private void HandleThreeBetRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 2/3",
+                RiverBoardTexture.Coordinated => "Bet Pot",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 2/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleOpenRaiseVs3BetRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 2/3",
+                RiverBoardTexture.Coordinated => "Bet Pot",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 2/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet + " (Value vs 3bet)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = inPosition ? baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
+            else
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleOpenRaiseVs3BetAndCallRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 1/3",
+                RiverBoardTexture.Coordinated => "Bet 1/2",
+                RiverBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2").Replace("1/2", "3/4") + " (Value vs Called 3bet)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = inPosition ? baseBet + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Call");
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+        }
+
+        private void HandleFourBetRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 1/3",
+                RiverBoardTexture.Coordinated => "Bet 1/2",
+                RiverBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 85)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2").Replace("1/2", "3/4").Replace("3/4", "Pot") + " (Value after 4bet)";
+            else if (equity > 65)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2").Replace("1/2", "3/4") + " (Value)";
+            else if (equity > 50)
+                _responseAction.Action = baseBet + " (Thin Value)";
+            else
+            {
+                if (Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/3 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleCold4BetRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 2/3",
+                RiverBoardTexture.Coordinated => "Bet Pot",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 2/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet + " (Value Cold 4bet)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4") + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        private void HandleSqueezeRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/2 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 2/3",
+                RiverBoardTexture.Coordinated => "Bet Pot",
+                RiverBoardTexture.Paired => "Bet Pot",
+                _ => "Bet 2/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (!inPosition)
+                baseBet = baseBet.Replace("Pot", "3/4");
+
+            if (equity > 75)
+                _responseAction.Action = baseBet + " (Value Squeeze)";
+            else if (equity > 55)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4") + " (Value)";
+            else if (equity > 40)
+                _responseAction.Action = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)";
+            else
+            {
+                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                    _responseAction.Action = "Bet 1/2 (Bluff)";
+                else
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+            }
+        }
+
+        private void HandleVsSqueezeRiverAction()
+        {
+            var equity = _riverResult.EquityPercentage;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            if (equity < 40)
+            {
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+                return;
+            }
+
+            var baseBet = _riverBoardTexture switch
+            {
+                RiverBoardTexture.Dry => "Bet 1/3",
+                RiverBoardTexture.Coordinated => "Bet 1/2",
+                RiverBoardTexture.Paired => "Bet 3/4",
+                _ => "Bet 1/3"
+            };
+
+            if (betSize == BetSize.Large)
+                baseBet = baseBet.Replace("3/4", "1/2");
+
+            if (equity > 80)
+                _responseAction.Action = baseBet.Replace("1/3", "1/2").Replace("1/2", "3/4") + " (Value vs Squeeze)";
+            else if (equity > 60)
+                _responseAction.Action = baseBet + " (Value)";
+            else if (equity > 45)
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
+            else
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
+        }
+
+        #endregion
+
         /// <summary>
-        /// Procesa la fase de flop
+        /// Analiza la textura del board del turn
+        /// </summary>
+        private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
+        {
+            var turnCards = boardCards.Where(b => b.Position == BoardPosition.Turn).ToList();
+            if (turnCards.Count < 1) return TurnBoardTexture.Dry;
+
+            var suits = turnCards.Select(b => b.Suit).ToList();
+            var ranks = turnCards.Select(b => b.Force).OrderBy(r => r).ToList();
+
+            // Check for pairs
+            if (ranks.GroupBy(r => r).Any(g => g.Count() >= 2))
+                return TurnBoardTexture.Paired;
+
+            // Check for flush draws or straight draws
+            bool hasFlushDraw = suits.GroupBy(s => s).Any(g => g.Count() >= 3);
+            bool hasStraightDraw = ranks.Count >= 3 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
+
+            if (hasFlushDraw || hasStraightDraw)
+                return TurnBoardTexture.Coordinated;
+
+            return TurnBoardTexture.Dry;
+        }
+
+        /// <summary>
+        /// Analiza la textura del board del river
+        /// </summary>
+        private RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> boardCards)
+        {
+            var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
+            if (communityCards.Count < 5) return RiverBoardTexture.Dry;
+
+            var suits = communityCards.Select(b => b.Suit).ToList();
+            var ranks = communityCards.Select(b => b.Force).OrderBy(r => r).ToList();
+
+            // Check for pairs (three of a kind or full house)
+            if (ranks.GroupBy(r => r).Any(g => g.Count() >= 3) || ranks.GroupBy(r => r).Count(g => g.Count() >= 2) >= 2)
+                return RiverBoardTexture.Paired;
+
+            // Check for flush or straight possibilities
+            bool hasFlush = suits.GroupBy(s => s).Any(g => g.Count() >= 5);
+            bool hasStraight = ranks.Count >= 5 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
+
+            if (hasFlush || hasStraight)
+                return RiverBoardTexture.Coordinated;
+
+            return RiverBoardTexture.Dry;
+        }
+
+        /// <summary>
+        /// Determina el tamaño de la apuesta de los contrarios
+        /// </summary>
+        private BetSize GetOpponentBetSize(decimal maxBet, decimal potSize)
+        {
+            if (maxBet == 0) return BetSize.NoBet;
+            if (maxBet < potSize / 3) return BetSize.Small;
+            if (maxBet < potSize * 2 / 3) return BetSize.Medium;
+            return BetSize.Large;
+        }
+
+        /// <summary>
+        /// Procesa la fase de turn
         /// </summary>
         private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
@@ -619,8 +1533,6 @@ namespace OpenScrape.App
 
             dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard1Face, Location = 0 });
             dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard2Rank, Suit = _playerGameState.HoleCard2Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard2Face, Location = 0 });
-
-            _handEvaluator.EvaluateHand(dataBoard);
 
             // Procesar el flop
             var setFlopForceBoardResponse = _setFlopForceBoardUseCase.Execute(
@@ -676,16 +1588,6 @@ namespace OpenScrape.App
             // Analizar el flop y determinar acción
             DetermineFlopAction();
             //_responseAction.Action = analysis.RecommendedAction;
-        }
-
-        /// <summary>
-        /// Actualiza el panel de métricas con los resultados del cálculo
-        /// </summary>
-        private void UpdateMetricsPanel(PokerCalculationResult result)
-        {
-            lblEV.Text = $"EV: {result.ExpectedValue:F2}";
-            lblFoldEquity.Text = $"Fold Eq: {result.FoldEquity:F1}%";
-            lblBetSize.Text = result.SuggestedBetSize.HasValue ? $"Bet: {result.SuggestedBetSize.Value:F1}x" : "Bet: N/A";
         }
 
         /// <summary>
@@ -746,6 +1648,55 @@ namespace OpenScrape.App
             }
         }
 
+        private void DetermineTurnAction()
+        {
+            switch (_playerGameState.HandSituation)
+            {
+                case HandSituation.OpenRaise:
+                    HandleOpenRaiseTurnAction();
+                    break;
+
+                case HandSituation.Call:
+                    HandleCallTurnAction();
+                    break;
+
+                case HandSituation.RaiseOverLimper:
+                    HandleRaiseOverLimperTurnAction();
+                    break;
+
+                case HandSituation.ThreeBet:
+                    HandleThreeBetTurnAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3Bet:
+                    HandleOpenRaiseVs3BetTurnAction();
+                    break;
+
+                case HandSituation.OpenRaiseVs3BetAndCall:
+                    HandleOpenRaiseVs3BetAndCallTurnAction();
+                    break;
+
+                case HandSituation.FourBet:
+                    HandleFourBetTurnAction();
+                    break;
+
+                case HandSituation.Cold4Bet:
+                    HandleCold4BetTurnAction();
+                    break;
+
+                case HandSituation.Squeeze:
+                    HandleSqueezeTurnAction();
+                    break;
+
+                case HandSituation.VsSqueeze:
+                    HandleVsSqueezeTurnAction();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
         #region [Handle Flop Action]
 
         private void HandleOpenRaiseFlopAction()
@@ -754,33 +1705,34 @@ namespace OpenScrape.App
             var hero = _scrapeFlopResult.HeroStrength;
             var inPosition = _playerGameState.IsInPosition;
 
+            // GTO-inspired polarized betting: bet strong hands and bluffs, check medium
             _responseAction.Action = board switch
             {
                 { IsDry: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 2/3 (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Valor)",
-                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Proteger)" : "Check (Call)",
-                    { HasBottomPair: true } => "Check (Fold)",
-                    _ => "Check (Fold)"
+                    { HasTopPairOrBetter: true } => "Bet 1/3 (Thin Value)",  // Small bet for thin value
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Value)",  // Larger for strong
+                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Protection)" : "Check (Fold)",  // Small protection bet
+                    { HasBottomPair: true } => "Check (Fold)",  // Fold weak
+                    _ => inPosition ? "Bet 1/2 (Bluff)" : "Check (Fold)"  // Bluff with air if IP
                 },
 
                 { IsCoordinated: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
-                    { HasMiddlePair: true } => "Bet 1/2 (Proteger)",
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",  // Larger bet on wet board
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Bet 2/3 (Protection)",
                     { HasBottomPair: true } => "Check (Fold)",
-                    _ => inPosition ? "Bet 1/2 (Semibluff)" : "Check (Fold)"
+                    _ => inPosition ? "Bet 3/4 (Semibluff)" : "Check (Fold)"  // Semibluff with draws
                 },
 
                 { IsPaired: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
-                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",  // Pot bet on paired board
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
                     { HasBottomPair: true } => "Check (Fold)",
-                    _ => "Check (Fold)"
+                    _ => "Check (Fold)"  // No bluff on paired
                 },
                 _ => "Check (Fold)"
             };
@@ -792,30 +1744,31 @@ namespace OpenScrape.App
             var hero = _scrapeFlopResult.HeroStrength;
             var inPosition = _playerGameState.IsInPosition;
 
+            // GTO for called flop: more checking, smaller bets, focus on value
             _responseAction.Action = board switch
             {
                 { IsDry: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 2/3 (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Valor)",
-                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasTopPairOrBetter: true } => "Bet 1/3 (Thin Value)",  // Small bet to protect
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Check (Call)",  // Check medium
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"
                 },
 
                 { IsCoordinated: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasTopPairOrBetter: true } => "Bet 1/2 (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Value)",
                     { HasMiddlePair: true } => "Check (Call)",
                     { HasBottomPair: true } => "Check (Fold)",
-                    _ => inPosition ? "Bet 2/3 (Proyecto muy Fuerte)" : "Check (Fold)"
+                    _ => inPosition ? "Bet 1/3 (Semibluff)" : "Check (Fold)"  // Light bluff IP
                 },
 
                 { IsPaired: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet Pot (Valor)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Valor)",
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",  // Larger on paired for protection
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
                     { HasMiddlePair: true } => "Check (Call)",
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"
@@ -899,17 +1852,120 @@ namespace OpenScrape.App
 
         private void HandleOpenRaiseVs3BetFlopAction()
         {
-            _responseAction.Action = "Not implemented";
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+            var bluffFreq = _flopBluffFrequency;
+
+            // GTO vs 3bet range: aggressive value betting, selective bluffs
+            _responseAction.Action = board switch
+            {
+                { IsDry: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value vs 3bet)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Protection)" : "Check (Fold)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition && Random.Shared.NextDouble() < bluffFreq ? "Bet 1/3 (Light Bluff)" : "Check (Fold)"
+                },
+
+                { IsCoordinated: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition && Random.Shared.NextDouble() < bluffFreq * 1.2 ? "Bet 1/2 (Semibluff)" : "Check (Fold)"
+                },
+
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"  // No bluff on paired
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleOpenRaiseVs3BetAndCallFlopAction()
         {
-            _responseAction.Action = "Not implemented";
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            // GTO after calling 3bet: continuation bets with value, conservative bluffs
+            _responseAction.Action = board switch
+            {
+                { IsDry: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 2/3 (Value vs Called 3bet)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Protection)" : "Check (Call)",
+                    { HasBottomPair: true } => "Check (Call)",
+                    _ => inPosition && Random.Shared.NextDouble() < _flopBluffFrequency * 0.5 ? "Bet 1/3 (Light Bluff)" : "Check (Call)"
+                },
+
+                { IsCoordinated: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/3 (Protection)",
+                    { HasBottomPair: true } => "Check (Call)",
+                    _ => inPosition && Random.Shared.NextDouble() < _flopBluffFrequency * 0.7 ? "Bet 1/3 (Semibluff)" : "Check (Call)"
+                },
+
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasBottomPair: true } => "Check (Call)",
+                    _ => "Check (Call)"  // No bluff on paired boards
+                },
+                _ => "Check (Call)"
+            };
         }
 
         private void HandleFourBetFlopAction()
         {
-            _responseAction.Action = "Not implemented";
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            // GTO after 4bet: aggressive c-betting with strong range
+            _responseAction.Action = board switch
+            {
+                { IsDry: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value after 4bet)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/3 (Protection)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition && Random.Shared.NextDouble() < _flopBluffFrequency * 0.8 ? "Bet 1/3 (Bluff)" : "Check (Fold)"
+                },
+
+                { IsCoordinated: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => inPosition && Random.Shared.NextDouble() < _flopBluffFrequency ? "Bet 1/2 (Semibluff)" : "Check (Fold)"
+                },
+
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"  // No bluff on paired
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         private void HandleCold4BetFlopAction()
@@ -986,7 +2042,41 @@ namespace OpenScrape.App
 
         private void HandleVsSqueezeFlopAction()
         {
-            _responseAction.Action = "Not implemented";
+            var board = _scrapeFlopResult.BoardTexture;
+            var hero = _scrapeFlopResult.HeroStrength;
+            var inPosition = _playerGameState.IsInPosition;
+
+            // GTO vs squeeze: very conservative, squeeze range is strong
+            _responseAction.Action = board switch
+            {
+                { IsDry: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 2/3 (Value vs Squeeze)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"  // No bluffs vs squeeze
+                },
+
+                { IsCoordinated: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"  // No bluffs vs squeeze
+                },
+
+                { IsPaired: true } => hero switch
+                {
+                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",
+                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
+                    { HasMiddlePair: true } => "Check (Call)",
+                    { HasBottomPair: true } => "Check (Fold)",
+                    _ => "Check (Fold)"  // No bluffs vs squeeze
+                },
+                _ => "Check (Fold)"
+            };
         }
 
         #endregion
@@ -1008,6 +2098,9 @@ namespace OpenScrape.App
 
             var dataBoard = turnResponse.DataBoard;
             _playerGameState.BoardCards = turnResponse.DataBoard;
+
+            // Analizar textura del board del turn
+            _turnBoardTexture = AnalyzeTurnBoardTexture(dataBoard);
 
             var myCards = new List<CardDataOuts>
             {
@@ -1033,9 +2126,15 @@ namespace OpenScrape.App
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
+            _turnResult = result;
+
             UpdateOverlayWithPotOdds(result);
 
-            _responseAction.Action = "Turn action not implemented"; // Placeholder
+            // Determinar si estamos en posición
+            SetIsInPosition();
+
+            // Determinar acción en el turn
+            DetermineTurnAction();
         }
 
         /// <summary>
@@ -1081,9 +2180,18 @@ namespace OpenScrape.App
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
+            _riverResult = result;
+
             UpdateOverlayWithPotOdds(result);
 
-            _responseAction.Action = "River action not implemented"; // Placeholder
+            // Analizar textura del board del river
+            _riverBoardTexture = AnalyzeRiverBoardTexture(dataBoard);
+
+            // Determinar si estamos en posición
+            SetIsInPosition();
+
+            // Determinar acción en el river
+            DetermineRiverAction();
         }
 
         /// <summary>
@@ -1113,7 +2221,6 @@ namespace OpenScrape.App
         private void UpdateOverlayWithPotOdds(PokerCalculationResult potOddsResult)
         {
             _frmOverlay.UpdateWithCalculationResult(potOddsResult);
-            UpdateMetricsPanel(potOddsResult);
         }
 
         /// <summary>
@@ -1148,7 +2255,6 @@ namespace OpenScrape.App
             if (_frmOverlay != null)
                 _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
 
-            UpdateMetricsPanel(potOddsResult);
         }
 
         /// <summary>
@@ -3257,14 +4363,6 @@ namespace OpenScrape.App
             tbResume.BorderStyle = BorderStyle.None;
 
             logsTab.ResumeLayout(true);
-        }
-
-        private void pnMetrics_Paint(object sender, PaintEventArgs e)
-        {
-            using (LinearGradientBrush brush = new LinearGradientBrush(pnMetrics.ClientRectangle, Color.LightBlue, Color.White, LinearGradientMode.Vertical))
-            {
-                e.Graphics.FillRectangle(brush, pnMetrics.ClientRectangle);
-            }
         }
 
         #endregion

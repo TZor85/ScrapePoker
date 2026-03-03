@@ -2,6 +2,10 @@
 
 This document provides coding guidelines, build commands, and development practices for the OpenScrape poker bot codebase. Follow these guidelines when making changes to ensure consistency and maintainability.
 
+## Communication Guidelines
+
+- **Language**: All responses must be in Castellano (Spanish). This includes code comments, commit messages, documentation, and any communication related to the project.
+
 ## Build Commands
 
 ### Full Build

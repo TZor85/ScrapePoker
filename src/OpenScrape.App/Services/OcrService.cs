@@ -227,18 +227,18 @@ public class OcrService
                     ulong hash = ComputeDHash(croppedBitmap);
                     if (_ocrCache.TryGetValue(hash, out var cachedText))
                     {
-                    // Cache hit: create result with cached text
-                    using var ms = new MemoryStream();
-                    using var skImage = SKImage.FromBitmap(croppedBitmap);
-                    using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
-                    encoded.SaveTo(ms);
-                    ms.Position = 0;
-                    result = new OcrResult
-                    {
-                        Text = cachedText,
-                        Image = new Bitmap(ms)
-                    };
-                    return result;
+                        // Cache hit: create result with cached text
+                        using var ms = new MemoryStream();
+                        using var skImage = SKImage.FromBitmap(croppedBitmap);
+                        using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
+                        encoded.SaveTo(ms);
+                        ms.Position = 0;
+                        result = new OcrResult
+                        {
+                            Text = cachedText,
+                            Image = new Bitmap(ms)
+                        };
+                        return result;
                     }
 
                     using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, umbral))
@@ -411,10 +411,10 @@ public class OcrService
     {
         // First, resize to 64x64 for normalization
         var normalized = bitmap.Resize(new SKImageInfo(64, 64), SKFilterQuality.Medium);
-        
+
         // Then resize to 9x8 for dHash
         var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), SKFilterQuality.None);
-        
+
         ulong hash = 0;
         int bitIndex = 0;
         for (int y = 0; y < 8; y++)
