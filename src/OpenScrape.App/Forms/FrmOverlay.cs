@@ -241,7 +241,7 @@ namespace OpenScrape.App.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 BackColor = Color.Black,
-                Location = new Point(0, 92), // Below existing panels
+                Location = new Point(0, 75), // Below existing panels
                 Name = "panel6"
             };
 
@@ -265,7 +265,7 @@ namespace OpenScrape.App.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 BackColor = Color.Black,
-                Location = new Point(0, 111),
+                Location = new Point(0, 95),
                 Name = "panel7"
             };
 
@@ -289,7 +289,7 @@ namespace OpenScrape.App.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 BackColor = Color.Black,
-                Location = new Point(0, 130),
+                Location = new Point(0, 115),
                 Name = "panel8"
             };
 
@@ -319,7 +319,7 @@ namespace OpenScrape.App.Forms
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 BackColor = Color.Black,
-                Location = new Point(0, 149), // Below panel8
+                Location = new Point(0, 135), // Below panel8
                 Name = "panel9"
             };
 
@@ -340,7 +340,7 @@ namespace OpenScrape.App.Forms
             this.Controls.Add(panel9);
 
             // Increase form height to accommodate new panels
-            this.ClientSize = new Size(214, 170);
+            this.ClientSize = new Size(180, 150);
         }
 
         private void AnimationTimer_Tick(object? sender, EventArgs e)

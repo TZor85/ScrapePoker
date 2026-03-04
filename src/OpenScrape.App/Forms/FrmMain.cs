@@ -132,6 +132,7 @@ namespace OpenScrape.App
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
         private readonly IPokerCalculator _pokerCalculator;
+        private readonly BetSizingService _betSizingService;
         private readonly ColorDetectionService _colorDetectionService = new();
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
@@ -144,7 +145,8 @@ namespace OpenScrape.App
                         ActionScenarioUseCases actionScenarioUseCases,
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases,
-                        IPokerCalculator pokerCalculator)
+                        IPokerCalculator pokerCalculator,
+                        BetSizingService betSizingService)
         {
             InitializeComponent();
 
@@ -166,6 +168,7 @@ namespace OpenScrape.App
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
             _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
+            _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -518,6 +521,7 @@ namespace OpenScrape.App
 
                 SetActivePlayer();
                 SetBetPlayer();
+                SetHeroStack();
 
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
@@ -1757,32 +1761,36 @@ namespace OpenScrape.App
             var hero = _scrapeFlopResult.HeroStrength;
             var inPosition = _playerGameState.IsInPosition;
 
+            var heroStack = _playerGameState.HeroStack;
+            var potSize = _playerGameState.PotSize;
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+
             // GTO-inspired polarized betting: bet strong hands and bluffs, check medium
             _responseAction.Action = board switch
             {
                 { IsDry: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 1/3 (Thin Value)",  // Small bet for thin value
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Value)",  // Larger for strong
-                    { HasMiddlePair: true } => inPosition ? "Bet 1/3 (Protection)" : "Check (Fold)",  // Small protection bet
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet 1/3 (Thin Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Small bet for thin value
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 2/3 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Larger for strong
+                    { HasMiddlePair: true } => inPosition ? AdjustBetSize("Bet 1/3 (Protection)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition) : "Check (Fold)",  // Small protection bet
                     { HasBottomPair: true } => "Check (Fold)",  // Fold weak
-                    _ => inPosition ? "Bet 1/2 (Bluff)" : "Check (Fold)"  // Bluff with air if IP
+                    _ => inPosition ? AdjustBetSize("Bet 1/2 (Bluff)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition) : "Check (Fold)"  // Bluff with air if IP
                 },
 
                 { IsCoordinated: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",  // Larger bet on wet board
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
-                    { HasMiddlePair: true } => "Bet 2/3 (Protection)",
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet 3/4 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Larger bet on wet board
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 1/2 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
+                    { HasMiddlePair: true } => AdjustBetSize("Bet 2/3 (Protection)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
                     { HasBottomPair: true } => "Check (Fold)",
-                    _ => inPosition ? "Bet 3/4 (Semibluff)" : "Check (Fold)"  // Semibluff with draws
+                    _ => inPosition ? AdjustBetSize("Bet 3/4 (Semibluff)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition) : "Check (Fold)"  // Semibluff with draws
                 },
 
                 { IsPaired: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet Pot (Value)",  // Pot bet on paired board
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 3/4 (Value)",
-                    { HasMiddlePair: true } => "Bet 1/2 (Protection)",
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet Pot (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Pot bet on paired board
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 3/4 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
+                    { HasMiddlePair: true } => AdjustBetSize("Bet 1/2 (Protection)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"  // No bluff on paired
                 },
@@ -1796,13 +1804,17 @@ namespace OpenScrape.App
             var hero = _scrapeFlopResult.HeroStrength;
             var inPosition = _playerGameState.IsInPosition;
 
+            var heroStack = _playerGameState.HeroStack;
+            var potSize = _playerGameState.PotSize;
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+
             // GTO for called flop: more checking, smaller bets, focus on value
             _responseAction.Action = board switch
             {
                 { IsDry: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 1/3 (Thin Value)",  // Small bet to protect
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet 1/3 (Thin Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Small bet to protect
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 1/2 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
                     { HasMiddlePair: true } => "Check (Call)",  // Check medium
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"
@@ -1810,17 +1822,17 @@ namespace OpenScrape.App
 
                 { IsCoordinated: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 1/2 (Value)",
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 2/3 (Value)",
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet 1/2 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 2/3 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
                     { HasMiddlePair: true } => "Check (Call)",
                     { HasBottomPair: true } => "Check (Fold)",
-                    _ => inPosition ? "Bet 1/3 (Semibluff)" : "Check (Fold)"  // Light bluff IP
+                    _ => inPosition ? AdjustBetSize("Bet 1/3 (Semibluff)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition) : "Check (Fold)"  // Light bluff IP
                 },
 
                 { IsPaired: true } => hero switch
                 {
-                    { HasTopPairOrBetter: true } => "Bet 3/4 (Value)",  // Larger on paired for protection
-                    { HasTopPair: true } or { HasOverPair: true } => "Bet 1/2 (Value)",
+                    { HasTopPairOrBetter: true } => AdjustBetSize("Bet 3/4 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),  // Larger on paired for protection
+                    { HasTopPair: true } or { HasOverPair: true } => AdjustBetSize("Bet 1/2 (Value)", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, inPosition),
                     { HasMiddlePair: true } => "Check (Call)",
                     { HasBottomPair: true } => "Check (Fold)",
                     _ => "Check (Fold)"
@@ -1840,12 +1852,17 @@ namespace OpenScrape.App
                 flopCardsName += item.Name;
             }
 
+            var heroStack = _playerGameState.HeroStack;
+            var potSize = _playerGameState.PotSize;
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            var board = _scrapeFlopResult.BoardTexture;
+
             // IP
             if (_playerGameState.IsInPosition)
             {
                 var response = RaiseOverLimperIPAnalyzerHelper.DetermineContinuationBetSizing(flopAnalyzerRequest.TableScrapeFlopResult, flopAnalyzerRequest.PlayerState);
                 if (response != "Check")
-                    _responseAction.Action = $"Bet {response}";
+                    _responseAction.Action = AdjustBetSize($"Bet {response}", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, _playerGameState.IsInPosition);
                 else
                     _responseAction.Action = response;
             }
@@ -1856,9 +1873,9 @@ namespace OpenScrape.App
                 //_responseAction.Action = rolOopEngine.PredictAction(heroCardsName,flopCardsName, out var probs);
 
                 if (RaiseOverLimperOOPAnalyzerHelper.IsActionTo13Bet(flopAnalyzerRequest))
-                    _responseAction.Action = "Bet 1/3";
+                    _responseAction.Action = AdjustBetSize("Bet 1/3", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, _playerGameState.IsInPosition);
                 else if (RaiseOverLimperOOPAnalyzerHelper.IsActionTo34Bet(flopAnalyzerRequest))
-                    _responseAction.Action = "Bet 3/4";
+                    _responseAction.Action = AdjustBetSize("Bet 3/4", heroStack, potSize, numOpponents, board.IsPaired, board.IsCoordinated, board.IsDry, _playerGameState.IsInPosition);
                 else if (RaiseOverLimperOOPAnalyzerHelper.IsActionToCheckCall(flopAnalyzerRequest))
                     _responseAction.Action = "Check/Call";
                 else
@@ -2518,6 +2535,37 @@ namespace OpenScrape.App
                 if (player != null)
                 {
                     player.Bet = betValue;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Establece el stack del héroe
+        /// </summary>
+        private void SetHeroStack()
+        {
+            var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "User");
+            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+                return;
+
+            foreach (var region in regionTableMap.Regions)
+            {
+                if (region.Name == "uStack") // Región específica para stack del héroe
+                {
+                    var stackValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
+                        region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+
+                    if (stackValue.ToString().Contains(','))
+                    { 
+                        var values = stackValue.ToString().Split(',');
+                        if (values[0].Length == 3 && values[0].Substring(0, 1) == "8")
+                            stackValue = decimal.Parse(values[0].Substring(1) + "," + values[1]);
+                        
+                    }
+
+                    _playerGameState.HeroStack = stackValue;
+                    lbUserStack.Text = stackValue.ToString();
+                    break;
                 }
             }
         }
@@ -3270,6 +3318,63 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Establece el valor del stack usando OCR
+        /// </summary>
+        private decimal SetStackValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
+        {
+            // Validación de parámetros
+            if (_formImage.pbImage.Image == null)
+                return 0;
+
+            var firstOcr = new OcrResult();
+            var secondOcr = new OcrResult();
+
+            var result = string.Empty;
+
+            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image,
+                posX,
+                posY,
+                width,
+                height,
+                umbral ?? 0,
+                isOnlyNumber ?? false);
+
+
+            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image,
+                posX,
+                posY,
+                width,
+                height,
+                inactiveUmbral ?? 0,
+                isOnlyNumber ?? false);
+
+            if (isOnlyNumber.HasValue == true)
+            {
+                if (string.IsNullOrEmpty(firstOcr.Text))
+                    firstOcr.Text = "0";
+
+                if (string.IsNullOrEmpty(secondOcr.Text))
+                    secondOcr.Text = "0";
+
+                var ocr1 = decimal.Parse(firstOcr.Text);
+                var ocr2 = decimal.Parse(secondOcr.Text);
+
+                if (ocr2 >= ocr1)
+                    result = ocr2.ToString();
+                else
+                    result = ocr1.ToString();
+            }
+
+
+            if (decimal.TryParse(result, out var stack))
+                return stack;
+
+            return 0;
+        }
+
+        /// <summary>
         /// Extrae texto OCR de una región específica
         /// </summary>
         /// <returns>Texto extraído</returns>
@@ -3375,8 +3480,8 @@ namespace OpenScrape.App
                     _frmOverlay = new FrmOverlay
                     {
                         Location = new Point(
-                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 165)),
-                            windowRect.bottom - 125)
+                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 117)), // Ajustado para nuevo tamaño
+                            windowRect.bottom - 75) // Más bajo: reducido de -125 a -75
                     };
                     _frmOverlay.Show();
                 }
@@ -3399,7 +3504,7 @@ namespace OpenScrape.App
                             if (_frmOverlay != null)
                             {
                                 _frmOverlay.Location = new Point(
-                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 165)),
+                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 117)),
                                     windowRect.bottom - 125);
                             }
                         });
@@ -4437,6 +4542,32 @@ namespace OpenScrape.App
         private void tbJuego_Click(object sender, EventArgs e)
         {
 
+        }
+
+        /// <summary>
+        /// Ajusta el tamaño de apuesta basado en stack dinámico
+        /// </summary>
+        private string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
+        {
+            if (!action.StartsWith("Bet "))
+                return action;
+
+            var parts = action.Split(' ');
+            double baseSize;
+
+            if (parts[1] == "Pot")
+                baseSize = 1.0;
+            else if (parts[1].Contains('/'))
+            {
+                var frac = parts[1].Split('/');
+                baseSize = double.Parse(frac[0]) / double.Parse(frac[1]);
+            }
+            else
+                return action; // not a standard bet
+
+            var adjustedBet = _betSizingService.CalculateDynamicBetSize(baseSize, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
+            var reason = action.Contains('(') ? action.Substring(action.IndexOf('(')) : "";
+            return adjustedBet + reason;
         }
     }
 

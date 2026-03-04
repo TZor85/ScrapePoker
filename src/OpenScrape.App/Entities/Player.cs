@@ -8,6 +8,7 @@ namespace OpenScrape.App.Entities
         public string? Alias { get; set; }
         public bool Dealer { get; set; }
         public decimal Bet { get; set; }
+        public decimal Stack { get; set; }
         public bool Active { get; set; }
         public bool SitOut { get; set; }
         public bool Empty { get; set; }

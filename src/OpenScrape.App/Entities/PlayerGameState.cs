@@ -25,6 +25,7 @@ namespace OpenScrape.App.Entities
 
         // Betting information
         public decimal CurrentBet { get; set; }
+        public decimal HeroStack { get; set; }
 
         // Game state
         public HandSituation HandSituation { get; set; }

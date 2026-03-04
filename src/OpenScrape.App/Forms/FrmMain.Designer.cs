@@ -136,6 +136,8 @@
             tbLogs = new TabPage();
             tbResume = new TextBox();
             lbNamePlayerOne = new Label();
+            pnlUserStack = new Panel();
+            lbUserStack = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
             gbTest.SuspendLayout();
@@ -176,6 +178,7 @@
             tbTables.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
+            pnlUserStack.SuspendLayout();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -197,6 +200,7 @@
             // 
             // tbJuego
             // 
+            tbJuego.Controls.Add(pnlUserStack);
             tbJuego.Controls.Add(lbPositionAction);
             tbJuego.Controls.Add(lbAction);
             tbJuego.Controls.Add(gbTest);
@@ -243,7 +247,7 @@
             // 
             lbPositionAction.AutoSize = true;
             lbPositionAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lbPositionAction.Location = new Point(205, 303);
+            lbPositionAction.Location = new Point(205, 325);
             lbPositionAction.Name = "lbPositionAction";
             lbPositionAction.Size = new Size(0, 21);
             lbPositionAction.TabIndex = 84;
@@ -252,7 +256,7 @@
             // 
             lbAction.AutoSize = true;
             lbAction.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lbAction.Location = new Point(205, 343);
+            lbAction.Location = new Point(205, 360);
             lbAction.Name = "lbAction";
             lbAction.Size = new Size(0, 21);
             lbAction.TabIndex = 83;
@@ -1250,7 +1254,7 @@
             tbTables.Controls.Add(twTables);
             tbTables.Location = new Point(4, 24);
             tbTables.Name = "tbTables";
-            tbTables.Size = new Size(668, 392);
+            tbTables.Size = new Size(569, 392);
             tbTables.TabIndex = 3;
             tbTables.Text = "Tablas";
             tbTables.UseVisualStyleBackColor = true;
@@ -1261,7 +1265,7 @@
             dgvHands.Dock = DockStyle.Fill;
             dgvHands.Location = new Point(205, 0);
             dgvHands.Name = "dgvHands";
-            dgvHands.Size = new Size(463, 392);
+            dgvHands.Size = new Size(364, 392);
             dgvHands.TabIndex = 1;
             // 
             // twTables
@@ -1280,7 +1284,7 @@
             tbLogs.Location = new Point(4, 24);
             tbLogs.Name = "tbLogs";
             tbLogs.Padding = new Padding(3);
-            tbLogs.Size = new Size(668, 392);
+            tbLogs.Size = new Size(569, 392);
             tbLogs.TabIndex = 1;
             tbLogs.Text = "Logs";
             tbLogs.UseVisualStyleBackColor = true;
@@ -1293,7 +1297,7 @@
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
             tbResume.ReadOnly = true;
-            tbResume.Size = new Size(662, 386);
+            tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
             // 
             // lbNamePlayerOne
@@ -1303,6 +1307,24 @@
             lbNamePlayerOne.Name = "lbNamePlayerOne";
             lbNamePlayerOne.Size = new Size(0, 15);
             lbNamePlayerOne.TabIndex = 1;
+            // 
+            // pnlUserStack
+            // 
+            pnlUserStack.BorderStyle = BorderStyle.FixedSingle;
+            pnlUserStack.Controls.Add(lbUserStack);
+            pnlUserStack.Location = new Point(251, 294);
+            pnlUserStack.Name = "pnlUserStack";
+            pnlUserStack.Size = new Size(79, 20);
+            pnlUserStack.TabIndex = 86;
+            // 
+            // lbUserStack
+            // 
+            lbUserStack.AutoSize = true;
+            lbUserStack.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbUserStack.Location = new Point(2, 3);
+            lbUserStack.Name = "lbUserStack";
+            lbUserStack.Size = new Size(0, 13);
+            lbUserStack.TabIndex = 0;
             // 
             // FrmMain
             // 
@@ -1375,6 +1397,8 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
+            pnlUserStack.ResumeLayout(false);
+            pnlUserStack.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -1488,5 +1512,7 @@
         private RadioButton rbTurn;
         private Button btnClear;
         private Label lbPositionAction;
+        private Panel pnlUserStack;
+        private Label lbUserStack;
     }
 }

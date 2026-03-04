@@ -41,6 +41,7 @@ namespace OpenScrape.App
                     services.AddSingleton<OutsCalculator>();
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
+                    services.AddSingleton<BetSizingService>();
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
