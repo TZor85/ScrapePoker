@@ -156,7 +156,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         //GET 3BET
         if (request.ResponseAction.Action is null)
         {
-            if (request.PlayerState.Players.Count(a => a.Bet > 1) >= 1 && UserHandHelper.Exist4Bet(request.PlayerState))
+            if (request.PlayerState.Players.Count(a => a.Bet > 1) >= 1 && !UserHandHelper.Exist4Bet(request.PlayerState))
             {
                 var action = await Get3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.First(w => w.Bet > 1).Position, request.PlayerState);
                 if (!string.IsNullOrEmpty(action))

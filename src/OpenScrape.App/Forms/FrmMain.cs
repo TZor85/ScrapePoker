@@ -31,6 +31,7 @@ using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
 using Image = System.Drawing.Image;
 using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 
 namespace OpenScrape.App
 {
@@ -504,6 +505,7 @@ namespace OpenScrape.App
 
                 if (_newHand)
                 {
+                    _frmOverlay?.ClearAll();
                     _playerGameState = new PlayerGameState();
                     _responseAction = new ResponseAction();
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
@@ -2562,6 +2564,11 @@ namespace OpenScrape.App
                             stackValue = decimal.Parse(values[0].Substring(1) + "," + values[1]);
                         
                     }
+                    else
+                    {
+                        if (stackValue.ToString().Length == 4)
+                            stackValue = decimal.Parse(stackValue.ToString().Substring(0, 2) + "," + stackValue.ToString().Substring(2, 2));
+                    }
 
                     _playerGameState.HeroStack = stackValue;
                     lbUserStack.Text = stackValue.ToString();
@@ -3318,6 +3325,54 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Preprocesa una región de imagen para mejorar el OCR del stack
+        /// </summary>
+        private Bitmap PreprocessImageForOCR(Image sourceImage, int x, int y, int width, int height)
+        {
+            // Extraer la región
+            var regionRect = new Rectangle(x, y, width, height);
+            var regionBitmap = new Bitmap(width, height);
+            using (var g = Graphics.FromImage(regionBitmap))
+            {
+                g.DrawImage(sourceImage, new Rectangle(0, 0, width, height), regionRect, GraphicsUnit.Pixel);
+            }
+
+            // Convertir a escala de grises
+            var grayBitmap = new Bitmap(width, height);
+            using (var gGray = Graphics.FromImage(grayBitmap))
+            {
+                var colorMatrix = new ColorMatrix(new float[][]
+                {
+                    new float[] {0.299f, 0.299f, 0.299f, 0, 0},
+                    new float[] {0.587f, 0.587f, 0.587f, 0, 0},
+                    new float[] {0.114f, 0.114f, 0.114f, 0, 0},
+                    new float[] {0, 0, 0, 1, 0},
+                    new float[] {0, 0, 0, 0, 1}
+                });
+                var attributes = new ImageAttributes();
+                attributes.SetColorMatrix(colorMatrix);
+                gGray.DrawImage(regionBitmap, new Rectangle(0, 0, width, height), 0, 0, width, height, GraphicsUnit.Pixel, attributes);
+            }
+            regionBitmap.Dispose();
+
+            // Binarización con umbral adaptativo simple
+            var binaryBitmap = new Bitmap(width, height);
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
+                {
+                    var pixel = grayBitmap.GetPixel(i, j);
+                    var gray = (pixel.R + pixel.G + pixel.B) / 3;
+                    var binaryColor = gray > 128 ? Color.White : Color.Black;
+                    binaryBitmap.SetPixel(i, j, binaryColor);
+                }
+            }
+            grayBitmap.Dispose();
+
+            return binaryBitmap;
+        }
+
+        /// <summary>
         /// Establece el valor del stack usando OCR
         /// </summary>
         private decimal SetStackValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
@@ -3331,24 +3386,30 @@ namespace OpenScrape.App
 
             var result = string.Empty;
 
-            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                posX,
-                posY,
-                width,
-                height,
-                umbral ?? 0,
-                isOnlyNumber ?? false);
+            using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+            {
+                firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                    preprocessed,
+                    0,
+                    0,
+                    width,
+                    height,
+                    umbral ?? 0,
+                    isOnlyNumber ?? false);
+            }
 
 
-            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                posX,
-                posY,
-                width,
-                height,
-                inactiveUmbral ?? 0,
-                isOnlyNumber ?? false);
+            using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+            {
+                secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                    preprocessed,
+                    0,
+                    0,
+                    width,
+                    height,
+                    inactiveUmbral ?? 0,
+                    isOnlyNumber ?? false);
+            }
 
             if (isOnlyNumber.HasValue == true)
             {

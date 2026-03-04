@@ -41,7 +41,7 @@ namespace OpenScrape.App.Helpers
                 }
             }
 
-            return cont > 1 ? false : true;
+            return cont > 1 ? true : false;
         }
 
     }
