@@ -2150,6 +2150,52 @@ namespace OpenScrape.App
             };
         }
 
+        /// <summary>
+        /// Valida las asignaciones de posiciones para asegurar consistencia
+        /// </summary>
+        /// <param name="players">Lista de jugadores activos</param>
+        private void ValidatePositionAssignments(List<Player> players)
+        {
+            // Validar exactamente un dealer
+            var dealers = players.Where(p => p.Dealer).ToList();
+            if (dealers.Count != 1)
+            {
+                LogInformation($"Advertencia: Se encontraron {dealers.Count} dealers. Debe haber exactamente 1.");
+            }
+
+            // Validar posiciones únicas (excepto None)
+            var assignedPositions = players.Where(p => p.Position != TablePosition.None)
+                                           .GroupBy(p => p.Position)
+                                           .Where(g => g.Count() > 1)
+                                           .Select(g => g.Key)
+                                           .ToList();
+            if (assignedPositions.Any())
+            {
+                LogInformation($"Advertencia: Posiciones duplicadas: {string.Join(", ", assignedPositions)}");
+            }
+
+            // Validar blinds si hay suficientes jugadores
+            if (players.Count >= 2)
+            {
+                var hasSmallBlind = players.Any(p => p.Position == TablePosition.SmallBlind);
+                var hasBigBlind = players.Any(p => p.Position == TablePosition.BigBlind);
+                if (!hasSmallBlind || !hasBigBlind)
+                {
+                    LogInformation("Advertencia: Faltan asignar SmallBlind o BigBlind.");
+                }
+            }
+
+            // Validar Button si hay suficientes jugadores
+            if (players.Count >= 3)
+            {
+                var hasButton = players.Any(p => p.Position == TablePosition.Button);
+                if (!hasButton)
+                {
+                    LogInformation("Advertencia: Falta asignar Button.");
+                }
+            }
+        }
+
         #endregion
 
         /// <summary>
@@ -2558,11 +2604,11 @@ namespace OpenScrape.App
                         region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
                     if (stackValue.ToString().Contains(','))
-                    { 
+                    {
                         var values = stackValue.ToString().Split(',');
                         if (values[0].Length == 3 && values[0].Substring(0, 1) == "8")
                             stackValue = decimal.Parse(values[0].Substring(1) + "," + values[1]);
-                        
+
                     }
                     else
                     {
@@ -2798,6 +2844,9 @@ namespace OpenScrape.App
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
+            // Clear all previous dealer flags to ensure only one dealer per hand
+            _playerGameState.Players.ForEach(p => p.Dealer = false);
+
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
             var emptyPositions = _playerGameState.Players
@@ -2809,7 +2858,10 @@ namespace OpenScrape.App
             {
                 var color = bitmap.GetPixel(region.PosX, region.PosY);
                 if (!_colorDealer.Contains(color.R))
+                {
+                    LogInformation($"Dealer region {region.Name} color R:{color.R} does not match dealer color set {_colorDealer.Min()}-{_colorDealer.Max()}");
                     continue;
+                }
 
                 var playerNumber = GetPlayerNumber(region.Name, "dealer");
                 if (playerNumber == null)
@@ -2845,9 +2897,13 @@ namespace OpenScrape.App
                 return;
             }
 
+            // Skip dealer assignment if the seat is empty or sitting out
+            if (player.Empty || player.SitOut)
+                return;
+
             // Actualizar estado del jugador
             player.Dealer = true;
-            player.Empty = false;
+            LogInformation($"Dealer assigned to player P{playerNumber}");
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
             _playerGameState.Position = DetermineP0Position(playerNumber, emptyPositions);
@@ -2863,35 +2919,58 @@ namespace OpenScrape.App
         /// <returns>Posición de la mesa para P0</returns>
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
-            var positionMap = new Dictionary<int, (TablePosition defaultPosition, Dictionary<int, TablePosition> emptyPositions)>
-            {
-                { 1, (TablePosition.CutOff, new Dictionary<int, TablePosition>()) },
-                { 2, (TablePosition.Middle, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.Early },
-                    { 2, TablePosition.BigBlind }
-                })},
-                { 3, (TablePosition.Early, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.BigBlind },
-                    { 2, TablePosition.SmallBlind }
-                })},
-                { 4, (TablePosition.BigBlind, new Dictionary<int, TablePosition> {
-                    { 1, TablePosition.SmallBlind }
-                })},
-                { 5, (TablePosition.SmallBlind, new Dictionary<int, TablePosition>()) }
-            };
+            // Obtener asientos activos (jugadores no vacíos ni sentados fuera)
+            var activeSeats = _playerGameState.Players
+                .Where(p => !p.Empty && !p.SitOut)
+                .Select(p => p.ValuePosition)
+                .OrderBy(s => s)
+                .ToList();
 
-            if (!positionMap.TryGetValue(dealerPosition, out var positionInfo))
+            int dealerSeat = dealerPosition;
+            int heroSeat = 5; // Asumiendo que el héroe está en el asiento 5
+
+            if (!activeSeats.Contains(dealerSeat) || !activeSeats.Contains(heroSeat))
                 return TablePosition.None;
 
-            // Contar asientos vacíos que afectan la posición de P0
-            var relevantEmptySeats = emptyPositions.Count(pos => pos > dealerPosition);
+            int dealerIndex = activeSeats.IndexOf(dealerSeat);
+            int heroIndex = activeSeats.IndexOf(heroSeat);
 
-            // Si hay una regla específica para el número de asientos vacíos, úsala
-            if (positionInfo.emptyPositions.TryGetValue(relevantEmptySeats, out var specialPosition))
-                return specialPosition;
+            int distance = (heroIndex - dealerIndex + activeSeats.Count) % activeSeats.Count;
 
-            // Si no hay regla específica, usar la posición por defecto
-            return positionInfo.defaultPosition;
+            // Mapear distancia a posición de mesa
+            var position = distance switch
+            {
+                0 => TablePosition.Button,
+                1 => TablePosition.SmallBlind,
+                2 => TablePosition.BigBlind,
+                3 => TablePosition.Early,
+                4 => TablePosition.CutOff,
+                _ => TablePosition.None
+            };
+
+            LogInformation($"Posición del héroe calculada: {position} (distancia: {distance}, dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
+            return position;
+        }
+
+        /// <summary>
+        /// Intenta múltiples umbrales OCR para mejorar la detección
+        /// </summary>
+        private string TryMultipleOCRThresholds(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
+        {
+            // Lista de umbrales a probar
+            var thresholds = new List<double?> { umbral, inactiveUmbral, 0.1, 0.2, 0.3, 0.4, 0.5 };
+
+            foreach (var threshold in thresholds.Distinct())
+            {
+                var text = SetTextOCR(posX, posY, width, height, threshold, threshold, isOnlyNumber);
+                if (!string.IsNullOrEmpty(text) && text.Contains("SIT"))
+                {
+                    return text;
+                }
+            }
+
+            // Si ninguno contiene "SIT", devolver el mejor resultado
+            return SetTextOCR(posX, posY, width, height, umbral, inactiveUmbral, isOnlyNumber);
         }
 
         /// <summary>
@@ -2928,7 +3007,7 @@ namespace OpenScrape.App
 
                 var active = !player.Active;
                 var empty = !player.Empty;
-                var textoo = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                var textoo = TryMultipleOCRThresholds(region.PosX, region.PosY, region.Width, region.Height,
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
                 // Extracción de condición compleja a variable
@@ -3007,8 +3086,8 @@ namespace OpenScrape.App
             {
                 TablePosition.BigBlind => new List<TablePosition>
                 {
-                    TablePosition.Early, TablePosition.Middle, TablePosition.CutOff,
-                    TablePosition.Button, TablePosition.SmallBlind
+                    TablePosition.SmallBlind, TablePosition.Button, TablePosition.CutOff,
+                    TablePosition.Middle, TablePosition.Early
                 },
                 TablePosition.SmallBlind => new List<TablePosition>
                 {
@@ -3061,6 +3140,13 @@ namespace OpenScrape.App
             }
 
             SetVillainPositionExtension(activePlayers, positionsOrder);
+
+            // Validar asignaciones de posiciones
+            ValidatePositionAssignments(activePlayers);
+
+            // Logging de posiciones asignadas
+            var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
+            LogInformation($"Posiciones asignadas: {positionLog}");
         }
 
         /// <summary>

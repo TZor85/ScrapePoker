@@ -262,5 +262,46 @@ public class TableService
 }
 ```
 
+### Run Benchmarks
+```bash
+dotnet run --project BenchmarkSuite1/BenchmarkSuite1.csproj
+```
+
+## Debugging Guidelines
+
+- Use Visual Studio Debugger or dotnet debug for breakpoints.
+- Log detailed information in Debug mode.
+- For OCR issues, enable debug mode in OcrService to save intermediate images.
+- Check logs in the application directory for errors.
+
+## Security Best Practices
+
+- **Secrets Management**: Never commit API keys, passwords, or sensitive data. Use environment variables or secure configuration.
+- **Input Validation**: Validate all inputs to prevent injection attacks, especially in OCR text processing.
+- **Logging**: Avoid logging sensitive information like player names or stack values.
+- **Access Control**: Ensure proper permissions for file access and external APIs.
+- **Code Reviews**: Require peer reviews for all changes, especially those affecting OCR or decision logic.
+
+## Performance Guidelines
+
+- Use efficient algorithms for poker calculations (e.g., Monte Carlo simulations).
+- Cache OCR results where possible to avoid redundant processing.
+- Profile performance-critical code using BenchmarkDotNet (see BenchmarkSuite1).
+- Minimize allocations in UI update loops.
+
+## OCR Specific Guidelines
+
+- Preprocess images with grayscale and binarization for better accuracy.
+- Use multiple thresholds (active/inactive) for robust text extraction.
+- Validate numeric results (e.g., stack values) before calculations.
+- Handle failures gracefully by falling back to defaults or logging warnings.
+
+## Version Control
+
+- Use Git for source control.
+- Follow conventional commit messages in Spanish.
+- Create feature branches for new developments.
+- Never commit build artifacts or sensitive files.
+
 This document should be updated as the codebase evolves. When adding new patterns or changing existing guidelines, update this file accordingly.</content>
 <parameter name="filePath">C:\Code\Poker\ScrapePoker\AGENTS.md

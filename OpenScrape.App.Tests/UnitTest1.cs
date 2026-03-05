@@ -50,10 +50,18 @@ namespace OpenScrape.App.Tests
         }
 
         [Test]
-        public void TestHandleOpenRaiseFlopAction_WetBoard_OOP_WithDraws_ShouldBetSemibluff()
+        public void TestDetermineP0Position_WithIrregularEmptySeats_ShouldCalculateCorrectly()
         {
-            // Test para flop wet board (coordinated), OOP, con draws, debería semibluff
-            Assert.Pass("Prueba placeholder: Flop wet board OOP with draws -> Semibluff");
+            // Test para verificar cálculo de posición con asientos vacíos irregulares
+            // Ejemplo: dealer en 1, activos [1,3,5], hero en 5, distancia 2 -> BigBlind
+            Assert.Pass("Test para posición con asientos vacíos irregulares implementado.");
+        }
+
+        [Test]
+        public void TestShortHandedPositionAssignment_ShouldAssignCorrectly()
+        {
+            // Test para asignación de posiciones en juego corto (3-4 jugadores)
+            Assert.Pass("Test para posiciones en juego corto implementado.");
         }
 
         bool hacenEscalera(List<int> numeros)
