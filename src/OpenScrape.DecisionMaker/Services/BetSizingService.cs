@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 using System;
@@ -6,6 +8,13 @@ namespace OpenScrape.DecisionMaker.Services
 {
     public class BetSizingService
     {
+        private readonly StrategyProfile _profile;
+
+        public BetSizingService(IOptions<StrategyProfile> profileOptions)
+        {
+            _profile = profileOptions.Value;
+        }
+
         public string CalculateDynamicBetSize(
             double baseSize,
             decimal heroStack,
@@ -22,45 +31,45 @@ namespace OpenScrape.DecisionMaker.Services
             double spr = (double)heroStack / (double)potSize;
             double adjustedSize = baseSize;
 
-            // Adjust based on SPR
-            if (spr > 3.0)
+            // Ajustar por SPR
+            if (spr > _profile.BetSizingSPRDeepThreshold)
             {
-                adjustedSize *= 1.25; // Increase 25% for deep stacks
+                adjustedSize *= _profile.BetSizingSPRDeepMultiplier;
             }
-            else if (spr < 1.0)
+            else if (spr < _profile.BetSizingSPRShallowThreshold)
             {
-                adjustedSize *= 0.75; // Decrease 25% for shallow stacks
+                adjustedSize *= _profile.BetSizingSPRShallowMultiplier;
             }
 
-            // Adjust based on number of opponents
+            // Ajustar por número de oponentes
             if (numOpponents >= 3)
             {
-                adjustedSize *= 0.85; // Smaller bets with more opponents
+                adjustedSize *= _profile.BetSizingMultiOpponentMultiplier;
             }
             else if (numOpponents == 1)
             {
-                adjustedSize *= 1.1; // Slightly larger vs single opponent
+                adjustedSize *= 1.1;
             }
 
-            // Adjust based on board texture
+            // Ajustar por textura de board
             if (isPaired)
             {
-                adjustedSize *= 1.15; // Larger bets on paired boards
+                adjustedSize *= _profile.BetSizingPairedMultiplier;
             }
             else if (isCoordinated && !isDry)
             {
-                adjustedSize *= 0.9; // Smaller bets on wet boards
+                adjustedSize *= _profile.BetSizingCoordinatedMultiplier;
             }
 
-            // Position adjustment
+            // Ajustar por posición
             if (!isInPosition)
             {
-                adjustedSize *= 0.9; // Smaller bets OOP
+                adjustedSize *= _profile.BetSizingOOPMultiplier;
             }
 
-            // Cap the size
-            adjustedSize = Math.Min(adjustedSize, 1.0); // Don't exceed pot
-            adjustedSize = Math.Max(adjustedSize, 0.1); // Minimum 10%
+            // Limitar tamaño
+            adjustedSize = Math.Min(adjustedSize, 1.0);
+            adjustedSize = Math.Max(adjustedSize, 0.1);
 
             return GetBetSizeString(adjustedSize);
         }

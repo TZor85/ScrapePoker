@@ -1,4 +1,7 @@
+using Microsoft.Extensions.Options;
+
 using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App.Tests;
 
@@ -10,7 +13,7 @@ public class BetSizingServiceTests
     [SetUp]
     public void Setup()
     {
-        _service = new BetSizingService();
+        _service = new BetSizingService(Options.Create(new StrategyProfile()));
     }
 
     [Test]

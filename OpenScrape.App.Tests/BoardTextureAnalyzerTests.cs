@@ -1,0 +1,177 @@
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.ValueObjects;
+
+namespace OpenScrape.App.Tests;
+
+[TestFixture]
+public class BoardTextureAnalyzerTests
+{
+    private BoardTextureAnalyzer _analyzer;
+
+    private static CardDataOuts C(Rank rank, Suit suit) => new(suit, rank);
+
+    [SetUp]
+    public void Setup()
+    {
+        _analyzer = new BoardTextureAnalyzer();
+    }
+
+    [Test]
+    public void Analyze_FlopMonotone_DeberiaSerWet()
+    {
+        // Flop: Ah Kh Qh (monotone)
+        var cards = new List<CardDataOuts> { C(Rank.Ace, Suit.Hearts), C(Rank.King, Suit.Hearts), C(Rank.Queen, Suit.Hearts) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsMonotone, Is.True);
+        Assert.That(result.HasFlushPossibility, Is.True);
+        Assert.That(result.Category, Is.EqualTo(BoardTextureCategory.Wet));
+        Assert.That(result.SimplifiedTexture, Is.EqualTo("Coordinated"));
+    }
+
+    [Test]
+    public void Analyze_FlopRainbowDisconnected_DeberiaSerDry()
+    {
+        // Flop: 2c 7d Ks (rainbow, desconectado)
+        var cards = new List<CardDataOuts> { C(Rank.Two, Suit.Clubs), C(Rank.Seven, Suit.Diamonds), C(Rank.King, Suit.Spades) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsRainbow, Is.True);
+        Assert.That(result.HasFlushPossibility, Is.False);
+        Assert.That(result.Category, Is.EqualTo(BoardTextureCategory.Dry));
+        Assert.That(result.SimplifiedTexture, Is.EqualTo("Dry"));
+    }
+
+    [Test]
+    public void Analyze_FlopPaired_DeberiaSerPaired()
+    {
+        // Flop: 8c 8d Ks
+        var cards = new List<CardDataOuts> { C(Rank.Eight, Suit.Clubs), C(Rank.Eight, Suit.Diamonds), C(Rank.King, Suit.Spades) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsPaired, Is.True);
+        Assert.That(result.Category, Is.EqualTo(BoardTextureCategory.Paired));
+        Assert.That(result.SimplifiedTexture, Is.EqualTo("Paired"));
+    }
+
+    [Test]
+    public void Analyze_FlopTwoToneConnected_DeberiaSerSemiWetOWet()
+    {
+        // Flop: 9h Th Jc (two-tone, connected)
+        var cards = new List<CardDataOuts> { C(Rank.Nine, Suit.Hearts), C(Rank.Ten, Suit.Hearts), C(Rank.Jack, Suit.Clubs) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsTwoTone, Is.True);
+        Assert.That(result.IsConnected, Is.True);
+        Assert.That(result.HasStraightPossibility, Is.True);
+        Assert.That(result.WetnessScore, Is.GreaterThan(30));
+    }
+
+    [Test]
+    public void Analyze_BroadwayHeavy_DeberiaDetectarBroadway()
+    {
+        // Flop: Kh Qd Js
+        var cards = new List<CardDataOuts> { C(Rank.King, Suit.Hearts), C(Rank.Queen, Suit.Diamonds), C(Rank.Jack, Suit.Spades) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsBroadwayHeavy, Is.True);
+    }
+
+    [Test]
+    public void Analyze_LowBoard_DeberiaDetectarLowBoard()
+    {
+        // Flop: 2c 4d 6s
+        var cards = new List<CardDataOuts> { C(Rank.Two, Suit.Clubs), C(Rank.Four, Suit.Diamonds), C(Rank.Six, Suit.Spades) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.IsLowBoard, Is.True);
+    }
+
+    [Test]
+    public void Analyze_TurnConFlush_DeberiaAumentarWetness()
+    {
+        // Turn: Ah 5h 9h 3c (3 hearts = flush possibility)
+        var cards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts), C(Rank.Five, Suit.Hearts),
+            C(Rank.Nine, Suit.Hearts), C(Rank.Three, Suit.Clubs)
+        };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.HasFlushPossibility, Is.True);
+        Assert.That(result.WetnessScore, Is.GreaterThan(20));
+    }
+
+    [Test]
+    public void Analyze_River5Cartas_DeberiaAnalizarCorrectamente()
+    {
+        // River: 2c 7d Ks 4h Jc (5 cartas, dry)
+        var cards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Clubs), C(Rank.Seven, Suit.Diamonds),
+            C(Rank.King, Suit.Spades), C(Rank.Four, Suit.Hearts),
+            C(Rank.Jack, Suit.Clubs)
+        };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.Category, Is.Not.EqualTo(BoardTextureCategory.Paired));
+    }
+
+    [Test]
+    public void Analyze_MenosDe3Cartas_DeberiaRetornarDry()
+    {
+        var cards = new List<CardDataOuts> { C(Rank.Ace, Suit.Hearts), C(Rank.King, Suit.Hearts) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.Category, Is.EqualTo(BoardTextureCategory.Dry));
+        Assert.That(result.WetnessScore, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Analyze_VersionConRanksYSuits_DeberiaFuncionarIgual()
+    {
+        // Ranks como ints, suits como ints
+        var ranks = new List<int> { 14, 13, 12 }; // A, K, Q
+        var suits = new List<int> { 1, 1, 1 }; // all hearts
+
+        var result = _analyzer.Analyze(ranks, suits);
+
+        Assert.That(result.IsMonotone, Is.True);
+        Assert.That(result.IsBroadwayHeavy, Is.True);
+    }
+
+    [Test]
+    public void WetnessScore_MonotoneConnectedBroadway_DeberiaSerAlto()
+    {
+        // Board más wet posible: Jh Qh Kh (monotone + connected + broadway)
+        var cards = new List<CardDataOuts> { C(Rank.Jack, Suit.Hearts), C(Rank.Queen, Suit.Hearts), C(Rank.King, Suit.Hearts) };
+        var result = _analyzer.Analyze(cards);
+
+        Assert.That(result.WetnessScore, Is.GreaterThanOrEqualTo(60));
+    }
+
+    [Test]
+    public void SimplifiedTexture_MapeoRetrocompatible()
+    {
+        // Dry → "Dry"
+        var dry = new BoardTextureResult(BoardTextureCategory.Dry, 10, false, false, true, false, false, false, true, false, false);
+        Assert.That(dry.SimplifiedTexture, Is.EqualTo("Dry"));
+
+        // SemiDry → "Dry"
+        var semiDry = new BoardTextureResult(BoardTextureCategory.SemiDry, 20, false, true, false, false, false, false, false, false, false);
+        Assert.That(semiDry.SimplifiedTexture, Is.EqualTo("Dry"));
+
+        // SemiWet → "Coordinated"
+        var semiWet = new BoardTextureResult(BoardTextureCategory.SemiWet, 40, false, true, false, false, true, false, false, true, true);
+        Assert.That(semiWet.SimplifiedTexture, Is.EqualTo("Coordinated"));
+
+        // Wet → "Coordinated"
+        var wet = new BoardTextureResult(BoardTextureCategory.Wet, 70, true, false, false, false, true, true, false, true, true);
+        Assert.That(wet.SimplifiedTexture, Is.EqualTo("Coordinated"));
+
+        // Paired → "Paired"
+        var paired = new BoardTextureResult(BoardTextureCategory.Paired, 15, false, false, true, true, false, false, false, false, false);
+        Assert.That(paired.SimplifiedTexture, Is.EqualTo("Paired"));
+    }
+}

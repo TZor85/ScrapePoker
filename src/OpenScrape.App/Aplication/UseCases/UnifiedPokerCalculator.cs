@@ -1,4 +1,6 @@
-﻿using OpenScrape.DecisionMaker.Algorithms;
+﻿using Microsoft.Extensions.Options;
+
+using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 using System;
@@ -34,15 +36,18 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
+        private readonly StrategyProfile _profile;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
-            PreflopEquityCalculator preflopEquityCalculator)
+            PreflopEquityCalculator preflopEquityCalculator,
+            IOptions<StrategyProfile> profileOptions)
         {
             _monteCarloSimulator = monteCarloSimulator;
             _outsCalculator = outsCalculator;
             _preflopEquityCalculator = preflopEquityCalculator;
+            _profile = profileOptions.Value;
         }
 
         public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
@@ -135,21 +140,16 @@ namespace OpenScrape.App.Aplication.UseCases
 
         private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)
         {
-            // Heurística básica para fold equity en cash games
-            double baseFoldEquity = 20.0; // 20% base
+            double baseFoldEquity = _profile.FoldEquityBase;
 
-            // Ajustes por calle (más difícil hacer fold en streets posteriores)
-            if (communityCardsCount >= 4) baseFoldEquity -= 5.0; // River
-            else if (communityCardsCount >= 3) baseFoldEquity += 5.0; // Flop
+            if (communityCardsCount >= 4) baseFoldEquity += _profile.FoldEquityRiverPenalty;
+            else if (communityCardsCount >= 3) baseFoldEquity += _profile.FoldEquityFlopBonus;
 
-            // Ajustes por posición (IP puede representar más folds)
-            if (isInPosition) baseFoldEquity += 10.0;
+            if (isInPosition) baseFoldEquity += _profile.FoldEquityIPBonus;
 
-            // Ajustes por situación de mano (más agresivos hacen menos folds)
-            if (handSituation?.Contains("ThreeBet") == true) baseFoldEquity -= 10.0;
+            if (handSituation?.Contains("ThreeBet") == true) baseFoldEquity += _profile.FoldEquityThreeBetPenalty;
 
-            // Limitar entre 5% y 60%
-            return Math.Max(5.0, Math.Min(60.0, baseFoldEquity));
+            return Math.Max(_profile.FoldEquityMin, Math.Min(_profile.FoldEquityMax, baseFoldEquity));
         }
 
         private double CalculateEVWithFoldEquity(double equity, double foldEquity, double potSize, double betAmount)
@@ -170,32 +170,28 @@ namespace OpenScrape.App.Aplication.UseCases
             // Factores adicionales para cash games
             double adjustedEquity = equity;
 
-            // Bonus por draws (outs disponibles)
             if (hasDraws && communityCardsCount < 5)
             {
-                adjustedEquity += 2.0;
+                adjustedEquity += _profile.DrawEquityBonus;
             }
 
-            // Ajuste por calle (más conservador en streets posteriores)
-            if (communityCardsCount >= 4) // River
+            if (communityCardsCount >= 4)
             {
-                adjustedEquity -= 1.0;
+                adjustedEquity += _profile.RiverEquityPenalty;
             }
 
-            // Ajustes por posición en cash games
             if (isInPosition)
             {
-                adjustedEquity += 3.0; // IP bonus
+                adjustedEquity += _profile.IPEquityBonus;
             }
 
-            // Considerar stack sizes (SPR - Stack to Pot Ratio)
             if (heroStack > 0 && villainStack > 0)
             {
-                decimal currentPot = heroStack + villainStack; // Aproximación
+                decimal currentPot = heroStack + villainStack;
                 double spr = (double)(heroStack / currentPot);
-                if (spr > 3.0) // Deep stacks
+                if (spr > _profile.BetSizingSPRDeepThreshold)
                 {
-                    adjustedEquity += 1.0; // Más agresivo con stacks profundos
+                    adjustedEquity += _profile.DeepStackEquityBonus;
                 }
             }
 
@@ -215,7 +211,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 return ("Fold", null);
 
             // Considerar EV con fold equity para decisiones de apuesta
-            bool shouldBet = result.EVWithFoldEquity > result.ExpectedValue + 5.0; // Threshold arbitrario
+            bool shouldBet = result.EVWithFoldEquity > result.ExpectedValue + _profile.BetEVThreshold;
 
             if (shouldBet)
             {

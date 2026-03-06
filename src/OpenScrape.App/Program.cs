@@ -4,11 +4,11 @@ using Microsoft.Extensions.Hosting;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
-using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App
 {
@@ -43,7 +43,13 @@ namespace OpenScrape.App
                     services.AddSingleton<OutsCalculator>();
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
+                    // Strategy profile (antes de servicios que lo usan)
+                    services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
+                    services.AddSingleton<StrategyProfileService>();
+
                     services.AddSingleton<BetSizingService>();
+                    services.AddSingleton<BoardTextureAnalyzer>();
+                    services.AddSingleton<PostflopDecisionService>();
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
@@ -51,10 +57,6 @@ namespace OpenScrape.App
                     // Game logger y state machine
                     services.AddScoped<GameLoggerService>();
                     services.AddSingleton<GameLoopStateMachine>();
-
-                    // Strategy profile
-                    services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
-                    services.AddSingleton<StrategyProfileService>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

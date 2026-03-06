@@ -10,7 +10,7 @@
 - [x] Anadir tests de integracion para el flujo Equity -> Decision (DecisionIntegrationTests)
 - [x] Prerequisito para todo lo demas — sin tests no se puede refactorizar con confianza
 
-**Archivos creados:**
+**Archivos de tests:**
 - `OpenScrape.App.Tests/HandEvaluatorTests.cs` (15 tests)
 - `OpenScrape.App.Tests/MonteCarloSimulatorTests.cs` (6 tests)
 - `OpenScrape.App.Tests/OutsCalculatorTests.cs` (6 tests)
@@ -19,8 +19,10 @@
 - `OpenScrape.App.Tests/GameLoopStateMachineTests.cs` (14 tests)
 - `OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
 - `OpenScrape.App.Tests/DecisionIntegrationTests.cs` (8 tests)
+- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (12 tests)
+- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (15 tests)
 
-**Resultado:** 83 tests, todos pasan.
+**Resultado:** 110 tests, todos pasan.
 
 ### 1.2 Game Logger / Historial de partidas
 
@@ -51,7 +53,7 @@
 
 ## Fase 2 — Motor de Decision Avanzado
 
-> **Estado: EN PROGRESO (2.0 y 2.1 completadas)**
+> **Estado: COMPLETADA**
 
 ### Diagnostico del estado actual
 
@@ -166,206 +168,70 @@ Los 20 metodos son:
 - `src/OpenScrape.App/Program.cs` — registro de `IOptions<StrategyProfile>` y `StrategyProfileService`
 - `src/OpenScrape.App/Forms/FrmMain.cs` — inyeccion de servicio, metodo generico, dispatchers simplificados
 
-**Pendiente de integracion futura (no bloqueante):**
-- [ ] Inyectar StrategyProfile en `UnifiedPokerCalculator.cs` para reemplazar thresholds de fold equity
-- [ ] Inyectar StrategyProfile en `BetSizingService.cs` para reemplazar thresholds de SPR/board multipliers
+**Integracion en UnifiedPokerCalculator y BetSizingService:**
+- [x] Inyectar `IOptions<StrategyProfile>` en `UnifiedPokerCalculator` — fold equity (base, bonuses, penalties, min/max), draw/river/IP equity adjustments, EV threshold
+- [x] Inyectar `IOptions<StrategyProfile>` en `BetSizingService` — SPR multipliers, board texture multipliers, OOP/multi-opponent multipliers
+- [x] Agregar `Microsoft.Extensions.Options` como dependencia de `OpenScrape.DecisionMaker.csproj`
 
-**Resultado:** 70 tests, todos pasan (58 previos + 12 nuevos de StrategyProfile).
+**Resultado:** 110 tests, todos pasan.
 
 ---
 
 ### 2.2 Board Texture Analyzer
 
-> **Dependencias:** 2.0.2 (fix de board texture)
-> **Esfuerzo estimado:** Bajo-Medio
+> **Estado: COMPLETADA**
 
 **Objetivo:** Extraer el analisis de board texture a un servicio dedicado en DecisionMaker con scoring mas fino que Dry/Coordinated/Paired.
 
-#### Problema actual
+#### Implementacion realizada
 
-- Solo 3 categorias: Dry, Coordinated, Paired
-- Turn texture analiza solo 1 carta (bug)
-- No detecta: monotone (3+ same suit), broadway-heavy, low board, connected
-- Mismo enum para Turn y River (redundante)
+**`BoardTextureAnalyzer`** (`src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs`):
+- `Analyze(List<CardDataOuts>)` y `Analyze(List<int> ranks, List<int> suits)` para flexibilidad.
+- **Wetness score** (0-100) basado en: monotone (+35), two-tone (+15), connectivity (+20), flush possibility (+15), straight possibility (+15), broadway heavy (+10), paired (-10), trips (-15).
+- **5 categorias**: `Dry` (<15), `SemiDry` (15-35), `SemiWet` (35-60), `Wet` (>=60), `Paired`.
+- **Flags detallados**: `IsMonotone`, `IsTwoTone`, `IsRainbow`, `IsPaired`, `IsConnected`, `IsBroadwayHeavy`, `IsLowBoard`, `HasFlushPossibility`, `HasStraightPossibility`.
+- **`SimplifiedTexture`**: mapeo retrocompatible a "Dry"/"Coordinated"/"Paired" para integracion con StreetThresholds.
 
-#### Implementacion
+**`BoardTextureResult`** es un record inmutable con todas las propiedades.
 
-**Archivo:** `src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs`
-
-```csharp
-public class BoardTextureAnalyzer
-{
-    public BoardTextureResult Analyze(List<CardDataOuts> communityCards)
-}
-
-public class BoardTextureResult
-{
-    public bool IsPaired { get; set; }       // Dos o mas cartas del mismo rango
-    public bool IsMonotone { get; set; }     // 3+ cartas del mismo suit
-    public bool IsTwoTone { get; set; }      // Exactamente 2 suits representados
-    public bool IsRainbow { get; set; }      // 3+ suits diferentes
-    public bool IsConnected { get; set; }    // 3+ cartas consecutivas
-    public bool HasStraightDraw { get; set; }
-    public bool HasFlushDraw { get; set; }
-    public bool IsBroadwayHeavy { get; set; } // 2+ cartas >= T
-    public bool IsLowBoard { get; set; }     // Todas las cartas <= 8
-    public double WetnessScore { get; set; } // 0.0 (dry) a 1.0 (wet)
-
-    // Categoria simplificada (retrocompatible con enum actual)
-    public BoardTextureCategory Category { get; set; }
-}
-
-public enum BoardTextureCategory { Dry, SemiDry, SemiWet, Wet, Paired }
-```
-
-**Wetness score** se calcula como suma ponderada:
-- Paired: +0.3
-- Monotone: +0.4
-- TwoTone: +0.2
-- Connected (3+ consecutivas): +0.3
-- Broadway heavy: +0.1
-
-**Mapping retrocompatible:**
-- WetnessScore < 0.2 -> Dry (mapea a TurnBoardTexture.Dry)
-- WetnessScore 0.2-0.5 -> SemiDry/SemiWet
-- WetnessScore > 0.5 -> Wet (mapea a TurnBoardTexture.Coordinated)
-- IsPaired -> Paired (mapea a TurnBoardTexture.Paired)
-
-#### Archivos a crear
+**Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs`
-- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs`
+- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (12 tests)
 
-#### Archivos a modificar
-- `src/OpenScrape.App/Forms/FrmMain.cs` — inyectar BoardTextureAnalyzer, reemplazar AnalyzeTurnBoardTexture y AnalyzeRiverBoardTexture
-- `src/OpenScrape.App/Program.cs` — registrar BoardTextureAnalyzer como Singleton
-
-#### Tests
-- Board `2h 7h Kh 9c` -> IsMonotone=false, IsTwoTone=true, HasFlushDraw=true
-- Board `2h 7h Kh` -> monotone 3 hearts
-- Board `7c 7d Ks 2h` -> IsPaired=true
-- Board `8c 9d Ts Jh` -> IsConnected=true
-- Board `2s 5d 9h Kc` -> Dry (low wetness)
-- Board `Ts Js Qs` -> Wet + Broadway + Monotone
+**Archivos modificados:**
+- `src/OpenScrape.App/Program.cs` — registrado como Singleton
 
 ---
 
-### 2.3 Postflop Decision Services (Turn y River)
+### 2.3 Postflop Decision Service
 
-> **Dependencias:** 2.2 (BoardTextureAnalyzer)
-> **Esfuerzo estimado:** Medio (reducido tras 2.1)
-> **Estado: PENDIENTE**
+> **Estado: COMPLETADA**
 
-**Objetivo:** Extraer `DeterminePostflopAction` de FrmMain a un servicio dedicado en DecisionMaker, con logica mejorada.
+**Objetivo:** Extraer la logica de decision postflop a un servicio testeable en DecisionMaker, con logica avanzada.
 
-**Nota:** La consolidacion de 20 handlers en 1 metodo generico ya se hizo en 2.1. Esta fase se enfoca en:
-- Mover `DeterminePostflopAction` a un servicio testeable independiente de FrmMain
-- Anadir logica avanzada (barrel, showdown value, pot odds integration)
+#### Implementacion realizada
 
-#### Problema actual (post-2.1)
+**`PostflopDecisionService`** (`src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`):
+- `DetermineAction(equity, street, situation, boardTexture, isInPosition, betSize, potOdds, totalOuts, previousStreetBet)` — metodo principal con toda la logica.
+- `GetThresholds(BoardPosition, HandSituation)` — acceso a thresholds con fallback conservador.
+- **Semi-bluff**: con 8+ outs (no river), recomienda semi-bluff automaticamente.
+- **Pot odds integration**: equity marginal con pot odds favorables → call en vez de fold.
+- **Showdown value**: river sin apuesta con equity marginal → check (no bet innecesario).
+- **Barrel logic**: marca `IsBarrel = true` cuando hay bet continuado en river tras bet en turn.
+- **Bluff conditions**: misma logica configurable que FrmMain (Always/OOPOnly/IPCoordinatedSmallOnly).
+- **Modo simplificado**: RaiseOverLimper con bets fijos IP/OOP.
 
-- `DeterminePostflopAction` vive en FrmMain (acoplado a UI)
-- No hay continuation bet logic (2nd/3rd barrel)
-- No hay showdown value analysis en river
-- Pot odds calculados pero no integrados en la decision
-- No hay contexto de acciones previas (flop action no influye en turn)
+**`PostflopDecisionResult`** record con: `Action`, `Reason`, `IsBluff`, `IsBarrel`.
 
-#### Servicio PostflopDecisionService
+**`BetSizeCategory`** enum: `NoBet`, `Small`, `Medium`, `Large` (antes estaba solo en FrmMain).
 
-**Archivo:** `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`
-
-Entrada:
-```csharp
-public class PostflopDecisionRequest
-{
-    public double EquityPercentage { get; set; }
-    public double PotOddsPercentage { get; set; }
-    public double ExpectedValue { get; set; }
-    public BoardPosition Street { get; set; }
-    public HandSituation Situation { get; set; }
-    public BoardTextureResult BoardTexture { get; set; }
-    public bool IsInPosition { get; set; }
-    public int TotalOuts { get; set; }
-    public decimal HeroStack { get; set; }
-    public decimal PotSize { get; set; }
-    public string? PreviousStreetAction { get; set; }  // Accion tomada en street anterior
-}
-```
-
-Salida:
-```csharp
-public class PostflopDecisionResult
-{
-    public string Action { get; set; }           // "Fold", "Check/Call", "Bet 1/3 (Value)", etc.
-    public string Reasoning { get; set; }        // Explicacion para logging/overlay
-    public double Confidence { get; set; }       // 0.0-1.0 confianza en la decision
-}
-```
-
-Logica principal:
-```
-1. Obtener thresholds de StrategyProfile segun street + situation
-2. Si equity < FoldBelow:
-   a. Verificar si tiene pot odds para call (equity > potOdds -> "Call (Pot Odds)")
-   b. Verificar bluff frequency -> posible bluff
-   c. Si tiene outs > 8 y no es river -> "Semi-Bluff"
-   d. Else -> "Fold"
-3. Determinar bet size base segun board texture (usa BoardTextureAnalyzer)
-4. Barrel logic (NUEVO):
-   a. Si PreviousStreetAction contiene "Bet" y equity se mantuvo -> 2nd/3rd barrel
-   b. Si board cambio drasticamente (nueva carta completa draw) -> check-back
-5. Aplicar equity tiers (StrongValue/Value/ThinValue)
-6. Ajustar bet size con BetSizingService (pasar heroStack REAL)
-7. River-specific: showdown value check
-   a. Si equity > ThinValueAbove pero < ValueAbove -> "Check/Call" (showdown value)
-```
-
-#### Integracion en FrmMain
-
-Reemplazar DetermineTurnAction() y DetermineRiverAction() con:
-
-```csharp
-// En ProcessTurnAsync, despues de calcular equity:
-var decision = _postflopDecisionService.Decide(new PostflopDecisionRequest
-{
-    EquityPercentage = _turnResult.EquityPercentage,
-    PotOddsPercentage = _turnResult.PotOddsPercentage,
-    ExpectedValue = _turnResult.ExpectedValue,
-    Street = BoardPosition.Turn,
-    Situation = _playerGameState.HandSituation,
-    BoardTexture = _boardTextureAnalyzer.Analyze(communityCards),
-    IsInPosition = _playerGameState.IsInPosition,
-    TotalOuts = _turnResult.TotalOuts,
-    HeroStack = _playerGameState.HeroStack,
-    PotSize = _playerGameState.PotSize,
-    PreviousStreetAction = _responseAction?.Action
-});
-
-_responseAction.Action = decision.Action;
-_gameLoggerService.LogStreetDecision(new StreetDecision(...));
-```
-
-Esto elimina ~800 lineas de FrmMain y las consolida en ~100 lineas de servicio testeable.
-
-#### Archivos a crear
+**Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`
-- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs`
+- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (15 tests)
 
-#### Archivos a modificar
-- `src/OpenScrape.App/Forms/FrmMain.cs` — eliminar 20 handlers, delegar a PostflopDecisionService
-- `src/OpenScrape.App/Program.cs` — registrar PostflopDecisionService
-- `src/OpenScrape.DecisionMaker/OpenScrape.DecisionMaker.csproj` — posible referencia adicional
-
-#### Tests
-- Equity baja sin pot odds -> Fold
-- Equity baja con pot odds favorables -> Call (Pot Odds)
-- Equity alta en dry board -> Value bet grande
-- Equity alta en wet board -> Value bet reducido
-- 2nd barrel: accion previa fue bet, equity mantenida -> continuar betting
-- 3rd barrel: river con equity fuerte -> value bet
-- Showdown value: equity media en river -> Check/Call (no bet)
-- Semi-bluff: equity baja pero 9+ outs en turn -> Semi-Bluff
-- OOP penalty: misma equity OOP reduce bet size
-- Board texture cambia drasticamente turn -> check-back
+**Archivos modificados:**
+- `src/OpenScrape.App/Program.cs` — registrado como Singleton
+- `src/OpenScrape.DecisionMaker/OpenScrape.DecisionMaker.csproj` — agregado `Microsoft.Extensions.Options`
 
 ---
 
@@ -384,19 +250,23 @@ Esto elimina ~800 lineas de FrmMain y las consolida en ~100 lineas de servicio t
   |  Entidad + JSON + service + metodo generico en FrmMain
   |  80+ hardcoded values externalizados a appsettings.json
   |  20 handlers → 1 metodo generico (~800 lineas eliminadas)
+  |  Inyectado en UnifiedPokerCalculator y BetSizingService
   |  12 tests de configuracion
   |
   v
-2.2 BoardTextureAnalyzer (PENDIENTE)
+2.2 BoardTextureAnalyzer ✅ COMPLETADA
   |  Servicio dedicado en DecisionMaker
-  |  Wetness score + categorias finas
-  |  Tests unitarios
+  |  Wetness score (0-100) + 5 categorias
+  |  Flags: monotone, two-tone, rainbow, connected, broadway, low board
+  |  SimplifiedTexture retrocompatible
+  |  12 tests unitarios
   |
   v
-2.3 PostflopDecisionService (PENDIENTE, requiere 2.2)
-     Barrel logic + showdown value
-     Integrar pot odds en decision
-     Tests de decision completos
+2.3 PostflopDecisionService ✅ COMPLETADA
+     Extraido de FrmMain a servicio testeable en DecisionMaker
+     Semi-bluff con outs, pot odds integration, showdown value
+     Barrel logic, bluff conditions configurables
+     15 tests unitarios
 ```
 
 ### Verificacion Fase 2
@@ -404,10 +274,10 @@ Esto elimina ~800 lineas de FrmMain y las consolida en ~100 lineas de servicio t
 | Paso | Criterio de aceptacion | Estado |
 |------|----------------------|--------|
 | 2.0 | `dotnet test` pasa, heroStack > 0 en logs, board texture correcta | ✅ |
-| 2.1 | Todos los thresholds cargados desde JSON, comportamiento identico al actual | ✅ |
-| 2.2 | BoardTextureAnalyzer detecta monotone/connected/paired correctamente | Pendiente |
-| 2.3 | PostflopDecisionService con barrel logic y showdown value | Pendiente |
-| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 83 tests |
+| 2.1 | Todos los thresholds cargados desde JSON, inyectados en UnifiedPokerCalculator y BetSizingService | ✅ |
+| 2.2 | BoardTextureAnalyzer detecta monotone/connected/paired correctamente | ✅ |
+| 2.3 | PostflopDecisionService con barrel logic, pot odds y showdown value | ✅ |
+| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 110 tests |
 
 ### Riesgos y mitigacion
 
@@ -587,10 +457,10 @@ Fase 2.0 ✅ COMPLETADA (bugfixes criticos)
 Fase 2.1 ✅ COMPLETADA (StrategyProfile configurable)
   |
   v
-Fase 2.2 (BoardTextureAnalyzer) ← SIGUIENTE
+Fase 2.2 ✅ COMPLETADA (BoardTextureAnalyzer)
   |
   v
-Fase 2.3 (PostflopDecisionService, depende de 2.2)
+Fase 2.3 ✅ COMPLETADA (PostflopDecisionService)
   |
   v
 Fase 3.1 -> 3.2 (secuencial)
@@ -605,7 +475,7 @@ Fase 4.2 (requiere 4.1 + 2.1 + datos suficientes)
 Fase 5 (opcional, en cualquier momento)
 ```
 
-## Datos Perdidos Actualmente (a resolver en Fase 2)
+## Datos Perdidos Actualmente (a resolver en fases futuras)
 
 | Dato | Se detecta | Se persiste | Necesario para |
 |------|-----------|-------------|----------------|
@@ -621,11 +491,12 @@ Fase 5 (opcional, en cualquier momento)
 
 | Fase | Criterio de aceptacion | Estado |
 |------|----------------------|--------|
-| 1 | `dotnet test` -> 83 tests pasan, `dotnet build` sin errores, booleans reemplazados, retry OCR | ✅ |
+| 1 | Tests reales, game logger, state machine, retry OCR, booleans reemplazados | ✅ |
 | 2.0 | Bugfixes: heroStack real, board texture correcta, bluff freq consistente | ✅ |
-| 2.1 | StrategyProfile cargado desde JSON, 70 tests pasan, 20 handlers → 1 generico | ✅ |
-| 2.2 | BoardTextureAnalyzer detecta monotone/connected/paired correctamente | Pendiente |
-| 2.3 | PostflopDecisionService con barrel logic y showdown value | Pendiente |
+| 2.1 | StrategyProfile cargado desde JSON, inyectado en UnifiedPokerCalculator y BetSizingService, 20 handlers → 1 generico | ✅ |
+| 2.2 | BoardTextureAnalyzer: wetness score, 5 categorias, flags detallados, retrocompatible | ✅ |
+| 2.3 | PostflopDecisionService: semi-bluff, pot odds, showdown value, barrel logic | ✅ |
+| Final Fase 2 | `dotnet build` sin errores, `dotnet test` → 110 tests pasan | ✅ |
 | 3.1 | Bot ejecuta acciones automaticamente en mesa de prueba | Pendiente |
 | 3.2 | Validacion pre-accion detecta cambios de estado | Pendiente |
 | 4.1 | Dashboard muestra BB/100, equity vs outcome, timeline | Pendiente |
