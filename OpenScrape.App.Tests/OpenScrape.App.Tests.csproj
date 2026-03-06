@@ -21,6 +21,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <ProjectReference Include="..\src\OpenScrape.App\OpenScrape.App.csproj" />
+    <ProjectReference Include="..\src\OpenScrape.DecisionMaker\OpenScrape.DecisionMaker.csproj" />
+    <ProjectReference Include="..\src\OpenScrape.Domain\OpenScrape.Domain.csproj" />
   </ItemGroup>
 
 </Project>

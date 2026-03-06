@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.ValueObjects;
@@ -45,6 +46,10 @@ namespace OpenScrape.App
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
+
+                    // Game logger y state machine
+                    services.AddScoped<GameLoggerService>();
+                    services.AddSingleton<GameLoopStateMachine>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

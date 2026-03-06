@@ -137,6 +137,8 @@ namespace OpenScrape.App
         private readonly ColorDetectionService _colorDetectionService = new();
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
+        private readonly GameLoggerService _gameLoggerService;
+        private readonly GameLoopStateMachine _gameLoopStateMachine;
         #endregion
 
         /// <summary>
@@ -147,7 +149,9 @@ namespace OpenScrape.App
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases,
                         IPokerCalculator pokerCalculator,
-                        BetSizingService betSizingService)
+                        BetSizingService betSizingService,
+                        GameLoggerService gameLoggerService,
+                        GameLoopStateMachine gameLoopStateMachine)
         {
             InitializeComponent();
 
@@ -170,6 +174,8 @@ namespace OpenScrape.App
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
             _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
             _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
+            _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
+            _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -512,6 +518,10 @@ namespace OpenScrape.App
                     _newHand = false;
                     _isFlop = false;
 
+                    // State machine: transicionar a nueva mano
+                    _gameLoopStateMachine.Reset();
+                    _gameLoopStateMachine.TryTransition(GameState.HandDetected);
+
                     if (!cbTest.Checked)
                         await HandleNewHandAsync();
                 }
@@ -574,10 +584,12 @@ namespace OpenScrape.App
         {
 
             SetPotValue();
+            _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
             _preflopHeroPosition = GetPreflopHeroPosition();
 
             if (!_isFlop && !_isTurn && !_isRiver)
             {
+                _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
                 await ProcessPreflopAsync();
             }
             else
@@ -2317,6 +2329,20 @@ namespace OpenScrape.App
         private async Task HandleNewHandAsync()
         {
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
+
+            // Registrar nueva ronda en el game logger
+            if (long.TryParse(_tableHand, out var handNum))
+            {
+                var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
+                _gameLoggerService.StartNewRound(
+                    handNum,
+                    _tableName,
+                    _playerGameState?.HoleCard1Face ?? string.Empty,
+                    _playerGameState?.HoleCard2Face ?? string.Empty,
+                    _playerGameState?.Position ?? TablePosition.None,
+                    _playerGameState?.HeroStack ?? 0,
+                    activePlayers);
+            }
 
             _folderPath = Path.Combine(
                 DEFAULT_RESOURCES_PATH,
