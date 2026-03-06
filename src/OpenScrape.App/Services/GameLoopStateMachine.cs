@@ -83,4 +83,23 @@ public class GameLoopStateMachine
     public bool IsRiver => CurrentState is GameState.RiverDetected or GameState.RiverAction;
     public bool IsWaiting => CurrentState == GameState.WaitingForHand;
     public bool IsHandComplete => CurrentState == GameState.HandComplete;
+
+    /// <summary>
+    /// Fuerza el estado directamente (solo para modo test/debug con radiobuttons).
+    /// Salta la validación de transiciones.
+    /// </summary>
+    public void ForceState(GameState state)
+    {
+        var previousState = CurrentState;
+        CurrentState = state;
+
+        _logger.LogWarning(
+            "Estado forzado (test): {PreviousState} -> {NewState}",
+            previousState, state);
+    }
+
+    /// <summary>
+    /// Número máximo de reintentos para OCR fallido.
+    /// </summary>
+    public const int MaxOcrRetries = 2;
 }

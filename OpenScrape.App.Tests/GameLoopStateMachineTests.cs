@@ -116,4 +116,58 @@ public class GameLoopStateMachineTests
     {
         Assert.That(_stateMachine.IsWaiting, Is.True);
     }
+
+    [Test]
+    public void ForceState_DeberiaCambiarEstadoDirectamente()
+    {
+        _stateMachine.ForceState(GameState.TurnDetected);
+
+        Assert.That(_stateMachine.CurrentState, Is.EqualTo(GameState.TurnDetected));
+        Assert.That(_stateMachine.IsTurn, Is.True);
+    }
+
+    [Test]
+    public void ForceState_DeberiaSaltarValidacionDeTransiciones()
+    {
+        // WaitingForHand → TurnDetected no es una transición válida
+        _stateMachine.ForceState(GameState.TurnDetected);
+
+        Assert.That(_stateMachine.CurrentState, Is.EqualTo(GameState.TurnDetected));
+    }
+
+    [Test]
+    public void MaxOcrRetries_DeberiaSerAlMenos1()
+    {
+        Assert.That(GameLoopStateMachine.MaxOcrRetries, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public void IsRiver_DeberiaSerTrue_EnRiverDetectedYRiverAction()
+    {
+        _stateMachine.TryTransition(GameState.HandDetected);
+        _stateMachine.TryTransition(GameState.PreflopAction);
+        _stateMachine.TryTransition(GameState.FlopDetected);
+        _stateMachine.TryTransition(GameState.FlopAction);
+        _stateMachine.TryTransition(GameState.TurnDetected);
+        _stateMachine.TryTransition(GameState.TurnAction);
+        _stateMachine.TryTransition(GameState.RiverDetected);
+        Assert.That(_stateMachine.IsRiver, Is.True);
+
+        _stateMachine.TryTransition(GameState.RiverAction);
+        Assert.That(_stateMachine.IsRiver, Is.True);
+    }
+
+    [Test]
+    public void IsTurn_DeberiaSerTrue_EnTurnDetectedYTurnAction()
+    {
+        _stateMachine.TryTransition(GameState.HandDetected);
+        _stateMachine.TryTransition(GameState.PreflopAction);
+        _stateMachine.TryTransition(GameState.FlopDetected);
+        _stateMachine.TryTransition(GameState.FlopAction);
+        _stateMachine.TryTransition(GameState.TurnDetected);
+        Assert.That(_stateMachine.IsTurn, Is.True);
+
+        _stateMachine.TryTransition(GameState.TurnAction);
+        Assert.That(_stateMachine.IsTurn, Is.True);
+    }
 }

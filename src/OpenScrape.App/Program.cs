@@ -8,6 +8,7 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App
 {
@@ -50,6 +51,10 @@ namespace OpenScrape.App
                     // Game logger y state machine
                     services.AddScoped<GameLoggerService>();
                     services.AddSingleton<GameLoopStateMachine>();
+
+                    // Strategy profile
+                    services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
+                    services.AddSingleton<StrategyProfileService>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

@@ -84,10 +84,11 @@ namespace OpenScrape.App
         private IntPtr _handle;
         private User32.RECT _locWindowRect = new();
         private bool _executeCapture;
-        private bool _isPreflop = true;
-        private bool _isFlop;
-        private bool _isTurn;
-        private bool _isRiver;
+        // Street flags derivados del state machine
+        private bool IsPreflop => _gameLoopStateMachine.IsPreflop;
+        private bool IsFlop => _gameLoopStateMachine.CurrentState == GameState.FlopDetected;
+        private bool IsTurn => _gameLoopStateMachine.CurrentState == GameState.TurnDetected;
+        private bool IsRiver => _gameLoopStateMachine.CurrentState == GameState.RiverDetected;
         private string _tableName = string.Empty;
         private long _newTableHand;
         private bool _newHand;
@@ -139,6 +140,7 @@ namespace OpenScrape.App
         private readonly CardUseCases _cardUseCases;
         private readonly GameLoggerService _gameLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
+        private readonly StrategyProfileService _strategyProfileService;
         #endregion
 
         /// <summary>
@@ -151,7 +153,8 @@ namespace OpenScrape.App
                         IPokerCalculator pokerCalculator,
                         BetSizingService betSizingService,
                         GameLoggerService gameLoggerService,
-                        GameLoopStateMachine gameLoopStateMachine)
+                        GameLoopStateMachine gameLoopStateMachine,
+                        StrategyProfileService strategyProfileService)
         {
             InitializeComponent();
 
@@ -176,6 +179,7 @@ namespace OpenScrape.App
             _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
+            _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -501,9 +505,12 @@ namespace OpenScrape.App
 
                 if (cbTest.Checked)
                 {
-                    _isFlop = rbFlop.Checked;
-                    _isTurn = rbTurn.Checked;
-                    _isRiver = rbRiver.Checked;
+                    if (rbFlop.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.FlopDetected);
+                    else if (rbTurn.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.TurnDetected);
+                    else if (rbRiver.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                     _frmOverlay.Show();
                 }
 
@@ -516,9 +523,8 @@ namespace OpenScrape.App
                     _responseAction = new ResponseAction();
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
                     _newHand = false;
-                    _isFlop = false;
 
-                    // State machine: transicionar a nueva mano
+                    // State machine: transicionar a nueva mano (reset limpia todos los street flags)
                     _gameLoopStateMachine.Reset();
                     _gameLoopStateMachine.TryTransition(GameState.HandDetected);
 
@@ -587,7 +593,7 @@ namespace OpenScrape.App
             _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (!_isFlop && !_isTurn && !_isRiver)
+            if (!IsFlop && !IsTurn && !IsRiver)
             {
                 _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
                 await ProcessPreflopAsync();
@@ -603,7 +609,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPreflopAsync()
         {
-            _isPreflop = true;
+            // IsPreflop se deriva del state machine (HandDetected o PreflopAction)
             var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
             {
                 ResponseAction = _responseAction,
@@ -620,18 +626,21 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
-            if (_isFlop)
+            if (IsFlop)
             {
+                _gameLoopStateMachine.TryTransition(GameState.FlopAction);
                 await ProcessFlopAsync(potOddsResult);
             }
 
-            if (_isTurn)
+            if (IsTurn)
             {
+                _gameLoopStateMachine.TryTransition(GameState.TurnAction);
                 await ProcessTurnAsync();
             }
 
-            if (_isRiver)
+            if (IsRiver)
             {
+                _gameLoopStateMachine.TryTransition(GameState.RiverAction);
                 await ProcessRiverAsync();
             }
 
@@ -642,8 +651,149 @@ namespace OpenScrape.App
             _frmOverlay.UpdateAction(_responseAction.Action);
         }
 
-        #region [Handle Turn Action]
+        #region [Generic Postflop Action]
 
+        /// <summary>
+        /// Método genérico que reemplaza los 20 handlers de Turn/River.
+        /// Usa los thresholds configurados en StrategyProfile para determinar la acción.
+        /// </summary>
+        private void DeterminePostflopAction(
+            double equity,
+            BoardPosition street,
+            HandSituation situation,
+            string boardTexture,
+            bool isInPosition,
+            BetSize betSize)
+        {
+            var thresholds = _strategyProfileService.GetThresholds(street, situation);
+
+            // Modo simplificado (RaiseOverLimper): IP/OOP con bets fijos
+            if (thresholds.IsSimplified)
+            {
+                DetermineSimplifiedAction(equity, thresholds, isInPosition);
+                return;
+            }
+
+            // Acción para equity baja
+            if (equity < thresholds.FoldBelow)
+            {
+                if (thresholds.CanBluff && ShouldBluff(thresholds, isInPosition, boardTexture, betSize, street))
+                {
+                    _responseAction.Action = thresholds.BluffBetSize + " (Bluff)";
+                }
+                else
+                {
+                    var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
+                }
+                return;
+            }
+
+            // Determinar bet base por textura de board
+            var baseBet = boardTexture switch
+            {
+                "Dry" => thresholds.DryBoardBetSize,
+                "Coordinated" => thresholds.CoordinatedBoardBetSize,
+                "Paired" => thresholds.PairedBoardBetSize,
+                _ => thresholds.DryBoardBetSize
+            };
+
+            // Ajustar por apuesta grande del oponente
+            if (thresholds.ReduceSizeForLargeBet && betSize == BetSize.Large)
+                baseBet = ReduceBetSize(baseBet);
+
+            // Ajustar por OOP
+            if (thresholds.ReduceSizeForOOP && !isInPosition)
+                baseBet = ReduceBetSize(baseBet);
+
+            // Determinar acción por tier de equity
+            if (equity > thresholds.StrongValueAbove)
+            {
+                _responseAction.Action = thresholds.StrongValueBetSize + " (Value)";
+            }
+            else if (equity > thresholds.ValueAbove)
+            {
+                _responseAction.Action = thresholds.ValueBetSize + " (Value)";
+            }
+            else if (equity > thresholds.ThinValueAbove)
+            {
+                if (!thresholds.ThinValueIPOnly || isInPosition)
+                {
+                    _responseAction.Action = thresholds.ThinValueBetSize + " (Thin Value)";
+                }
+                else
+                {
+                    var fallback = thresholds.ThinValueOOPFallback == "CheckCall" ? "Call" : "Fold";
+                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
+                }
+            }
+            else
+            {
+                var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
+                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
+            }
+        }
+
+        /// <summary>
+        /// Determina si se debe ejecutar un bluff según las condiciones configuradas.
+        /// </summary>
+        private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BetSize betSize, BoardPosition street)
+        {
+            var bluffFreq = _strategyProfileService.GetBluffFrequency(street) * thresholds.BluffFrequencyMultiplier;
+
+            return thresholds.BluffCondition switch
+            {
+                "Always" => Random.Shared.NextDouble() < bluffFreq,
+                "OOPOnly" => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
+                "IPCoordinatedSmallOnly" => isInPosition && boardTexture == "Coordinated" && betSize == BetSize.Small && Random.Shared.NextDouble() < bluffFreq,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Lógica simplificada para RaiseOverLimper (sin board texture, split IP/OOP).
+        /// </summary>
+        private void DetermineSimplifiedAction(double equity, StreetThresholds thresholds, bool isInPosition)
+        {
+            if (isInPosition)
+            {
+                if (equity > thresholds.StrongValueAbove)
+                    _responseAction.Action = thresholds.SimplifiedIPStrongBet;
+                else if (equity > thresholds.ThinValueAbove)
+                    _responseAction.Action = thresholds.SimplifiedIPThinBet;
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+            else
+            {
+                if (equity > thresholds.StrongValueAbove)
+                    _responseAction.Action = thresholds.SimplifiedOOPStrongBet;
+                else if (equity > thresholds.ValueAbove)
+                    _responseAction.Action = thresholds.SimplifiedOOPValueBet;
+                else if (equity > thresholds.ThinValueAbove)
+                    _responseAction.Action = thresholds.SimplifiedOOPThinBet;
+                else
+                    _responseAction.Action = "Check (Fold)";
+            }
+        }
+
+        /// <summary>
+        /// Reduce el tamaño de apuesta un nivel en la escala: Pot → 3/4 → 2/3 → 1/2 → 1/3.
+        /// </summary>
+        private static string ReduceBetSize(string bet)
+        {
+            return bet
+                .Replace("Pot", "3/4")
+                .Replace("3/4", "2/3")
+                .Replace("2/3", "1/2")
+                .Replace("1/2", "1/3");
+        }
+
+        #endregion
+
+        #region [Legacy Turn/River Handlers - DEPRECATED]
+        // Los 20 handlers individuales han sido reemplazados por DeterminePostflopAction.
+        // Se mantiene HandleOpenRaiseTurnAction como referencia por si se necesita debugging.
         private void HandleOpenRaiseTurnAction()
         {
             var equity = _turnResult.EquityPercentage;
@@ -1039,51 +1189,14 @@ namespace OpenScrape.App
 
         private void DetermineRiverAction()
         {
-            switch (_playerGameState.HandSituation)
-            {
-                case HandSituation.OpenRaise:
-                    HandleOpenRaiseRiverAction();
-                    break;
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+            var texture = _riverBoardTexture.ToString();
 
-                case HandSituation.Call:
-                    HandleCallRiverAction();
-                    break;
-
-                case HandSituation.RaiseOverLimper:
-                    HandleRaiseOverLimperRiverAction();
-                    break;
-
-                case HandSituation.ThreeBet:
-                    HandleThreeBetRiverAction();
-                    break;
-
-                case HandSituation.OpenRaiseVs3Bet:
-                    HandleOpenRaiseVs3BetRiverAction();
-                    break;
-
-                case HandSituation.OpenRaiseVs3BetAndCall:
-                    HandleOpenRaiseVs3BetAndCallRiverAction();
-                    break;
-
-                case HandSituation.FourBet:
-                    HandleFourBetRiverAction();
-                    break;
-
-                case HandSituation.Cold4Bet:
-                    HandleCold4BetRiverAction();
-                    break;
-
-                case HandSituation.Squeeze:
-                    HandleSqueezeRiverAction();
-                    break;
-
-                case HandSituation.VsSqueeze:
-                    HandleVsSqueezeRiverAction();
-                    break;
-
-                default:
-                    break;
-            }
+            DeterminePostflopAction(equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition, betSize);
         }
 
         #region [Handle River Action]
@@ -1589,17 +1702,29 @@ namespace OpenScrape.App
                 new OutsCalculator(),
                 new PreflopEquityCalculator());
 
-            _isFlop = false;
-
-            // Capturar cartas del flop
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
+            // Capturar cartas del flop con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap
+                });
 
-            var dataBoard = flopResponse.DataBoard;
+                dataBoard = flopResponse.DataBoard;
+
+                if (dataBoard.Count(d => d.Position == BoardPosition.Flop) >= 3)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR flop: intento {attempt + 1} falló, reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
             _playerGameState.BoardCards = dataBoard;
 
             dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard1Face, Location = 0 });
@@ -1616,19 +1741,16 @@ namespace OpenScrape.App
             _playerGameState = setFlopForceBoardResponse.PlayerState;
             _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
 
-            // Calcular odds y actualizar overlay
-            //potOddsResult = GetPotOddsCalculator();
-
             var myCards = new List<CardDataOuts>
             {
                 new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
                 new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
             };
 
-            // Verificar que hay suficientes cartas del flop
+            // Verificar que hay suficientes cartas del flop tras reintentos
             if (dataBoard.Count(d => d.Position == BoardPosition.Flop) < 3)
             {
-                LogError("No se detectaron suficientes cartas del flop. Se requieren al menos 3 cartas.");
+                LogError("No se detectaron suficientes cartas del flop tras reintentos.");
                 _responseAction.Action = "Error: No se pudieron detectar cartas del flop";
                 UpdateOverlayWithPotOdds(new PokerCalculationResult());
                 return;
@@ -1721,51 +1843,14 @@ namespace OpenScrape.App
 
         private void DetermineTurnAction()
         {
-            switch (_playerGameState.HandSituation)
-            {
-                case HandSituation.OpenRaise:
-                    HandleOpenRaiseTurnAction();
-                    break;
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+            var texture = _turnBoardTexture.ToString();
 
-                case HandSituation.Call:
-                    HandleCallTurnAction();
-                    break;
-
-                case HandSituation.RaiseOverLimper:
-                    HandleRaiseOverLimperTurnAction();
-                    break;
-
-                case HandSituation.ThreeBet:
-                    HandleThreeBetTurnAction();
-                    break;
-
-                case HandSituation.OpenRaiseVs3Bet:
-                    HandleOpenRaiseVs3BetTurnAction();
-                    break;
-
-                case HandSituation.OpenRaiseVs3BetAndCall:
-                    HandleOpenRaiseVs3BetAndCallTurnAction();
-                    break;
-
-                case HandSituation.FourBet:
-                    HandleFourBetTurnAction();
-                    break;
-
-                case HandSituation.Cold4Bet:
-                    HandleCold4BetTurnAction();
-                    break;
-
-                case HandSituation.Squeeze:
-                    HandleSqueezeTurnAction();
-                    break;
-
-                case HandSituation.VsSqueeze:
-                    HandleVsSqueezeTurnAction();
-                    break;
-
-                default:
-                    break;
-            }
+            DeterminePostflopAction(equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition, betSize);
         }
 
         #region [Handle Flop Action]
@@ -2216,18 +2301,38 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
-            _isTurn = false;
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+            // Capturar carta del turn con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap,
-                DataBoard = _playerGameState.BoardCards
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap,
+                    DataBoard = _playerGameState.BoardCards
+                });
 
-            var dataBoard = turnResponse.DataBoard;
-            _playerGameState.BoardCards = turnResponse.DataBoard;
+                dataBoard = turnResponse.DataBoard;
+
+                if (dataBoard.Count >= 4)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR turn: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
+            if (dataBoard.Count < 4)
+            {
+                LogError("No se detectó la carta del turn tras reintentos.");
+                _responseAction.Action = "Error: No se pudo detectar carta del turn";
+                return;
+            }
+
+            _playerGameState.BoardCards = dataBoard;
 
             // Analizar textura del board del turn
             _turnBoardTexture = AnalyzeTurnBoardTexture(dataBoard);
@@ -2272,18 +2377,38 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
-            _isRiver = false;
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
+            // Capturar carta del river con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap,
-                DataBoard = _playerGameState.BoardCards
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap,
+                    DataBoard = _playerGameState.BoardCards
+                });
 
-            var dataBoard = riverResponse.DataBoard;
-            _playerGameState.BoardCards = riverResponse.DataBoard;
+                dataBoard = riverResponse.DataBoard;
 
+                if (dataBoard.Count >= 5)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR river: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
+            if (dataBoard.Count < 5)
+            {
+                LogError("No se detectó la carta del river tras reintentos.");
+                _responseAction.Action = "Error: No se pudo detectar carta del river";
+                return;
+            }
+
+            _playerGameState.BoardCards = dataBoard;
 
             var myCards = new List<CardDataOuts>
             {
@@ -2378,13 +2503,13 @@ namespace OpenScrape.App
 
             if (_playerGameState != null)
             {
-                if (_isPreflop)
+                if (IsPreflop)
                 {
                     UpdateResumeTextForPreflop(potOddsResult);
-                    _isPreflop = false;
+                    // Transición a PreflopAction ya se hizo en ProcessTableInfoAsync
                 }
 
-                if (_isFlop)
+                if (_gameLoopStateMachine.IsFlop)
                 {
                     UpdateResumeTextForFlop();
                 }
@@ -3739,7 +3864,7 @@ namespace OpenScrape.App
 
                         if (shouldCaptureFlop)
                         {
-                            _isFlop = true;
+                            _gameLoopStateMachine.TryTransition(GameState.FlopDetected);
                         }
 
                         if (shouldCapture)
