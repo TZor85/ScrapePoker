@@ -47,6 +47,42 @@ public class PostflopDecisionService
     }
 
     /// <summary>
+    /// Calcula la penalización de equity por carta peligrosa en el board.
+    /// Flush/straight usan penalización porcentual (proporcional a la equity).
+    /// Facing bet multiplica la penalización (villano representa el draw completado).
+    /// </summary>
+    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet)
+    {
+        if (boardChange.DangerLevel == 0)
+            return 0;
+
+        double penalty = 0;
+
+        // Completaciones mayores: porcentual sobre equity (escala con la fuerza de la mano)
+        if (boardChange.FlushCompleted)
+            penalty += rawEquity * (_profile.DangerFlushCompletePct / 100.0);
+        else if (boardChange.FlushDrawAppeared)
+            penalty += _profile.DangerFlushDrawPenalty;
+
+        if (boardChange.StraightCompleted)
+            penalty += rawEquity * (_profile.DangerStraightCompletePct / 100.0);
+
+        // Cambios menores: flat
+        if (boardChange.BoardPaired) penalty += _profile.DangerBoardPairedPenalty;
+        if (boardChange.OvercardAppeared) penalty += _profile.DangerOvercardPenalty;
+
+        // Facing bet en board peligroso → villano representando el draw completado
+        if (isFacingBet)
+            penalty *= _profile.DangerFacingBetMultiplier;
+
+        // Blocker effect: hero tiene carta del suit peligroso, reduce penalización
+        if (heroBlocksDangerSuit)
+            penalty *= _profile.DangerHeroBlocksReduction;
+
+        return penalty;
+    }
+
+    /// <summary>
     /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión.
     /// </summary>
     public PostflopDecisionResult DetermineAction(
@@ -59,14 +95,30 @@ public class PostflopDecisionService
         double potOdds = 0,
         int totalOuts = 0,
         bool previousStreetBet = false,
-        bool villainShowedAggression = false)
+        bool villainShowedAggression = false,
+        BoardChangeResult? boardChange = null,
+        bool heroBlocksDangerSuit = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
 
+        // Aplicar penalización por carta peligrosa
+        double dangerPenalty = boardChange != null
+            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet)
+            : 0;
+        double effectiveEquity = equity - dangerPenalty;
+
+        // Tope de equity para APOSTAR en boards con draw completado que hero no tiene.
+        // Apostar solo consigue que nos paguen flushes/straights (peores foldean, mejores pagan).
+        if (!isFacingBet && boardChange != null && !heroBlocksDangerSuit &&
+            (boardChange.FlushCompleted || boardChange.StraightCompleted))
+        {
+            effectiveEquity = Math.Min(effectiveEquity, _profile.DangerCompletedDrawNoBetCap);
+        }
+
         // Modo simplificado (RaiseOverLimper)
         if (thresholds.IsSimplified)
-            return DetermineSimplifiedAction(equity, thresholds, isInPosition, isFacingBet);
+            return DetermineSimplifiedAction(effectiveEquity, thresholds, isInPosition, isFacingBet);
 
         // Ajustar thresholds si estamos facing a bet (necesitamos más equity para continuar)
         double adjustedFoldBelow = thresholds.FoldBelow;
@@ -91,17 +143,17 @@ public class PostflopDecisionService
         }
 
         // Equity baja (debajo del threshold ajustado)
-        if (equity < adjustedFoldBelow)
-            return HandleLowEquity(equity, thresholds, isInPosition, boardTexture,
+        if (effectiveEquity < adjustedFoldBelow)
+            return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet);
 
         // --- FACING BET: decidir entre Call y Raise ---
         if (isFacingBet)
-            return HandleFacingBet(equity, thresholds, isInPosition, villainBetSize,
+            return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
                 street, potOdds, adjustedThinValueAbove, previousStreetBet);
 
         // --- NO FACING BET: decidir entre Check y Bet ---
-        return HandleNoBet(equity, thresholds, isInPosition, boardTexture,
+        return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
             street, previousStreetBet);
     }
 

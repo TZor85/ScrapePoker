@@ -142,7 +142,9 @@ namespace OpenScrape.App
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
+        private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private bool _previousStreetWasBet;
+        private BoardChangeResult _lastBoardChange = BoardChangeResult.Safe;
         #endregion
 
         /// <summary>
@@ -157,7 +159,8 @@ namespace OpenScrape.App
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
-                        PostflopDecisionService postflopDecisionService)
+                        PostflopDecisionService postflopDecisionService,
+                        BoardTextureAnalyzer boardTextureAnalyzer)
         {
             InitializeComponent();
 
@@ -184,6 +187,7 @@ namespace OpenScrape.App
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
+            _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -1077,13 +1081,33 @@ namespace OpenScrape.App
             var texture = _riverBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            // Analizar carta peligrosa: comparar turn (4 cartas) con river (5ª carta)
+            var riverChange = AnalyzeBoardChange(_playerGameState.BoardCards, 4);
+            // Combinar con peligro arrastrado del turn (flush/straight que sigue en board)
+            var boardChange = CombineBoardChanges(_lastBoardChange, riverChange);
+            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
+                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
+                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
+
+            bool isFacingBet = betSize != BetSize.NoBet;
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
+            LogError($"[RIVER] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
+                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
+                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
+                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
+                     $"Situation={_playerGameState.HandSituation}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
+
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _riverResult.PotOddsPercentage,
                 totalOuts: _riverResult.TotalOuts,
                 previousStreetBet: _previousStreetWasBet,
-                villainShowedAggression: villainAggro);
+                villainShowedAggression: villainAggro,
+                boardChange: boardChange,
+                heroBlocksDangerSuit: heroBlocks);
+
+            LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -1484,6 +1508,45 @@ namespace OpenScrape.App
         /// <summary>
         /// Analiza la textura del board del turn
         /// </summary>
+        /// <summary>
+        /// Analiza el cambio de board al caer una nueva carta.
+        /// previousCardCount indica cuántas cartas había antes (3 para turn, 4 para river).
+        /// </summary>
+        /// <summary>
+        /// Combina el peligro de la street anterior con el de la nueva carta.
+        /// Si el turn completó un flush, el river hereda ese peligro.
+        /// </summary>
+        private static BoardChangeResult CombineBoardChanges(BoardChangeResult previous, BoardChangeResult current)
+        {
+            if (previous.DangerLevel == 0)
+                return current;
+            if (current.DangerLevel == 0 && previous.DangerLevel > 0)
+                return previous; // Arrastrar peligro de la street anterior
+
+            // Ambos tienen peligro: combinar tomando el peor caso
+            return new BoardChangeResult(
+                FlushCompleted: previous.FlushCompleted || current.FlushCompleted,
+                FlushDrawAppeared: previous.FlushDrawAppeared || current.FlushDrawAppeared,
+                StraightCompleted: previous.StraightCompleted || current.StraightCompleted,
+                BoardPaired: previous.BoardPaired || current.BoardPaired,
+                OvercardAppeared: previous.OvercardAppeared || current.OvercardAppeared,
+                CompletedFlushSuit: current.CompletedFlushSuit >= 0 ? current.CompletedFlushSuit : previous.CompletedFlushSuit,
+                DangerLevel: Math.Max(previous.DangerLevel, current.DangerLevel));
+        }
+
+        private BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount)
+        {
+            var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
+            if (communityCards.Count <= previousCardCount)
+                return BoardChangeResult.Safe;
+
+            var previousRanks = communityCards.Take(previousCardCount).Select(c => c.Force).ToList();
+            var previousSuits = communityCards.Take(previousCardCount).Select(c => c.Suit).ToList();
+            var newCard = communityCards[previousCardCount];
+
+            return _boardTextureAnalyzer.AnalyzeBoardChange(previousRanks, previousSuits, newCard.Force, newCard.Suit);
+        }
+
         private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
         {
             // Analizar TODAS las cartas comunitarias (flop + turn), no solo la carta del turn
@@ -1741,13 +1804,33 @@ namespace OpenScrape.App
             var texture = _turnBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
+            var boardChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
+            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
+                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
+                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
+
+            bool isFacingBet = betSize != BetSize.NoBet;
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
+            LogError($"[TURN] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
+                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
+                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
+                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
+                     $"Situation={_playerGameState.HandSituation}");
+
+            _lastBoardChange = boardChange;
+
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _turnResult.PotOddsPercentage,
                 totalOuts: _turnResult.TotalOuts,
                 previousStreetBet: _previousStreetWasBet,
-                villainShowedAggression: villainAggro);
+                villainShowedAggression: villainAggro,
+                boardChange: boardChange,
+                heroBlocksDangerSuit: heroBlocks);
+
+            LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -2355,6 +2438,7 @@ namespace OpenScrape.App
         private async Task HandleNewHandAsync()
         {
             _previousStreetWasBet = false;
+            _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
 
             // Registrar nueva ronda en el game logger
@@ -4451,12 +4535,26 @@ namespace OpenScrape.App
         /// <param name="exception">Optional exception details.</param>
         private void LogError(string message, Exception? exception = null)
         {
-            // Example implementation: Log to the console or a file
-            Console.WriteLine($"Error: {message}");
-            if (exception != null)
+            var logLine = exception != null
+                ? $"[{DateTime.Now:HH:mm:ss}] {message} | Exception: {exception.Message}"
+                : $"[{DateTime.Now:HH:mm:ss}] {message}";
+
+            Console.WriteLine(logLine);
+
+            if (tbResume != null && !tbResume.IsDisposed)
             {
-                Console.WriteLine($"Exception: {exception.Message}");
+                if (tbResume.InvokeRequired)
+                    tbResume.Invoke(() => AppendLog(logLine));
+                else
+                    AppendLog(logLine);
             }
+        }
+
+        private void AppendLog(string line)
+        {
+            tbResume.AppendText(line + Environment.NewLine);
+            tbResume.SelectionStart = tbResume.TextLength;
+            tbResume.ScrollToCaret();
         }
 
         /// <summary>

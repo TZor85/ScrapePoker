@@ -28,6 +28,22 @@ public record BoardTextureResult(
     };
 }
 
+/// <summary>
+/// Resultado del análisis de cambio de board al caer una nueva carta.
+/// Detecta si la nueva carta completa draws, empareja el board, etc.
+/// </summary>
+public record BoardChangeResult(
+    bool FlushCompleted,
+    bool FlushDrawAppeared,
+    bool StraightCompleted,
+    bool BoardPaired,
+    bool OvercardAppeared,
+    int CompletedFlushSuit,
+    int DangerLevel)
+{
+    public static BoardChangeResult Safe => new(false, false, false, false, false, -1, 0);
+}
+
 public class BoardTextureAnalyzer
 {
     /// <summary>
@@ -104,6 +120,111 @@ public class BoardTextureAnalyzer
         var ranks = communityCards.Select(c => (int)c.Rank).ToList();
         var suits = communityCards.Select(c => (int)c.Suit).ToList();
         return Analyze(ranks, suits);
+    }
+
+    /// <summary>
+    /// Analiza cómo cambia el board al caer una nueva carta (turn o river).
+    /// Detecta flush completado, straight completado, board paired, overcard, etc.
+    /// </summary>
+    public BoardChangeResult AnalyzeBoardChange(
+        List<int> previousRanks, List<int> previousSuits,
+        int newCardRank, int newCardSuit)
+    {
+        if (previousRanks.Count < 3)
+            return BoardChangeResult.Safe;
+
+        var allRanks = previousRanks.Concat(new[] { newCardRank }).ToList();
+        var allSuits = previousSuits.Concat(new[] { newCardSuit }).ToList();
+
+        // --- Flush analysis ---
+        var suitGroups = allSuits.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
+        var prevSuitGroups = previousSuits.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
+
+        // Flush completado: 3+ del mismo suit en board completo (en turn con 4 cartas, 3 del mismo suit
+        // ya es flush posible; en river con 5 cartas, 3+ del mismo suit)
+        bool flushCompleted = suitGroups.Values.Any(c => c >= 3) && !prevSuitGroups.Values.Any(c => c >= 3);
+        // Si ya había 3 del mismo suit y ahora hay 4+, también es peligroso (refuerza flush)
+        if (!flushCompleted && suitGroups.Values.Any(c => c >= 4))
+            flushCompleted = true;
+
+        int completedFlushSuit = flushCompleted
+            ? suitGroups.Where(g => g.Value >= 3).OrderByDescending(g => g.Value).First().Key
+            : -1;
+
+        // Flush draw appeared: 2 del mismo suit pasa a 3 (para el turn, nuevo draw)
+        bool flushDrawAppeared = !flushCompleted &&
+            suitGroups.Values.Any(c => c >= 2) &&
+            newCardSuit == previousSuits.GroupBy(s => s)
+                .Where(g => g.Count() >= 2)
+                .Select(g => g.Key)
+                .FirstOrDefault(-1);
+
+        // --- Straight analysis ---
+        var prevUnique = previousRanks.Distinct().OrderBy(r => r).ToList();
+        var allUnique = allRanks.Distinct().OrderBy(r => r).ToList();
+
+        bool prevHadStraightDraw = HasStraightDraw(prevUnique);
+        bool nowHasStraight = HasCompletedStraight(allUnique);
+        bool straightCompleted = nowHasStraight && prevHadStraightDraw;
+
+        // --- Board paired ---
+        var prevRankGroups = previousRanks.GroupBy(r => r).ToDictionary(g => g.Key, g => g.Count());
+        bool boardPaired = previousRanks.Contains(newCardRank) && !prevRankGroups.Values.Any(c => c >= 2);
+
+        // --- Overcard ---
+        int prevMaxRank = previousRanks.Max();
+        bool overcardAppeared = newCardRank > prevMaxRank;
+
+        // --- Danger level (0-10) ---
+        int dangerLevel = 0;
+        if (flushCompleted) dangerLevel += 4;
+        else if (flushDrawAppeared) dangerLevel += 2;
+        if (straightCompleted) dangerLevel += 3;
+        if (boardPaired) dangerLevel += 2;
+        if (overcardAppeared) dangerLevel += 1;
+
+        return new BoardChangeResult(
+            flushCompleted, flushDrawAppeared, straightCompleted,
+            boardPaired, overcardAppeared, completedFlushSuit,
+            Math.Min(10, dangerLevel));
+    }
+
+    /// <summary>
+    /// Versión que acepta CardDataOuts para board anterior + nueva carta.
+    /// </summary>
+    public BoardChangeResult AnalyzeBoardChange(
+        List<CardDataOuts> previousBoard, CardDataOuts newCard)
+    {
+        var ranks = previousBoard.Select(c => (int)c.Rank).ToList();
+        var suits = previousBoard.Select(c => (int)c.Suit).ToList();
+        return AnalyzeBoardChange(ranks, suits, (int)newCard.Rank, (int)newCard.Suit);
+    }
+
+    private static bool HasCompletedStraight(List<int> sortedUnique)
+    {
+        if (sortedUnique.Count < 4) return false;
+
+        // Check 4+ consecutivas con gap <= 1
+        for (int i = 0; i <= sortedUnique.Count - 4; i++)
+        {
+            if (sortedUnique[i + 3] - sortedUnique[i] <= 4)
+            {
+                // Verificar que hay al menos 4 cartas en ese rango
+                int count = sortedUnique.Count(r => r >= sortedUnique[i] && r <= sortedUnique[i] + 4);
+                if (count >= 4)
+                    return true;
+            }
+        }
+
+        // Wheel check: A-2-3-4 o A-2-3-4-5
+        if (sortedUnique.Contains(14))
+        {
+            var lowCards = sortedUnique.Where(r => r <= 5).ToList();
+            if (lowCards.Count >= 3 && lowCards.Max() - lowCards.Min() <= 4)
+                return true;
+        }
+
+        return false;
     }
 
     private static bool HasStraightDraw(List<int> sortedRanks)

@@ -32,6 +32,8 @@
             backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tbJuego = new TabPage();
+            pnlUserStack = new Panel();
+            lbUserStack = new Label();
             lbPositionAction = new Label();
             lbAction = new Label();
             gbTest = new GroupBox();
@@ -136,10 +138,9 @@
             tbLogs = new TabPage();
             tbResume = new TextBox();
             lbNamePlayerOne = new Label();
-            pnlUserStack = new Panel();
-            lbUserStack = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
+            pnlUserStack.SuspendLayout();
             gbTest.SuspendLayout();
             panel10.SuspendLayout();
             panel9.SuspendLayout();
@@ -178,7 +179,6 @@
             tbTables.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
-            pnlUserStack.SuspendLayout();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -243,6 +243,24 @@
             tbJuego.UseVisualStyleBackColor = true;
             tbJuego.Click += tbJuego_Click;
             // 
+            // pnlUserStack
+            // 
+            pnlUserStack.BorderStyle = BorderStyle.FixedSingle;
+            pnlUserStack.Controls.Add(lbUserStack);
+            pnlUserStack.Location = new Point(251, 294);
+            pnlUserStack.Name = "pnlUserStack";
+            pnlUserStack.Size = new Size(79, 20);
+            pnlUserStack.TabIndex = 86;
+            // 
+            // lbUserStack
+            // 
+            lbUserStack.AutoSize = true;
+            lbUserStack.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lbUserStack.Location = new Point(2, 3);
+            lbUserStack.Name = "lbUserStack";
+            lbUserStack.Size = new Size(0, 13);
+            lbUserStack.TabIndex = 0;
+            // 
             // lbPositionAction
             // 
             lbPositionAction.AutoSize = true;
@@ -302,7 +320,7 @@
             rbTurn.AutoSize = true;
             rbTurn.Location = new Point(7, 44);
             rbTurn.Name = "rbTurn";
-            rbTurn.Size = new Size(50, 19);
+            rbTurn.Size = new Size(49, 19);
             rbTurn.TabIndex = 49;
             rbTurn.TabStop = true;
             rbTurn.Text = "Turn";
@@ -335,7 +353,7 @@
             cbTest.CheckAlign = ContentAlignment.MiddleRight;
             cbTest.Location = new Point(516, 9);
             cbTest.Name = "cbTest";
-            cbTest.Size = new Size(47, 19);
+            cbTest.Size = new Size(46, 19);
             cbTest.TabIndex = 80;
             cbTest.Text = "Test";
             cbTest.UseVisualStyleBackColor = true;
@@ -657,7 +675,7 @@
             lbNameHero.AutoSize = true;
             lbNameHero.Location = new Point(1, 5);
             lbNameHero.Name = "lbNameHero";
-            lbNameHero.Size = new Size(32, 15);
+            lbNameHero.Size = new Size(31, 15);
             lbNameHero.TabIndex = 1;
             lbNameHero.Text = "TZor";
             // 
@@ -1292,11 +1310,9 @@
             // tbResume
             // 
             tbResume.Dock = DockStyle.Fill;
-            tbResume.Enabled = false;
             tbResume.Location = new Point(3, 3);
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
-            tbResume.ReadOnly = true;
             tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
             // 
@@ -1307,24 +1323,6 @@
             lbNamePlayerOne.Name = "lbNamePlayerOne";
             lbNamePlayerOne.Size = new Size(0, 15);
             lbNamePlayerOne.TabIndex = 1;
-            // 
-            // pnlUserStack
-            // 
-            pnlUserStack.BorderStyle = BorderStyle.FixedSingle;
-            pnlUserStack.Controls.Add(lbUserStack);
-            pnlUserStack.Location = new Point(251, 294);
-            pnlUserStack.Name = "pnlUserStack";
-            pnlUserStack.Size = new Size(79, 20);
-            pnlUserStack.TabIndex = 86;
-            // 
-            // lbUserStack
-            // 
-            lbUserStack.AutoSize = true;
-            lbUserStack.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            lbUserStack.Location = new Point(2, 3);
-            lbUserStack.Name = "lbUserStack";
-            lbUserStack.Size = new Size(0, 13);
-            lbUserStack.TabIndex = 0;
             // 
             // FrmMain
             // 
@@ -1340,6 +1338,8 @@
             tbControl.ResumeLayout(false);
             tbJuego.ResumeLayout(false);
             tbJuego.PerformLayout();
+            pnlUserStack.ResumeLayout(false);
+            pnlUserStack.PerformLayout();
             gbTest.ResumeLayout(false);
             gbTest.PerformLayout();
             panel10.ResumeLayout(false);
@@ -1397,8 +1397,6 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
-            pnlUserStack.ResumeLayout(false);
-            pnlUserStack.PerformLayout();
             ResumeLayout(false);
         }
 

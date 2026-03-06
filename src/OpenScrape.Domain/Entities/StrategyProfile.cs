@@ -39,6 +39,21 @@ public class StrategyProfile
     public double TurnBluffFrequency { get; set; } = 0.15;
     public double RiverBluffFrequency { get; set; } = 0.10;
 
+    // Danger Card Penalties (usado en PostflopDecisionService)
+    // Porcentual: reduce equity un X% cuando se completa draw (ej: 25 = -25% de equity)
+    public double DangerFlushCompletePct { get; set; } = 25.0;
+    public double DangerStraightCompletePct { get; set; } = 18.0;
+    // Flat: penalización fija en puntos de equity
+    public double DangerBoardPairedPenalty { get; set; } = 5.0;
+    public double DangerOvercardPenalty { get; set; } = 3.0;
+    public double DangerFlushDrawPenalty { get; set; } = 5.0;
+    // Multiplicadores
+    public double DangerFacingBetMultiplier { get; set; } = 1.4;
+    public double DangerHeroBlocksReduction { get; set; } = 0.5;
+    // Tope de equity para APOSTAR cuando flush/straight completado y hero no lo tiene
+    // (apostar solo consigue que nos paguen manos que nos ganan)
+    public double DangerCompletedDrawNoBetCap { get; set; } = 45.0;
+
     // Decision Adjustments (usado en UnifiedPokerCalculator)
     public double DrawEquityBonus { get; set; } = 2.0;
     public double RiverEquityPenalty { get; set; } = -1.0;

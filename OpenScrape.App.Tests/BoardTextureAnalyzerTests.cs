@@ -174,4 +174,89 @@ public class BoardTextureAnalyzerTests
         var paired = new BoardTextureResult(BoardTextureCategory.Paired, 15, false, false, true, true, false, false, false, false, false);
         Assert.That(paired.SimplifiedTexture, Is.EqualTo("Paired"));
     }
+
+    // --- Tests de BoardChangeResult / AnalyzeBoardChange ---
+
+    [Test]
+    public void AnalyzeBoardChange_FlushCompleted_Turn2hEnQh3h7s()
+    {
+        // Flop: Qh(12,1) 3h(3,1) 7s(7,4) → Turn: 2h(2,1) → 3 hearts = flush completado
+        var prevRanks = new List<int> { 12, 3, 7 };
+        var prevSuits = new List<int> { 1, 1, 4 }; // hearts=1, spades=4
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 2, 1); // 2h
+
+        Assert.That(result.FlushCompleted, Is.True);
+        Assert.That(result.CompletedFlushSuit, Is.EqualTo(1));
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(4));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_SafeCard_NoDanger()
+    {
+        // Flop: Qh 3h 7s → Turn: 2c (no completa nada)
+        var prevRanks = new List<int> { 12, 3, 7 };
+        var prevSuits = new List<int> { 1, 1, 4 };
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 2, 2); // 2c (clubs=2)
+
+        Assert.That(result.FlushCompleted, Is.False);
+        Assert.That(result.StraightCompleted, Is.False);
+        Assert.That(result.BoardPaired, Is.False);
+        Assert.That(result.DangerLevel, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_BoardPaired()
+    {
+        // Flop: Qh 3d 7s → Turn: 7c → board paired
+        var prevRanks = new List<int> { 12, 3, 7 };
+        var prevSuits = new List<int> { 1, 3, 4 };
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 7, 2); // 7c
+
+        Assert.That(result.BoardPaired, Is.True);
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(2));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_OvercardAppeared()
+    {
+        // Flop: 3h 5d 7s → Turn: Ac → overcard
+        var prevRanks = new List<int> { 3, 5, 7 };
+        var prevSuits = new List<int> { 1, 3, 4 };
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 14, 2); // Ac
+
+        Assert.That(result.OvercardAppeared, Is.True);
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_StraightCompleted()
+    {
+        // Flop: 9c Td Jh → Turn: 8s → straight completado (8-9-T-J)
+        var prevRanks = new List<int> { 9, 10, 11 };
+        var prevSuits = new List<int> { 2, 3, 1 };
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 8, 4); // 8s
+
+        Assert.That(result.StraightCompleted, Is.True);
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(3));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_River_FlushStillDangerous()
+    {
+        // Board turn: Qh 3h 7s 2h → River: Tc (no completa flush pero 3 hearts persisten)
+        var prevRanks = new List<int> { 12, 3, 7, 2 };
+        var prevSuits = new List<int> { 1, 1, 4, 1 }; // 3 hearts ya
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 10, 2); // Tc
+
+        // Flush ya estaba completada antes, la nueva carta no cambia eso
+        // Pero el board ya tenía 3 hearts, y ahora con 4 cartas previas ya tenemos flush en board
+        Assert.That(result.OvercardAppeared, Is.False); // Tc(10) < Qh(12)
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_MenosDe3CartasPrevias_Safe()
+    {
+        var result = _analyzer.AnalyzeBoardChange(new List<int> { 12, 3 }, new List<int> { 1, 1 }, 7, 4);
+        Assert.That(result.DangerLevel, Is.EqualTo(0));
+    }
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 
+using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -296,6 +297,197 @@ public class PostflopDecisionServiceTests
 
         Assert.That(thresholds.FoldBelow, Is.EqualTo(40));
         Assert.That(thresholds.CanBluff, Is.False);
+    }
+
+    // --- Tests de cartas peligrosas / danger penalty ---
+
+    [Test]
+    public void DetermineAction_FlushCompleted_FacingBet_DeberiaReducirEquityYFold()
+    {
+        // Equity 60, flush completed facing medium bet
+        // penalty = 60 * 0.25 * 1.4 = 21.0 → effEquity = 39 < adjustedFoldBelow(45+4=49) → fold
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: flushBoard, heroBlocksDangerSuit: false);
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void DetermineAction_FlushCompleted_HeroBlocksSuit_ReducePenalty()
+    {
+        // Equity 60, flush completed facing medium, hero con blocker
+        // penalty = 60 * 0.25 * 1.4 * 0.5 = 10.5 → effEquity = 49.5 > adjustedFoldBelow(49) → no fold
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: flushBoard, heroBlocksDangerSuit: true);
+
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void DetermineAction_FlushCompleted_NoBet_DeberiaCheck_NoValueBet()
+    {
+        // Equity 60, flush completed, no facing bet
+        // penalty = 60 * 0.25 = 15.0 → effEquity = 45 = ThinValueAbove → check o thin
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            boardChange: flushBoard, heroBlocksDangerSuit: false);
+
+        // effectiveEquity = 45, ThinValueAbove = 45 → check (no strong/value bet)
+        Assert.That(result.Action, Does.Not.Contain("Value").Or.Contain("Thin Value"));
+    }
+
+    [Test]
+    public void DetermineAction_StraightCompleted_DeberiaReducirEquity()
+    {
+        // Equity 55, straight completed facing medium
+        // penalty = 55 * 0.18 * 1.4 = 13.86 → effEquity = 41.14 < adjustedFoldBelow(49) → fold
+        var straightBoard = new BoardChangeResult(
+            FlushCompleted: false, FlushDrawAppeared: false, StraightCompleted: true,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 3);
+
+        var result = _service.DetermineAction(
+            equity: 55, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: straightBoard, heroBlocksDangerSuit: false);
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void DetermineAction_SafeBoard_NoPenalty()
+    {
+        // BoardChangeResult.Safe → no penalty
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            boardChange: BoardChangeResult.Safe, heroBlocksDangerSuit: false);
+
+        Assert.That(result.Action, Does.Contain("Value"));
+    }
+
+    [Test]
+    public void DetermineAction_HighEquity_FlushCompleted_FacingBet_DeberiaCall_NoRaise()
+    {
+        // Simula la mano del usuario: AsQc en Qh3h7s-2h, equity ~94, facing small bet
+        // penalty = 94 * 0.25 * 1.4 = 32.9 → effEquity = 61.1
+        // StrongValueAbove = 80 → NOT strong → Call (no Raise)
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 94, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Small,
+            boardChange: flushBoard, heroBlocksDangerSuit: false);
+
+        Assert.That(result.Action, Does.Not.Contain("Raise"));
+        Assert.That(result.Action, Is.EqualTo("Call"));
+    }
+
+    [Test]
+    public void DetermineAction_HighEquity_FlushPersisted_River_NoBet_DeberiaCheck()
+    {
+        // River: flush sigue del turn (arrastrado), villain checks, hero no tiene flush
+        // penalty = 99 * 0.25 = 24.75 → effEquity = 74.25
+        // PERO: cap para no apostar en draw completado sin tenerlo → effEquity = min(74.25, 45) = 45
+        // River_OpenRaise ThinValueAbove = 40, 45 > 40 → thin value, pero ThinValueIPOnly check OOP
+        // Con IP: Thin Value bet (moderada). Sin cap sería Bet Pot.
+        var flushPersisted = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 99, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            boardChange: flushPersisted, heroBlocksDangerSuit: false);
+
+        // Capped a 45 → no value bet fuerte, como mucho thin value o check
+        Assert.That(result.Action, Does.Not.Contain("Pot"));
+        Assert.That(result.Action, Does.Not.Contain("3/4"));
+    }
+
+    [Test]
+    public void DetermineAction_FlushCompleted_NoBet_HeroHasBlocker_PuedeApostar()
+    {
+        // Si hero tiene carta del flush suit (blocker), cap NO aplica → puede apostar
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = _service.DetermineAction(
+            equity: 80, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            boardChange: flushBoard, heroBlocksDangerSuit: true);
+
+        // Con blocker: penalty = 80*0.25*0.5 = 10 → effEquity = 70, cap NO aplica
+        // 70 > ValueAbove(55) → Value bet
+        Assert.That(result.Action, Does.Contain("Value"));
+    }
+
+    [Test]
+    public void CalculateDangerPenalty_FlushCompleted_SinBlocker_Porcentual()
+    {
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        // equity=80, no facing, no blocker → 80 * 0.25 = 20.0
+        var penalty = _service.CalculateDangerPenalty(80, flushBoard, heroBlocksDangerSuit: false, isFacingBet: false);
+        Assert.That(penalty, Is.EqualTo(20.0));
+    }
+
+    [Test]
+    public void CalculateDangerPenalty_FlushCompleted_ConBlocker_Porcentual()
+    {
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        // equity=80, no facing, blocker → 80 * 0.25 * 0.5 = 10.0
+        var penalty = _service.CalculateDangerPenalty(80, flushBoard, heroBlocksDangerSuit: true, isFacingBet: false);
+        Assert.That(penalty, Is.EqualTo(10.0));
+    }
+
+    [Test]
+    public void CalculateDangerPenalty_FlushCompleted_FacingBet_Multiplica()
+    {
+        var flushBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        // equity=80, facing bet, no blocker → 80 * 0.25 * 1.4 = 28.0
+        var penalty = _service.CalculateDangerPenalty(80, flushBoard, heroBlocksDangerSuit: false, isFacingBet: true);
+        Assert.That(penalty, Is.EqualTo(28.0));
+    }
+
+    [Test]
+    public void CalculateDangerPenalty_MultipleDangers_DeberiaAcumular()
+    {
+        var dangerBoard = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: true,
+            BoardPaired: true, OvercardAppeared: true, CompletedFlushSuit: 1, DangerLevel: 10);
+
+        // equity=80, no facing, no blocker
+        // flush: 80*0.25=20, straight: 80*0.18=14.4, paired: 5, overcard: 3 → total = 42.4
+        var penalty = _service.CalculateDangerPenalty(80, dangerBoard, heroBlocksDangerSuit: false, isFacingBet: false);
+        Assert.That(penalty, Is.EqualTo(42.4));
     }
 
     private static StrategyProfile CreateDefaultProfile()
