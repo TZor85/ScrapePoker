@@ -141,6 +141,8 @@ namespace OpenScrape.App
         private readonly GameLoggerService _gameLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
+        private readonly PostflopDecisionService _postflopDecisionService;
+        private bool _previousStreetWasBet;
         #endregion
 
         /// <summary>
@@ -154,7 +156,8 @@ namespace OpenScrape.App
                         BetSizingService betSizingService,
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
-                        StrategyProfileService strategyProfileService)
+                        StrategyProfileService strategyProfileService,
+                        PostflopDecisionService postflopDecisionService)
         {
             InitializeComponent();
 
@@ -180,6 +183,7 @@ namespace OpenScrape.App
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
+            _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -654,140 +658,16 @@ namespace OpenScrape.App
         #region [Generic Postflop Action]
 
         /// <summary>
-        /// Método genérico que reemplaza los 20 handlers de Turn/River.
-        /// Usa los thresholds configurados en StrategyProfile para determinar la acción.
+        /// Convierte BetSize local a BetSizeCategory del servicio de decisión.
         /// </summary>
-        private void DeterminePostflopAction(
-            double equity,
-            BoardPosition street,
-            HandSituation situation,
-            string boardTexture,
-            bool isInPosition,
-            BetSize betSize)
+        private static BetSizeCategory ToBetSizeCategory(BetSize betSize) => betSize switch
         {
-            var thresholds = _strategyProfileService.GetThresholds(street, situation);
-
-            // Modo simplificado (RaiseOverLimper): IP/OOP con bets fijos
-            if (thresholds.IsSimplified)
-            {
-                DetermineSimplifiedAction(equity, thresholds, isInPosition);
-                return;
-            }
-
-            // Acción para equity baja
-            if (equity < thresholds.FoldBelow)
-            {
-                if (thresholds.CanBluff && ShouldBluff(thresholds, isInPosition, boardTexture, betSize, street))
-                {
-                    _responseAction.Action = thresholds.BluffBetSize + " (Bluff)";
-                }
-                else
-                {
-                    var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
-                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
-                }
-                return;
-            }
-
-            // Determinar bet base por textura de board
-            var baseBet = boardTexture switch
-            {
-                "Dry" => thresholds.DryBoardBetSize,
-                "Coordinated" => thresholds.CoordinatedBoardBetSize,
-                "Paired" => thresholds.PairedBoardBetSize,
-                _ => thresholds.DryBoardBetSize
-            };
-
-            // Ajustar por apuesta grande del oponente
-            if (thresholds.ReduceSizeForLargeBet && betSize == BetSize.Large)
-                baseBet = ReduceBetSize(baseBet);
-
-            // Ajustar por OOP
-            if (thresholds.ReduceSizeForOOP && !isInPosition)
-                baseBet = ReduceBetSize(baseBet);
-
-            // Determinar acción por tier de equity
-            if (equity > thresholds.StrongValueAbove)
-            {
-                _responseAction.Action = thresholds.StrongValueBetSize + " (Value)";
-            }
-            else if (equity > thresholds.ValueAbove)
-            {
-                _responseAction.Action = thresholds.ValueBetSize + " (Value)";
-            }
-            else if (equity > thresholds.ThinValueAbove)
-            {
-                if (!thresholds.ThinValueIPOnly || isInPosition)
-                {
-                    _responseAction.Action = thresholds.ThinValueBetSize + " (Thin Value)";
-                }
-                else
-                {
-                    var fallback = thresholds.ThinValueOOPFallback == "CheckCall" ? "Call" : "Fold";
-                    _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
-                }
-            }
-            else
-            {
-                var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
-                _responseAction.Action = betSize == BetSize.NoBet ? "Check" : fallback;
-            }
-        }
-
-        /// <summary>
-        /// Determina si se debe ejecutar un bluff según las condiciones configuradas.
-        /// </summary>
-        private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BetSize betSize, BoardPosition street)
-        {
-            var bluffFreq = _strategyProfileService.GetBluffFrequency(street) * thresholds.BluffFrequencyMultiplier;
-
-            return thresholds.BluffCondition switch
-            {
-                "Always" => Random.Shared.NextDouble() < bluffFreq,
-                "OOPOnly" => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
-                "IPCoordinatedSmallOnly" => isInPosition && boardTexture == "Coordinated" && betSize == BetSize.Small && Random.Shared.NextDouble() < bluffFreq,
-                _ => false
-            };
-        }
-
-        /// <summary>
-        /// Lógica simplificada para RaiseOverLimper (sin board texture, split IP/OOP).
-        /// </summary>
-        private void DetermineSimplifiedAction(double equity, StreetThresholds thresholds, bool isInPosition)
-        {
-            if (isInPosition)
-            {
-                if (equity > thresholds.StrongValueAbove)
-                    _responseAction.Action = thresholds.SimplifiedIPStrongBet;
-                else if (equity > thresholds.ThinValueAbove)
-                    _responseAction.Action = thresholds.SimplifiedIPThinBet;
-                else
-                    _responseAction.Action = "Check (Fold)";
-            }
-            else
-            {
-                if (equity > thresholds.StrongValueAbove)
-                    _responseAction.Action = thresholds.SimplifiedOOPStrongBet;
-                else if (equity > thresholds.ValueAbove)
-                    _responseAction.Action = thresholds.SimplifiedOOPValueBet;
-                else if (equity > thresholds.ThinValueAbove)
-                    _responseAction.Action = thresholds.SimplifiedOOPThinBet;
-                else
-                    _responseAction.Action = "Check (Fold)";
-            }
-        }
-
-        /// <summary>
-        /// Reduce el tamaño de apuesta un nivel en la escala: Pot → 3/4 → 2/3 → 1/2 → 1/3.
-        /// </summary>
-        private static string ReduceBetSize(string bet)
-        {
-            return bet
-                .Replace("Pot", "3/4")
-                .Replace("3/4", "2/3")
-                .Replace("2/3", "1/2")
-                .Replace("1/2", "1/3");
-        }
+            BetSize.NoBet => BetSizeCategory.NoBet,
+            BetSize.Small => BetSizeCategory.Small,
+            BetSize.Medium => BetSizeCategory.Medium,
+            BetSize.Large => BetSizeCategory.Large,
+            _ => BetSizeCategory.NoBet
+        };
 
         #endregion
 
@@ -1195,8 +1075,18 @@ namespace OpenScrape.App
             var potSize = _playerGameState.PotSize;
             var betSize = GetOpponentBetSize(maxBet, potSize);
             var texture = _riverBoardTexture.ToString();
+            bool villainAggro = maxBet > 0;
 
-            DeterminePostflopAction(equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition, betSize);
+            var decision = _postflopDecisionService.DetermineAction(
+                equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition,
+                ToBetSizeCategory(betSize),
+                potOdds: _riverResult.PotOddsPercentage,
+                totalOuts: _riverResult.TotalOuts,
+                previousStreetBet: _previousStreetWasBet,
+                villainShowedAggression: villainAggro);
+
+            _responseAction.Action = decision.Action;
+            _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
         }
 
         #region [Handle River Action]
@@ -1849,8 +1739,18 @@ namespace OpenScrape.App
             var potSize = _playerGameState.PotSize;
             var betSize = GetOpponentBetSize(maxBet, potSize);
             var texture = _turnBoardTexture.ToString();
+            bool villainAggro = maxBet > 0;
 
-            DeterminePostflopAction(equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition, betSize);
+            var decision = _postflopDecisionService.DetermineAction(
+                equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition,
+                ToBetSizeCategory(betSize),
+                potOdds: _turnResult.PotOddsPercentage,
+                totalOuts: _turnResult.TotalOuts,
+                previousStreetBet: _previousStreetWasBet,
+                villainShowedAggression: villainAggro);
+
+            _responseAction.Action = decision.Action;
+            _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
         }
 
         #region [Handle Flop Action]
@@ -2454,6 +2354,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
+            _previousStreetWasBet = false;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
 
             // Registrar nueva ronda en el game logger

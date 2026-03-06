@@ -47,7 +47,7 @@ public class PostflopDecisionService
     }
 
     /// <summary>
-    /// Determina la acción postflop basándose en equity, street, situación y contexto.
+    /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión.
     /// </summary>
     public PostflopDecisionResult DetermineAction(
         double equity,
@@ -55,22 +55,122 @@ public class PostflopDecisionService
         HandSituation situation,
         string boardTexture,
         bool isInPosition,
-        BetSizeCategory betSize,
+        BetSizeCategory villainBetSize,
         double potOdds = 0,
         int totalOuts = 0,
-        bool previousStreetBet = false)
+        bool previousStreetBet = false,
+        bool villainShowedAggression = false)
     {
         var thresholds = GetThresholds(street, situation);
+        bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
 
         // Modo simplificado (RaiseOverLimper)
         if (thresholds.IsSimplified)
-            return DetermineSimplifiedAction(equity, thresholds, isInPosition);
+            return DetermineSimplifiedAction(equity, thresholds, isInPosition, isFacingBet);
 
-        // Equity baja
-        if (equity < thresholds.FoldBelow)
-            return HandleLowEquity(equity, thresholds, isInPosition, boardTexture, betSize, street, potOdds, totalOuts);
+        // Ajustar thresholds si estamos facing a bet (necesitamos más equity para continuar)
+        double adjustedFoldBelow = thresholds.FoldBelow;
+        double adjustedThinValueAbove = thresholds.ThinValueAbove;
+        if (isFacingBet)
+        {
+            double facingBetPenalty = villainBetSize switch
+            {
+                BetSizeCategory.Large => 8.0,
+                BetSizeCategory.Medium => 4.0,
+                BetSizeCategory.Small => 1.0,
+                _ => 0
+            };
+            adjustedFoldBelow += facingBetPenalty;
+            adjustedThinValueAbove += facingBetPenalty / 2;
 
-        // Determinar bet base por textura
+            // Villano agresivo postflop → necesitamos aún más equity
+            if (villainShowedAggression)
+            {
+                adjustedFoldBelow += 3.0;
+            }
+        }
+
+        // Equity baja (debajo del threshold ajustado)
+        if (equity < adjustedFoldBelow)
+            return HandleLowEquity(equity, thresholds, isInPosition, boardTexture,
+                villainBetSize, street, potOdds, totalOuts, isFacingBet);
+
+        // --- FACING BET: decidir entre Call y Raise ---
+        if (isFacingBet)
+            return HandleFacingBet(equity, thresholds, isInPosition, villainBetSize,
+                street, potOdds, adjustedThinValueAbove, previousStreetBet);
+
+        // --- NO FACING BET: decidir entre Check y Bet ---
+        return HandleNoBet(equity, thresholds, isInPosition, boardTexture,
+            street, previousStreetBet);
+    }
+
+    /// <summary>
+    /// Cuando el villano apuesta: decidir Fold/Call/Raise.
+    /// </summary>
+    private PostflopDecisionResult HandleFacingBet(
+        double equity,
+        StreetThresholds thresholds,
+        bool isInPosition,
+        BetSizeCategory villainBetSize,
+        BoardPosition street,
+        double potOdds,
+        double adjustedThinValueAbove,
+        bool previousStreetBet)
+    {
+        // Equity muy alta → raise for value
+        if (equity > thresholds.StrongValueAbove)
+        {
+            var raiseSize = villainBetSize == BetSizeCategory.Large
+                ? "Raise Pot"
+                : "Raise 3x";
+            bool isBarrel = previousStreetBet && street == BoardPosition.River;
+            return new PostflopDecisionResult(raiseSize + " (Value)", "Raise for value vs bet", IsBarrel: isBarrel);
+        }
+
+        // Equity buena → call (no raise, el villano ya mostró fuerza)
+        if (equity > thresholds.ValueAbove)
+        {
+            return new PostflopDecisionResult("Call", "Call — equity buena vs bet");
+        }
+
+        // Thin value → call si pot odds favorables, sino depende de posición
+        if (equity > adjustedThinValueAbove)
+        {
+            if (potOdds > 0 && equity >= potOdds)
+                return new PostflopDecisionResult("Call", "Call — pot odds favorables");
+
+            if (isInPosition)
+                return new PostflopDecisionResult("Call", "Call — thin value IP");
+
+            var fallback = thresholds.ThinValueOOPFallback == "CheckCall" ? "Call" : "Fold";
+            return new PostflopDecisionResult(fallback, "Thin value OOP vs bet");
+        }
+
+        // Equity marginal pero pot odds buenos
+        if (potOdds > 0 && equity >= potOdds)
+            return new PostflopDecisionResult("Call", "Call — pot odds favorables");
+
+        // Showdown value en river con bet pequeña
+        if (street == BoardPosition.River && villainBetSize == BetSizeCategory.Small && equity >= thresholds.FoldBelow)
+            return new PostflopDecisionResult("Call", "Call — showdown value vs bet pequeña");
+
+        var lowFallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
+        return new PostflopDecisionResult(lowFallback, "Equity insuficiente vs bet");
+    }
+
+    /// <summary>
+    /// Sin apuesta del villano: decidir Check o Bet.
+    /// </summary>
+    private PostflopDecisionResult HandleNoBet(
+        double equity,
+        StreetThresholds thresholds,
+        bool isInPosition,
+        string boardTexture,
+        BoardPosition street,
+        bool previousStreetBet)
+    {
+        // Determinar bet size base por textura de board
         var baseBet = boardTexture switch
         {
             "Dry" => thresholds.DryBoardBetSize,
@@ -79,73 +179,66 @@ public class PostflopDecisionService
             _ => thresholds.DryBoardBetSize
         };
 
-        // Ajustes de sizing
-        if (thresholds.ReduceSizeForLargeBet && betSize == BetSizeCategory.Large)
-            baseBet = ReduceBetSize(baseBet);
+        // Ajustar por OOP
         if (thresholds.ReduceSizeForOOP && !isInPosition)
             baseBet = ReduceBetSize(baseBet);
 
-        // Determinar acción por tier de equity
+        // Strong value → bet grande
         if (equity > thresholds.StrongValueAbove)
         {
             bool isBarrel = previousStreetBet && street == BoardPosition.River;
             return new PostflopDecisionResult(
                 thresholds.StrongValueBetSize + " (Value)",
-                "Strong value",
+                "Bet — strong value",
                 IsBarrel: isBarrel);
         }
 
+        // Value → bet
         if (equity > thresholds.ValueAbove)
         {
             return new PostflopDecisionResult(
                 thresholds.ValueBetSize + " (Value)",
-                "Value bet");
+                "Bet — value");
         }
 
+        // Thin value → bet solo IP (OOP check para proteger rango)
         if (equity > thresholds.ThinValueAbove)
         {
             if (!thresholds.ThinValueIPOnly || isInPosition)
             {
                 return new PostflopDecisionResult(
                     thresholds.ThinValueBetSize + " (Thin Value)",
-                    "Thin value");
+                    "Bet — thin value");
             }
 
-            var fallback = thresholds.ThinValueOOPFallback == "CheckCall" ? "Call" : "Fold";
-            var action = betSize == BetSizeCategory.NoBet ? "Check" : fallback;
-            return new PostflopDecisionResult(action, "Thin value OOP fallback");
+            // OOP con thin value: check (showdown value, no hinchar pote OOP)
+            return new PostflopDecisionResult("Check", "Check — thin value OOP (showdown)");
         }
 
-        // Equity entre FoldBelow y ThinValueAbove (zona marginal)
-        // Integrar pot odds para calls marginales
-        if (betSize != BetSizeCategory.NoBet && potOdds > 0 && equity >= potOdds)
-        {
-            return new PostflopDecisionResult("Call", "Pot odds favorables");
-        }
+        // Showdown value en river
+        if (street == BoardPosition.River)
+            return new PostflopDecisionResult("Check", "Check — showdown value");
 
-        // Showdown value: en river sin apuesta, check con equity marginal
-        if (street == BoardPosition.River && betSize == BetSizeCategory.NoBet)
-        {
-            return new PostflopDecisionResult("Check", "Showdown value");
-        }
-
-        var defaultFallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
-        var defaultAction = betSize == BetSizeCategory.NoBet ? "Check" : defaultFallback;
-        return new PostflopDecisionResult(defaultAction, "Equity marginal");
+        // Equity marginal sin facing bet → check
+        return new PostflopDecisionResult("Check", "Check — equity marginal");
     }
 
+    /// <summary>
+    /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales, o fold.
+    /// </summary>
     private PostflopDecisionResult HandleLowEquity(
         double equity,
         StreetThresholds thresholds,
         bool isInPosition,
         string boardTexture,
-        BetSizeCategory betSize,
+        BetSizeCategory villainBetSize,
         BoardPosition street,
         double potOdds,
-        int totalOuts)
+        int totalOuts,
+        bool isFacingBet)
     {
-        // Semi-bluff con draws: si tenemos outs y pot odds aceptables
-        if (totalOuts >= 8 && street != BoardPosition.River)
+        // Semi-bluff con draws (solo si NO estamos facing a bet grande — no semi-bluff raise vs pot bet)
+        if (totalOuts >= 8 && street != BoardPosition.River && !isFacingBet)
         {
             return new PostflopDecisionResult(
                 thresholds.BluffBetSize + " (Semi-Bluff)",
@@ -153,8 +246,19 @@ public class PostflopDecisionService
                 IsBluff: true);
         }
 
-        // Bluff puro según condiciones
-        if (thresholds.CanBluff && ShouldBluff(thresholds, isInPosition, boardTexture, betSize, street))
+        // Con draws y facing bet → call si pot odds lo justifican
+        if (totalOuts >= 8 && street != BoardPosition.River && isFacingBet)
+        {
+            // Implied odds: con draws fuertes, aceptamos odds peores
+            double effectiveOdds = potOdds > 0 ? potOdds * 0.75 : 999;
+            double drawEquity = totalOuts * (street == BoardPosition.Turn ? 2.17 : 4.35);
+            if (drawEquity >= effectiveOdds)
+                return new PostflopDecisionResult("Call", $"Call — draw con {totalOuts} outs (implied odds)");
+        }
+
+        // Bluff puro (solo sin facing bet — no bluffear contra una apuesta)
+        if (!isFacingBet && thresholds.CanBluff &&
+            ShouldBluff(thresholds, isInPosition, boardTexture, villainBetSize, street))
         {
             return new PostflopDecisionResult(
                 thresholds.BluffBetSize + " (Bluff)",
@@ -162,15 +266,19 @@ public class PostflopDecisionService
                 IsBluff: true);
         }
 
-        // Pot odds check: si getting good odds, call
-        if (betSize != BetSizeCategory.NoBet && potOdds > 0 && equity >= potOdds * 0.8)
+        // Pot odds marginales (facing bet con equity baja pero odds)
+        if (isFacingBet && potOdds > 0 && equity >= potOdds * 0.8)
         {
-            return new PostflopDecisionResult("Call", "Pot odds marginales");
+            return new PostflopDecisionResult("Call", "Call — pot odds marginales");
         }
 
+        // Sin facing bet → check (no fold sin apuesta)
+        if (!isFacingBet)
+            return new PostflopDecisionResult("Check", "Check — equity baja");
+
+        // Facing bet → fold o call según config
         var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
-        var action = betSize == BetSizeCategory.NoBet ? "Check" : fallback;
-        return new PostflopDecisionResult(action, "Equity baja");
+        return new PostflopDecisionResult(fallback, "Equity baja vs bet");
     }
 
     private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BetSizeCategory betSize, BoardPosition street)
@@ -194,24 +302,38 @@ public class PostflopDecisionService
         _ => 0.0
     };
 
-    private static PostflopDecisionResult DetermineSimplifiedAction(double equity, StreetThresholds thresholds, bool isInPosition)
+    private static PostflopDecisionResult DetermineSimplifiedAction(double equity, StreetThresholds thresholds, bool isInPosition, bool isFacingBet)
     {
         if (isInPosition)
         {
             if (equity > thresholds.StrongValueAbove)
-                return new PostflopDecisionResult(thresholds.SimplifiedIPStrongBet, "Strong value IP");
+                return new PostflopDecisionResult(
+                    isFacingBet ? "Raise 3x (Value)" : thresholds.SimplifiedIPStrongBet,
+                    "Strong value IP");
             if (equity > thresholds.ThinValueAbove)
-                return new PostflopDecisionResult(thresholds.SimplifiedIPThinBet, "Thin value IP");
-            return new PostflopDecisionResult("Check (Fold)", "Equity baja IP");
+                return new PostflopDecisionResult(
+                    isFacingBet ? "Call" : thresholds.SimplifiedIPThinBet,
+                    isFacingBet ? "Call — thin value IP" : "Thin value IP");
+            return new PostflopDecisionResult(
+                isFacingBet ? "Fold" : "Check",
+                "Equity baja IP");
         }
 
         if (equity > thresholds.StrongValueAbove)
-            return new PostflopDecisionResult(thresholds.SimplifiedOOPStrongBet, "Strong value OOP");
+            return new PostflopDecisionResult(
+                isFacingBet ? "Raise 3x (Value)" : thresholds.SimplifiedOOPStrongBet,
+                "Strong value OOP");
         if (equity > thresholds.ValueAbove)
-            return new PostflopDecisionResult(thresholds.SimplifiedOOPValueBet, "Value OOP");
+            return new PostflopDecisionResult(
+                isFacingBet ? "Call" : thresholds.SimplifiedOOPValueBet,
+                isFacingBet ? "Call — value OOP" : "Value OOP");
         if (equity > thresholds.ThinValueAbove)
-            return new PostflopDecisionResult(thresholds.SimplifiedOOPThinBet, "Thin value OOP");
-        return new PostflopDecisionResult("Check (Fold)", "Equity baja OOP");
+            return new PostflopDecisionResult(
+                isFacingBet ? "Call" : thresholds.SimplifiedOOPThinBet,
+                isFacingBet ? "Call — thin value OOP" : "Thin value OOP");
+        return new PostflopDecisionResult(
+            isFacingBet ? "Fold" : "Check",
+            "Equity baja OOP");
     }
 
     private static string ReduceBetSize(string bet)
