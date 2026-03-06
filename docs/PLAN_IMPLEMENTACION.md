@@ -19,10 +19,10 @@
 - `OpenScrape.App.Tests/GameLoopStateMachineTests.cs` (14 tests)
 - `OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
 - `OpenScrape.App.Tests/DecisionIntegrationTests.cs` (8 tests)
-- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (12 tests)
-- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (15 tests)
+- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (19 tests: 12 textura + 7 board change)
+- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests: facing bet, danger cards, blocker, cap)
 
-**Resultado:** 110 tests, todos pasan.
+**Resultado:** 139 tests, todos pasan.
 
 ### 1.2 Game Logger / Historial de partidas
 
@@ -207,31 +207,81 @@ Los 20 metodos son:
 
 > **Estado: COMPLETADA**
 
-**Objetivo:** Extraer la logica de decision postflop a un servicio testeable en DecisionMaker, con logica avanzada.
+**Objetivo:** Extraer la logica de decision postflop a un servicio testeable en DecisionMaker, con logica avanzada de facing bet, cartas peligrosas y posicion.
 
 #### Implementacion realizada
 
 **`PostflopDecisionService`** (`src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`):
-- `DetermineAction(equity, street, situation, boardTexture, isInPosition, betSize, potOdds, totalOuts, previousStreetBet)` — metodo principal con toda la logica.
-- `GetThresholds(BoardPosition, HandSituation)` — acceso a thresholds con fallback conservador.
-- **Semi-bluff**: con 8+ outs (no river), recomienda semi-bluff automaticamente.
+- `DetermineAction(equity, street, situation, boardTexture, isInPosition, villainBetSize, potOdds, totalOuts, previousStreetBet, villainShowedAggression, boardChange, heroBlocksDangerSuit)` — metodo principal.
+- **3 paths de decision:**
+  - `HandleFacingBet()` — Fold/Call/Raise segun equity ajustada y thresholds
+  - `HandleNoBet()` — Check/Bet con sizing por board texture
+  - `HandleLowEquity()` — semi-bluff, implied odds, pot odds marginales
+- **Facing bet adjustments:** penalty por tamaño de bet (Small+1, Medium+4, Large+8) y villain aggression (+3) sobre FoldBelow.
+- **Nunca fold sin facing bet:** siempre Check cuando villainBetSize=NoBet.
+- **Semi-bluff solo sin facing bet**: con facing bet + draws → Call por implied odds.
 - **Pot odds integration**: equity marginal con pot odds favorables → call en vez de fold.
-- **Showdown value**: river sin apuesta con equity marginal → check (no bet innecesario).
+- **Showdown value**: river sin apuesta con equity marginal → check.
 - **Barrel logic**: marca `IsBarrel = true` cuando hay bet continuado en river tras bet en turn.
-- **Bluff conditions**: misma logica configurable que FrmMain (Always/OOPOnly/IPCoordinatedSmallOnly).
-- **Modo simplificado**: RaiseOverLimper con bets fijos IP/OOP.
+- **Modo simplificado**: RaiseOverLimper con bets fijos IP/OOP, distingue facing bet vs no bet.
 
 **`PostflopDecisionResult`** record con: `Action`, `Reason`, `IsBluff`, `IsBarrel`.
 
-**`BetSizeCategory`** enum: `NoBet`, `Small`, `Medium`, `Large` (antes estaba solo en FrmMain).
+**`BetSizeCategory`** enum: `NoBet`, `Small`, `Medium`, `Large`.
+
+#### 2.3.1 Deteccion de cartas peligrosas (Board Change Analysis)
+
+**Problema resuelto:** Monte Carlo calcula equity vs rango RANDOM, pero cuando una carta completa un flush/straight, la equity real baja drasticamente (villano que apuesta en board peligroso tiene rango mucho mas fuerte).
+
+**`BoardChangeResult`** record en `BoardTextureAnalyzer.cs`:
+- `FlushCompleted`, `FlushDrawAppeared`, `StraightCompleted`, `BoardPaired`, `OvercardAppeared`
+- `CompletedFlushSuit` (para detectar blocker effect de hero)
+- `DangerLevel` (0-10, acumulativo)
+
+**`AnalyzeBoardChange(previousRanks, previousSuits, newCardRank, newCardSuit)`** en `BoardTextureAnalyzer`:
+- Compara board anterior con nueva carta para detectar cambios
+- Detecta flush completado (3+ del mismo suit), straight completado (4+ consecutivas), board paired, overcard
+- Wheel check (A-2-3-4-5) para straight detection
+
+**`CalculateDangerPenalty(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet)`** en `PostflopDecisionService`:
+- **Penalizacion porcentual** (proporcional a equity, no flat):
+  - Flush completado: equity × 25% (`DangerFlushCompletePct`)
+  - Straight completado: equity × 18% (`DangerStraightCompletePct`)
+- **Penalizacion flat** para cambios menores:
+  - Board paired: -5, Overcard: -3, Flush draw: -5
+- **Multiplicador facing bet** (`DangerFacingBetMultiplier = 1.4`): villano representa el draw completado
+- **Blocker effect** (`DangerHeroBlocksReduction = 0.5`): hero tiene carta del suit peligroso
+- **Tope para apostar** (`DangerCompletedDrawNoBetCap = 45`): cuando flush/straight completado y hero no lo tiene, equity se topa para evitar value bet en boards donde solo nos pagan manos mejores
+
+**Arrastre de peligro entre streets:**
+- `_lastBoardChange` almacena el BoardChangeResult del turn
+- En river, `CombineBoardChanges()` combina peligro del turn con cambio del river
+- Si turn completo flush, river hereda ese peligro aunque la carta del river sea safe
+
+**Ejemplo validado (AsQc en Qh3h7s-2h-Tc):**
+- Turn 2h: FlushCompleted=True, Penalty=33.0 (94.3×0.25×1.4), EffEquity=61.3 → **Call** (antes: Raise 3x)
+- River Tc: Flush arrastrado, cap aplica, EffEquity=45 → **Check/Thin** (antes: Bet Pot)
+
+**Logging en pestaña Logs:**
+- `LogError()` ahora escribe a `tbResume` (pestaña Logs de UI) ademas de Console
+- Logs detallados `[TURN]`/`[RIVER]` con: Equity, DangerLevel, Penalty, EffEquity, FlushComplete, HeroBlocks, Texture, FacingBet, Situation, Decision, Reason
+
+**Parametros configurables en `StrategyProfile`:**
+- `DangerFlushCompletePct` (25.0), `DangerStraightCompletePct` (18.0)
+- `DangerBoardPairedPenalty` (5.0), `DangerOvercardPenalty` (3.0), `DangerFlushDrawPenalty` (5.0)
+- `DangerFacingBetMultiplier` (1.4), `DangerHeroBlocksReduction` (0.5)
+- `DangerCompletedDrawNoBetCap` (45.0)
 
 **Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`
-- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (15 tests)
+- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests)
 
 **Archivos modificados:**
 - `src/OpenScrape.App/Program.cs` — registrado como Singleton
 - `src/OpenScrape.DecisionMaker/OpenScrape.DecisionMaker.csproj` — agregado `Microsoft.Extensions.Options`
+- `src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs` — BoardChangeResult + AnalyzeBoardChange()
+- `src/OpenScrape.Domain/Entities/StrategyProfile.cs` — parametros Danger*
+- `src/OpenScrape.App/Forms/FrmMain.cs` — inyeccion BoardTextureAnalyzer, AnalyzeBoardChange(), CombineBoardChanges(), logging a tbResume
 
 ---
 
@@ -258,15 +308,21 @@ Los 20 metodos son:
   |  Servicio dedicado en DecisionMaker
   |  Wetness score (0-100) + 5 categorias
   |  Flags: monotone, two-tone, rainbow, connected, broadway, low board
-  |  SimplifiedTexture retrocompatible
-  |  12 tests unitarios
+  |  BoardChangeResult: flush/straight/paired/overcard detection
+  |  AnalyzeBoardChange(): compara board previo con nueva carta
+  |  19 tests unitarios
   |
   v
 2.3 PostflopDecisionService ✅ COMPLETADA
-     Extraido de FrmMain a servicio testeable en DecisionMaker
-     Semi-bluff con outs, pot odds integration, showdown value
-     Barrel logic, bluff conditions configurables
-     15 tests unitarios
+     3 paths: HandleFacingBet / HandleNoBet / HandleLowEquity
+     Facing bet adjustments: penalty por tamaño + villain aggression
+     Danger card penalty: porcentual (flush -25%, straight -18%) + facingBet ×1.4
+     Blocker effect: hero con suit peligroso reduce penalty ×0.5
+     NoBet cap: equity topada a 45 en boards con draw completado sin tenerlo
+     Arrastre de peligro turn→river via CombineBoardChanges()
+     Logging a pestaña Logs (tbResume) con Equity/Penalty/EffEquity/Decision
+     Semi-bluff con outs, pot odds, showdown value, barrel logic
+     32 tests unitarios
 ```
 
 ### Verificacion Fase 2
@@ -275,9 +331,9 @@ Los 20 metodos son:
 |------|----------------------|--------|
 | 2.0 | `dotnet test` pasa, heroStack > 0 en logs, board texture correcta | ✅ |
 | 2.1 | Todos los thresholds cargados desde JSON, inyectados en UnifiedPokerCalculator y BetSizingService | ✅ |
-| 2.2 | BoardTextureAnalyzer detecta monotone/connected/paired correctamente | ✅ |
-| 2.3 | PostflopDecisionService con barrel logic, pot odds y showdown value | ✅ |
-| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 110 tests |
+| 2.2 | BoardTextureAnalyzer: textura + board change (flush/straight/paired/overcard) | ✅ |
+| 2.3 | PostflopDecisionService: facing bet, danger cards, blocker, cap, logging | ✅ |
+| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 139 tests |
 
 ### Riesgos y mitigacion
 
@@ -496,7 +552,7 @@ Fase 5 (opcional, en cualquier momento)
 | 2.1 | StrategyProfile cargado desde JSON, inyectado en UnifiedPokerCalculator y BetSizingService, 20 handlers → 1 generico | ✅ |
 | 2.2 | BoardTextureAnalyzer: wetness score, 5 categorias, flags detallados, retrocompatible | ✅ |
 | 2.3 | PostflopDecisionService: semi-bluff, pot odds, showdown value, barrel logic | ✅ |
-| Final Fase 2 | `dotnet build` sin errores, `dotnet test` → 110 tests pasan | ✅ |
+| Final Fase 2 | `dotnet build` sin errores, `dotnet test` → 139 tests pasan | ✅ |
 | 3.1 | Bot ejecuta acciones automaticamente en mesa de prueba | Pendiente |
 | 3.2 | Validacion pre-accion detecta cambios de estado | Pendiente |
 | 4.1 | Dashboard muestra BB/100, equity vs outcome, timeline | Pendiente |
