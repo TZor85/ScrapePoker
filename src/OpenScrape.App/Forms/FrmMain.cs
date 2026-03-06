@@ -655,7 +655,7 @@ namespace OpenScrape.App
             // Default check/fold for low equity (increased threshold for less aggression)
             if (equity < 45)
             {
-                if (inPosition && _turnBoardTexture == TurnBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                if (inPosition && _turnBoardTexture == TurnBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Semibluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -802,7 +802,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -831,7 +831,7 @@ namespace OpenScrape.App
                 _responseAction.Action = inPosition ? baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -848,7 +848,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.01)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency * 0.5)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
@@ -888,7 +888,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -914,7 +914,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet + " (Thin Value)";
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -965,7 +965,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -994,7 +994,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)";
             else
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1099,7 +1099,7 @@ namespace OpenScrape.App
             // Default check/fold for low equity (higher threshold for river)
             if (equity < 40)
             {
-                if (inPosition && _riverBoardTexture == RiverBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                if (inPosition && _riverBoardTexture == RiverBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Semibluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1246,7 +1246,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1275,7 +1275,7 @@ namespace OpenScrape.App
                 _responseAction.Action = inPosition ? baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1329,7 +1329,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1355,7 +1355,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet + " (Thin Value)";
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1406,7 +1406,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1435,7 +1435,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)";
             else
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1483,8 +1483,9 @@ namespace OpenScrape.App
         /// </summary>
         private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
         {
-            var turnCards = boardCards.Where(b => b.Position == BoardPosition.Turn).ToList();
-            if (turnCards.Count < 1) return TurnBoardTexture.Dry;
+            // Analizar TODAS las cartas comunitarias (flop + turn), no solo la carta del turn
+            var turnCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
+            if (turnCards.Count < 4) return TurnBoardTexture.Dry;
 
             var suits = turnCards.Select(b => b.Suit).ToList();
             var ranks = turnCards.Select(b => b.Force).OrderBy(r => r).ToList();
@@ -1646,7 +1647,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2251,7 +2252,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2305,7 +2306,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2564,7 +2565,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
