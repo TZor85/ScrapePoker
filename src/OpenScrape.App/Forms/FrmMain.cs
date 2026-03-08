@@ -106,6 +106,29 @@ namespace OpenScrape.App
                 return BetSize.Medium;
             return BetSize.Large;
         }
+
+        private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
+        {
+            if (maxBet == 0)
+                return (false, currentSituation);
+
+            bool villainWasPreflopAggressor = _playerGameState.Players
+                .Any(p => p.Active && p.WasPreflopAggressor);
+
+            bool isDonkBet = !villainWasPreflopAggressor;
+
+            if (isDonkBet)
+            {
+                var donkSituation = currentSituation switch
+                {
+                    HandSituation.OpenRaise => HandSituation.DonkBetVsOpenRaise,
+                    _ => HandSituation.DonkBet
+                };
+                return (true, donkSituation);
+            }
+
+            return (false, currentSituation);
+        }
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -671,6 +694,30 @@ namespace OpenScrape.App
 
             _responseAction = responseFlop.ResponseAction;
             _playerGameState = responseFlop.PlayerState;
+
+            SetPreflopAggressors();
+        }
+
+        private void SetPreflopAggressors()
+        {
+            var maxBet = _playerGameState.Players.Max(p => p.Bet);
+            if (maxBet <= 1)
+                return;
+
+            var bigBlind = 1m;
+            var playersWhoRaised = _playerGameState.Players
+                .Where(p => p.Active && p.Bet > bigBlind)
+                .ToList();
+
+            foreach (var player in playersWhoRaised)
+            {
+                player.WasPreflopAggressor = true;
+            }
+
+            if (playersWhoRaised.Count > 0)
+            {
+                LogError($"[PREFLOP] Aggressors set: {string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}"))}");
+            }
         }
 
         /// <summary>
@@ -1125,6 +1172,9 @@ namespace OpenScrape.App
             var texture = _riverBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
+
             // Analizar carta peligrosa: comparar turn (4 cartas) con river (5ª carta)
             var riverChange = AnalyzeBoardChange(_playerGameState.BoardCards, 4);
             // Combinar con peligro arrastrado del turn (flush/straight que sigue en board)
@@ -1139,10 +1189,10 @@ namespace OpenScrape.App
                      $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
                      $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
                      $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={_playerGameState.HandSituation}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
 
             var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition,
+                equity, BoardPosition.River, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _riverResult.PotOddsPercentage,
                 totalOuts: _riverResult.TotalOuts,
@@ -1848,6 +1898,9 @@ namespace OpenScrape.App
             var texture = _turnBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
+
             // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
             var boardChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
             bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
@@ -1860,12 +1913,12 @@ namespace OpenScrape.App
                      $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
                      $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
                      $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={_playerGameState.HandSituation}");
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}");
 
             _lastBoardChange = boardChange;
 
             var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition,
+                equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _turnResult.PotOddsPercentage,
                 totalOuts: _turnResult.TotalOuts,
