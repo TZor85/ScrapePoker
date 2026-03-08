@@ -596,13 +596,40 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
         {
-
             SetPotValue();
             _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
             _preflopHeroPosition = GetPreflopHeroPosition();
 
             if (!IsFlop && !IsTurn && !IsRiver)
             {
+                bool hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                    !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+                if (!hasHoleCards)
+                {
+                    int maxRetries = 2;
+                    int retryDelayMs = 200;
+
+                    for (int retry = 0; retry < maxRetries && !hasHoleCards; retry++)
+                    {
+                        if (retry > 0)
+                        {
+                            await Task.Delay(retryDelayMs);
+                        }
+
+                        await ObtainCardsPlayerAsync();
+
+                        hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                       !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+                    }
+
+                    if (!hasHoleCards)
+                    {
+                        LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
+                        return;
+                    }
+                }
+
                 _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
                 await ProcessPreflopAsync();
             }
@@ -617,7 +644,24 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPreflopAsync()
         {
-            // IsPreflop se deriva del state machine (HandDetected o PreflopAction)
+            if (_playerGameState.Position == TablePosition.None)
+            {
+                LogError("Posición del jugador no detectada, saltando procesamiento preflop");
+                return;
+            }
+
+            if (_preflopHeroPosition == null || !_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+            {
+                LogError($"PreflopHeroPosition no tiene datos para posición {_playerGameState.Position}, reconstruyendo...");
+                _preflopHeroPosition = GetPreflopHeroPosition();
+                
+                if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+                {
+                    LogError($"Sigue sin tener datos para posición {_playerGameState.Position}, saltando preflop");
+                    return;
+                }
+            }
+
             var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
             {
                 ResponseAction = _responseAction,
