@@ -48,6 +48,7 @@
             panel9 = new Panel();
             lbTableName = new Label();
             btnCapture = new Button();
+            btnDetectionDebug = new Button();
             panel8 = new Panel();
             lbPot = new Label();
             pbBoard5 = new PictureBox();
@@ -209,6 +210,7 @@
             tbJuego.Controls.Add(panel10);
             tbJuego.Controls.Add(panel9);
             tbJuego.Controls.Add(btnCapture);
+            tbJuego.Controls.Add(btnDetectionDebug);
             tbJuego.Controls.Add(panel8);
             tbJuego.Controls.Add(pbBoard5);
             tbJuego.Controls.Add(pbBoard4);
@@ -320,7 +322,7 @@
             rbTurn.AutoSize = true;
             rbTurn.Location = new Point(7, 44);
             rbTurn.Name = "rbTurn";
-            rbTurn.Size = new Size(49, 19);
+            rbTurn.Size = new Size(50, 19);
             rbTurn.TabIndex = 49;
             rbTurn.TabStop = true;
             rbTurn.Text = "Turn";
@@ -353,7 +355,7 @@
             cbTest.CheckAlign = ContentAlignment.MiddleRight;
             cbTest.Location = new Point(516, 9);
             cbTest.Name = "cbTest";
-            cbTest.Size = new Size(46, 19);
+            cbTest.Size = new Size(47, 19);
             cbTest.TabIndex = 80;
             cbTest.Text = "Test";
             cbTest.UseVisualStyleBackColor = true;
@@ -400,6 +402,16 @@
             btnCapture.Text = "Capture";
             btnCapture.UseVisualStyleBackColor = true;
             btnCapture.Click += btnCapture_Click;
+            // 
+            // btnDetectionDebug
+            // 
+            btnDetectionDebug.Location = new Point(8, 262);
+            btnDetectionDebug.Name = "btnDetectionDebug";
+            btnDetectionDebug.Size = new Size(80, 60);
+            btnDetectionDebug.TabIndex = 78;
+            btnDetectionDebug.Text = "Debug";
+            btnDetectionDebug.UseVisualStyleBackColor = true;
+            btnDetectionDebug.Click += BtnDetectionDebug_Click;
             // 
             // panel8
             // 
@@ -675,7 +687,7 @@
             lbNameHero.AutoSize = true;
             lbNameHero.Location = new Point(1, 5);
             lbNameHero.Name = "lbNameHero";
-            lbNameHero.Size = new Size(31, 15);
+            lbNameHero.Size = new Size(32, 15);
             lbNameHero.TabIndex = 1;
             lbNameHero.Text = "TZor";
             // 
@@ -1497,6 +1509,7 @@
         private Panel panel8;
         private Label lbPot;
         private Button btnCapture;
+        private Button btnDetectionDebug;
         private Panel panel10;
         private Label lbTableHand;
         private Panel panel9;
