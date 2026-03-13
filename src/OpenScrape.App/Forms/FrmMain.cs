@@ -3839,6 +3839,12 @@ namespace OpenScrape.App
         {
             try
             {
+                if (_handle == IntPtr.Zero)
+                {
+                    LogError("GetImageWhilePlaying: _handle es IntPtr.Zero, no se puede capturar");
+                    return;
+                }
+
                 string baseFolder = Path.Combine(
                     "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
                     $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}");
@@ -3853,7 +3859,13 @@ namespace OpenScrape.App
 
                 var path = Path.Combine(_folderPath, $"game_{DateTime.Now.Ticks}.png");
 
-                _useCase.ExecuteImage(path);
+                using var capturedBitmap = _useCase.ExecuteImage(path);
+
+                if (capturedBitmap.Width <= 1 || capturedBitmap.Height <= 1)
+                {
+                    LogError($"GetImageWhilePlaying: Captura inválida ({capturedBitmap.Width}x{capturedBitmap.Height})");
+                    return;
+                }
 
                 using var windowImg = Image.FromFile(path);
 
@@ -3891,8 +3903,10 @@ namespace OpenScrape.App
 
                 if (_handle == IntPtr.Zero)
                 {
+                    // Esperar 2s para que el usuario active la ventana de poker
                     Task.Delay(2000).Wait();
-                    _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+                    IntPtr foregroundHandle = CaptureWindowsHelper.User32.GetForegroundWindow();
+                    _handle = _useCase.GetWindow(foregroundHandle);
 
                     User32.GetWindowRect(_handle, ref windowRect);
                     _locWindowRect = windowRect;
@@ -3972,7 +3986,21 @@ namespace OpenScrape.App
                             return;
                         }
 
+                        if (_handle == IntPtr.Zero)
+                        {
+                            _detectionLoggerService.LogDetectionError("Handle es IntPtr.Zero - no se puede capturar");
+                            Task.Delay(500).Wait();
+                            continue;
+                        }
+
                         using var img = _useCase.Execute(_handle);
+
+                        if (img == null || img.Width <= 1 || img.Height <= 1)
+                        {
+                            _detectionLoggerService.LogDetectionError($"Captura inválida: {img?.Width}x{img?.Height}");
+                            Task.Delay(500).Wait();
+                            continue;
+                        }
 
                         // Validación de regiones
                         var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
