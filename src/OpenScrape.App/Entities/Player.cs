@@ -16,5 +16,6 @@ namespace OpenScrape.App.Entities
         public bool SmallBlind { get; set; }
         public TablePosition Position { get; set; }
         public int ValuePosition { get; set; }
+        public bool WasPreflopAggressor { get; set; } = false;
     }
 }

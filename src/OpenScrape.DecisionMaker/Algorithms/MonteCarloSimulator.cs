@@ -12,13 +12,10 @@ namespace OpenScrape.DecisionMaker.Algorithms
 {
     public class MonteCarloSimulator
     {
-        //private readonly ILogger _logger;
-        private readonly Random _random;
         private readonly int _defaultIterations = 10000;
 
         public MonteCarloSimulator()
         {
-            _random = new Random();
         }
 
         public class EquityResult
@@ -145,7 +142,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
         private CardDataOuts DrawRandomCard(List<CardDataOuts> deck)
         {
-            int index = _random.Next(deck.Count);
+            int index = Random.Shared.Next(deck.Count);
             var card = deck[index];
             deck.RemoveAt(index);
             return card;

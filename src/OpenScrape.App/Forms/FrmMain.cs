@@ -106,6 +106,29 @@ namespace OpenScrape.App
                 return BetSize.Medium;
             return BetSize.Large;
         }
+
+        private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
+        {
+            if (maxBet == 0)
+                return (false, currentSituation);
+
+            bool villainWasPreflopAggressor = _playerGameState.Players
+                .Any(p => p.Active && p.WasPreflopAggressor);
+
+            bool isDonkBet = !villainWasPreflopAggressor;
+
+            if (isDonkBet)
+            {
+                var donkSituation = currentSituation switch
+                {
+                    HandSituation.OpenRaise => HandSituation.DonkBetVsOpenRaise,
+                    _ => HandSituation.DonkBet
+                };
+                return (true, donkSituation);
+            }
+
+            return (false, currentSituation);
+        }
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -139,6 +162,7 @@ namespace OpenScrape.App
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
         private readonly GameLoggerService _gameLoggerService;
+        private readonly DetectionLoggerService _detectionLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
@@ -184,6 +208,7 @@ namespace OpenScrape.App
             _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
             _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
+            _detectionLoggerService = new DetectionLoggerService();
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
@@ -568,6 +593,44 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Abre la ventana de debug de detección de turnos
+        /// </summary>
+        private void BtnDetectionDebug_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Obtener la región uAction
+                var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                
+                if (regionAction == null)
+                {
+                    MessageBox.Show("No se encontró la región 'uAction'. Por favor, carga la configuración de regiones primero.", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (_handle == IntPtr.Zero)
+                {
+                    MessageBox.Show("No hay una ventana de poker seleccionada. Por favor, selecciona la ventana primero.", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Crear y mostrar la ventana de debug
+                var debugForm = new FrmDetectionDebug(_handle, regionAction);
+                debugForm.Show();
+                
+                _detectionLoggerService.LogDetectionError("Ventana de debug de detección abierta");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al abrir la ventana de debug: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _detectionLoggerService.LogDetectionError($"Error al abrir ventana de debug: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// Inicializa los datos de los jugadores
         /// </summary>
         private async Task InitializePlayersAsync()
@@ -596,13 +659,40 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
         {
-
             SetPotValue();
             _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
             _preflopHeroPosition = GetPreflopHeroPosition();
 
             if (!IsFlop && !IsTurn && !IsRiver)
             {
+                bool hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                    !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+                if (!hasHoleCards)
+                {
+                    int maxRetries = 2;
+                    int retryDelayMs = 200;
+
+                    for (int retry = 0; retry < maxRetries && !hasHoleCards; retry++)
+                    {
+                        if (retry > 0)
+                        {
+                            await Task.Delay(retryDelayMs);
+                        }
+
+                        await ObtainCardsPlayerAsync();
+
+                        hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                       !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+                    }
+
+                    if (!hasHoleCards)
+                    {
+                        LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
+                        return;
+                    }
+                }
+
                 _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
                 await ProcessPreflopAsync();
             }
@@ -617,7 +707,24 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPreflopAsync()
         {
-            // IsPreflop se deriva del state machine (HandDetected o PreflopAction)
+            if (_playerGameState.Position == TablePosition.None)
+            {
+                LogError("Posición del jugador no detectada, saltando procesamiento preflop");
+                return;
+            }
+
+            if (_preflopHeroPosition == null || !_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+            {
+                LogError($"PreflopHeroPosition no tiene datos para posición {_playerGameState.Position}, reconstruyendo...");
+                _preflopHeroPosition = GetPreflopHeroPosition();
+                
+                if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+                {
+                    LogError($"Sigue sin tener datos para posición {_playerGameState.Position}, saltando preflop");
+                    return;
+                }
+            }
+
             var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
             {
                 ResponseAction = _responseAction,
@@ -627,6 +734,30 @@ namespace OpenScrape.App
 
             _responseAction = responseFlop.ResponseAction;
             _playerGameState = responseFlop.PlayerState;
+
+            SetPreflopAggressors();
+        }
+
+        private void SetPreflopAggressors()
+        {
+            var maxBet = _playerGameState.Players.Max(p => p.Bet);
+            if (maxBet <= 1)
+                return;
+
+            var bigBlind = 1m;
+            var playersWhoRaised = _playerGameState.Players
+                .Where(p => p.Active && p.Bet > bigBlind)
+                .ToList();
+
+            foreach (var player in playersWhoRaised)
+            {
+                player.WasPreflopAggressor = true;
+            }
+
+            if (playersWhoRaised.Count > 0)
+            {
+                LogError($"[PREFLOP] Aggressors set: {string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}"))}");
+            }
         }
 
         /// <summary>
@@ -1081,6 +1212,9 @@ namespace OpenScrape.App
             var texture = _riverBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
+
             // Analizar carta peligrosa: comparar turn (4 cartas) con river (5ª carta)
             var riverChange = AnalyzeBoardChange(_playerGameState.BoardCards, 4);
             // Combinar con peligro arrastrado del turn (flush/straight que sigue en board)
@@ -1095,10 +1229,10 @@ namespace OpenScrape.App
                      $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
                      $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
                      $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={_playerGameState.HandSituation}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
 
             var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.River, _playerGameState.HandSituation, texture, inPosition,
+                equity, BoardPosition.River, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _riverResult.PotOddsPercentage,
                 totalOuts: _riverResult.TotalOuts,
@@ -1804,6 +1938,9 @@ namespace OpenScrape.App
             var texture = _turnBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
 
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
+
             // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
             var boardChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
             bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
@@ -1816,12 +1953,12 @@ namespace OpenScrape.App
                      $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
                      $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
                      $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={_playerGameState.HandSituation}");
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}");
 
             _lastBoardChange = boardChange;
 
             var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.Turn, _playerGameState.HandSituation, texture, inPosition,
+                equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _turnResult.PotOddsPercentage,
                 totalOuts: _turnResult.TotalOuts,
@@ -3805,70 +3942,252 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento DoWork del BackgroundWorker
+        /// Maneja el evento DoWork del BackgroundWorker con detección mejorada y logging detallado
         /// </summary>
         private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             try
             {
                 _backgroundExecute = true;
+                var detectionStats = new { StartTime = DateTime.Now, TotalChecks = 0, Detections = 0, Errors = 0 };
+                var lastLoggedColor = Color.Empty;
+                var colorChangeCount = 0;
 
                 User32.RECT windowRect = new User32.RECT();
                 User32.GetWindowRect(_handle, ref windowRect);
 
+                _detectionLoggerService.LogDetectionError("BackgroundWorker iniciado - Monitoreo de detección activo");
+
                 while (true)
                 {
-                    // Validación de overlay
-                    if (_frmOverlay == null || !_frmOverlay.Visible)
+                    try
                     {
-                        e.Cancel = true;
-                        return;
-                    }
+                        detectionStats = detectionStats with { TotalChecks = detectionStats.TotalChecks + 1 };
 
-                    using var img = _useCase.Execute(_handle);
-
-                    // Validación de regiones
-                    var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
-                    var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
-
-                    if (regionAction == null || flop == null)
-                    {
-                        Task.Delay(100).Wait();
-                        continue;
-                    }
-
-                    using var bitmap = new Bitmap(img);
-                    Color colorAction = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
-                    Color colorFlop = bitmap.GetPixel(flop.PosX, flop.PosY);
-
-                    this.Invoke((MethodInvoker)delegate
-                    {
-                        // Extracción de condiciones a variables
-                        bool shouldCaptureFlop = colorAction.B == 24 && !_executeCapture && colorFlop.B == 255;
-                        bool shouldCapture = colorAction.B == 24 && !_executeCapture;
-
-                        if (shouldCaptureFlop)
+                        // Validación de overlay
+                        if (_frmOverlay == null || !_frmOverlay.Visible)
                         {
-                            _gameLoopStateMachine.TryTransition(GameState.FlopDetected);
+                            _detectionLoggerService.LogDetectionError("Overlay no visible - Cancelando BackgroundWorker");
+                            e.Cancel = true;
+                            return;
                         }
 
-                        if (shouldCapture)
+                        using var img = _useCase.Execute(_handle);
+
+                        // Validación de regiones
+                        var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                        var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
+
+                        if (regionAction == null || flop == null)
                         {
-                            btnCapture_Click(sender, e);
+                            if (detectionStats.TotalChecks % 100 == 0) // Log cada 100 intentos
+                            {
+                                _detectionLoggerService.LogDetectionError($"Regiones no encontradas - uAction: {regionAction != null}, isFlop: {flop != null}");
+                            }
+                            Task.Delay(100).Wait();
+                            continue;
                         }
 
-                        if (colorAction.B != 24)
-                            _executeCapture = false;
-                    });
+                        using var bitmap = new Bitmap(img);
+                        
+                        // Detección mejorada con múltiples píxeles y tolerancia
+                        var detectionResult = PerformEnhancedDetection(bitmap, regionAction, flop);
+                        
+                        // Log cambios de color significativos
+                        if (!detectionResult.ActionColor.Equals(lastLoggedColor))
+                        {
+                            colorChangeCount++;
+                            if (colorChangeCount % 10 == 0 || Math.Abs(detectionResult.ActionColor.B - lastLoggedColor.B) > 5)
+                            {
+                                _detectionLoggerService.LogColorDetection(
+                                    new Point(regionAction.PosX, regionAction.PosY),
+                                    detectionResult.ActionColor,
+                                    detectionResult.ShouldCapture,
+                                    "uAction"
+                                );
+                                lastLoggedColor = detectionResult.ActionColor;
+                            }
+                        }
 
-                    btnWindow_Click(sender, e);
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            try
+                            {
+                                // Detección de flop mejorada
+                                if (detectionResult.ShouldCaptureFlop)
+                                {
+                                    _gameLoopStateMachine.TryTransition(GameState.FlopDetected);
+                                    _detectionLoggerService.LogTurnDetected(
+                                        new Point(regionAction.PosX, regionAction.PosY),
+                                        detectionResult.ActionColor,
+                                        "FlopDetected"
+                                    );
+                                }
+
+                                // Detección de turno del Hero mejorada
+                                if (detectionResult.ShouldCapture)
+                                {
+                                    detectionStats = detectionStats with { Detections = detectionStats.Detections + 1 };
+                                    
+                                    _detectionLoggerService.LogTurnDetected(
+                                        new Point(regionAction.PosX, regionAction.PosY),
+                                        detectionResult.ActionColor,
+                                        _gameLoopStateMachine.CurrentState.ToString()
+                                    );
+
+                                    // Guardar screenshot de debug si está habilitado
+                                    if (detectionStats.Detections % 5 == 0) // Cada 5 detecciones
+                                    {
+                                        _detectionLoggerService.SaveDebugScreenshot(
+                                            img,
+                                            new Point(regionAction.PosX, regionAction.PosY),
+                                            detectionResult.ActionColor,
+                                            "turn_detected"
+                                        );
+                                    }
+
+                                    btnCapture_Click(sender, e);
+                                }
+
+                                // Reset del flag de ejecución con lógica mejorada
+                                if (!detectionResult.IsActionColorInRange)
+                                    _executeCapture = false;
+                            }
+                            catch (Exception invokeEx)
+                            {
+                                _detectionLoggerService.LogDetectionError($"Error en Invoke delegate: {invokeEx.Message}", invokeEx);
+                            }
+                        });
+
+                        // Log estadísticas periódicas
+                        if (detectionStats.TotalChecks % 1000 == 0)
+                        {
+                            var sessionDuration = DateTime.Now - detectionStats.StartTime;
+                            _detectionLoggerService.LogDetectionStatistics(
+                                detectionStats.TotalChecks,
+                                detectionStats.Detections,
+                                detectionStats.Errors,
+                                sessionDuration
+                            );
+                        }
+
+                        btnWindow_Click(sender, e);
+                        
+                        // Delay adaptativo basado en la actividad
+                        var delay = detectionResult.ShouldCapture ? 200 : 100; // Más lento después de detección
+                        Task.Delay(delay).Wait();
+                    }
+                    catch (Exception loopEx)
+                    {
+                        detectionStats = detectionStats with { Errors = detectionStats.Errors + 1 };
+                        _detectionLoggerService.LogDetectionError($"Error en bucle de detección: {loopEx.Message}", loopEx);
+                        
+                        // Delay más largo en caso de error para evitar spam
+                        Task.Delay(500).Wait();
+                    }
                 }
             }
             catch (Exception ex)
             {
+                _detectionLoggerService.LogDetectionError($"Error crítico en BackgroundWorker1_DoWork: {ex.Message}", ex);
                 LogError($"Error en BackgroundWorker1_DoWork: {ex.Message}", ex);
                 e.Cancel = true;
             }
+        }
+
+        /// <summary>
+        /// Realiza detección mejorada con múltiples píxeles y tolerancia de color
+        /// </summary>
+        private DetectionResult PerformEnhancedDetection(Bitmap bitmap, Domain.ValueObjects.Region regionAction, Domain.ValueObjects.Region flop)
+        {
+            try
+            {
+                // Obtener color principal
+                Color primaryActionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
+                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+
+                // Muestrear píxeles adicionales alrededor del punto principal para mayor robustez
+                var sampleColors = new List<Color> { primaryActionColor };
+                
+                // Muestrear en un patrón de cruz pequeño (±2 píxeles)
+                var offsets = new[] { (-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1) };
+                
+                foreach (var (dx, dy) in offsets)
+                {
+                    var x = regionAction.PosX + dx;
+                    var y = regionAction.PosY + dy;
+                    
+                    if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
+                    {
+                        sampleColors.Add(bitmap.GetPixel(x, y));
+                    }
+                }
+
+                // Análisis de colores con tolerancia
+                var avgB = sampleColors.Average(c => c.B);
+                var avgR = sampleColors.Average(c => c.R);
+                var avgG = sampleColors.Average(c => c.G);
+                
+                // Detección con rango de tolerancia en lugar de valor exacto
+                const int TARGET_B = 24;
+                const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
+                
+                bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
+                bool shouldCapture = isActionColorInRange && !_executeCapture;
+                
+                // Detección de flop mejorada
+                const int FLOP_TARGET_B = 255;
+                const int FLOP_TOLERANCE = 10;
+                bool isFlopVisible = Math.Abs(flopColor.B - FLOP_TARGET_B) <= FLOP_TOLERANCE;
+                bool shouldCaptureFlop = shouldCapture && isFlopVisible;
+
+                return new DetectionResult
+                {
+                    ActionColor = primaryActionColor,
+                    FlopColor = flopColor,
+                    AverageActionB = avgB,
+                    SampleCount = sampleColors.Count,
+                    IsActionColorInRange = isActionColorInRange,
+                    ShouldCapture = shouldCapture,
+                    ShouldCaptureFlop = shouldCaptureFlop,
+                    IsFlopVisible = isFlopVisible
+                };
+            }
+            catch (Exception ex)
+            {
+                _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
+                
+                // Fallback a detección simple
+                Color actionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
+                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+                
+                return new DetectionResult
+                {
+                    ActionColor = actionColor,
+                    FlopColor = flopColor,
+                    AverageActionB = actionColor.B,
+                    SampleCount = 1,
+                    IsActionColorInRange = actionColor.B == 24,
+                    ShouldCapture = actionColor.B == 24 && !_executeCapture,
+                    ShouldCaptureFlop = actionColor.B == 24 && !_executeCapture && flopColor.B == 255,
+                    IsFlopVisible = flopColor.B == 255
+                };
+            }
+        }
+
+        /// <summary>
+        /// Resultado de la detección mejorada
+        /// </summary>
+        private record DetectionResult
+        {
+            public Color ActionColor { get; init; }
+            public Color FlopColor { get; init; }
+            public double AverageActionB { get; init; }
+            public int SampleCount { get; init; }
+            public bool IsActionColorInRange { get; init; }
+            public bool ShouldCapture { get; init; }
+            public bool ShouldCaptureFlop { get; init; }
+            public bool IsFlopVisible { get; init; }
         }
 
         /// <summary>
