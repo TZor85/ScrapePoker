@@ -77,7 +77,7 @@ namespace OpenScrape.App
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
         private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
-        private readonly List<int> _colorPlaying = new() { 33 };
+        private readonly List<int> _colorPlaying = new() { 17 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
@@ -93,6 +93,7 @@ namespace OpenScrape.App
         private long _newTableHand;
         private bool _newHand;
         private string _dealerPosition = "";
+        private int _dealerValuePosition = -1;
         private string _previousDealerPlayerName = "";
         private string _previousSBPlayerName = "";
         private string _previousBBPlayerName = "";
@@ -565,8 +566,10 @@ namespace OpenScrape.App
                         await HandleNewHandAsync();
                 }
 
-                if (_playerGameState.Players.Count() == 0)
+                if (_playerGameState.Players.Count() == 0 || cbTest.Checked)
                 {
+                    SetEmptyPlayer();
+                    SetSitOutPlayer();
                     await InitializePlayersAsync();
                 }
 
@@ -637,13 +640,10 @@ namespace OpenScrape.App
         {
             try
             {
-                await ObtainCardsPlayerAsync();
-                SetEmptyPlayer();
-                SetSitOutPlayer();
-                //SetActivePlayer();
+                // Las cartas y jugadores ya se obtienen antes
                 SetDealerPlayer();
-                //SetBetPlayer();
-                SetVillainPosition(_playerGameState.Position);
+                if (_dealerValuePosition >= 0)
+                    SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
                 SetAliasVillain();
             }
             catch (Exception ex)
@@ -2605,7 +2605,7 @@ namespace OpenScrape.App
 
             var path = Path.Combine(_folderPath, "resume.txt");
             await File.AppendAllTextAsync(path, tbResume.Text + Environment.NewLine);
-            tbResume.Text = string.Empty;
+            // tbResume.Text = string.Empty;
         }
 
         /// <summary>
@@ -2696,7 +2696,7 @@ namespace OpenScrape.App
                 }
             }
 
-            tbResume.Text = sb.ToString();
+            tbResume.AppendText(sb.ToString() + Environment.NewLine);
         }
 
         /// <summary>
@@ -3058,7 +3058,8 @@ namespace OpenScrape.App
 
             SetPotValue();
             await ObtainCardsPlayerAsync();
-            SetDealerPlayer();
+            // SetDealerPlayer se llama desde InitializePlayersAsync después de crear los jugadores
+            // SetDealerPlayer();
 
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
             if (regionTableMap == null)
@@ -3114,6 +3115,10 @@ namespace OpenScrape.App
         /// </summary>
         private void SetDealerPlayer()
         {
+            // Si no hay jugadores, no podemos determinar el dealer
+            if (_playerGameState.Players.Count == 0)
+                return;
+            
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
@@ -3180,9 +3185,24 @@ namespace OpenScrape.App
             LogInformation($"Dealer assigned to player P{playerNumber}");
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
-            _playerGameState.Position = DetermineP0Position(playerNumber, emptyPositions);
+            var p0Pos = DetermineP0Position(playerNumber, emptyPositions);
+            LogInformation($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
+            _playerGameState.Position = p0Pos;
+            
+            // Establecer la posición del jugador P0 (héroe)
+            var heroPlayer = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
+            if (heroPlayer != null)
+            {
+                heroPlayer.Position = p0Pos;
+                LogInformation($"Héroe P0 position establecida: {p0Pos}");
+            }
+            
             _previousDealerPlayerName = _dealerPosition;
             _dealerPosition = player.Name;
+            _dealerValuePosition = playerNumber;
+
+            // Asignar posiciones a villanos usando la posición del dealer
+            SetVillainPosition(p0Pos, playerNumber);
         }
 
         /// <summary>
@@ -3193,36 +3213,15 @@ namespace OpenScrape.App
         /// <returns>Posición de la mesa para P0</returns>
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
-            // Obtener asientos activos (jugadores no vacíos ni sentados fuera)
+            var position = PositionCalculator.DetermineP0Position(dealerPosition, _playerGameState.Players);
+            
             var activeSeats = _playerGameState.Players
                 .Where(p => !p.Empty && !p.SitOut)
                 .Select(p => p.ValuePosition)
                 .OrderBy(s => s)
                 .ToList();
-
-            int dealerSeat = dealerPosition;
-            int heroSeat = 5; // Asumiendo que el héroe está en el asiento 5
-
-            if (!activeSeats.Contains(dealerSeat) || !activeSeats.Contains(heroSeat))
-                return TablePosition.None;
-
-            int dealerIndex = activeSeats.IndexOf(dealerSeat);
-            int heroIndex = activeSeats.IndexOf(heroSeat);
-
-            int distance = (heroIndex - dealerIndex + activeSeats.Count) % activeSeats.Count;
-
-            // Mapear distancia a posición de mesa
-            var position = distance switch
-            {
-                0 => TablePosition.Button,
-                1 => TablePosition.SmallBlind,
-                2 => TablePosition.BigBlind,
-                3 => TablePosition.Early,
-                4 => TablePosition.CutOff,
-                _ => TablePosition.None
-            };
-
-            LogInformation($"Posición del héroe calculada: {position} (distancia: {distance}, dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
+            
+            LogInformation($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
             return position;
         }
 
@@ -3337,12 +3336,12 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece las posiciones de los villanos basado en la posición de P0
+        /// Establece las posiciones de los villanos basado en la posición de P0 y del dealer
         /// </summary>
         /// <param name="p0Position">Posición de P0</param>
-        private void SetVillainPosition(TablePosition p0Position)
+        /// <param name="dealerPosition">Posición del dealer</param>
+        private void SetVillainPosition(TablePosition p0Position, int dealerPosition)
         {
-            // Obtener copia de jugadores y filtrar activos (no vacíos ni sitout)
             var allPlayers = _playerGameState.Players.ToList();
             if (allPlayers == null || allPlayers.Count == 0)
                 return;
@@ -3355,72 +3354,30 @@ namespace OpenScrape.App
             if (!activePlayers.Any())
                 return;
 
-            // Orden base de posiciones según la posición de P0 (héroe) para mesa 6-max
-            var positionsOrder = p0Position switch
-            {
-                TablePosition.BigBlind => new List<TablePosition>
-                {
-                    TablePosition.SmallBlind, TablePosition.Button, TablePosition.CutOff,
-                    TablePosition.Middle, TablePosition.Early
-                },
-                TablePosition.SmallBlind => new List<TablePosition>
-                {
-                    TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
-                    TablePosition.CutOff, TablePosition.Button
-                },
-                TablePosition.Button => new List<TablePosition>
-                {
-                    TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
-                    TablePosition.Middle, TablePosition.CutOff
-                },
-                TablePosition.CutOff => new List<TablePosition>
-                {
-                    TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
-                    TablePosition.Early, TablePosition.Middle
-                },
-                TablePosition.Middle => new List<TablePosition>
-                {
-                    TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
-                    TablePosition.BigBlind, TablePosition.Early
-                },
-                TablePosition.Early => new List<TablePosition>
-                {
-                    TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
-                    TablePosition.SmallBlind, TablePosition.BigBlind
-                },
-                _ => new List<TablePosition>()
-            };
+            LogInformation($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {p0Position}, Dealer: {dealerPosition}");
 
-            if (activePlayers.Count() == 4)
-                positionsOrder.Remove(TablePosition.Middle);
-
-            if (activePlayers.Count() == 3)
-            {
-                positionsOrder.Remove(TablePosition.Middle);
-                positionsOrder.Remove(TablePosition.Early);
-            }
-
-            if (activePlayers.Count() == 2)
-            {
-                positionsOrder.Remove(TablePosition.Middle);
-                positionsOrder.Remove(TablePosition.Early);
-                positionsOrder.Remove(TablePosition.CutOff);
-            }
-
-            // Limpiar posiciones previas de jugadores activos
-            foreach (var p in activePlayers)
+            // Limpiar posiciones previas de jugadores activos (excepto héroe P0)
+            foreach (var p in activePlayers.Where(p => p.ValuePosition != 0))
             {
                 p.Position = TablePosition.None;
             }
 
-            SetVillainPositionExtension(activePlayers, positionsOrder);
+            // Usar PositionCalculator para asignar posiciones a villanos (basado en posición del héroe)
+            var villainPositions = PositionCalculator.AssignVillainPositions(p0Position, allPlayers);
 
-            // Validar asignaciones de posiciones
-            ValidatePositionAssignments(activePlayers);
+            foreach (var kvp in villainPositions)
+            {
+                var player = activePlayers.FirstOrDefault(p => p.ValuePosition == kvp.Key);
+                if (player != null)
+                {
+                    player.Position = kvp.Value;
+                }
+            }
 
-            // Logging de posiciones asignadas
             var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
             LogInformation($"Posiciones asignadas: {positionLog}");
+
+            ValidatePositionAssignments(activePlayers);
         }
 
         /// <summary>
@@ -3444,8 +3401,10 @@ namespace OpenScrape.App
                     if (player == null)
                         continue;
 
-                    // Elegibles solamente jugadores activos
-                    bool shouldAssignPosition = !player.Empty && !player.SitOut && player.Position == TablePosition.None;
+                    // Elegibles solamente jugadores activos (excluir héroe P0)
+                    bool shouldAssignPosition = !player.Empty && !player.SitOut && 
+                                               player.Position == TablePosition.None &&
+                                               player.ValuePosition != 0; // Excluir héroe
                     if (!shouldAssignPosition)
                         continue;
 
@@ -4910,8 +4869,16 @@ namespace OpenScrape.App
         /// <param name="message"></param>
         private void LogInformation(string message)
         {
-            // Example implementation: Log to the console or a file
-            Console.WriteLine($"Info: {message}");
+            var logLine = $"[{DateTime.Now:HH:mm:ss}] {message}";
+            Console.WriteLine(logLine);
+
+            if (tbResume != null && !tbResume.IsDisposed)
+            {
+                if (tbResume.InvokeRequired)
+                    tbResume.Invoke(() => AppendLog(logLine));
+                else
+                    AppendLog(logLine);
+            }
         }
 
         #endregion
