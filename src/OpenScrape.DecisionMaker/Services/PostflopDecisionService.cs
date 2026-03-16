@@ -35,6 +35,12 @@ public class PostflopDecisionService
     // Margen para pot odds marginales (80% de las pot odds requeridas)
     private const double MarginalPotOddsFactor = 0.80;
 
+    // Multi-way: penalización por oponente adicional (más de 1)
+    private const double MultiwayFoldBelowPerOpponent = 4.0;
+    private const double MultiwayThinValuePerOpponent = 3.0;
+    // Multi-way: no bluffear con 3+ oponentes
+    private const int MaxOpponentsForBluff = 2;
+
     public PostflopDecisionService(IOptions<StrategyProfile> profileOptions)
     {
         _profile = profileOptions.Value;
@@ -170,10 +176,12 @@ public class PostflopDecisionService
         bool heroBlocksDangerSuit = false,
         decimal heroStack = 0,
         decimal potSize = 0,
-        bool hasFlushDraw = false)
+        bool hasFlushDraw = false,
+        int numOpponents = 1)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
+        bool isMultiway = numOpponents >= 2;
 
         // Calcular implied odds factor
         double impliedOddsFactor = CalculateImpliedOddsFactor(
@@ -219,10 +227,18 @@ public class PostflopDecisionService
             }
         }
 
+        // Multi-way: necesitamos más equity con más oponentes activos
+        if (isMultiway)
+        {
+            int extraOpponents = numOpponents - 1;
+            adjustedFoldBelow += extraOpponents * MultiwayFoldBelowPerOpponent;
+            adjustedThinValueAbove += extraOpponents * MultiwayThinValuePerOpponent;
+        }
+
         // Equity baja (debajo del threshold ajustado)
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
-                villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor);
+                villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway);
 
         // --- FACING BET: decidir entre Call y Raise ---
         if (isFacingBet)
@@ -372,10 +388,11 @@ public class PostflopDecisionService
         double potOdds,
         int totalOuts,
         bool isFacingBet,
-        double impliedOddsFactor)
+        double impliedOddsFactor,
+        bool isMultiway = false)
     {
-        // Semi-bluff con draws (solo si NO estamos facing a bet grande — no semi-bluff raise vs pot bet)
-        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet)
+        // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
+        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
         {
             return new PostflopDecisionResult(
                 thresholds.BluffBetSize + " (Semi-Bluff)",
@@ -393,8 +410,8 @@ public class PostflopDecisionService
                     $"Call — draw con {totalOuts} outs (implied odds, SPR factor={impliedOddsFactor:F2})");
         }
 
-        // Bluff puro (solo sin facing bet — no bluffear contra una apuesta)
-        if (!isFacingBet && thresholds.CanBluff &&
+        // Bluff puro (solo sin facing bet, no multiway — no bluffear contra una apuesta ni multiway)
+        if (!isFacingBet && !isMultiway && thresholds.CanBluff &&
             ShouldBluff(thresholds, isInPosition, boardTexture, villainBetSize, street))
         {
             return new PostflopDecisionResult(

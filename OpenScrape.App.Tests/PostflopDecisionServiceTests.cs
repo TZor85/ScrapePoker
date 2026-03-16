@@ -654,4 +654,83 @@ public class PostflopDecisionServiceTests
             }
         };
     }
+
+    // ─── Tests Multi-way ─────────────────────────────────────────────
+
+    [Test]
+    public void Multiway_FoldBelow_SubeConMasOponentes()
+    {
+        // Equity 48, FoldBelow base = 40. Con 1 oponente → no fold. Con 3 oponentes → +8 → fold.
+        var result1 = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 1);
+
+        var result3 = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        // Con 1 oponente, equity 48 > FoldBelow 40 → bet/check
+        Assert.That(result1.Action, Does.Not.Contain("Fold"));
+        // Con 3 oponentes, FoldBelow = 40 + 2*4 = 48 → equity justo en el límite
+        Assert.That(result3.Action, Does.Contain("Check").Or.Contains("Fold"));
+    }
+
+    [Test]
+    public void Multiway_NoBluffConMultiplesOponentes()
+    {
+        // Con 3 oponentes, no debería bluffear
+        var result = _service.DetermineAction(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        Assert.That(result.IsBluff, Is.False);
+    }
+
+    [Test]
+    public void Multiway_NoSemiBluffConMultiplesOponentes()
+    {
+        // Equity baja con draws + multiway → no semi-bluff (sin facing bet)
+        var result = _service.DetermineAction(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 9, numOpponents: 3);
+
+        // Con multiway no debería semi-bluffear
+        Assert.That(result.IsBluff, Is.False);
+    }
+
+    [Test]
+    public void Multiway_HeadsUp_SiPermiteBluff()
+    {
+        // Heads-up con outs → sí puede semi-bluff
+        var result = _service.DetermineAction(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 9, numOpponents: 1);
+
+        Assert.That(result.Action, Does.Contain("Semi-Bluff"));
+    }
+
+    [Test]
+    public void Multiway_FacingBet_NecesitaMasEquity()
+    {
+        // Facing medium bet + 3 oponentes → FoldBelow = 40 + 4(facing) + 2*4(multiway) = 52
+        var resultHU = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            numOpponents: 1);
+
+        var resultMW = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            numOpponents: 3);
+
+        // HU: FoldBelow = 40 + 4 = 44, equity 50 > 44 → call
+        Assert.That(resultHU.Action, Does.Not.Contain("Fold"));
+        // MW: FoldBelow = 40 + 4 + 8 = 52, equity 50 < 52 → fold
+        Assert.That(resultMW.Action, Does.Contain("Fold"));
+    }
 }

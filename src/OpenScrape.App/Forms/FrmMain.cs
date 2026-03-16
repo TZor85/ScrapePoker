@@ -1229,6 +1229,7 @@ namespace OpenScrape.App
                      $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
                      $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
 
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.River, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
@@ -1240,9 +1241,10 @@ namespace OpenScrape.App
                 heroBlocksDangerSuit: heroBlocks,
                 heroStack: _playerGameState.HeroStack,
                 potSize: _playerGameState.PotSize,
-                hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"));
+                hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"),
+                numOpponents: Math.Max(1, numOpponents));
 
-            LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}");
+            LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -1952,6 +1954,7 @@ namespace OpenScrape.App
 
             _lastBoardChange = boardChange;
 
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
@@ -1963,9 +1966,10 @@ namespace OpenScrape.App
                 heroBlocksDangerSuit: heroBlocks,
                 heroStack: _playerGameState.HeroStack,
                 potSize: _playerGameState.PotSize,
-                hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"));
+                hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"),
+                numOpponents: Math.Max(1, numOpponents));
 
-            LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}");
+            LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");

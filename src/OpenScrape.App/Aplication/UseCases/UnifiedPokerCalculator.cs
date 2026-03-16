@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -69,8 +70,8 @@ namespace OpenScrape.App.Aplication.UseCases
                 // 1. Calcular pot odds
                 result.PotOddsPercentage = CalculatePotOddsPercentage(currentPotSize, betToCall);
 
-                // 2. Calcular equity
-                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations);
+                // 2. Calcular equity (con rango del villano si hay situación definida)
+                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations, handSituation);
 
                 // 3. Calcular outs y draws
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
@@ -130,7 +131,7 @@ namespace OpenScrape.App.Aplication.UseCases
         }
 
         private double CalculateEquity(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
-            int numOpponents, int? monteCarloIterations)
+            int numOpponents, int? monteCarloIterations, string? handSituation = null)
         {
             if (communityCards.Count == 0) // Preflop
             {
@@ -138,8 +139,15 @@ namespace OpenScrape.App.Aplication.UseCases
             }
             else // Postflop
             {
+                // Obtener rango del villano según la situación de la mano
+                VillainRange? villainRange = null;
+                if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var situation))
+                {
+                    villainRange = VillainRange.GetForSituation(situation);
+                }
+
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(
-                    playerHand, communityCards, numOpponents, monteCarloIterations);
+                    playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
                 return monteCarloResult.Equity * 100;
             }
         }

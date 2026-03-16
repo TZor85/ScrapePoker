@@ -53,6 +53,7 @@ namespace OpenScrape.App
                     services.AddSingleton<BetSizingService>();
                     services.AddSingleton<BoardTextureAnalyzer>();
                     services.AddSingleton<PostflopDecisionService>();
+                    services.AddSingleton<OpponentTracker>();
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();

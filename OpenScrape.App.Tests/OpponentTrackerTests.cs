@@ -1,0 +1,212 @@
+using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.Entities;
+
+namespace OpenScrape.App.Tests;
+
+[TestFixture]
+public class OpponentTrackerTests
+{
+    private OpponentTracker _tracker;
+
+    [SetUp]
+    public void Setup()
+    {
+        _tracker = new OpponentTracker();
+    }
+
+    [Test]
+    public void GetProfile_NuevoJugador_DeberiaCrearPerfil()
+    {
+        var profile = _tracker.GetProfile("Player1");
+
+        Assert.That(profile, Is.Not.Null);
+        Assert.That(profile.PlayerId, Is.EqualTo("Player1"));
+        Assert.That(profile.HandsPlayed, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void GetProfile_MismoJugador_DeberiaRetornarMismoObjeto()
+    {
+        var profile1 = _tracker.GetProfile("Player1");
+        profile1.HandsPlayed = 5;
+        var profile2 = _tracker.GetProfile("Player1");
+
+        Assert.That(profile2.HandsPlayed, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void GetProfile_CaseInsensitive()
+    {
+        _tracker.RecordHandPlayed("player1");
+        var profile = _tracker.GetProfile("PLAYER1");
+
+        Assert.That(profile.HandsPlayed, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RecordVPIP_DeberiaAcumularse()
+    {
+        _tracker.RecordHandPlayed("P1");
+        _tracker.RecordHandPlayed("P1");
+        _tracker.RecordHandPlayed("P1");
+        _tracker.RecordVPIP("P1");
+        _tracker.RecordVPIP("P1");
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.VPIP, Is.EqualTo(2.0 / 3.0 * 100).Within(0.1));
+    }
+
+    [Test]
+    public void AggressionFactor_ConBetsYCalls_DeberiaCalcularCorrectamente()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesPostflopBet = 6;
+        profile.TimesPostflopRaised = 4;
+        profile.TimesPostflopCalled = 5;
+
+        // AF = (6+4) / 5 = 2.0
+        Assert.That(profile.AggressionFactor, Is.EqualTo(2.0));
+    }
+
+    [Test]
+    public void AggressionFactor_SinCalls_DeberiaRetornar3()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesPostflopBet = 5;
+
+        Assert.That(profile.AggressionFactor, Is.EqualTo(3.0));
+    }
+
+    [Test]
+    public void OpponentType_TAG_VPIP20_AF2()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 50;
+        profile.TimesVoluntarilyPutMoneyIn = 10; // VPIP = 20% (tight)
+        profile.TimesPostflopBet = 8;
+        profile.TimesPostflopRaised = 4;
+        profile.TimesPostflopCalled = 5; // AF = 2.4 (aggressive)
+
+        Assert.That(profile.Type, Is.EqualTo(OpponentType.TAG));
+    }
+
+    [Test]
+    public void OpponentType_LP_VPIP50_AF05()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 50;
+        profile.TimesVoluntarilyPutMoneyIn = 25; // VPIP = 50% (loose)
+        profile.TimesPostflopBet = 2;
+        profile.TimesPostflopCalled = 10; // AF = 0.2 (passive)
+
+        Assert.That(profile.Type, Is.EqualTo(OpponentType.LP));
+    }
+
+    [Test]
+    public void OpponentType_Unknown_PocasManos()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 5;
+        profile.TimesVoluntarilyPutMoneyIn = 3;
+
+        Assert.That(profile.Type, Is.EqualTo(OpponentType.Unknown));
+    }
+
+    [Test]
+    public void IsReliable_MenosDe20_NoEsFiable()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 15;
+
+        Assert.That(profile.IsReliable, Is.False);
+    }
+
+    [Test]
+    public void IsReliable_20OMas_EsFiable()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 20;
+
+        Assert.That(profile.IsReliable, Is.True);
+    }
+
+    [Test]
+    public void GetAdjustedFoldEquity_Fish_IncrementaFoldEquity()
+    {
+        var profile = _tracker.GetProfile("Fish");
+        profile.HandsPlayed = 30;
+        profile.TimesVoluntarilyPutMoneyIn = 18; // VPIP = 60% (loose)
+        profile.TimesPostflopBet = 2;
+        profile.TimesPostflopCalled = 10; // AF = 0.2 (passive) → LP
+
+        double adjusted = _tracker.GetAdjustedFoldEquity("Fish", 20.0);
+
+        Assert.That(adjusted, Is.EqualTo(25.0)); // 20 * 1.25
+    }
+
+    [Test]
+    public void GetAdjustedFoldEquity_LAG_ReduceFoldEquity()
+    {
+        var profile = _tracker.GetProfile("LAG");
+        profile.HandsPlayed = 30;
+        profile.TimesVoluntarilyPutMoneyIn = 15; // VPIP = 50% (loose)
+        profile.TimesPostflopBet = 10;
+        profile.TimesPostflopRaised = 5;
+        profile.TimesPostflopCalled = 3; // AF = 5.0 (aggressive) → LAG
+
+        double adjusted = _tracker.GetAdjustedFoldEquity("LAG", 20.0);
+
+        Assert.That(adjusted, Is.EqualTo(14.0)); // 20 * 0.70
+    }
+
+    [Test]
+    public void GetAdjustedFoldEquity_Unknown_NoAjusta()
+    {
+        _tracker.RecordHandPlayed("New");
+
+        double adjusted = _tracker.GetAdjustedFoldEquity("New", 20.0);
+
+        Assert.That(adjusted, Is.EqualTo(20.0));
+    }
+
+    [Test]
+    public void RecordPostflopAction_Bet_DeberiaIncrementar()
+    {
+        _tracker.RecordPostflopAction("P1", PostflopAction.Bet);
+        _tracker.RecordPostflopAction("P1", PostflopAction.Bet);
+        _tracker.RecordPostflopAction("P1", PostflopAction.Call);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesPostflopBet, Is.EqualTo(2));
+        Assert.That(profile.TimesPostflopCalled, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void FoldToCBet_DeberiaCalcularCorrectamente()
+    {
+        _tracker.RecordFacedCBet("P1", folded: true);
+        _tracker.RecordFacedCBet("P1", folded: true);
+        _tracker.RecordFacedCBet("P1", folded: false);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.FoldToCBetPct, Is.EqualTo(2.0 / 3.0 * 100).Within(0.1));
+    }
+
+    [Test]
+    public void Reset_DeberiaLimpiarTodo()
+    {
+        _tracker.RecordHandPlayed("P1");
+        _tracker.RecordHandPlayed("P2");
+
+        _tracker.Reset();
+
+        Assert.That(_tracker.AllProfiles.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void GetProfile_Vacio_DeberiaRetornarPerfilNuevo()
+    {
+        var profile = _tracker.GetProfile("");
+        Assert.That(profile.HandsPlayed, Is.EqualTo(0));
+    }
+}

@@ -13,7 +13,11 @@
       "Read(//tmp/**)",
       "Bash(find /c/Code/Poker/ScrapePoker/src/OpenScrape.DecisionMaker -name \"*.cs\" -type f | xargs ls -la | grep -v \"obj/\")",
       "Bash(dotnet package:*)",
-      "Bash(cd C:/Code/Poker/ScrapePoker && dotnet build OpenScrape.sln 2>&1 | findstr \"CS8\" 2>/dev/null || dotnet build OpenScrape.sln 2>&1 | grep -i \"CS8\")"
+      "Bash(cd C:/Code/Poker/ScrapePoker && dotnet build OpenScrape.sln 2>&1 | findstr \"CS8\" 2>/dev/null || dotnet build OpenScrape.sln 2>&1 | grep -i \"CS8\")",
+      "Bash(wc -l \"C:/Code/Poker/ScrapePoker/src/OpenScrape.App/Data\"/*.json | sort -n)",
+      "Bash(git log:*)",
+      "Bash(find /c/Code/Poker/ScrapePoker -type f -name \"*.md\" | xargs grep -l \"mejora\\\\|improve\\\\|refactor\\\\|analiza\\\\|analysis\" -i 2>/dev/null | head -10)",
+      "Bash(ls -la /c/Code/Poker/ScrapePoker/*.md 2>/dev/null)"
     ]
   }
 }

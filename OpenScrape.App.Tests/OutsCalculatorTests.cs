@@ -241,8 +241,10 @@ public class OutsCalculatorTests
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
         // Necesita 5 para completar A-2-3-4-5 → 4 outs (gutshot)
+        // + Ace es overcard (>K) → 3 outs extra (Ad, Ah, As)
         Assert.That(result.HasGutshotStraightDraw, Is.True);
-        Assert.That(result.TotalOuts, Is.EqualTo(4));
+        Assert.That(result.HasOvercards, Is.True);
+        Assert.That(result.TotalOuts, Is.EqualTo(7));
     }
 
     [Test]
@@ -289,5 +291,103 @@ public class OutsCalculatorTests
         Assert.That(result.HasFlushDraw, Is.False);
         // Ya tiene flush → flush outs = 0
         Assert.That(result.TotalOuts, Is.EqualTo(0));
+    }
+
+    // ─── Tests de Overcards ──────────────────────────────────────────
+
+    [Test]
+    public void CalculateOuts_DosOvercards_Deberia6Outs()
+    {
+        // Hero: AK, Flop: 7-5-2 rainbow (sin draws)
+        // 2 overcards: A y K → 3 outs cada una = 6 outs
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.Five, Suit.Diamonds),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOvercards, Is.True);
+        Assert.That(result.OvercardCount, Is.EqualTo(2));
+        Assert.That(result.TotalOuts, Is.EqualTo(6));
+        Assert.That(result.DrawTypes, Does.Contain("Overcards (2)"));
+    }
+
+    [Test]
+    public void CalculateOuts_UnaOvercard_Deberia3Outs()
+    {
+        // Hero: A2, Flop: K-7-5 (solo Ace es overcard)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Clubs),
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Five, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOvercards, Is.True);
+        Assert.That(result.OvercardCount, Is.EqualTo(1));
+        Assert.That(result.TotalOuts, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void CalculateOuts_SinOvercards_DeberiaNoContarOvercards()
+    {
+        // Hero: 3s 4d, Flop: K-Q-J (ninguna carta de hero es overcard)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Three, Suit.Spades),
+            C(Rank.Four, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Clubs),
+            C(Rank.Queen, Suit.Hearts),
+            C(Rank.Jack, Suit.Diamonds)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOvercards, Is.False);
+        Assert.That(result.OvercardCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void CalculateOuts_OvercardsConFlushDraw_NoSeCuentan()
+    {
+        // Hero: Ah Kh, Flop: 7h 5h 2c → flush draw (9 outs)
+        // Overcards: A y K son overcard, PERO con flush draw principal,
+        // las overcards no se cuentan (el flush draw ya domina).
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts),
+            C(Rank.Two, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.HasOvercards, Is.False);
+        // Solo 9 flush outs, sin overcards extra
+        Assert.That(result.TotalOuts, Is.EqualTo(9));
     }
 }

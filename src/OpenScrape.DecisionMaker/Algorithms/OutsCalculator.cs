@@ -15,6 +15,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public bool HasOpenEndedStraightDraw { get; set; }
             public bool HasGutshotStraightDraw { get; set; }
             public bool HasStraightFlushDraw { get; set; }
+            public bool HasOvercards { get; set; }
+            public int OvercardCount { get; set; }
             public double OutsToEquity { get; set; }
             public List<string> DrawTypes { get; set; } = [];
         }
@@ -51,8 +53,49 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int straightOuts = straightOutCards.Count;
             int overlapOuts = overlapCards.Count;
 
-            // Total = flush + straight - overlap (sin doble conteo)
-            result.TotalOuts = flushOuts + straightOuts - overlapOuts;
+            // 6. Overcards: cartas de hero más altas que todas las del board
+            // Solo se cuentan cuando NO hay flush draw ni OESD (draws principales ya dominan)
+            // y NO tienes ya una mano hecha (flush o straight completados)
+            int overcardOuts = 0;
+            bool hasMainDraw = flushOuts > 0 || straightCompletingRanks.Count >= 2;
+            bool hasMadeHand = HasMadeFlush(allCards) || HasFiveCardStraight(
+                allCards.Select(c => (int)c.Rank).Distinct().ToHashSet());
+            if (communityCards.Count >= 3 && !hasMainDraw && !hasMadeHand)
+            {
+                var boardMaxRank = communityCards.Max(c => (int)c.Rank);
+                var overcards = myCards
+                    .Where(c => (int)c.Rank > boardMaxRank)
+                    .Select(c => c.Rank)
+                    .Distinct()
+                    .ToList();
+
+                if (overcards.Count > 0)
+                {
+                    result.HasOvercards = true;
+                    result.OvercardCount = overcards.Count;
+
+                    foreach (var rank in overcards)
+                    {
+                        // 3 outs por overcard (3 cartas del mismo rank en el deck)
+                        // Descontar las que ya son straight outs (gutshot)
+                        var overcardCards = deck
+                            .Where(c => c.Rank == rank)
+                            .ToList();
+
+                        foreach (var oc in overcardCards)
+                        {
+                            if (!straightOutCards.Contains(oc))
+                                overcardOuts++;
+                        }
+                    }
+
+                    if (overcardOuts > 0)
+                        result.DrawTypes.Add($"Overcards ({result.OvercardCount})");
+                }
+            }
+
+            // Total = flush + straight - overlap + overcards (sin doble conteo)
+            result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts;
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)
@@ -156,6 +199,19 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 return true;
 
             return false;
+        }
+
+        /// <summary>
+        /// Verifica si ya hay flush completo (5+ cartas del mismo palo).
+        /// </summary>
+        private bool HasMadeFlush(List<CardDataOuts> allCards)
+        {
+            var suitCounts = new Dictionary<Suit, int>();
+            foreach (var card in allCards)
+            {
+                suitCounts[card.Suit] = suitCounts.GetValueOrDefault(card.Suit) + 1;
+            }
+            return suitCounts.Values.Any(count => count >= 5);
         }
 
         private List<CardDataOuts> CreateDeck()
