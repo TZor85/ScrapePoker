@@ -133,6 +133,7 @@ namespace OpenScrape.App
         private List<Table>? _dataTables;
         private double _flopBluffFrequency = 0.15;
         private double _turnBluffFrequency = 0.15;
+        private PokerCalculationResult _flopResult;
         private PokerCalculationResult _turnResult;
         private TurnBoardTexture _turnBoardTexture;
         private PokerCalculationResult _riverResult;
@@ -1248,6 +1249,15 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+
+            // Persistir decisión y board en game logger
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.River, equity, _riverResult.PotOddsPercentage, _riverResult.ExpectedValue,
+                _riverResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
+                maxBet, effectiveSituation, inPosition));
+            var riverCardName = _playerGameState.BoardCards
+                .FirstOrDefault(b => b.Position == BoardPosition.River)?.Name;
+            _gameLoggerService.UpdateBoard([], riverCard: riverCardName);
         }
 
         #region [Handle River Action]
@@ -1857,6 +1867,7 @@ namespace OpenScrape.App
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
+            _flopResult = result;
             UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
@@ -1864,7 +1875,20 @@ namespace OpenScrape.App
 
             // Analizar el flop y determinar acción
             DetermineFlopAction();
-            //_responseAction.Action = analysis.RecommendedAction;
+
+            // Persistir flop board y decisión
+            var flopCardNames = _playerGameState.BoardCards
+                .Where(b => b.Position == BoardPosition.Flop)
+                .OrderBy(b => b.Location)
+                .Select(b => b.Name ?? string.Empty)
+                .ToList();
+            _gameLoggerService.UpdateBoard(flopCardNames);
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.Flop, result.EquityPercentage, result.PotOddsPercentage, result.ExpectedValue,
+                result.RecommendedAction, _responseAction.Action ?? "Unknown", _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet), _playerGameState.HandSituation,
+                _playerGameState.IsInPosition));
+            _gameLoggerService.UpdateSituation(_playerGameState.HandSituation);
         }
 
         /// <summary>
@@ -1973,6 +1997,16 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+
+            // Persistir decisión y board en game logger
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.Turn, equity, _turnResult.PotOddsPercentage, _turnResult.ExpectedValue,
+                _turnResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
+                maxBet, effectiveSituation, inPosition));
+            var turnCardName = _playerGameState.BoardCards
+                .FirstOrDefault(b => b.Position == BoardPosition.Turn)?.Name;
+            _gameLoggerService.UpdateBoard([], turnCard: turnCardName);
+            _gameLoggerService.UpdateSituation(effectiveSituation);
         }
 
         #region [Handle Flop Action]
@@ -2575,6 +2609,13 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
+            // Finalizar la ronda anterior antes de empezar una nueva
+            if (_gameLoggerService.HasActiveRound)
+            {
+                _gameLoggerService.EndRound(_playerGameState?.HeroStack ?? 0);
+                await _gameLoggerService.SaveRoundAsync();
+            }
+
             _previousStreetWasBet = false;
             _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
@@ -2591,6 +2632,7 @@ namespace OpenScrape.App
                     _playerGameState?.Position ?? TablePosition.None,
                     _playerGameState?.HeroStack ?? 0,
                     activePlayers);
+                _gameLoggerService.UpdateSessionId(_session);
             }
 
             _folderPath = Path.Combine(

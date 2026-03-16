@@ -28,4 +28,18 @@ public class GameRound
     public decimal PotSizeFinal { get; set; }
     public BoardPosition LastStreetPlayed { get; set; }
     public int NumOpponents { get; set; }
+    public decimal HeroStackEnd { get; set; }
+    public HandResult Result { get; set; } = HandResult.Unknown;
+    public HandSituation Situation { get; set; } = HandSituation.None;
+
+    // Sesión (para agrupar manos de una misma sesión)
+    public string SessionId { get; set; } = string.Empty;
+}
+
+public enum HandResult
+{
+    Unknown,
+    Won,
+    Lost,
+    Push
 }

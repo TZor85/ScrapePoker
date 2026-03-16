@@ -22,7 +22,7 @@
 - `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (19 tests: 12 textura + 7 board change)
 - `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests: facing bet, danger cards, blocker, cap)
 
-**Resultado:** 139 tests, todos pasan.
+**Resultado:** 225 tests, todos pasan (acumulado final incluyendo fases posteriores).
 
 ### 1.2 Game Logger / Historial de partidas
 
@@ -285,6 +285,86 @@ Los 20 metodos son:
 
 ---
 
+### 2.4 Mejoras de Logica de Juego
+
+> **Estado: COMPLETADA**
+
+**Objetivo:** Corregir bugs y mejorar la precision del motor de decision.
+
+#### 2.4.1 Reescritura de OutsCalculator
+
+- [x] Reescrito con inclusion-exclusion: `flush + straight - overlap` (sin doble conteo)
+- [x] `GetStraightCompletingRanks()` — prueba cada rank 2-14 para ver si crea escalera
+- [x] `HasFiveCardStraight()` — detecta escaleras regulares + rueda (A-2-3-4-5)
+- [x] `GetFlushDrawSuit()` — null si ya hay flush (5+), solo retorna suit con exactamente 4 cartas
+- [x] Overcards como outs: solo sin flush draw, OESD ni mano hecha, sin doble conteo con straight outs
+- [x] `HasMadeFlush()` — verifica flush completo para no contar overcards innecesarias
+
+**Tests:** 17 tests (13 base + 4 overcards)
+
+#### 2.4.2 Implied Odds Dinamico
+
+- [x] Reemplaza constante fija 0.75 con calculo SPR-based
+- [x] `CalculateImpliedOddsFactor()` — factor entre 0.5 y 1.0 segun SPR, posicion, street, tipo de draw
+- [x] Interpolacion lineal entre SPR shallow y deep
+- [x] River siempre retorna 1.0 (no hay implied odds en ultima calle)
+- [x] Parametros configurables en `StrategyProfile`: ImpliedOddsSPR*, ImpliedOddsIP*, ImpliedOddsFlush*, ImpliedOddsFlop/Turn*
+- [x] Aplicado en HandleFacingBet, HandleLowEquity
+
+**Tests:** 9 tests nuevos de implied odds
+
+#### 2.4.3 Villain Range Filtering (Monte Carlo)
+
+- [x] `VillainRange` (Domain/ValueObjects): 12 rangos predefinidos por HandSituation
+- [x] `ExpandHandNotation()` — convierte "AKs", "QQ", "JTo" a combos concretos de cartas
+- [x] `GetForSituation()` — retorna rango segun accion preflop (ej: 3Bettor ~8%, Limper ~40%)
+- [x] `MonteCarloSimulator.CalculateEquity()` acepta `VillainRange?` opcional
+- [x] `BuildVillainCombos()` — pre-expande rango filtrando cartas bloqueadas
+- [x] `TryDrawFromRange()` — seleccion ponderada por frecuencia con fallback aleatorio
+- [x] `UnifiedPokerCalculator` pasa handSituation → VillainRange al Monte Carlo
+
+**Tests:** 12 tests (4 MonteCarlo rango + 8 VillainRange)
+
+#### 2.4.4 Opponent Modeling Basico
+
+- [x] `OpponentProfile` (Domain/Entities): VPIP, PFR, 3Bet%, AggressionFactor, CBet%, FoldToCBet%, Type
+- [x] `OpponentType`: TAG, LAG, TP (nit), LP (fish), Unknown
+- [x] `OpponentTracker` (DecisionMaker/Services): acumula stats por sesion, case-insensitive
+- [x] `GetAdjustedFoldEquity()`: LP×1.25, TP×1.10, TAG×0.85, LAG×0.70
+- [x] `IsReliable` >= 20 manos para considerar stats fiables
+- [x] Registrado como Singleton en DI
+
+**Tests:** 18 tests
+
+#### 2.4.5 Multi-way Pot Adjustments
+
+- [x] `numOpponents` parametro en `DetermineAction()`
+- [x] FoldBelow +4 por oponente extra, ThinValueAbove +3 por extra
+- [x] No bluff ni semi-bluff en multiway (>= 2 oponentes)
+- [x] Integrado en `DetermineTurnAction()` y `DetermineRiverAction()` de FrmMain
+- [x] Logging incluye numero de oponentes
+
+**Tests:** 5 tests multiway
+
+**Archivos creados:**
+- `src/OpenScrape.Domain/ValueObjects/VillainRange.cs`
+- `src/OpenScrape.Domain/Entities/OpponentProfile.cs`
+- `src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs`
+- `OpenScrape.App.Tests/OpponentTrackerTests.cs`
+
+**Archivos modificados:**
+- `src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs` — reescritura + overcards
+- `src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs` — VillainRange opcional
+- `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs` — implied odds + multiway
+- `src/OpenScrape.App/Aplication/UseCases/UnifiedPokerCalculator.cs` — pasa VillainRange
+- `src/OpenScrape.Domain/Entities/StrategyProfile.cs` — 10 params ImpliedOdds*
+- `src/OpenScrape.App/Forms/FrmMain.cs` — numOpponents en Turn/River
+- `src/OpenScrape.App/Program.cs` — registro OpponentTracker
+
+**Resultado:** 225 tests, todos pasan.
+
+---
+
 ### Orden de implementacion Fase 2
 
 ```
@@ -333,7 +413,7 @@ Los 20 metodos son:
 | 2.1 | Todos los thresholds cargados desde JSON, inyectados en UnifiedPokerCalculator y BetSizingService | ✅ |
 | 2.2 | BoardTextureAnalyzer: textura + board change (flush/straight/paired/overcard) | ✅ |
 | 2.3 | PostflopDecisionService: facing bet, danger cards, blocker, cap, logging | ✅ |
-| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 139 tests |
+| Final | `dotnet build` sin errores, `dotnet test` todos pasan | ✅ 225 tests |
 
 ### Riesgos y mitigacion
 
@@ -397,31 +477,60 @@ Los 20 metodos son:
 
 ## Fase 4 — Analisis y Optimizacion
 
-> **Estado: PENDIENTE**
+> **Estado: EN PROGRESO (4.1 completada)**
 
-### 4.1 Strategy Analyzer
+### 4.1 Strategy Analyzer + Persistencia de Datos
 
-**Objetivo:** Dashboard con metricas de rendimiento por estrategia.
+> **Estado: COMPLETADA**
 
-**Metricas:**
-- BB/100 manos (winrate principal)
-- Win/loss por accion (fold/call/bet) por street
-- Equity vs Outcome scatter plot (la equity predijo bien?)
-- Funds timeline (evolucion del stack)
-- ROI por posicion (BTN, CO, SB, BB, etc.)
-- Equity realizada vs equity esperada
+**Objetivo:** Servicio de analisis de rendimiento con metricas completas y persistencia de datos de juego.
 
-**Implementacion:**
-- Crear `StrategyAnalyzerService` que consulta `GameRound`s de Marten
-- Agregar metricas por periodo (sesion, dia, semana)
-- Form `FrmAnalytics` con graficos (WinForms chart controls o libreria LiveCharts)
+#### 4.1.1 StrategyAnalyzerService
 
-**Archivos a crear:**
-- `src/OpenScrape.App/Services/StrategyAnalyzerService.cs`
-- `src/OpenScrape.App/Forms/FrmAnalytics.cs`
-- `src/OpenScrape.Features/GameRound/GetGameRoundStats.cs`
+**`StrategyAnalyzerService`** (`src/OpenScrape.DecisionMaker/Services/StrategyAnalyzerService.cs`):
+- `Analyze(List<GameRound>, bigBlind)` — metodo principal de analisis
+- **Metricas generales:** TotalHands, HandsWon/Lost/Push/Unknown, WinRate, TotalProfit, BiggestWin/Loss, BBPer100
+- **Stats por posicion** (`PositionStats`): hands, won, lost, profit, winrate, avgProfitPerHand por cada `TablePosition`
+- **Stats por street** (`StreetStats`): totalDecisions, bets/calls/raises/folds/checks, avgEquity, avgPotOdds por cada `BoardPosition`
+- **Stats por situacion** (`SituationStats`): hands, won, profit, winrate por cada `HandSituation`
+- **Sesiones** (`SessionSummary`): sessionId, startTime, endTime, hands, profit, BBPer100
+- **Equity vs Outcome** (`EquityVsOutcome`): equity predicha, resultado real, profit, accion — para evaluar precision del modelo
+- `CalculateEquityAccuracy()` — agrupa por buckets de 10%, compara winrate real vs equity predicha, accuracy = 100 - promedio diff absoluta
+- `GenerateReport()` — resumen formateado para UI/logs con tablas por posicion, street, situacion y sesiones recientes
 
-**Dependencias:** 1.2 (Game Logger con datos suficientes, minimo ~500 manos).
+#### 4.1.2 Persistencia completa de GameRound
+
+**Campos agregados a `GameRound`:**
+- `HeroStackEnd` — stack al finalizar la mano
+- `Result` (`HandResult` enum: Unknown, Won, Lost, Push) — calculado automaticamente al cerrar la mano
+- `Situation` (`HandSituation`) — situacion preflop detectada
+- `SessionId` — identificador de sesion para agrupacion
+
+**Metodos en `GameLoggerService`:**
+- `EndRound(heroStackEnd)` — calcula HandResult por diferencia de stacks (Won si diff > 0, Lost si diff < 0, Push si diff == 0)
+- `UpdateSituation(HandSituation)` — persiste situacion en GameRound
+- `UpdateSessionId(string)` — persiste session ID
+
+**Integracion en `FrmMain`:**
+- `HandleNewHandAsync()` llama a `EndRound(heroStack)` + `SaveRoundAsync()` antes de iniciar nueva mano
+- `HandleNewHandAsync()` llama a `UpdateSessionId(_session)` al iniciar nueva mano
+- `ProcessFlopAsync` llama a `UpdateBoard(flopCards)` y `LogStreetDecision()`
+- `DetermineTurnAction()` llama a `LogStreetDecision()`, `UpdateBoard(turnCard)`, `UpdateSituation()`
+- `DetermineRiverAction()` llama a `LogStreetDecision()`, `UpdateBoard(riverCard)`
+
+**No se necesitan nuevas regiones de OCR** — todos los datos necesarios (heroStack, position, cartas, acciones, pot) ya se detectan con las regiones existentes del tableMap.
+
+**Archivos creados:**
+- `src/OpenScrape.DecisionMaker/Services/StrategyAnalyzerService.cs`
+- `OpenScrape.App.Tests/StrategyAnalyzerServiceTests.cs` (12 tests)
+
+**Archivos modificados:**
+- `src/OpenScrape.Domain/Entities/GameRound.cs` — HeroStackEnd, Result, Situation, SessionId
+- `src/OpenScrape.App/Services/GameLoggerService.cs` — EndRound(), UpdateSituation(), UpdateSessionId()
+- `src/OpenScrape.App/Forms/FrmMain.cs` — llamadas a persistencia en flujo de juego
+- `src/OpenScrape.App/Program.cs` — registro StrategyAnalyzerService como Singleton
+
+**Pendiente para 4.1:** Form `FrmAnalytics` con graficos (LiveCharts o WinForms chart controls).
 
 ### 4.2 Genetic Algorithm
 
@@ -519,13 +628,16 @@ Fase 2.2 ✅ COMPLETADA (BoardTextureAnalyzer)
 Fase 2.3 ✅ COMPLETADA (PostflopDecisionService)
   |
   v
-Fase 3.1 -> 3.2 (secuencial)
+Fase 2.4 ✅ COMPLETADA (OutsCalculator, VillainRange, OpponentModeling, Multi-way)
   |
   v
-Fase 4.1 (requiere datos de Game Logger)
+Fase 4.1 ✅ COMPLETADA (StrategyAnalyzerService + persistencia)
   |
   v
-Fase 4.2 (requiere 4.1 + 2.1 + datos suficientes)
+Fase 3.1 -> 3.2 (aplazada — automatizacion)
+  |
+  v
+Fase 4.2 (requiere 4.1 + datos suficientes ~2000+ manos)
   |
   v
 Fase 5 (opcional, en cualquier momento)
@@ -535,13 +647,13 @@ Fase 5 (opcional, en cualquier momento)
 
 | Dato | Se detecta | Se persiste | Necesario para |
 |------|-----------|-------------|----------------|
-| Acciones de villanos | Si | No | Opponent modeling |
+| Acciones de villanos | Si | No | Opponent modeling (OpponentTracker en memoria, no persistido) |
 | Stacks de villanos | Si | No | SPR analysis |
 | Posiciones de villanos | Si | No | Position-based stats |
-| Resultado de la mano | No | No | Winrate, fitness |
+| Resultado de la mano | Si | **Si** ✅ | Winrate, fitness (HandResult calculado en EndRound) |
 | Fold rates por villano | No | No | Fold equity dinamica |
 | Bet sizing de villanos | Si (Small/Med/Large) | No | Opponent profiling |
-| Session aggregates | No | No | BB/hour, ROI |
+| Session aggregates | **Si** ✅ | **Si** ✅ | BB/hour, ROI (SessionId en GameRound, SessionSummary en Analyzer) |
 
 ## Verificacion por Fase
 
@@ -552,9 +664,10 @@ Fase 5 (opcional, en cualquier momento)
 | 2.1 | StrategyProfile cargado desde JSON, inyectado en UnifiedPokerCalculator y BetSizingService, 20 handlers → 1 generico | ✅ |
 | 2.2 | BoardTextureAnalyzer: wetness score, 5 categorias, flags detallados, retrocompatible | ✅ |
 | 2.3 | PostflopDecisionService: semi-bluff, pot odds, showdown value, barrel logic | ✅ |
-| Final Fase 2 | `dotnet build` sin errores, `dotnet test` → 139 tests pasan | ✅ |
-| 3.1 | Bot ejecuta acciones automaticamente en mesa de prueba | Pendiente |
-| 3.2 | Validacion pre-accion detecta cambios de estado | Pendiente |
-| 4.1 | Dashboard muestra BB/100, equity vs outcome, timeline | Pendiente |
+| 2.4 | OutsCalculator, VillainRange, OpponentModeling, Multi-way | ✅ |
+| Final Fase 2 | `dotnet build` sin errores, `dotnet test` → 225 tests pasan | ✅ |
+| 4.1 | StrategyAnalyzerService + persistencia completa de GameRound | ✅ |
+| 3.1 | Bot ejecuta acciones automaticamente en mesa de prueba | Aplazada |
+| 3.2 | Validacion pre-accion detecta cambios de estado | Aplazada |
 | 4.2 | Genetic optimizer produce generacion con mejor fitness | Pendiente |
 | 5.1 | Template matching detecta 52 cartas con >95% accuracy | Pendiente |

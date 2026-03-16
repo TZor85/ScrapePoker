@@ -84,6 +84,40 @@ public class GameLoggerService
             _currentRound.PotSizeFinal = potSize;
     }
 
+    public void UpdateSituation(HandSituation situation)
+    {
+        if (_currentRound != null)
+            _currentRound.Situation = situation;
+    }
+
+    public void UpdateSessionId(string sessionId)
+    {
+        if (_currentRound != null)
+            _currentRound.SessionId = sessionId;
+    }
+
+    /// <summary>
+    /// Finaliza la ronda registrando el stack final y calculando el resultado.
+    /// </summary>
+    public void EndRound(decimal heroStackEnd)
+    {
+        if (_currentRound == null) return;
+
+        _currentRound.HeroStackEnd = heroStackEnd;
+
+        decimal diff = heroStackEnd - _currentRound.HeroStackStart;
+        _currentRound.Result = diff switch
+        {
+            > 0 => HandResult.Won,
+            < 0 => HandResult.Lost,
+            _ => HandResult.Push,
+        };
+
+        _logger.LogInformation(
+            "Ronda finalizada: Hand #{HandNumber}, Result={Result}, Diff={Diff:+0.00;-0.00}",
+            _currentRound.HandNumber, _currentRound.Result, diff);
+    }
+
     public async Task SaveRoundAsync()
     {
         if (_currentRound == null)
