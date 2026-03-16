@@ -108,12 +108,13 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_DrawConFacingBet_DeberiaCallImpliedOdds()
     {
-        // Facing bet con draw → call por implied odds (no semi-bluff raise)
-        // potOdds=25 para que el cálculo de implied odds funcione
+        // Facing bet con draw en stacks profundos (SPR=5) → implied odds reducen pot odds requeridas
+        // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 25 * ~0.65 ≈ 16.25 → 19.53 >= 16.25 → Call
         var result = _service.DetermineAction(
             equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            potOdds: 25, totalOuts: 9);
+            potOdds: 25, totalOuts: 9,
+            heroStack: 500, potSize: 100);
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("implied odds").IgnoreCase);
@@ -488,6 +489,127 @@ public class PostflopDecisionServiceTests
         // flush: 80*0.25=20, straight: 80*0.18=14.4, paired: 5, overcard: 3 → total = 42.4
         var penalty = _service.CalculateDangerPenalty(80, dangerBoard, heroBlocksDangerSuit: false, isFacingBet: false);
         Assert.That(penalty, Is.EqualTo(42.4));
+    }
+
+    // ============================================================
+    // Tests de Implied Odds
+    // ============================================================
+
+    [Test]
+    public void CalculateImpliedOddsFactor_SPRDeep_DeberiaReducirFactor()
+    {
+        // SPR = 500/100 = 5.0 (deep) → factor ≈ 0.65 base
+        var factor = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: false, hasFlushDraw: false,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(factor, Is.LessThan(0.75));
+        Assert.That(factor, Is.GreaterThan(0.50));
+    }
+
+    [Test]
+    public void CalculateImpliedOddsFactor_SPRShallow_DeberiaSerCercaA1()
+    {
+        // SPR = 100/100 = 1.0 (shallow) → factor ≈ 0.95
+        var factor = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: false, hasFlushDraw: false,
+            heroStack: 100, potSize: 100);
+
+        Assert.That(factor, Is.GreaterThanOrEqualTo(0.85));
+    }
+
+    [Test]
+    public void CalculateImpliedOddsFactor_River_DeberiaSerExactamente1()
+    {
+        // River: no hay más calles → factor = 1.0 (sin implied odds)
+        var factor = _service.CalculateImpliedOddsFactor(
+            BoardPosition.River, isInPosition: true, hasFlushDraw: true,
+            heroStack: 1000, potSize: 100);
+
+        Assert.That(factor, Is.EqualTo(1.0));
+    }
+
+    [Test]
+    public void CalculateImpliedOddsFactor_SinStacks_DeberiaSerNeutro()
+    {
+        // Sin datos de stack → factor = 1.0 (neutro, no asumimos)
+        var factor = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: true, hasFlushDraw: true,
+            heroStack: 0, potSize: 0);
+
+        Assert.That(factor, Is.EqualTo(1.0));
+    }
+
+    [Test]
+    public void CalculateImpliedOddsFactor_IPConFlushDraw_DeberiaSerMenorQueOOP()
+    {
+        // IP + flush draw debería dar mejor implied odds que OOP sin flush draw
+        var factorIP = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: true, hasFlushDraw: true,
+            heroStack: 500, potSize: 100);
+        var factorOOP = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: false, hasFlushDraw: false,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(factorIP, Is.LessThan(factorOOP));
+    }
+
+    [Test]
+    public void CalculateImpliedOddsFactor_Flop_DeberiaSerMenorQueTurn()
+    {
+        // Flop tiene 2 calles futuras vs Turn con 1 → mejor implied odds en flop
+        var factorFlop = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Flop, isInPosition: false, hasFlushDraw: false,
+            heroStack: 500, potSize: 100);
+        var factorTurn = _service.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, isInPosition: false, hasFlushDraw: false,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(factorFlop, Is.LessThan(factorTurn));
+    }
+
+    [Test]
+    public void DetermineAction_DrawSPRShallow_DeberiaFoldSinImpliedOdds()
+    {
+        // SPR shallow (1.0): implied odds casi neutro (~0.90)
+        // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 30 * 0.90 ≈ 27 → 19.53 < 27 → no draw call
+        // Marginal: equity 20 < potOdds 30 * 0.80 * 0.90 ≈ 21.66 → no marginal → Fold
+        var result = _service.DetermineAction(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false, villainBetSize: BetSizeCategory.Small,
+            potOdds: 30, totalOuts: 9,
+            heroStack: 100, potSize: 100);
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void DetermineAction_DrawSPRDeep_DeberiaCallConImpliedOdds()
+    {
+        // SPR deep (5.0): implied odds ≈ 0.62
+        // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 30 * 0.62 ≈ 18.5 → 19.53 >= 18.5 → Call
+        var result = _service.DetermineAction(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false, villainBetSize: BetSizeCategory.Small,
+            potOdds: 30, totalOuts: 9,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("implied odds").IgnoreCase);
+    }
+
+    [Test]
+    public void DetermineAction_FacingBetMarginalConImpliedOdds_DeberiaCall()
+    {
+        // Equity 38, potOdds 42 → sin implied: 38 < 42 * 0.80 = 33.6 → Call marginal
+        // Con SPR deep: adjustedMarginal = 42 * 0.80 * 0.65 = 21.8 → 38 >= 21.8 → Call
+        var result = _service.DetermineAction(
+            equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
+            potOdds: 42, totalOuts: 0,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
     }
 
     private static StrategyProfile CreateDefaultProfile()

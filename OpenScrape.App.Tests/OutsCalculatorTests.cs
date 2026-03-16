@@ -42,11 +42,8 @@ public class OutsCalculatorTests
     [Test]
     public void CalculateOuts_OpenEndedStraightDraw_DeberiaDetectarOuts()
     {
-        // El algoritmo detecta OESD cuando hay 4 cartas con rango diferencia=4
-        // Hero: 7s 8d, Flop: 9c Th 2c -> ranks sorted: 2,7,8,9,10
-        // 7,8,9,10 => diff=3 -> no activa el OESD del algoritmo
-        // El algoritmo busca gaps: 7,8,10 (diff=3) -> gutshot
-        // Usamos 7,8,9,J (diff=4 entre 7 y J) para activar OESD
+        // Hero: 7s 8d, Flop: 9c Th 2c -> ranks: {2,7,8,9,10}
+        // OESD real: 7-8-9-10 necesita 6 (para 6-7-8-9-10) o J (para 7-8-9-10-J)
         var myCards = new List<CardDataOuts>
         {
             C(Rank.Seven, Suit.Spades),
@@ -55,37 +52,39 @@ public class OutsCalculatorTests
         var communityCards = new List<CardDataOuts>
         {
             C(Rank.Nine, Suit.Clubs),
-            C(Rank.Jack, Suit.Hearts),
+            C(Rank.Ten, Suit.Hearts),
             C(Rank.Two, Suit.Clubs)
         };
 
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
-        // 7,8,9,J tiene diferencia 4 -> OESD: necesita 6 o Q (= 8 cartas)
+        // 2 ranks completan escalera (6 y J) → 8 outs de escalera
         Assert.That(result.HasOpenEndedStraightDraw, Is.True);
-        Assert.That(result.TotalOuts, Is.GreaterThanOrEqualTo(8));
+        Assert.That(result.TotalOuts, Is.EqualTo(8));
     }
 
     [Test]
     public void CalculateOuts_Gutshot_DeberiaDetectar4Outs()
     {
-        // Hero: 8s 9d, Flop: 6c Jh 2s (gutshot: necesita 7 o 10)
+        // Hero: 5s 6d, Flop: 8c 9h 2s -> ranks: {2,5,6,8,9}
+        // Gutshot: necesita 7 para completar 5-6-7-8-9
         var myCards = new List<CardDataOuts>
         {
-            C(Rank.Eight, Suit.Spades),
-            C(Rank.Nine, Suit.Diamonds)
+            C(Rank.Five, Suit.Spades),
+            C(Rank.Six, Suit.Diamonds)
         };
         var communityCards = new List<CardDataOuts>
         {
-            C(Rank.Six, Suit.Clubs),
-            C(Rank.Jack, Suit.Hearts),
+            C(Rank.Eight, Suit.Clubs),
+            C(Rank.Nine, Suit.Hearts),
             C(Rank.Two, Suit.Spades)
         };
 
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
-        Assert.That(result.HasGutshotStraightDraw || result.HasOpenEndedStraightDraw, Is.True);
-        Assert.That(result.TotalOuts, Is.GreaterThanOrEqualTo(4));
+        // 1 rank completa escalera (7) → 4 outs de escalera
+        Assert.That(result.HasGutshotStraightDraw, Is.True);
+        Assert.That(result.TotalOuts, Is.EqualTo(4));
     }
 
     [Test]
@@ -155,5 +154,140 @@ public class OutsCalculatorTests
 
         // cardsToCome = 5 - 4 = 1, equity = outs * 1 * 2
         Assert.That(result.OutsToEquity, Is.EqualTo(result.TotalOuts * 1 * 2.0));
+    }
+
+    [Test]
+    public void CalculateOuts_FlushDrawMasOESD_DeberiaSumarSinDobleConteo()
+    {
+        // Hero: Js Ts, Flop: Qs 9s 3h -> ranks: {3,9,10,11,12}
+        // Flush draw: 4 spades → 9 flush outs
+        // OESD: 9-10-J-Q necesita 8 (para 8-9-10-J-Q) o K (para 9-10-J-Q-K) → 8 straight outs
+        // Overlap: 8s y Ks son flush outs Y straight outs → 2 overlap
+        // Total = 9 + 8 - 2 = 15 outs
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Jack, Suit.Spades),
+            C(Rank.Ten, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Queen, Suit.Spades),
+            C(Rank.Nine, Suit.Spades),
+            C(Rank.Three, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.HasOpenEndedStraightDraw, Is.True);
+        Assert.That(result.HasStraightFlushDraw, Is.True);
+        // 9 flush + 8 straight - 2 overlap = 15
+        Assert.That(result.TotalOuts, Is.EqualTo(15));
+    }
+
+    [Test]
+    public void CalculateOuts_FlushDrawMasGutshot_DeberiaSumarSinDobleConteo()
+    {
+        // Hero: Ah 6h, Flop: 8h 9h 3c -> ranks: {3,6,8,9,14}
+        // Flush draw: 4 hearts → 9 flush outs
+        // Gutshot: necesita 7 para 6-7-8-9-10? No, falta 10. Necesita 7 para 5-6-7-8-9? No 5.
+        // Realmente: {3,6,8,9,14} → add 7 → {3,6,7,8,9,14} → 6-7-8-9-10? No. No straight.
+        // Mejor ejemplo: Hero Ah Th, Flop: 8h 9h 3c → ranks: {3,8,9,10,14}
+        // Gutshot: add J → 8-9-10-J-Q? No Q. Add 7 → 7-8-9-10-J? No J. Add J → no.
+        // Mejor: Hero Jh 7h, Flop: 8h 9h 3c → ranks: {3,7,8,9,11}
+        // Add 10 → {3,7,8,9,10,11} → 7-8-9-10-11 ✓ = straight
+        // Add 6 → {3,6,7,8,9,11} → 6-7-8-9-10? No 10. No straight.
+        // Solo 10 completa → gutshot, 4 outs
+        // Flush: 9 outs, overlap: 10h = 1 carta
+        // Total = 9 + 4 - 1 = 12
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Jack, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Eight, Suit.Hearts),
+            C(Rank.Nine, Suit.Hearts),
+            C(Rank.Three, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.HasGutshotStraightDraw, Is.True);
+        // 9 flush + 4 straight - 1 overlap = 12
+        Assert.That(result.TotalOuts, Is.EqualTo(12));
+    }
+
+    [Test]
+    public void CalculateOuts_Rueda_DeberiaDetectarDraw()
+    {
+        // Hero: Ac 2d, Flop: 3s 4h Kc -> ranks: {2,3,4,13,14}
+        // Rueda draw: A-2-3-4 necesita 5 para A-2-3-4-5
+        // También: add 5 → {2,3,4,5,13,14} → 2-3-4-5-6? No 6. A-2-3-4-5? A=14, yes!
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Clubs),
+            C(Rank.Two, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Three, Suit.Spades),
+            C(Rank.Four, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        // Necesita 5 para completar A-2-3-4-5 → 4 outs (gutshot)
+        Assert.That(result.HasGutshotStraightDraw, Is.True);
+        Assert.That(result.TotalOuts, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void CalculateOuts_YaTieneEscalera_DeberiaSerCeroOutsDeEscalera()
+    {
+        // Hero: 7s 8d, Flop: 9c Th 6h -> ranks: {6,7,8,9,10} = escalera hecha
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Spades),
+            C(Rank.Eight, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Ten, Suit.Hearts),
+            C(Rank.Six, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOpenEndedStraightDraw, Is.False);
+        Assert.That(result.HasGutshotStraightDraw, Is.False);
+        Assert.That(result.TotalOuts, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void CalculateOuts_FlushCompleto_DeberiaSerCeroOutsDeFlush()
+    {
+        // Hero: Ah Kh, Flop: 2h 7h 9h -> 5 hearts = flush hecho
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.Nine, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.False);
+        // Ya tiene flush → flush outs = 0
+        Assert.That(result.TotalOuts, Is.EqualTo(0));
     }
 }

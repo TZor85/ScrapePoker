@@ -35,9 +35,6 @@ public class PostflopDecisionService
     // Margen para pot odds marginales (80% de las pot odds requeridas)
     private const double MarginalPotOddsFactor = 0.80;
 
-    // Factor de descuento de implied odds sobre pot odds
-    private const double ImpliedOddsFactor = 0.75;
-
     public PostflopDecisionService(IOptions<StrategyProfile> profileOptions)
     {
         _profile = profileOptions.Value;
@@ -102,7 +99,61 @@ public class PostflopDecisionService
     }
 
     /// <summary>
-    /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión.
+    /// Calcula el factor de implied odds basado en SPR, posición, street y tipo de draw.
+    /// Retorna un valor entre 0 y 1: menor = mejores implied odds (necesitas menos equity).
+    /// En river no hay implied odds (no hay más calles).
+    /// </summary>
+    public double CalculateImpliedOddsFactor(
+        BoardPosition street,
+        bool isInPosition,
+        bool hasFlushDraw,
+        decimal heroStack = 0,
+        decimal potSize = 0)
+    {
+        // River: no hay implied odds (última calle)
+        if (street == BoardPosition.River)
+            return 1.0;
+
+        // Sin datos de stack/pot: factor neutro
+        if (heroStack <= 0 || potSize <= 0)
+            return 1.0;
+
+        // 1. Factor base por SPR (Stack-to-Pot Ratio)
+        double spr = (double)(heroStack / potSize);
+        double sprFactor;
+        if (spr >= _profile.ImpliedOddsSPRDeepThreshold)
+            sprFactor = _profile.ImpliedOddsSPRDeepFactor;
+        else if (spr <= _profile.ImpliedOddsSPRShallowThreshold)
+            sprFactor = _profile.ImpliedOddsSPRShallowFactor;
+        else
+        {
+            // Interpolación lineal entre shallow y deep
+            double range = _profile.ImpliedOddsSPRDeepThreshold - _profile.ImpliedOddsSPRShallowThreshold;
+            double position = (spr - _profile.ImpliedOddsSPRShallowThreshold) / range;
+            sprFactor = _profile.ImpliedOddsSPRShallowFactor +
+                (position * (_profile.ImpliedOddsSPRDeepFactor - _profile.ImpliedOddsSPRShallowFactor));
+        }
+
+        // 2. Multiplicar por factor de calle (flop tiene 2 calles por extraer, turn solo 1)
+        double streetFactor = street == BoardPosition.Turn
+            ? _profile.ImpliedOddsTurnMultiplier
+            : _profile.ImpliedOddsFlopMultiplier;
+        sprFactor *= streetFactor;
+
+        // 3. Bonus por posición (IP controla tamaño del pote futuro)
+        if (isInPosition)
+            sprFactor *= _profile.ImpliedOddsIPBonus;
+
+        // 4. Bonus por flush draw (más difícil de leer para el villano)
+        if (hasFlushDraw)
+            sprFactor *= _profile.ImpliedOddsFlushDrawBonus;
+
+        // Limitar entre 0.5 y 1.0 (no reducir más del 50% las odds requeridas)
+        return Math.Max(0.50, Math.Min(1.0, sprFactor));
+    }
+
+    /// <summary>
+    /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
     /// </summary>
     public PostflopDecisionResult DetermineAction(
         double equity,
@@ -116,10 +167,17 @@ public class PostflopDecisionService
         bool previousStreetBet = false,
         bool villainShowedAggression = false,
         BoardChangeResult? boardChange = null,
-        bool heroBlocksDangerSuit = false)
+        bool heroBlocksDangerSuit = false,
+        decimal heroStack = 0,
+        decimal potSize = 0,
+        bool hasFlushDraw = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
+
+        // Calcular implied odds factor
+        double impliedOddsFactor = CalculateImpliedOddsFactor(
+            street, isInPosition, hasFlushDraw, heroStack, potSize);
 
         // Aplicar penalización por carta peligrosa
         double dangerPenalty = boardChange != null
@@ -164,12 +222,12 @@ public class PostflopDecisionService
         // Equity baja (debajo del threshold ajustado)
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
-                villainBetSize, street, potOdds, totalOuts, isFacingBet);
+                villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor);
 
         // --- FACING BET: decidir entre Call y Raise ---
         if (isFacingBet)
             return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
-                street, potOdds, adjustedThinValueAbove, previousStreetBet);
+                street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor);
 
         // --- NO FACING BET: decidir entre Check y Bet ---
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
@@ -178,6 +236,7 @@ public class PostflopDecisionService
 
     /// <summary>
     /// Cuando el villano apuesta: decidir Fold/Call/Raise.
+    /// Implied odds reducen las pot odds necesarias para continuar.
     /// </summary>
     private PostflopDecisionResult HandleFacingBet(
         double equity,
@@ -187,8 +246,12 @@ public class PostflopDecisionService
         BoardPosition street,
         double potOdds,
         double adjustedThinValueAbove,
-        bool previousStreetBet)
+        bool previousStreetBet,
+        double impliedOddsFactor)
     {
+        // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
+        double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
+
         // Equity muy alta → raise for value
         if (equity > thresholds.StrongValueAbove)
         {
@@ -205,11 +268,12 @@ public class PostflopDecisionService
             return new PostflopDecisionResult("Call", "Call — equity buena vs bet");
         }
 
-        // Thin value → call si pot odds favorables, sino depende de posición
+        // Thin value → call si pot odds (con implied) favorables, sino depende de posición
         if (equity > adjustedThinValueAbove)
         {
-            if (potOdds > 0 && equity >= potOdds)
-                return new PostflopDecisionResult("Call", "Call — pot odds favorables");
+            if (adjustedPotOdds > 0 && equity >= adjustedPotOdds)
+                return new PostflopDecisionResult("Call",
+                    $"Call — implied odds favorables (SPR factor={impliedOddsFactor:F2})");
 
             if (isInPosition)
                 return new PostflopDecisionResult("Call", "Call — thin value IP");
@@ -218,9 +282,10 @@ public class PostflopDecisionService
             return new PostflopDecisionResult(fallback, "Thin value OOP vs bet");
         }
 
-        // Equity marginal pero pot odds buenos
-        if (potOdds > 0 && equity >= potOdds)
-            return new PostflopDecisionResult("Call", "Call — pot odds favorables");
+        // Equity marginal pero implied odds buenos
+        if (adjustedPotOdds > 0 && equity >= adjustedPotOdds)
+            return new PostflopDecisionResult("Call",
+                $"Call — implied odds favorables (SPR factor={impliedOddsFactor:F2})");
 
         // Showdown value en river con bet pequeña
         if (street == BoardPosition.River && villainBetSize == BetSizeCategory.Small && equity >= thresholds.FoldBelow)
@@ -295,7 +360,7 @@ public class PostflopDecisionService
     }
 
     /// <summary>
-    /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales, o fold.
+    /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales (con implied odds), o fold.
     /// </summary>
     private PostflopDecisionResult HandleLowEquity(
         double equity,
@@ -306,7 +371,8 @@ public class PostflopDecisionService
         BoardPosition street,
         double potOdds,
         int totalOuts,
-        bool isFacingBet)
+        bool isFacingBet,
+        double impliedOddsFactor)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet grande — no semi-bluff raise vs pot bet)
         if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet)
@@ -317,14 +383,14 @@ public class PostflopDecisionService
                 IsBluff: true);
         }
 
-        // Con draws y facing bet → call si pot odds lo justifican
+        // Con draws y facing bet → call si implied odds lo justifican
         if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && isFacingBet)
         {
-            // Implied odds: con draws fuertes, aceptamos odds peores
-            double effectiveOdds = potOdds > 0 ? potOdds * ImpliedOddsFactor : 999;
+            double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 999;
             double drawEquity = totalOuts * (street == BoardPosition.Turn ? TurnOutsMultiplier : RiverOutsMultiplier);
-            if (drawEquity >= effectiveOdds)
-                return new PostflopDecisionResult("Call", $"Call — draw con {totalOuts} outs (implied odds)");
+            if (drawEquity >= adjustedPotOdds)
+                return new PostflopDecisionResult("Call",
+                    $"Call — draw con {totalOuts} outs (implied odds, SPR factor={impliedOddsFactor:F2})");
         }
 
         // Bluff puro (solo sin facing bet — no bluffear contra una apuesta)
@@ -337,10 +403,11 @@ public class PostflopDecisionService
                 IsBluff: true);
         }
 
-        // Pot odds marginales (facing bet con equity baja pero odds)
-        if (isFacingBet && potOdds > 0 && equity >= potOdds * MarginalPotOddsFactor)
+        // Pot odds marginales con implied odds
+        if (isFacingBet && potOdds > 0 && equity >= potOdds * MarginalPotOddsFactor * impliedOddsFactor)
         {
-            return new PostflopDecisionResult("Call", "Call — pot odds marginales");
+            return new PostflopDecisionResult("Call",
+                $"Call — pot odds marginales (implied factor={impliedOddsFactor:F2})");
         }
 
         // Sin facing bet → check (no fold sin apuesta)

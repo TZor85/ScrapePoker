@@ -1237,7 +1237,10 @@ namespace OpenScrape.App
                 previousStreetBet: _previousStreetWasBet,
                 villainShowedAggression: villainAggro,
                 boardChange: boardChange,
-                heroBlocksDangerSuit: heroBlocks);
+                heroBlocksDangerSuit: heroBlocks,
+                heroStack: _playerGameState.HeroStack,
+                potSize: _playerGameState.PotSize,
+                hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"));
 
             LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}");
 
@@ -1957,7 +1960,10 @@ namespace OpenScrape.App
                 previousStreetBet: _previousStreetWasBet,
                 villainShowedAggression: villainAggro,
                 boardChange: boardChange,
-                heroBlocksDangerSuit: heroBlocks);
+                heroBlocksDangerSuit: heroBlocks,
+                heroStack: _playerGameState.HeroStack,
+                potSize: _playerGameState.PotSize,
+                hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"));
 
             LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}");
 

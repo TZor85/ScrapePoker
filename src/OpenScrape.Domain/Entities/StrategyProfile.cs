@@ -54,6 +54,18 @@ public class StrategyProfile
     // (apostar solo consigue que nos paguen manos que nos ganan)
     public double DangerCompletedDrawNoBetCap { get; set; } = 45.0;
 
+    // Implied Odds (usado en PostflopDecisionService)
+    // Factor que reduce las pot odds requeridas según SPR (< 1.0 = necesitas menos equity)
+    public double ImpliedOddsSPRDeepFactor { get; set; } = 0.65;       // SPR > 4: alto implied odds
+    public double ImpliedOddsSPRMediumFactor { get; set; } = 0.80;     // SPR 2-4: moderado
+    public double ImpliedOddsSPRShallowFactor { get; set; } = 0.95;    // SPR < 2: casi sin implied odds
+    public double ImpliedOddsSPRDeepThreshold { get; set; } = 4.0;     // Umbral para "deep"
+    public double ImpliedOddsSPRShallowThreshold { get; set; } = 2.0;  // Umbral para "shallow"
+    public double ImpliedOddsFlushDrawBonus { get; set; } = 0.90;      // Flush draws son más ocultos
+    public double ImpliedOddsIPBonus { get; set; } = 0.92;             // IP controla tamaño del pote
+    public double ImpliedOddsFlopMultiplier { get; set; } = 0.90;      // Flop: 2 calles por extraer valor
+    public double ImpliedOddsTurnMultiplier { get; set; } = 0.95;      // Turn: 1 calle
+
     // Decision Adjustments (usado en UnifiedPokerCalculator)
     public double DrawEquityBonus { get; set; } = 2.0;
     public double RiverEquityPenalty { get; set; } = -1.0;
