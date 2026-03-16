@@ -27,7 +27,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
-using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
 using Image = System.Drawing.Image;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -1782,12 +1781,6 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
-            // Crear el servicio
-            var equityService = new EquityCalculatorService(
-                new MonteCarloSimulator(),
-                new OutsCalculator(),
-                new PreflopEquityCalculator());
-
             // Capturar cartas del flop con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
