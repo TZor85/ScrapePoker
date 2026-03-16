@@ -37,17 +37,26 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 
 ## Architecture
 
-.NET 10.0 WinForms poker table scraping and decision-making bot. Clean Architecture with CQRS (MediatR).
+.NET 10.0 WinForms poker table scraping and decision-making bot. Clean Architecture with scoped use cases (no MediatR pipeline).
 
 **Five layers:**
 
 1. **OpenScrape.Domain** — Core entities (`Table`, `Card`, `RegionTableMap`, `GameRound`, `StrategyProfile`), value objects (`Hand`, `Region`, `CardDataOuts`, `StreetThresholds`, `StreetDecision`, `BoardChangeResult`), enums (`BoardPosition`, `HandSituation`, `TablePosition`, `JugadasEnum`), DTOs, mappers. No external dependencies.
-2. **OpenScrape.Features** — CQRS use cases via MediatR. Organized by feature: `Table/`, `Cards/`, `ActionScenario/`, `RegionsTableMap/`, `GameRound/`. `Services.cs` registers all use cases.
+2. **OpenScrape.Features** — Scoped use cases organized by feature: `Table/`, `Cards/`, `ActionScenario/`, `RegionsTableMap/`, `GameRound/`. `Services.cs` registers all use cases. Uses `Ardalis.Result` for return types.
 3. **OpenScrape.Infrastructure** — Marten (PostgreSQL document DB) setup. `Services.cs` configures the document store.
 4. **OpenScrape.DecisionMaker** — Poker algorithms and decision services. See "Decision Engine" below.
-5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder. Key services: `OcrService` (Tesseract OCR with caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine`, `GameLoggerService`. Forms: `FrmMain` (main window), `FrmOverlay` (table overlay), `FrmDetectionDebug`.
+5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder with `DOTNET_ENVIRONMENT` (defaults to `"Development"`). Key services: `OcrService` (Tesseract OCR with bounded caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine`, `GameLoggerService`. Forms: `FrmMain` (main window), `FrmOverlay` (table overlay), `FrmDetectionDebug`.
 
 **Data flow:** Screen capture → Image preprocessing (OpenCvSharp/SkiaSharp) → OCR (Tesseract) → Domain model → Decision engine (equity calculation, hand evaluation) → Action recommendation.
+
+**DI pattern:** `FrmMain` is resolved from a scoped `ServiceProvider` (not root) because it depends on scoped use cases. All DecisionMaker services are singletons.
+
+## Configuration & Secrets
+
+- **`appsettings.json`** — Contains strategy config, thresholds, and placeholder credentials (`CHANGE_ME`). Safe to commit.
+- **`appsettings.Development.json`** — Contains real database credentials and encryption key. Gitignored, never committed.
+- **`launchSettings.json`** — Sets `DOTNET_ENVIRONMENT=Development` for Visual Studio launches.
+- Environment variable `DOTNET_ENVIRONMENT` controls which appsettings override file is loaded. Defaults to `"Development"` for this desktop app.
 
 ## Decision Engine (DecisionMaker)
 
@@ -111,12 +120,11 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Key Dependencies
 
-- **Marten** — PostgreSQL document database
-- **MediatR** — CQRS command/query dispatch
+- **Marten 8.24.0** — PostgreSQL document database
 - **Tesseract** — OCR engine (eng.traineddata)
-- **OpenCvSharp4 / Emgu.CV / SkiaSharp** — Image processing
-- **Ardalis.Result** — Result pattern
-- **NUnit** — Testing framework (139 tests, no mocking framework)
+- **OpenCvSharp4 / SkiaSharp** — Image processing
+- **Ardalis.Result** — Result pattern (used in Features layer)
+- **NUnit** — Testing framework (160 tests, no mocking framework)
 
 ## Code Style
 
@@ -126,4 +134,3 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - Private fields: `_camelCase`. Booleans: `is`/`has`/`can`/`should` prefix
 - Using groups: System → third-party → OpenScrape.*
 - Conventional commits in Spanish
-- All DecisionMaker services registered as singletons

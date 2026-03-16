@@ -40,7 +40,7 @@ namespace OpenScrape.App
     public partial class FrmMain : Form, IDisposable
     {
         #region [Constants]
-        private const string DEFAULT_RESOURCES_PATH = @"C:\Code\Poker\ScrapePoker\resources";
+        private static readonly string DEFAULT_RESOURCES_PATH = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources");
         #endregion
 
         #region [Enums]

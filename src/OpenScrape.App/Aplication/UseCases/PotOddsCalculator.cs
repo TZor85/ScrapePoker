@@ -11,7 +11,7 @@ public class PotOddsCalculator : IPotOddsCalculator
         _outsCalculator = outsCalculator;
     }
 
-    public PotOddsResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards, decimal currentPotSize, decimal betToCall, List<CardDataOuts> blockedCards = null)
+    public PotOddsResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards, decimal currentPotSize, decimal betToCall, List<CardDataOuts>? blockedCards = null)
     {
         // 1. Calcular los outs y la equity usando el código existente
         var handStrength = _outsCalculator.CalculateAllOuts(playerHand, communityCards);

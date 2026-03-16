@@ -12,7 +12,8 @@
       "Bash(/tmp/deps.txt:*)",
       "Read(//tmp/**)",
       "Bash(find /c/Code/Poker/ScrapePoker/src/OpenScrape.DecisionMaker -name \"*.cs\" -type f | xargs ls -la | grep -v \"obj/\")",
-      "Bash(dotnet package:*)"
+      "Bash(dotnet package:*)",
+      "Bash(cd C:/Code/Poker/ScrapePoker && dotnet build OpenScrape.sln 2>&1 | findstr \"CS8\" 2>/dev/null || dotnet build OpenScrape.sln 2>&1 | grep -i \"CS8\")"
     ]
   }
 }

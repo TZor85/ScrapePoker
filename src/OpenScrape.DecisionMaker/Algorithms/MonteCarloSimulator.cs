@@ -25,7 +25,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public double LoseProbability { get; set; }
             public double Equity { get; set; }
             public int Simulations { get; set; }
-            public Dictionary<HandRank, int> HandDistribution { get; set; }
+            public Dictionary<HandRank, int> HandDistribution { get; set; } = new();
         }
 
         public EquityResult CalculateEquity(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,

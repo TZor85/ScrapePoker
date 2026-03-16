@@ -19,6 +19,25 @@ public class PostflopDecisionService
 {
     private readonly StrategyProfile _profile;
 
+    // Penalización de equity al facing bet según tamaño (se suma a FoldBelow)
+    private const double FacingBetPenaltyLarge = 8.0;
+    private const double FacingBetPenaltyMedium = 4.0;
+    private const double FacingBetPenaltySmall = 1.0;
+    private const double VillainAggressionPenalty = 3.0;
+
+    // Regla del 2 y del 4: multiplicador de outs → equity aproximada
+    private const double TurnOutsMultiplier = 2.17;
+    private const double RiverOutsMultiplier = 4.35;
+
+    // Outs mínimos para considerar semi-bluff o call con draws
+    private const int MinOutsForDraw = 8;
+
+    // Margen para pot odds marginales (80% de las pot odds requeridas)
+    private const double MarginalPotOddsFactor = 0.80;
+
+    // Factor de descuento de implied odds sobre pot odds
+    private const double ImpliedOddsFactor = 0.75;
+
     public PostflopDecisionService(IOptions<StrategyProfile> profileOptions)
     {
         _profile = profileOptions.Value;
@@ -127,9 +146,9 @@ public class PostflopDecisionService
         {
             double facingBetPenalty = villainBetSize switch
             {
-                BetSizeCategory.Large => 8.0,
-                BetSizeCategory.Medium => 4.0,
-                BetSizeCategory.Small => 1.0,
+                BetSizeCategory.Large => FacingBetPenaltyLarge,
+                BetSizeCategory.Medium => FacingBetPenaltyMedium,
+                BetSizeCategory.Small => FacingBetPenaltySmall,
                 _ => 0
             };
             adjustedFoldBelow += facingBetPenalty;
@@ -138,7 +157,7 @@ public class PostflopDecisionService
             // Villano agresivo postflop → necesitamos aún más equity
             if (villainShowedAggression)
             {
-                adjustedFoldBelow += 3.0;
+                adjustedFoldBelow += VillainAggressionPenalty;
             }
         }
 
@@ -290,7 +309,7 @@ public class PostflopDecisionService
         bool isFacingBet)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet grande — no semi-bluff raise vs pot bet)
-        if (totalOuts >= 8 && street != BoardPosition.River && !isFacingBet)
+        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet)
         {
             return new PostflopDecisionResult(
                 thresholds.BluffBetSize + " (Semi-Bluff)",
@@ -299,11 +318,11 @@ public class PostflopDecisionService
         }
 
         // Con draws y facing bet → call si pot odds lo justifican
-        if (totalOuts >= 8 && street != BoardPosition.River && isFacingBet)
+        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && isFacingBet)
         {
             // Implied odds: con draws fuertes, aceptamos odds peores
-            double effectiveOdds = potOdds > 0 ? potOdds * 0.75 : 999;
-            double drawEquity = totalOuts * (street == BoardPosition.Turn ? 2.17 : 4.35);
+            double effectiveOdds = potOdds > 0 ? potOdds * ImpliedOddsFactor : 999;
+            double drawEquity = totalOuts * (street == BoardPosition.Turn ? TurnOutsMultiplier : RiverOutsMultiplier);
             if (drawEquity >= effectiveOdds)
                 return new PostflopDecisionResult("Call", $"Call — draw con {totalOuts} outs (implied odds)");
         }
@@ -319,7 +338,7 @@ public class PostflopDecisionService
         }
 
         // Pot odds marginales (facing bet con equity baja pero odds)
-        if (isFacingBet && potOdds > 0 && equity >= potOdds * 0.8)
+        if (isFacingBet && potOdds > 0 && equity >= potOdds * MarginalPotOddsFactor)
         {
             return new PostflopDecisionResult("Call", "Call — pot odds marginales");
         }

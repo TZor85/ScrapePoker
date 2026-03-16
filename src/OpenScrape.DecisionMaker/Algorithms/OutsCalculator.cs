@@ -19,7 +19,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public bool HasGutshotStraightDraw { get; set; }
             public bool HasStraightFlushDraw { get; set; }
             public double OutsToEquity { get; set; }
-            public List<string> DrawTypes { get; set; }
+            public List<string> DrawTypes { get; set; } = [];
         }
 
         public OutsResult CalculateOuts(List<CardDataOuts> myCards, List<CardDataOuts> communityCards)

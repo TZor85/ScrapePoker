@@ -14,7 +14,7 @@ namespace OpenScrape.App.Aplication.UseCases
     {
         PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
-            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string handSituation = null);
+            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null);
     }
 
     public class PokerCalculationResult
@@ -25,10 +25,10 @@ namespace OpenScrape.App.Aplication.UseCases
         public double ExpectedValue { get; set; }        // EV de la acción
         public double FoldEquity { get; set; }           // Probabilidad de que el oponente se retire
         public double EVWithFoldEquity { get; set; }     // EV considerando fold equity
-        public List<string> DrawTypes { get; set; }      // Tipos de draws
+        public List<string> DrawTypes { get; set; } = [];  // Tipos de draws
         public int TotalOuts { get; set; }               // Outs totales
-        public string Street { get; set; }               // Calle actual
-        public string RecommendedAction { get; set; }    // Acción recomendada
+        public string Street { get; set; } = string.Empty; // Calle actual
+        public string RecommendedAction { get; set; } = string.Empty; // Acción recomendada
         public double? SuggestedBetSize { get; set; }    // Tamaño de apuesta sugerido (como porcentaje del pote)
     }
 
@@ -56,7 +56,7 @@ namespace OpenScrape.App.Aplication.UseCases
 
         public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
-            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string handSituation = null)
+            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null)
         {
             var result = new PokerCalculationResult
             {
