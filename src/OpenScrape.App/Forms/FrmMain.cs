@@ -7,7 +7,6 @@ using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
-using OpenScrape.App.Helpers.MLHelper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
@@ -2063,7 +2062,6 @@ namespace OpenScrape.App
 
         private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
         {
-            var rolOopEngine = new RolOopHelper();
             var heroCardsName = $"{flopAnalyzerRequest.PlayerState.HoleCard1Face}{flopAnalyzerRequest.PlayerState.HoleCard2Face}";
             var flopCardsName = string.Empty;
 

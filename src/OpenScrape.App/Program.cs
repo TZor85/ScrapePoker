@@ -27,7 +27,10 @@ namespace OpenScrape.App
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
+
             var builder = Host.CreateDefaultBuilder()
+                .UseEnvironment(environment)
                 .ConfigureServices((context, services) =>
                 {
                     // Agregar configuraci�n de base de datos
@@ -62,19 +65,13 @@ namespace OpenScrape.App
                     services.AddTransient<FrmMain>();
                 });
 
-            var environment = Environment.GetEnvironmentVariable("NETCORE_ENVIRONMENT") ?? "Production";
-
-            Configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-
             var host = builder.Build();
 
-            // Obtener el formulario principal desde el contenedor de servicios
-            var form = host.Services.GetRequiredService<FrmMain>();
+            Configuration = host.Services.GetRequiredService<IConfiguration>();
+
+            // Obtener el formulario principal desde un scope para resolver dependencias scoped
+            using var scope = host.Services.CreateScope();
+            var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
 
             Application.Run(form);
         }

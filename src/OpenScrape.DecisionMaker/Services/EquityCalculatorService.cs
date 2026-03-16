@@ -93,7 +93,7 @@ namespace OpenScrape.DecisionMaker.Services
 
                 return analysis;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

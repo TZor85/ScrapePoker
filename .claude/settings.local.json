@@ -6,7 +6,13 @@
       "Bash(dotnet build:*)",
       "Bash(find \"C:\\\\Code\\\\Poker\\\\ScrapePoker\\\\src\\\\OpenScrape.App\" -iname \"*ocr*\" -o -iname \"*capture*\" -o -iname \"*screenshot*\" -o -iname \"*screen*\" -o -iname \"*bitmap*\" -o -iname \"*crop*\" -o -iname \"*color*\" 2>/dev/null | head -20)",
       "Bash(find \"C:\\\\Code\\\\Poker\\\\ScrapePoker\\\\src\\\\OpenScrape.App\" -type f -name \"*.cs\" | xargs grep -l \"AddUseCases\\\\|AddDataBase\" | head -5)",
-      "Bash(cd \"C:\\\\Code\\\\Poker\\\\ScrapePoker\" && find . -name \"ColorHelper.cs\" -type f | head -1 | xargs wc -l 2>/dev/null)"
+      "Bash(cd \"C:\\\\Code\\\\Poker\\\\ScrapePoker\" && find . -name \"ColorHelper.cs\" -type f | head -1 | xargs wc -l 2>/dev/null)",
+      "Bash(find . -name \"*.csproj\" -exec grep -H \"PackageReference\\\\|ProjectReference\" {} \\\\; | grep -v \"obj/\" | sort)",
+      "Bash(find /c/Code/Poker/ScrapePoker -name \"Program.cs\" -o -name \"Startup.cs\" 2>/dev/null | xargs ls -la)",
+      "Bash(/tmp/deps.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(find /c/Code/Poker/ScrapePoker/src/OpenScrape.DecisionMaker -name \"*.cs\" -type f | xargs ls -la | grep -v \"obj/\")",
+      "Bash(dotnet package:*)"
     ]
   }
 }

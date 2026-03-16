@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
@@ -37,17 +38,20 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
         private readonly StrategyProfile _profile;
+        private readonly ILogger<UnifiedPokerCalculator> _logger;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
-            IOptions<StrategyProfile> profileOptions)
+            IOptions<StrategyProfile> profileOptions,
+            ILogger<UnifiedPokerCalculator> logger)
         {
             _monteCarloSimulator = monteCarloSimulator;
             _outsCalculator = outsCalculator;
             _preflopEquityCalculator = preflopEquityCalculator;
             _profile = profileOptions.Value;
+            _logger = logger;
         }
 
         public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
@@ -95,9 +99,11 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // En caso de error, devolver valores seguros
+                _logger.LogError(ex, "Error en cálculo de equity. Hand: {Hand}, Community: {Community}",
+                    string.Join(",", playerHand.Select(c => c.Id)),
+                    string.Join(",", communityCards.Select(c => c.Id)));
                 return new PokerCalculationResult
                 {
                     PotOddsPercentage = 0,

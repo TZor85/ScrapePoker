@@ -9,9 +9,6 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
 		<ApplicationIcon>imagen_2025-08-19_153143860.ico</ApplicationIcon>
-		<!-- Suppress vulnerability warnings for transitive dependencies from Microsoft.ML -->
-		<!-- These packages are not actually used at runtime in .NET 10.0 -->
-		<NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -31,19 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
-	<PackageReference Include="Emgu.CV" Version="4.10.0.5680" />
-	<PackageReference Include="Marten" Version="8.0.0-alpha-3" />
-	<PackageReference Include="MediatR" Version="12.5.0" />
+	<PackageReference Include="Marten" Version="8.24.0" />
 	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
 	<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
-	<PackageReference Include="Microsoft.ML" Version="4.0.2" />
-	<PackageReference Include="Microsoft.NETCore.App" Version="2.1.30" />
-	<PackageReference Include="Nancy" Version="2.0.0" />
-	<PackageReference Include="OpenCV" Version="2.4.11" />
 	<PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
 	<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />
-	<PackageReference Include="Rijndael256" Version="3.2.0" />
-	<PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
+	<PackageReference Include="SkiaSharp" Version="3.119.2" />
 	<PackageReference Include="Tesseract" Version="5.2.0" />
 	<PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
   </ItemGroup>
@@ -66,6 +56,9 @@
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

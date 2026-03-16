@@ -52,7 +52,7 @@ public class ImageCropperService
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error al recortar la imagen: {ex.Message}");
+                throw new Exception($"Error al recortar la imagen: {ex.Message}", ex);
             }
         }
     }
@@ -122,7 +122,7 @@ public class ImageCropperService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}");
+            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}", ex);
         }
     }
 
