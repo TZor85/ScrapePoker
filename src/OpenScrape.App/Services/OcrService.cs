@@ -65,6 +65,15 @@ public class OcrService
         }
     }
 
+    /// <summary>
+    /// Limpia el cache de resultados OCR para forzar re-lectura en la siguiente llamada.
+    /// Útil cuando se sabe que la imagen ha cambiado (ej: nuevo street, nuevo stack).
+    /// </summary>
+    public void ClearCache()
+    {
+        _ocrCache.Clear();
+    }
+
     // Método general para texto normal
     public async Task<string> ExtractTextFromRegionAsync(string imagePath, int x, int y, int width, int height)
     {

@@ -575,7 +575,7 @@ namespace OpenScrape.App
                         _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                 }
 
-                if (_playerGameState.Players.Count() == 0 || cbTest.Checked)
+                if (_playerGameState.Players.Count() == 0 || (cbTest.Checked && !isTestPostflop))
                 {
                     SetEmptyPlayer();
                     SetSitOutPlayer();
@@ -2947,31 +2947,90 @@ namespace OpenScrape.App
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
-            foreach (var region in regionTableMap.Regions)
+            var region = regionTableMap.Regions.FirstOrDefault(r => r.Name == "uStack");
+            if (region == null)
+                return;
+
+            // Limpiar cache OCR para evitar colisiones dHash entre valores similares (ej: 97 vs 92)
+            _ocrService.ClearCache();
+
+            // Intentar leer el stack con retry
+            decimal stackValue = 0;
+            int maxRetries = 2;
+
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
             {
-                if (region.Name == "uStack") // Región específica para stack del héroe
-                {
-                    var stackValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
-                        region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                var rawValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
+                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
-                    if (stackValue.ToString().Contains(','))
-                    {
-                        var values = stackValue.ToString().Split(',');
-                        if (values[0].Length == 3 && values[0].Substring(0, 1) == "8")
-                            stackValue = decimal.Parse(values[0].Substring(1) + "," + values[1]);
+                stackValue = NormalizeStackValue(rawValue);
 
-                    }
-                    else
-                    {
-                        if (stackValue.ToString().Length == 4)
-                            stackValue = decimal.Parse(stackValue.ToString().Substring(0, 2) + "," + stackValue.ToString().Substring(2, 2));
-                    }
-
-                    _playerGameState.HeroStack = stackValue;
-                    lbUserStack.Text = stackValue.ToString();
+                if (stackValue > 0)
                     break;
+
+                if (attempt < maxRetries)
+                    Thread.Sleep(100);
+            }
+
+            // Si no se obtuvo valor válido, mantener el anterior
+            if (stackValue <= 0 && _playerGameState.HeroStack > 0)
+            {
+                LogError($"[STACK] OCR falló tras reintentos, manteniendo valor anterior: {_playerGameState.HeroStack}");
+                lbUserStack.Text = _playerGameState.HeroStack.ToString();
+                return;
+            }
+
+            _playerGameState.HeroStack = stackValue;
+            lbUserStack.Text = stackValue.ToString();
+        }
+
+        /// <summary>
+        /// Normaliza el valor raw del OCR a un decimal válido de stack.
+        /// Maneja artefactos comunes del OCR: prefijo "8" espurio con separador decimal.
+        /// Los stacks sin separador decimal se devuelven tal cual (son valores enteros en BB).
+        /// </summary>
+        private decimal NormalizeStackValue(decimal rawValue)
+        {
+            if (rawValue <= 0)
+                return 0;
+
+            var rawStr = rawValue.ToString();
+
+            // Solo corregir artefacto "8" cuando ya tiene separador decimal
+            if (rawStr.Contains(',') || rawStr.Contains('.'))
+            {
+                var separator = rawStr.Contains(',') ? ',' : '.';
+                var parts = rawStr.Split(separator);
+
+                // Artefacto OCR: "8" espurio al inicio (ej: "812,50" → "12,50")
+                if (parts[0].Length > 2 && parts[0][0] == '8')
+                {
+                    var corrected = parts[0][1..] + separator + parts[1];
+                    if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
+                    {
+                        LogError($"[STACK] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                        return correctedValue;
+                    }
                 }
             }
+
+            // Sin separador decimal → valor entero, devolver tal cual
+            return rawValue;
+        }
+
+        /// <summary>
+        /// Limpia el texto OCR dejando solo caracteres numéricos válidos (dígitos, coma, punto)
+        /// </summary>
+        private static string CleanOcrNumericText(string? ocrText)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText))
+                return "0";
+
+            // Eliminar espacios, letras y caracteres no numéricos excepto separadores decimales
+            var cleaned = new string(ocrText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+
+            return string.IsNullOrEmpty(cleaned) ? "0" : cleaned;
         }
 
         /// <summary>
@@ -3769,7 +3828,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece el valor del stack usando OCR
+        /// Establece el valor del stack usando OCR con doble lectura y preprocesamiento
         /// </summary>
         private decimal SetStackValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
@@ -3782,46 +3841,58 @@ namespace OpenScrape.App
 
             var result = string.Empty;
 
+            // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
             {
                 firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                    preprocessed,
-                    0,
-                    0,
-                    width,
-                    height,
-                    umbral ?? 0,
-                    isOnlyNumber ?? false);
+                    preprocessed, 0, 0, width, height,
+                    umbral ?? 0, isOnlyNumber ?? false);
             }
 
-
+            // Lectura 2: con umbral inactivo y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
             {
                 secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                    preprocessed,
-                    0,
-                    0,
-                    width,
-                    height,
-                    inactiveUmbral ?? 0,
-                    isOnlyNumber ?? false);
+                    preprocessed, 0, 0, width, height,
+                    inactiveUmbral ?? 0, isOnlyNumber ?? false);
             }
+
+            // Lectura 3: directa sin preprocesamiento (como fallback)
+            var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image, posX, posY, width, height,
+                umbral ?? 0, isOnlyNumber ?? false);
 
             if (isOnlyNumber.HasValue == true)
             {
-                if (string.IsNullOrEmpty(firstOcr.Text))
-                    firstOcr.Text = "0";
+                var cleanFirst = CleanOcrNumericText(firstOcr.Text);
+                var cleanSecond = CleanOcrNumericText(secondOcr.Text);
+                var cleanThird = CleanOcrNumericText(thirdOcr.Text);
 
-                if (string.IsNullOrEmpty(secondOcr.Text))
-                    secondOcr.Text = "0";
+                decimal.TryParse(cleanFirst, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr1);
+                decimal.TryParse(cleanSecond, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr2);
+                decimal.TryParse(cleanThird, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr3);
 
-                var ocr1 = decimal.Parse(firstOcr.Text);
-                var ocr2 = decimal.Parse(secondOcr.Text);
-
-                if (ocr2 >= ocr1)
-                    result = ocr2.ToString();
+                // Elegir por consenso: si 2+ lecturas coinciden, usar ese valor.
+                // Si no hay consenso, preferir la lectura directa (sin preprocesamiento)
+                // ya que la binarización puede distorsionar dígitos.
+                decimal best;
+                if (ocr1 == ocr2 && ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr1 == ocr2)
+                    best = ocr1;
+                else if (ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr2 == ocr3)
+                    best = ocr2;
                 else
-                    result = ocr1.ToString();
+                    best = ocr3; // Sin consenso → preferir lectura directa (sin preprocesamiento)
+
+                result = best.ToString();
+
+                LogError($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
             }
 
 
