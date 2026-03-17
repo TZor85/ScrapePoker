@@ -537,19 +537,14 @@ namespace OpenScrape.App
                 }
 
                 if (cbTest.Checked)
-                {
-                    if (rbFlop.Checked)
-                        _gameLoopStateMachine.ForceState(GameState.FlopDetected);
-                    else if (rbTurn.Checked)
-                        _gameLoopStateMachine.ForceState(GameState.TurnDetected);
-                    else if (rbRiver.Checked)
-                        _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                     _frmOverlay.Show();
-                }
+
+                // En modo test, determinar si es postflop (flop/turn/river seleccionado)
+                bool isTestPostflop = cbTest.Checked && (rbFlop.Checked || rbTurn.Checked || rbRiver.Checked);
 
                 await SetTableHand();
 
-                if (_newHand)
+                if (_newHand && !isTestPostflop)
                 {
                     _frmOverlay?.ClearAll();
                     _playerGameState = new PlayerGameState();
@@ -563,6 +558,21 @@ namespace OpenScrape.App
 
                     if (!cbTest.Checked)
                         await HandleNewHandAsync();
+                }
+                else if (_newHand && isTestPostflop)
+                {
+                    _newHand = false;
+                }
+
+                // ForceState después del reset para que no se sobreescriba el estado forzado
+                if (cbTest.Checked)
+                {
+                    if (rbFlop.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.FlopDetected);
+                    else if (rbTurn.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.TurnDetected);
+                    else if (rbRiver.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                 }
 
                 if (_playerGameState.Players.Count() == 0 || cbTest.Checked)
@@ -697,6 +707,30 @@ namespace OpenScrape.App
             }
             else
             {
+                // Asegurar que las hole cards estén leídas (pueden perderse si _newHand resetea PlayerGameState)
+                bool hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                    !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+                if (!hasHoleCards)
+                {
+                    for (int retry = 0; retry < 2 && !hasHoleCards; retry++)
+                    {
+                        if (retry > 0)
+                            await Task.Delay(200);
+
+                        await ObtainCardsPlayerAsync();
+
+                        hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                       !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+                    }
+
+                    if (!hasHoleCards)
+                    {
+                        LogError("HoleCards no detectadas para postflop, saltando procesamiento");
+                        return;
+                    }
+                }
+
                 await ProcessPostFlopAsync(potOddsResult);
             }
         }
