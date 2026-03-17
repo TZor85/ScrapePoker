@@ -34,9 +34,9 @@ namespace OpenScrape.DecisionMaker.Services
             public double TieProbability { get; set; }
             public int Outs { get; set; }
             public double OutsToEquity { get; set; }
-            public List<string> DrawTypes { get; set; }
-            public Dictionary<HandRank, int> HandDistribution { get; set; }
-            public string RecommendedAction { get; set; }
+            public List<string> DrawTypes { get; set; } = [];
+            public Dictionary<HandRank, int> HandDistribution { get; set; } = new();
+            public string RecommendedAction { get; set; } = string.Empty;
             public double PotOdds { get; set; }
             public double ExpectedValue { get; set; }
         }
@@ -55,48 +55,41 @@ namespace OpenScrape.DecisionMaker.Services
                 HandDistribution = new Dictionary<HandRank, int>()
             };
 
-            try
+            // Calculate pot odds
+            analysis.PotOdds = callAmount / (potSize + callAmount);
+
+            // Determine calculation method based on game stage
+            if (communityCards.Count == 0) // Preflop
             {
-                // Calculate pot odds
-                analysis.PotOdds = callAmount / (potSize + callAmount);
-
-                // Determine calculation method based on game stage
-                if (communityCards.Count == 0) // Preflop
-                {
-                    analysis.OverallEquity = _preflopEquityCalculator.GetEquity(myCards, numOpponents);
-                    analysis.WinProbability = analysis.OverallEquity;
-                    analysis.TieProbability = 0.0;
-                }
-                else // Postflop
-                {
-                    // Run Monte Carlo simulation
-                    var monteCarloResult = _monteCarloSimulator.CalculateEquity(
-                        myCards, communityCards, numOpponents, monteCarloIterations);
-
-                    analysis.OverallEquity = monteCarloResult.Equity;
-                    analysis.WinProbability = monteCarloResult.WinProbability;
-                    analysis.TieProbability = monteCarloResult.TieProbability;
-                    analysis.HandDistribution = monteCarloResult.HandDistribution;
-
-                    // Calculate outs
-                    var outsResult = _outsCalculator.CalculateOuts(myCards, communityCards);
-                    analysis.Outs = outsResult.TotalOuts;
-                    analysis.OutsToEquity = outsResult.OutsToEquity;
-                    analysis.DrawTypes = outsResult.DrawTypes;
-                }
-
-                // Calculate expected value
-                analysis.ExpectedValue = CalculateExpectedValue(analysis.OverallEquity, potSize, callAmount);
-
-                // Generate recommendation
-                analysis.RecommendedAction = GenerateRecommendation(analysis);
-
-                return analysis;
+                analysis.OverallEquity = _preflopEquityCalculator.GetEquity(myCards, numOpponents);
+                analysis.WinProbability = analysis.OverallEquity;
+                analysis.TieProbability = 0.0;
             }
-            catch (Exception ex)
+            else // Postflop
             {
-                throw;
+                // Run Monte Carlo simulation
+                var monteCarloResult = _monteCarloSimulator.CalculateEquity(
+                    myCards, communityCards, numOpponents, monteCarloIterations);
+
+                analysis.OverallEquity = monteCarloResult.Equity;
+                analysis.WinProbability = monteCarloResult.WinProbability;
+                analysis.TieProbability = monteCarloResult.TieProbability;
+                analysis.HandDistribution = monteCarloResult.HandDistribution;
+
+                // Calculate outs
+                var outsResult = _outsCalculator.CalculateOuts(myCards, communityCards);
+                analysis.Outs = outsResult.TotalOuts;
+                analysis.OutsToEquity = outsResult.OutsToEquity;
+                analysis.DrawTypes = outsResult.DrawTypes;
             }
+
+            // Calculate expected value
+            analysis.ExpectedValue = CalculateExpectedValue(analysis.OverallEquity, potSize, callAmount);
+
+            // Generate recommendation
+            analysis.RecommendedAction = GenerateRecommendation(analysis);
+
+            return analysis;
         }
 
         private double CalculateExpectedValue(double equity, double potSize, double callAmount)

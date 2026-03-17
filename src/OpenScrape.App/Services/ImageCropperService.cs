@@ -9,6 +9,7 @@ public class ImageCropperService
 {
     private const int DefaultTolerance = 10;
     private const double SimilarityThreshold = 90.0;
+    private const int MaxImageCacheSize = 500;
 
     // Cache para evitar decodificar la misma imagen múltiples veces
     private readonly ConcurrentDictionary<string, byte[]> _imageCache = new();
@@ -52,7 +53,7 @@ public class ImageCropperService
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error al recortar la imagen: {ex.Message}");
+                throw new Exception($"Error al recortar la imagen: {ex.Message}", ex);
             }
         }
     }
@@ -122,7 +123,7 @@ public class ImageCropperService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}");
+            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}", ex);
         }
     }
 
@@ -136,6 +137,10 @@ public class ImageCropperService
 
     private byte[] GetOrAddToCache(string base64Image)
     {
+        if (_imageCache.Count >= MaxImageCacheSize)
+        {
+            _imageCache.Clear();
+        }
         return _imageCache.GetOrAdd(base64Image, key => Convert.FromBase64String(key));
     }
 
@@ -226,6 +231,7 @@ public class FastBitmap : IDisposable
     private readonly Bitmap _bitmap;
     private BitmapData? _bitmapData;
     private byte[]? _bytes;
+    private bool _disposed;
 
     public int Width => _bitmap.Width;
     public int Height => _bitmap.Height;
@@ -234,6 +240,11 @@ public class FastBitmap : IDisposable
     {
         _bitmap = bitmap;
         Lock();
+    }
+
+    ~FastBitmap()
+    {
+        Dispose(false);
     }
 
     private void Lock()
@@ -253,11 +264,23 @@ public class FastBitmap : IDisposable
 
     public void Dispose()
     {
-        if (_bitmapData != null)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        if (disposing)
         {
-            _bitmap.UnlockBits(_bitmapData);
-            _bitmapData = null;
+            if (_bitmapData != null)
+            {
+                _bitmap.UnlockBits(_bitmapData);
+                _bitmapData = null;
+            }
+            _bitmap.Dispose();
         }
-        _bitmap.Dispose();
     }
 }

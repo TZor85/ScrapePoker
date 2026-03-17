@@ -1,5 +1,4 @@
-﻿using Emgu.CV.Dai;
-using OpenScrape.App.Entities;
+﻿using OpenScrape.App.Entities;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Aplication;

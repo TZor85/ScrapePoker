@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
@@ -25,7 +27,10 @@ namespace OpenScrape.App
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
+
             var builder = Host.CreateDefaultBuilder()
+                .UseEnvironment(environment)
                 .ConfigureServices((context, services) =>
                 {
                     // Agregar configuraci�n de base de datos
@@ -41,28 +46,34 @@ namespace OpenScrape.App
                     services.AddSingleton<OutsCalculator>();
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
+                    // Strategy profile (antes de servicios que lo usan)
+                    services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
+                    services.AddSingleton<StrategyProfileService>();
+
                     services.AddSingleton<BetSizingService>();
+                    services.AddSingleton<BoardTextureAnalyzer>();
+                    services.AddSingleton<PostflopDecisionService>();
+                    services.AddSingleton<OpponentTracker>();
+                    services.AddSingleton<StrategyAnalyzerService>();
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
+
+                    // Game logger y state machine
+                    services.AddScoped<GameLoggerService>();
+                    services.AddSingleton<GameLoopStateMachine>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();
                 });
 
-            var environment = Environment.GetEnvironmentVariable("NETCORE_ENVIRONMENT") ?? "Production";
-
-            Configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-
             var host = builder.Build();
 
-            // Obtener el formulario principal desde el contenedor de servicios
-            var form = host.Services.GetRequiredService<FrmMain>();
+            Configuration = host.Services.GetRequiredService<IConfiguration>();
+
+            // Obtener el formulario principal desde un scope para resolver dependencias scoped
+            using var scope = host.Services.CreateScope();
+            var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
 
             Application.Run(form);
         }

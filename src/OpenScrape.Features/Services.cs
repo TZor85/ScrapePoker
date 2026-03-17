@@ -3,6 +3,7 @@ using OpenScrape.Features.ActionScenario;
 using OpenScrape.Features.ActionScenario.Get;
 using OpenScrape.Features.Card;
 using OpenScrape.Features.Card.GetAll;
+using OpenScrape.Features.GameRound;
 using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.GetAll;
 using OpenScrape.Features.RegionsTableMap.Update;
@@ -28,6 +29,9 @@ public static class Services
         .AddScoped<GetAllRegionTableMap>()
         .AddScoped<UpdateRegionTableMap>()
         .AddScoped<RegionTableMapUseCases>()
-        .AddScoped<GetAllTables>();
+        .AddScoped<GetAllTables>()
+
+        .AddScoped<GetRecentGameRounds>()
+        .AddScoped<GameRoundUseCases>();
 }
 

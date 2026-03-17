@@ -1,5 +1,9 @@
-﻿using OpenScrape.DecisionMaker.Algorithms;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -11,7 +15,7 @@ namespace OpenScrape.App.Aplication.UseCases
     {
         PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
-            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string handSituation = null);
+            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null);
     }
 
     public class PokerCalculationResult
@@ -22,10 +26,10 @@ namespace OpenScrape.App.Aplication.UseCases
         public double ExpectedValue { get; set; }        // EV de la acción
         public double FoldEquity { get; set; }           // Probabilidad de que el oponente se retire
         public double EVWithFoldEquity { get; set; }     // EV considerando fold equity
-        public List<string> DrawTypes { get; set; }      // Tipos de draws
+        public List<string> DrawTypes { get; set; } = [];  // Tipos de draws
         public int TotalOuts { get; set; }               // Outs totales
-        public string Street { get; set; }               // Calle actual
-        public string RecommendedAction { get; set; }    // Acción recomendada
+        public string Street { get; set; } = string.Empty; // Calle actual
+        public string RecommendedAction { get; set; } = string.Empty; // Acción recomendada
         public double? SuggestedBetSize { get; set; }    // Tamaño de apuesta sugerido (como porcentaje del pote)
     }
 
@@ -34,20 +38,26 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
+        private readonly StrategyProfile _profile;
+        private readonly ILogger<UnifiedPokerCalculator> _logger;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
-            PreflopEquityCalculator preflopEquityCalculator)
+            PreflopEquityCalculator preflopEquityCalculator,
+            IOptions<StrategyProfile> profileOptions,
+            ILogger<UnifiedPokerCalculator> logger)
         {
             _monteCarloSimulator = monteCarloSimulator;
             _outsCalculator = outsCalculator;
             _preflopEquityCalculator = preflopEquityCalculator;
+            _profile = profileOptions.Value;
+            _logger = logger;
         }
 
         public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
-            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string handSituation = null)
+            bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null)
         {
             var result = new PokerCalculationResult
             {
@@ -60,8 +70,8 @@ namespace OpenScrape.App.Aplication.UseCases
                 // 1. Calcular pot odds
                 result.PotOddsPercentage = CalculatePotOddsPercentage(currentPotSize, betToCall);
 
-                // 2. Calcular equity
-                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations);
+                // 2. Calcular equity (con rango del villano si hay situación definida)
+                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations, handSituation);
 
                 // 3. Calcular outs y draws
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
@@ -90,9 +100,11 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // En caso de error, devolver valores seguros
+                _logger.LogError(ex, "Error en cálculo de equity. Hand: {Hand}, Community: {Community}",
+                    string.Join(",", playerHand.Select(c => c.Id)),
+                    string.Join(",", communityCards.Select(c => c.Id)));
                 return new PokerCalculationResult
                 {
                     PotOddsPercentage = 0,
@@ -119,7 +131,7 @@ namespace OpenScrape.App.Aplication.UseCases
         }
 
         private double CalculateEquity(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
-            int numOpponents, int? monteCarloIterations)
+            int numOpponents, int? monteCarloIterations, string? handSituation = null)
         {
             if (communityCards.Count == 0) // Preflop
             {
@@ -127,29 +139,31 @@ namespace OpenScrape.App.Aplication.UseCases
             }
             else // Postflop
             {
+                // Obtener rango del villano según la situación de la mano
+                VillainRange? villainRange = null;
+                if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var situation))
+                {
+                    villainRange = VillainRange.GetForSituation(situation);
+                }
+
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(
-                    playerHand, communityCards, numOpponents, monteCarloIterations);
+                    playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
                 return monteCarloResult.Equity * 100;
             }
         }
 
         private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)
         {
-            // Heurística básica para fold equity en cash games
-            double baseFoldEquity = 20.0; // 20% base
+            double baseFoldEquity = _profile.FoldEquityBase;
 
-            // Ajustes por calle (más difícil hacer fold en streets posteriores)
-            if (communityCardsCount >= 4) baseFoldEquity -= 5.0; // River
-            else if (communityCardsCount >= 3) baseFoldEquity += 5.0; // Flop
+            if (communityCardsCount >= 4) baseFoldEquity += _profile.FoldEquityRiverPenalty;
+            else if (communityCardsCount >= 3) baseFoldEquity += _profile.FoldEquityFlopBonus;
 
-            // Ajustes por posición (IP puede representar más folds)
-            if (isInPosition) baseFoldEquity += 10.0;
+            if (isInPosition) baseFoldEquity += _profile.FoldEquityIPBonus;
 
-            // Ajustes por situación de mano (más agresivos hacen menos folds)
-            if (handSituation?.Contains("ThreeBet") == true) baseFoldEquity -= 10.0;
+            if (handSituation?.Contains("ThreeBet") == true) baseFoldEquity += _profile.FoldEquityThreeBetPenalty;
 
-            // Limitar entre 5% y 60%
-            return Math.Max(5.0, Math.Min(60.0, baseFoldEquity));
+            return Math.Max(_profile.FoldEquityMin, Math.Min(_profile.FoldEquityMax, baseFoldEquity));
         }
 
         private double CalculateEVWithFoldEquity(double equity, double foldEquity, double potSize, double betAmount)
@@ -170,32 +184,28 @@ namespace OpenScrape.App.Aplication.UseCases
             // Factores adicionales para cash games
             double adjustedEquity = equity;
 
-            // Bonus por draws (outs disponibles)
             if (hasDraws && communityCardsCount < 5)
             {
-                adjustedEquity += 2.0;
+                adjustedEquity += _profile.DrawEquityBonus;
             }
 
-            // Ajuste por calle (más conservador en streets posteriores)
-            if (communityCardsCount >= 4) // River
+            if (communityCardsCount >= 4)
             {
-                adjustedEquity -= 1.0;
+                adjustedEquity += _profile.RiverEquityPenalty;
             }
 
-            // Ajustes por posición en cash games
             if (isInPosition)
             {
-                adjustedEquity += 3.0; // IP bonus
+                adjustedEquity += _profile.IPEquityBonus;
             }
 
-            // Considerar stack sizes (SPR - Stack to Pot Ratio)
             if (heroStack > 0 && villainStack > 0)
             {
-                decimal currentPot = heroStack + villainStack; // Aproximación
+                decimal currentPot = heroStack + villainStack;
                 double spr = (double)(heroStack / currentPot);
-                if (spr > 3.0) // Deep stacks
+                if (spr > _profile.BetSizingSPRDeepThreshold)
                 {
-                    adjustedEquity += 1.0; // Más agresivo con stacks profundos
+                    adjustedEquity += _profile.DeepStackEquityBonus;
                 }
             }
 
@@ -215,7 +225,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 return ("Fold", null);
 
             // Considerar EV con fold equity para decisiones de apuesta
-            bool shouldBet = result.EVWithFoldEquity > result.ExpectedValue + 5.0; // Threshold arbitrario
+            bool shouldBet = result.EVWithFoldEquity > result.ExpectedValue + _profile.BetEVThreshold;
 
             if (shouldBet)
             {

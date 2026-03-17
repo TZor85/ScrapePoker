@@ -7,7 +7,6 @@ using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
-using OpenScrape.App.Helpers.MLHelper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
@@ -28,7 +27,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Tesseract;
 using static OpenScrape.App.Helpers.CaptureWindowsHelper;
-using static OpenScrape.DecisionMaker.Services.EquityCalculatorService;
 using Image = System.Drawing.Image;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -41,7 +39,7 @@ namespace OpenScrape.App
     public partial class FrmMain : Form, IDisposable
     {
         #region [Constants]
-        private const string DEFAULT_RESOURCES_PATH = @"C:\Code\Poker\ScrapePoker\resources";
+        private static readonly string DEFAULT_RESOURCES_PATH = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources");
         #endregion
 
         #region [Enums]
@@ -77,21 +75,23 @@ namespace OpenScrape.App
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
         private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
-        private readonly List<int> _colorPlaying = new() { 33 };
+        private readonly List<int> _colorPlaying = new() { 17 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
         private IntPtr _handle;
         private User32.RECT _locWindowRect = new();
         private bool _executeCapture;
-        private bool _isPreflop = true;
-        private bool _isFlop;
-        private bool _isTurn;
-        private bool _isRiver;
+        // Street flags derivados del state machine
+        private bool IsPreflop => _gameLoopStateMachine.IsPreflop;
+        private bool IsFlop => _gameLoopStateMachine.CurrentState == GameState.FlopDetected;
+        private bool IsTurn => _gameLoopStateMachine.CurrentState == GameState.TurnDetected;
+        private bool IsRiver => _gameLoopStateMachine.CurrentState == GameState.RiverDetected;
         private string _tableName = string.Empty;
         private long _newTableHand;
         private bool _newHand;
         private string _dealerPosition = "";
+        private int _dealerValuePosition = -1;
         private string _previousDealerPlayerName = "";
         private string _previousSBPlayerName = "";
         private string _previousBBPlayerName = "";
@@ -105,11 +105,35 @@ namespace OpenScrape.App
                 return BetSize.Medium;
             return BetSize.Large;
         }
+
+        private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
+        {
+            if (maxBet == 0)
+                return (false, currentSituation);
+
+            bool villainWasPreflopAggressor = _playerGameState.Players
+                .Any(p => p.Active && p.WasPreflopAggressor);
+
+            bool isDonkBet = !villainWasPreflopAggressor;
+
+            if (isDonkBet)
+            {
+                var donkSituation = currentSituation switch
+                {
+                    HandSituation.OpenRaise => HandSituation.DonkBetVsOpenRaise,
+                    _ => HandSituation.DonkBet
+                };
+                return (true, donkSituation);
+            }
+
+            return (false, currentSituation);
+        }
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
         private double _flopBluffFrequency = 0.15;
         private double _turnBluffFrequency = 0.15;
+        private PokerCalculationResult _flopResult;
         private PokerCalculationResult _turnResult;
         private TurnBoardTexture _turnBoardTexture;
         private PokerCalculationResult _riverResult;
@@ -137,6 +161,14 @@ namespace OpenScrape.App
         private readonly ColorDetectionService _colorDetectionService = new();
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
+        private readonly GameLoggerService _gameLoggerService;
+        private readonly DetectionLoggerService _detectionLoggerService;
+        private readonly GameLoopStateMachine _gameLoopStateMachine;
+        private readonly StrategyProfileService _strategyProfileService;
+        private readonly PostflopDecisionService _postflopDecisionService;
+        private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
+        private bool _previousStreetWasBet;
+        private BoardChangeResult _lastBoardChange = BoardChangeResult.Safe;
         #endregion
 
         /// <summary>
@@ -147,7 +179,12 @@ namespace OpenScrape.App
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases,
                         IPokerCalculator pokerCalculator,
-                        BetSizingService betSizingService)
+                        BetSizingService betSizingService,
+                        GameLoggerService gameLoggerService,
+                        GameLoopStateMachine gameLoopStateMachine,
+                        StrategyProfileService strategyProfileService,
+                        PostflopDecisionService postflopDecisionService,
+                        BoardTextureAnalyzer boardTextureAnalyzer)
         {
             InitializeComponent();
 
@@ -170,6 +207,12 @@ namespace OpenScrape.App
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
             _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
             _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
+            _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
+            _detectionLoggerService = new DetectionLoggerService();
+            _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
+            _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
+            _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
+            _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -494,30 +537,48 @@ namespace OpenScrape.App
                 }
 
                 if (cbTest.Checked)
-                {
-                    _isFlop = rbFlop.Checked;
-                    _isTurn = rbTurn.Checked;
-                    _isRiver = rbRiver.Checked;
                     _frmOverlay.Show();
-                }
+
+                // En modo test, determinar si es postflop (flop/turn/river seleccionado)
+                bool isTestPostflop = cbTest.Checked && (rbFlop.Checked || rbTurn.Checked || rbRiver.Checked);
 
                 await SetTableHand();
 
-                if (_newHand)
+                if (_newHand && !isTestPostflop)
                 {
                     _frmOverlay?.ClearAll();
                     _playerGameState = new PlayerGameState();
                     _responseAction = new ResponseAction();
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
                     _newHand = false;
-                    _isFlop = false;
+
+                    // State machine: transicionar a nueva mano (reset limpia todos los street flags)
+                    _gameLoopStateMachine.Reset();
+                    _gameLoopStateMachine.TryTransition(GameState.HandDetected);
 
                     if (!cbTest.Checked)
                         await HandleNewHandAsync();
                 }
-
-                if (_playerGameState.Players.Count() == 0)
+                else if (_newHand && isTestPostflop)
                 {
+                    _newHand = false;
+                }
+
+                // ForceState después del reset para que no se sobreescriba el estado forzado
+                if (cbTest.Checked)
+                {
+                    if (rbFlop.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.FlopDetected);
+                    else if (rbTurn.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.TurnDetected);
+                    else if (rbRiver.Checked)
+                        _gameLoopStateMachine.ForceState(GameState.RiverDetected);
+                }
+
+                if (_playerGameState.Players.Count() == 0 || (cbTest.Checked && !isTestPostflop))
+                {
+                    SetEmptyPlayer();
+                    SetSitOutPlayer();
                     await InitializePlayersAsync();
                 }
 
@@ -544,19 +605,54 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Abre la ventana de debug de detección de turnos
+        /// </summary>
+        private void BtnDetectionDebug_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Obtener la región uAction
+                var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                
+                if (regionAction == null)
+                {
+                    MessageBox.Show("No se encontró la región 'uAction'. Por favor, carga la configuración de regiones primero.", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (_handle == IntPtr.Zero)
+                {
+                    MessageBox.Show("No hay una ventana de poker seleccionada. Por favor, selecciona la ventana primero.", 
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                // Crear y mostrar la ventana de debug
+                var debugForm = new FrmDetectionDebug(_handle, regionAction);
+                debugForm.Show();
+                
+                _detectionLoggerService.LogDetectionError("Ventana de debug de detección abierta");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al abrir la ventana de debug: {ex.Message}", 
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _detectionLoggerService.LogDetectionError($"Error al abrir ventana de debug: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// Inicializa los datos de los jugadores
         /// </summary>
         private async Task InitializePlayersAsync()
         {
             try
             {
-                await ObtainCardsPlayerAsync();
-                SetEmptyPlayer();
-                SetSitOutPlayer();
-                //SetActivePlayer();
+                // Las cartas y jugadores ya se obtienen antes
                 SetDealerPlayer();
-                //SetBetPlayer();
-                SetVillainPosition(_playerGameState.Position);
+                if (_dealerValuePosition >= 0)
+                    SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
                 SetAliasVillain();
             }
             catch (Exception ex)
@@ -572,16 +668,69 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
         {
-
             SetPotValue();
+            _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
             _preflopHeroPosition = GetPreflopHeroPosition();
 
-            if (!_isFlop && !_isTurn && !_isRiver)
+            if (!IsFlop && !IsTurn && !IsRiver)
             {
+                bool hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                    !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+                if (!hasHoleCards)
+                {
+                    int maxRetries = 2;
+                    int retryDelayMs = 200;
+
+                    for (int retry = 0; retry < maxRetries && !hasHoleCards; retry++)
+                    {
+                        if (retry > 0)
+                        {
+                            await Task.Delay(retryDelayMs);
+                        }
+
+                        await ObtainCardsPlayerAsync();
+
+                        hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                       !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+                    }
+
+                    if (!hasHoleCards)
+                    {
+                        LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
+                        return;
+                    }
+                }
+
+                _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
                 await ProcessPreflopAsync();
             }
             else
             {
+                // Asegurar que las hole cards estén leídas (pueden perderse si _newHand resetea PlayerGameState)
+                bool hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                    !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+
+                if (!hasHoleCards)
+                {
+                    for (int retry = 0; retry < 2 && !hasHoleCards; retry++)
+                    {
+                        if (retry > 0)
+                            await Task.Delay(200);
+
+                        await ObtainCardsPlayerAsync();
+
+                        hasHoleCards = !string.IsNullOrEmpty(_playerGameState?.HoleCard1Face) &&
+                                       !string.IsNullOrEmpty(_playerGameState?.HoleCard2Face);
+                    }
+
+                    if (!hasHoleCards)
+                    {
+                        LogError("HoleCards no detectadas para postflop, saltando procesamiento");
+                        return;
+                    }
+                }
+
                 await ProcessPostFlopAsync(potOddsResult);
             }
         }
@@ -591,7 +740,24 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPreflopAsync()
         {
-            _isPreflop = true;
+            if (_playerGameState.Position == TablePosition.None)
+            {
+                LogError("Posición del jugador no detectada, saltando procesamiento preflop");
+                return;
+            }
+
+            if (_preflopHeroPosition == null || !_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+            {
+                LogError($"PreflopHeroPosition no tiene datos para posición {_playerGameState.Position}, reconstruyendo...");
+                _preflopHeroPosition = GetPreflopHeroPosition();
+                
+                if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
+                {
+                    LogError($"Sigue sin tener datos para posición {_playerGameState.Position}, saltando preflop");
+                    return;
+                }
+            }
+
             var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
             {
                 ResponseAction = _responseAction,
@@ -601,6 +767,30 @@ namespace OpenScrape.App
 
             _responseAction = responseFlop.ResponseAction;
             _playerGameState = responseFlop.PlayerState;
+
+            SetPreflopAggressors();
+        }
+
+        private void SetPreflopAggressors()
+        {
+            var maxBet = _playerGameState.Players.Max(p => p.Bet);
+            if (maxBet <= 1)
+                return;
+
+            var bigBlind = 1m;
+            var playersWhoRaised = _playerGameState.Players
+                .Where(p => p.Active && p.Bet > bigBlind)
+                .ToList();
+
+            foreach (var player in playersWhoRaised)
+            {
+                player.WasPreflopAggressor = true;
+            }
+
+            if (playersWhoRaised.Count > 0)
+            {
+                LogError($"[PREFLOP] Aggressors set: {string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}"))}");
+            }
         }
 
         /// <summary>
@@ -608,18 +798,21 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
-            if (_isFlop)
+            if (IsFlop)
             {
+                _gameLoopStateMachine.TryTransition(GameState.FlopAction);
                 await ProcessFlopAsync(potOddsResult);
             }
 
-            if (_isTurn)
+            if (IsTurn)
             {
+                _gameLoopStateMachine.TryTransition(GameState.TurnAction);
                 await ProcessTurnAsync();
             }
 
-            if (_isRiver)
+            if (IsRiver)
             {
+                _gameLoopStateMachine.TryTransition(GameState.RiverAction);
                 await ProcessRiverAsync();
             }
 
@@ -630,8 +823,25 @@ namespace OpenScrape.App
             _frmOverlay.UpdateAction(_responseAction.Action);
         }
 
-        #region [Handle Turn Action]
+        #region [Generic Postflop Action]
 
+        /// <summary>
+        /// Convierte BetSize local a BetSizeCategory del servicio de decisión.
+        /// </summary>
+        private static BetSizeCategory ToBetSizeCategory(BetSize betSize) => betSize switch
+        {
+            BetSize.NoBet => BetSizeCategory.NoBet,
+            BetSize.Small => BetSizeCategory.Small,
+            BetSize.Medium => BetSizeCategory.Medium,
+            BetSize.Large => BetSizeCategory.Large,
+            _ => BetSizeCategory.NoBet
+        };
+
+        #endregion
+
+        #region [Legacy Turn/River Handlers - DEPRECATED]
+        // Los 20 handlers individuales han sido reemplazados por DeterminePostflopAction.
+        // Se mantiene HandleOpenRaiseTurnAction como referencia por si se necesita debugging.
         private void HandleOpenRaiseTurnAction()
         {
             var equity = _turnResult.EquityPercentage;
@@ -643,7 +853,7 @@ namespace OpenScrape.App
             // Default check/fold for low equity (increased threshold for less aggression)
             if (equity < 45)
             {
-                if (inPosition && _turnBoardTexture == TurnBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                if (inPosition && _turnBoardTexture == TurnBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Semibluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -790,7 +1000,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -819,7 +1029,7 @@ namespace OpenScrape.App
                 _responseAction.Action = inPosition ? baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -836,7 +1046,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.01)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency * 0.5)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Call";
@@ -876,7 +1086,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -902,7 +1112,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet + " (Thin Value)";
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -953,7 +1163,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -982,7 +1192,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet.Replace("3/4", "1/2").Replace("1/2", "1/3") + " (Thin Value)";
             else
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1027,51 +1237,61 @@ namespace OpenScrape.App
 
         private void DetermineRiverAction()
         {
-            switch (_playerGameState.HandSituation)
-            {
-                case HandSituation.OpenRaise:
-                    HandleOpenRaiseRiverAction();
-                    break;
+            var equity = _riverResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+            var texture = _riverBoardTexture.ToString();
+            bool villainAggro = maxBet > 0;
 
-                case HandSituation.Call:
-                    HandleCallRiverAction();
-                    break;
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
 
-                case HandSituation.RaiseOverLimper:
-                    HandleRaiseOverLimperRiverAction();
-                    break;
+            // Analizar carta peligrosa: comparar turn (4 cartas) con river (5ª carta)
+            var riverChange = AnalyzeBoardChange(_playerGameState.BoardCards, 4);
+            // Combinar con peligro arrastrado del turn (flush/straight que sigue en board)
+            var boardChange = CombineBoardChanges(_lastBoardChange, riverChange);
+            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
+                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
+                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
 
-                case HandSituation.ThreeBet:
-                    HandleThreeBetRiverAction();
-                    break;
+            bool isFacingBet = betSize != BetSize.NoBet;
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
+            LogError($"[RIVER] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
+                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
+                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
+                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
 
-                case HandSituation.OpenRaiseVs3Bet:
-                    HandleOpenRaiseVs3BetRiverAction();
-                    break;
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            var decision = _postflopDecisionService.DetermineAction(
+                equity, BoardPosition.River, effectiveSituation, texture, inPosition,
+                ToBetSizeCategory(betSize),
+                potOdds: _riverResult.PotOddsPercentage,
+                totalOuts: _riverResult.TotalOuts,
+                previousStreetBet: _previousStreetWasBet,
+                villainShowedAggression: villainAggro,
+                boardChange: boardChange,
+                heroBlocksDangerSuit: heroBlocks,
+                heroStack: _playerGameState.HeroStack,
+                potSize: _playerGameState.PotSize,
+                hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"),
+                numOpponents: Math.Max(1, numOpponents));
 
-                case HandSituation.OpenRaiseVs3BetAndCall:
-                    HandleOpenRaiseVs3BetAndCallRiverAction();
-                    break;
+            LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
 
-                case HandSituation.FourBet:
-                    HandleFourBetRiverAction();
-                    break;
+            _responseAction.Action = decision.Action;
+            _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
 
-                case HandSituation.Cold4Bet:
-                    HandleCold4BetRiverAction();
-                    break;
-
-                case HandSituation.Squeeze:
-                    HandleSqueezeRiverAction();
-                    break;
-
-                case HandSituation.VsSqueeze:
-                    HandleVsSqueezeRiverAction();
-                    break;
-
-                default:
-                    break;
-            }
+            // Persistir decisión y board en game logger
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.River, equity, _riverResult.PotOddsPercentage, _riverResult.ExpectedValue,
+                _riverResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
+                maxBet, effectiveSituation, inPosition));
+            var riverCardName = _playerGameState.BoardCards
+                .FirstOrDefault(b => b.Position == BoardPosition.River)?.Name;
+            _gameLoggerService.UpdateBoard([], riverCard: riverCardName);
         }
 
         #region [Handle River Action]
@@ -1087,7 +1307,7 @@ namespace OpenScrape.App
             // Default check/fold for low equity (higher threshold for river)
             if (equity < 40)
             {
-                if (inPosition && _riverBoardTexture == RiverBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < 0.02)
+                if (inPosition && _riverBoardTexture == RiverBoardTexture.Coordinated && betSize == BetSize.Small && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Semibluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1234,7 +1454,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1263,7 +1483,7 @@ namespace OpenScrape.App
                 _responseAction.Action = inPosition ? baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)" : (betSize == BetSize.NoBet ? "Check" : "Fold");
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1317,7 +1537,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1343,7 +1563,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet + " (Thin Value)";
             else
             {
-                if (Random.Shared.NextDouble() < 0.02)
+                if (Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/3 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1394,7 +1614,7 @@ namespace OpenScrape.App
 
             if (equity < 40)
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1423,7 +1643,7 @@ namespace OpenScrape.App
                 _responseAction.Action = baseBet.Replace("Pot", "3/4").Replace("3/4", "1/2") + " (Thin Value)";
             else
             {
-                if (!inPosition && Random.Shared.NextDouble() < 0.02)
+                if (!inPosition && Random.Shared.NextDouble() < _turnBluffFrequency)
                     _responseAction.Action = "Bet 1/2 (Bluff)";
                 else
                     _responseAction.Action = betSize == BetSize.NoBet ? "Check" : "Fold";
@@ -1469,10 +1689,50 @@ namespace OpenScrape.App
         /// <summary>
         /// Analiza la textura del board del turn
         /// </summary>
+        /// <summary>
+        /// Analiza el cambio de board al caer una nueva carta.
+        /// previousCardCount indica cuántas cartas había antes (3 para turn, 4 para river).
+        /// </summary>
+        /// <summary>
+        /// Combina el peligro de la street anterior con el de la nueva carta.
+        /// Si el turn completó un flush, el river hereda ese peligro.
+        /// </summary>
+        private static BoardChangeResult CombineBoardChanges(BoardChangeResult previous, BoardChangeResult current)
+        {
+            if (previous.DangerLevel == 0)
+                return current;
+            if (current.DangerLevel == 0 && previous.DangerLevel > 0)
+                return previous; // Arrastrar peligro de la street anterior
+
+            // Ambos tienen peligro: combinar tomando el peor caso
+            return new BoardChangeResult(
+                FlushCompleted: previous.FlushCompleted || current.FlushCompleted,
+                FlushDrawAppeared: previous.FlushDrawAppeared || current.FlushDrawAppeared,
+                StraightCompleted: previous.StraightCompleted || current.StraightCompleted,
+                BoardPaired: previous.BoardPaired || current.BoardPaired,
+                OvercardAppeared: previous.OvercardAppeared || current.OvercardAppeared,
+                CompletedFlushSuit: current.CompletedFlushSuit >= 0 ? current.CompletedFlushSuit : previous.CompletedFlushSuit,
+                DangerLevel: Math.Max(previous.DangerLevel, current.DangerLevel));
+        }
+
+        private BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount)
+        {
+            var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
+            if (communityCards.Count <= previousCardCount)
+                return BoardChangeResult.Safe;
+
+            var previousRanks = communityCards.Take(previousCardCount).Select(c => c.Force).ToList();
+            var previousSuits = communityCards.Take(previousCardCount).Select(c => c.Suit).ToList();
+            var newCard = communityCards[previousCardCount];
+
+            return _boardTextureAnalyzer.AnalyzeBoardChange(previousRanks, previousSuits, newCard.Force, newCard.Suit);
+        }
+
         private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
         {
-            var turnCards = boardCards.Where(b => b.Position == BoardPosition.Turn).ToList();
-            if (turnCards.Count < 1) return TurnBoardTexture.Dry;
+            // Analizar TODAS las cartas comunitarias (flop + turn), no solo la carta del turn
+            var turnCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
+            if (turnCards.Count < 4) return TurnBoardTexture.Dry;
 
             var suits = turnCards.Select(b => b.Suit).ToList();
             var ranks = turnCards.Select(b => b.Force).OrderBy(r => r).ToList();
@@ -1570,23 +1830,29 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
-            // Crear el servicio
-            var equityService = new EquityCalculatorService(
-                new MonteCarloSimulator(),
-                new OutsCalculator(),
-                new PreflopEquityCalculator());
-
-            _isFlop = false;
-
-            // Capturar cartas del flop
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
+            // Capturar cartas del flop con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap
+                });
 
-            var dataBoard = flopResponse.DataBoard;
+                dataBoard = flopResponse.DataBoard;
+
+                if (dataBoard.Count(d => d.Position == BoardPosition.Flop) >= 3)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR flop: intento {attempt + 1} falló, reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
             _playerGameState.BoardCards = dataBoard;
 
             dataBoard.Add(new BoardData { Force = _playerGameState.HoleCard1Rank, Suit = _playerGameState.HoleCard1Suit, Position = BoardPosition.Hand, Name = _playerGameState.HoleCard1Face, Location = 0 });
@@ -1603,19 +1869,16 @@ namespace OpenScrape.App
             _playerGameState = setFlopForceBoardResponse.PlayerState;
             _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
 
-            // Calcular odds y actualizar overlay
-            //potOddsResult = GetPotOddsCalculator();
-
             var myCards = new List<CardDataOuts>
             {
                 new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
                 new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
             };
 
-            // Verificar que hay suficientes cartas del flop
+            // Verificar que hay suficientes cartas del flop tras reintentos
             if (dataBoard.Count(d => d.Position == BoardPosition.Flop) < 3)
             {
-                LogError("No se detectaron suficientes cartas del flop. Se requieren al menos 3 cartas.");
+                LogError("No se detectaron suficientes cartas del flop tras reintentos.");
                 _responseAction.Action = "Error: No se pudieron detectar cartas del flop";
                 UpdateOverlayWithPotOdds(new PokerCalculationResult());
                 return;
@@ -1634,10 +1897,11 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
+            _flopResult = result;
             UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
@@ -1645,7 +1909,20 @@ namespace OpenScrape.App
 
             // Analizar el flop y determinar acción
             DetermineFlopAction();
-            //_responseAction.Action = analysis.RecommendedAction;
+
+            // Persistir flop board y decisión
+            var flopCardNames = _playerGameState.BoardCards
+                .Where(b => b.Position == BoardPosition.Flop)
+                .OrderBy(b => b.Location)
+                .Select(b => b.Name ?? string.Empty)
+                .ToList();
+            _gameLoggerService.UpdateBoard(flopCardNames);
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.Flop, result.EquityPercentage, result.PotOddsPercentage, result.ExpectedValue,
+                result.RecommendedAction, _responseAction.Action ?? "Unknown", _playerGameState.PotSize,
+                _playerGameState.Players.Max(m => m.Bet), _playerGameState.HandSituation,
+                _playerGameState.IsInPosition));
+            _gameLoggerService.UpdateSituation(_playerGameState.HandSituation);
         }
 
         /// <summary>
@@ -1708,51 +1985,62 @@ namespace OpenScrape.App
 
         private void DetermineTurnAction()
         {
-            switch (_playerGameState.HandSituation)
-            {
-                case HandSituation.OpenRaise:
-                    HandleOpenRaiseTurnAction();
-                    break;
+            var equity = _turnResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+            var texture = _turnBoardTexture.ToString();
+            bool villainAggro = maxBet > 0;
 
-                case HandSituation.Call:
-                    HandleCallTurnAction();
-                    break;
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
 
-                case HandSituation.RaiseOverLimper:
-                    HandleRaiseOverLimperTurnAction();
-                    break;
+            // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
+            var boardChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
+            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
+                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
+                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
 
-                case HandSituation.ThreeBet:
-                    HandleThreeBetTurnAction();
-                    break;
+            bool isFacingBet = betSize != BetSize.NoBet;
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
+            LogError($"[TURN] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
+                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
+                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
+                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
+                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}");
 
-                case HandSituation.OpenRaiseVs3Bet:
-                    HandleOpenRaiseVs3BetTurnAction();
-                    break;
+            _lastBoardChange = boardChange;
 
-                case HandSituation.OpenRaiseVs3BetAndCall:
-                    HandleOpenRaiseVs3BetAndCallTurnAction();
-                    break;
+            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            var decision = _postflopDecisionService.DetermineAction(
+                equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
+                ToBetSizeCategory(betSize),
+                potOdds: _turnResult.PotOddsPercentage,
+                totalOuts: _turnResult.TotalOuts,
+                previousStreetBet: _previousStreetWasBet,
+                villainShowedAggression: villainAggro,
+                boardChange: boardChange,
+                heroBlocksDangerSuit: heroBlocks,
+                heroStack: _playerGameState.HeroStack,
+                potSize: _playerGameState.PotSize,
+                hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"),
+                numOpponents: Math.Max(1, numOpponents));
 
-                case HandSituation.FourBet:
-                    HandleFourBetTurnAction();
-                    break;
+            LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
 
-                case HandSituation.Cold4Bet:
-                    HandleCold4BetTurnAction();
-                    break;
+            _responseAction.Action = decision.Action;
+            _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
 
-                case HandSituation.Squeeze:
-                    HandleSqueezeTurnAction();
-                    break;
-
-                case HandSituation.VsSqueeze:
-                    HandleVsSqueezeTurnAction();
-                    break;
-
-                default:
-                    break;
-            }
+            // Persistir decisión y board en game logger
+            _gameLoggerService.LogStreetDecision(new StreetDecision(
+                BoardPosition.Turn, equity, _turnResult.PotOddsPercentage, _turnResult.ExpectedValue,
+                _turnResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
+                maxBet, effectiveSituation, inPosition));
+            var turnCardName = _playerGameState.BoardCards
+                .FirstOrDefault(b => b.Position == BoardPosition.Turn)?.Name;
+            _gameLoggerService.UpdateBoard([], turnCard: turnCardName);
+            _gameLoggerService.UpdateSituation(effectiveSituation);
         }
 
         #region [Handle Flop Action]
@@ -1845,7 +2133,6 @@ namespace OpenScrape.App
 
         private void HandleRaiseOverLimperFlopAction(FlopAnalyzerHelperReqest flopAnalyzerRequest)
         {
-            var rolOopEngine = new RolOopHelper();
             var heroCardsName = $"{flopAnalyzerRequest.PlayerState.HoleCard1Face}{flopAnalyzerRequest.PlayerState.HoleCard2Face}";
             var flopCardsName = string.Empty;
 
@@ -2203,18 +2490,38 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
-            _isTurn = false;
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+            // Capturar carta del turn con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap,
-                DataBoard = _playerGameState.BoardCards
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap,
+                    DataBoard = _playerGameState.BoardCards
+                });
 
-            var dataBoard = turnResponse.DataBoard;
-            _playerGameState.BoardCards = turnResponse.DataBoard;
+                dataBoard = turnResponse.DataBoard;
+
+                if (dataBoard.Count >= 4)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR turn: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
+            if (dataBoard.Count < 4)
+            {
+                LogError("No se detectó la carta del turn tras reintentos.");
+                _responseAction.Action = "Error: No se pudo detectar carta del turn";
+                return;
+            }
+
+            _playerGameState.BoardCards = dataBoard;
 
             // Analizar textura del board del turn
             _turnBoardTexture = AnalyzeTurnBoardTexture(dataBoard);
@@ -2239,7 +2546,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2259,18 +2566,38 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
-            _isRiver = false;
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-            var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
+            // Capturar carta del river con retry
+            List<BoardData> dataBoard = null!;
+            for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                Image = bitmap,
-                RegionsTableMap = _regionsTableMap,
-                DataBoard = _playerGameState.BoardCards
-            });
+                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
+                {
+                    Image = bitmap,
+                    RegionsTableMap = _regionsTableMap,
+                    DataBoard = _playerGameState.BoardCards
+                });
 
-            var dataBoard = riverResponse.DataBoard;
-            _playerGameState.BoardCards = riverResponse.DataBoard;
+                dataBoard = riverResponse.DataBoard;
 
+                if (dataBoard.Count >= 5)
+                    break;
+
+                if (attempt < GameLoopStateMachine.MaxOcrRetries)
+                {
+                    LogError($"OCR river: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    await Task.Delay(200);
+                }
+            }
+
+            if (dataBoard.Count < 5)
+            {
+                LogError("No se detectó la carta del river tras reintentos.");
+                _responseAction.Action = "Error: No se pudo detectar carta del river";
+                return;
+            }
+
+            _playerGameState.BoardCards = dataBoard;
 
             var myCards = new List<CardDataOuts>
             {
@@ -2293,7 +2620,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2316,7 +2643,31 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
+            // Finalizar la ronda anterior antes de empezar una nueva
+            if (_gameLoggerService.HasActiveRound)
+            {
+                _gameLoggerService.EndRound(_playerGameState?.HeroStack ?? 0);
+                await _gameLoggerService.SaveRoundAsync();
+            }
+
+            _previousStreetWasBet = false;
+            _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
+
+            // Registrar nueva ronda en el game logger
+            if (long.TryParse(_tableHand, out var handNum))
+            {
+                var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
+                _gameLoggerService.StartNewRound(
+                    handNum,
+                    _tableName,
+                    _playerGameState?.HoleCard1Face ?? string.Empty,
+                    _playerGameState?.HoleCard2Face ?? string.Empty,
+                    _playerGameState?.Position ?? TablePosition.None,
+                    _playerGameState?.HeroStack ?? 0,
+                    activePlayers);
+                _gameLoggerService.UpdateSessionId(_session);
+            }
 
             _folderPath = Path.Combine(
                 DEFAULT_RESOURCES_PATH,
@@ -2331,7 +2682,7 @@ namespace OpenScrape.App
 
             var path = Path.Combine(_folderPath, "resume.txt");
             await File.AppendAllTextAsync(path, tbResume.Text + Environment.NewLine);
-            tbResume.Text = string.Empty;
+            // tbResume.Text = string.Empty;
         }
 
         /// <summary>
@@ -2351,13 +2702,13 @@ namespace OpenScrape.App
 
             if (_playerGameState != null)
             {
-                if (_isPreflop)
+                if (IsPreflop)
                 {
                     UpdateResumeTextForPreflop(potOddsResult);
-                    _isPreflop = false;
+                    // Transición a PreflopAction ya se hizo en ProcessTableInfoAsync
                 }
 
-                if (_isFlop)
+                if (_gameLoopStateMachine.IsFlop)
                 {
                     UpdateResumeTextForFlop();
                 }
@@ -2422,7 +2773,7 @@ namespace OpenScrape.App
                 }
             }
 
-            tbResume.Text = sb.ToString();
+            tbResume.AppendText(sb.ToString() + Environment.NewLine);
         }
 
         /// <summary>
@@ -2538,7 +2889,7 @@ namespace OpenScrape.App
                 _playerGameState.PotSize,
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
-                heroStack: 0,
+                heroStack: _playerGameState.HeroStack,
                 villainStack: 0,
                 handSituation: _playerGameState.HandSituation.ToString());
 
@@ -2596,31 +2947,90 @@ namespace OpenScrape.App
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
-            foreach (var region in regionTableMap.Regions)
+            var region = regionTableMap.Regions.FirstOrDefault(r => r.Name == "uStack");
+            if (region == null)
+                return;
+
+            // Limpiar cache OCR para evitar colisiones dHash entre valores similares (ej: 97 vs 92)
+            _ocrService.ClearCache();
+
+            // Intentar leer el stack con retry
+            decimal stackValue = 0;
+            int maxRetries = 2;
+
+            for (int attempt = 0; attempt <= maxRetries; attempt++)
             {
-                if (region.Name == "uStack") // Región específica para stack del héroe
-                {
-                    var stackValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
-                        region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                var rawValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
+                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
-                    if (stackValue.ToString().Contains(','))
-                    {
-                        var values = stackValue.ToString().Split(',');
-                        if (values[0].Length == 3 && values[0].Substring(0, 1) == "8")
-                            stackValue = decimal.Parse(values[0].Substring(1) + "," + values[1]);
+                stackValue = NormalizeStackValue(rawValue);
 
-                    }
-                    else
-                    {
-                        if (stackValue.ToString().Length == 4)
-                            stackValue = decimal.Parse(stackValue.ToString().Substring(0, 2) + "," + stackValue.ToString().Substring(2, 2));
-                    }
-
-                    _playerGameState.HeroStack = stackValue;
-                    lbUserStack.Text = stackValue.ToString();
+                if (stackValue > 0)
                     break;
+
+                if (attempt < maxRetries)
+                    Thread.Sleep(100);
+            }
+
+            // Si no se obtuvo valor válido, mantener el anterior
+            if (stackValue <= 0 && _playerGameState.HeroStack > 0)
+            {
+                LogError($"[STACK] OCR falló tras reintentos, manteniendo valor anterior: {_playerGameState.HeroStack}");
+                lbUserStack.Text = _playerGameState.HeroStack.ToString();
+                return;
+            }
+
+            _playerGameState.HeroStack = stackValue;
+            lbUserStack.Text = stackValue.ToString();
+        }
+
+        /// <summary>
+        /// Normaliza el valor raw del OCR a un decimal válido de stack.
+        /// Maneja artefactos comunes del OCR: prefijo "8" espurio con separador decimal.
+        /// Los stacks sin separador decimal se devuelven tal cual (son valores enteros en BB).
+        /// </summary>
+        private decimal NormalizeStackValue(decimal rawValue)
+        {
+            if (rawValue <= 0)
+                return 0;
+
+            var rawStr = rawValue.ToString();
+
+            // Solo corregir artefacto "8" cuando ya tiene separador decimal
+            if (rawStr.Contains(',') || rawStr.Contains('.'))
+            {
+                var separator = rawStr.Contains(',') ? ',' : '.';
+                var parts = rawStr.Split(separator);
+
+                // Artefacto OCR: "8" espurio al inicio (ej: "812,50" → "12,50")
+                if (parts[0].Length > 2 && parts[0][0] == '8')
+                {
+                    var corrected = parts[0][1..] + separator + parts[1];
+                    if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
+                    {
+                        LogError($"[STACK] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                        return correctedValue;
+                    }
                 }
             }
+
+            // Sin separador decimal → valor entero, devolver tal cual
+            return rawValue;
+        }
+
+        /// <summary>
+        /// Limpia el texto OCR dejando solo caracteres numéricos válidos (dígitos, coma, punto)
+        /// </summary>
+        private static string CleanOcrNumericText(string? ocrText)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText))
+                return "0";
+
+            // Eliminar espacios, letras y caracteres no numéricos excepto separadores decimales
+            var cleaned = new string(ocrText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+
+            return string.IsNullOrEmpty(cleaned) ? "0" : cleaned;
         }
 
         /// <summary>
@@ -2784,7 +3194,8 @@ namespace OpenScrape.App
 
             SetPotValue();
             await ObtainCardsPlayerAsync();
-            SetDealerPlayer();
+            // SetDealerPlayer se llama desde InitializePlayersAsync después de crear los jugadores
+            // SetDealerPlayer();
 
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
             if (regionTableMap == null)
@@ -2840,6 +3251,10 @@ namespace OpenScrape.App
         /// </summary>
         private void SetDealerPlayer()
         {
+            // Si no hay jugadores, no podemos determinar el dealer
+            if (_playerGameState.Players.Count == 0)
+                return;
+            
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
@@ -2906,9 +3321,24 @@ namespace OpenScrape.App
             LogInformation($"Dealer assigned to player P{playerNumber}");
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
-            _playerGameState.Position = DetermineP0Position(playerNumber, emptyPositions);
+            var p0Pos = DetermineP0Position(playerNumber, emptyPositions);
+            LogInformation($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
+            _playerGameState.Position = p0Pos;
+            
+            // Establecer la posición del jugador P0 (héroe)
+            var heroPlayer = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
+            if (heroPlayer != null)
+            {
+                heroPlayer.Position = p0Pos;
+                LogInformation($"Héroe P0 position establecida: {p0Pos}");
+            }
+            
             _previousDealerPlayerName = _dealerPosition;
             _dealerPosition = player.Name;
+            _dealerValuePosition = playerNumber;
+
+            // Asignar posiciones a villanos usando la posición del dealer
+            SetVillainPosition(p0Pos, playerNumber);
         }
 
         /// <summary>
@@ -2919,36 +3349,15 @@ namespace OpenScrape.App
         /// <returns>Posición de la mesa para P0</returns>
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
-            // Obtener asientos activos (jugadores no vacíos ni sentados fuera)
+            var position = PositionCalculator.DetermineP0Position(dealerPosition, _playerGameState.Players);
+            
             var activeSeats = _playerGameState.Players
                 .Where(p => !p.Empty && !p.SitOut)
                 .Select(p => p.ValuePosition)
                 .OrderBy(s => s)
                 .ToList();
-
-            int dealerSeat = dealerPosition;
-            int heroSeat = 5; // Asumiendo que el héroe está en el asiento 5
-
-            if (!activeSeats.Contains(dealerSeat) || !activeSeats.Contains(heroSeat))
-                return TablePosition.None;
-
-            int dealerIndex = activeSeats.IndexOf(dealerSeat);
-            int heroIndex = activeSeats.IndexOf(heroSeat);
-
-            int distance = (heroIndex - dealerIndex + activeSeats.Count) % activeSeats.Count;
-
-            // Mapear distancia a posición de mesa
-            var position = distance switch
-            {
-                0 => TablePosition.Button,
-                1 => TablePosition.SmallBlind,
-                2 => TablePosition.BigBlind,
-                3 => TablePosition.Early,
-                4 => TablePosition.CutOff,
-                _ => TablePosition.None
-            };
-
-            LogInformation($"Posición del héroe calculada: {position} (distancia: {distance}, dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
+            
+            LogInformation($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
             return position;
         }
 
@@ -3063,12 +3472,12 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece las posiciones de los villanos basado en la posición de P0
+        /// Establece las posiciones de los villanos basado en la posición de P0 y del dealer
         /// </summary>
         /// <param name="p0Position">Posición de P0</param>
-        private void SetVillainPosition(TablePosition p0Position)
+        /// <param name="dealerPosition">Posición del dealer</param>
+        private void SetVillainPosition(TablePosition p0Position, int dealerPosition)
         {
-            // Obtener copia de jugadores y filtrar activos (no vacíos ni sitout)
             var allPlayers = _playerGameState.Players.ToList();
             if (allPlayers == null || allPlayers.Count == 0)
                 return;
@@ -3081,72 +3490,30 @@ namespace OpenScrape.App
             if (!activePlayers.Any())
                 return;
 
-            // Orden base de posiciones según la posición de P0 (héroe) para mesa 6-max
-            var positionsOrder = p0Position switch
-            {
-                TablePosition.BigBlind => new List<TablePosition>
-                {
-                    TablePosition.SmallBlind, TablePosition.Button, TablePosition.CutOff,
-                    TablePosition.Middle, TablePosition.Early
-                },
-                TablePosition.SmallBlind => new List<TablePosition>
-                {
-                    TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
-                    TablePosition.CutOff, TablePosition.Button
-                },
-                TablePosition.Button => new List<TablePosition>
-                {
-                    TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
-                    TablePosition.Middle, TablePosition.CutOff
-                },
-                TablePosition.CutOff => new List<TablePosition>
-                {
-                    TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
-                    TablePosition.Early, TablePosition.Middle
-                },
-                TablePosition.Middle => new List<TablePosition>
-                {
-                    TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
-                    TablePosition.BigBlind, TablePosition.Early
-                },
-                TablePosition.Early => new List<TablePosition>
-                {
-                    TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
-                    TablePosition.SmallBlind, TablePosition.BigBlind
-                },
-                _ => new List<TablePosition>()
-            };
+            LogInformation($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {p0Position}, Dealer: {dealerPosition}");
 
-            if (activePlayers.Count() == 4)
-                positionsOrder.Remove(TablePosition.Middle);
-
-            if (activePlayers.Count() == 3)
-            {
-                positionsOrder.Remove(TablePosition.Middle);
-                positionsOrder.Remove(TablePosition.Early);
-            }
-
-            if (activePlayers.Count() == 2)
-            {
-                positionsOrder.Remove(TablePosition.Middle);
-                positionsOrder.Remove(TablePosition.Early);
-                positionsOrder.Remove(TablePosition.CutOff);
-            }
-
-            // Limpiar posiciones previas de jugadores activos
-            foreach (var p in activePlayers)
+            // Limpiar posiciones previas de jugadores activos (excepto héroe P0)
+            foreach (var p in activePlayers.Where(p => p.ValuePosition != 0))
             {
                 p.Position = TablePosition.None;
             }
 
-            SetVillainPositionExtension(activePlayers, positionsOrder);
+            // Usar PositionCalculator para asignar posiciones a villanos (basado en posición del héroe)
+            var villainPositions = PositionCalculator.AssignVillainPositions(p0Position, allPlayers);
 
-            // Validar asignaciones de posiciones
-            ValidatePositionAssignments(activePlayers);
+            foreach (var kvp in villainPositions)
+            {
+                var player = activePlayers.FirstOrDefault(p => p.ValuePosition == kvp.Key);
+                if (player != null)
+                {
+                    player.Position = kvp.Value;
+                }
+            }
 
-            // Logging de posiciones asignadas
             var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
             LogInformation($"Posiciones asignadas: {positionLog}");
+
+            ValidatePositionAssignments(activePlayers);
         }
 
         /// <summary>
@@ -3170,8 +3537,10 @@ namespace OpenScrape.App
                     if (player == null)
                         continue;
 
-                    // Elegibles solamente jugadores activos
-                    bool shouldAssignPosition = !player.Empty && !player.SitOut && player.Position == TablePosition.None;
+                    // Elegibles solamente jugadores activos (excluir héroe P0)
+                    bool shouldAssignPosition = !player.Empty && !player.SitOut && 
+                                               player.Position == TablePosition.None &&
+                                               player.ValuePosition != 0; // Excluir héroe
                     if (!shouldAssignPosition)
                         continue;
 
@@ -3459,7 +3828,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece el valor del stack usando OCR
+        /// Establece el valor del stack usando OCR con doble lectura y preprocesamiento
         /// </summary>
         private decimal SetStackValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
@@ -3472,46 +3841,58 @@ namespace OpenScrape.App
 
             var result = string.Empty;
 
+            // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
             {
                 firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                    preprocessed,
-                    0,
-                    0,
-                    width,
-                    height,
-                    umbral ?? 0,
-                    isOnlyNumber ?? false);
+                    preprocessed, 0, 0, width, height,
+                    umbral ?? 0, isOnlyNumber ?? false);
             }
 
-
+            // Lectura 2: con umbral inactivo y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
             {
                 secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                    preprocessed,
-                    0,
-                    0,
-                    width,
-                    height,
-                    inactiveUmbral ?? 0,
-                    isOnlyNumber ?? false);
+                    preprocessed, 0, 0, width, height,
+                    inactiveUmbral ?? 0, isOnlyNumber ?? false);
             }
+
+            // Lectura 3: directa sin preprocesamiento (como fallback)
+            var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image, posX, posY, width, height,
+                umbral ?? 0, isOnlyNumber ?? false);
 
             if (isOnlyNumber.HasValue == true)
             {
-                if (string.IsNullOrEmpty(firstOcr.Text))
-                    firstOcr.Text = "0";
+                var cleanFirst = CleanOcrNumericText(firstOcr.Text);
+                var cleanSecond = CleanOcrNumericText(secondOcr.Text);
+                var cleanThird = CleanOcrNumericText(thirdOcr.Text);
 
-                if (string.IsNullOrEmpty(secondOcr.Text))
-                    secondOcr.Text = "0";
+                decimal.TryParse(cleanFirst, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr1);
+                decimal.TryParse(cleanSecond, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr2);
+                decimal.TryParse(cleanThird, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr3);
 
-                var ocr1 = decimal.Parse(firstOcr.Text);
-                var ocr2 = decimal.Parse(secondOcr.Text);
-
-                if (ocr2 >= ocr1)
-                    result = ocr2.ToString();
+                // Elegir por consenso: si 2+ lecturas coinciden, usar ese valor.
+                // Si no hay consenso, preferir la lectura directa (sin preprocesamiento)
+                // ya que la binarización puede distorsionar dígitos.
+                decimal best;
+                if (ocr1 == ocr2 && ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr1 == ocr2)
+                    best = ocr1;
+                else if (ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr2 == ocr3)
+                    best = ocr2;
                 else
-                    result = ocr1.ToString();
+                    best = ocr3; // Sin consenso → preferir lectura directa (sin preprocesamiento)
+
+                result = best.ToString();
+
+                LogError($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
             }
 
 
@@ -3565,6 +3946,12 @@ namespace OpenScrape.App
         {
             try
             {
+                if (_handle == IntPtr.Zero)
+                {
+                    LogError("GetImageWhilePlaying: _handle es IntPtr.Zero, no se puede capturar");
+                    return;
+                }
+
                 string baseFolder = Path.Combine(
                     "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
                     $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}");
@@ -3579,7 +3966,13 @@ namespace OpenScrape.App
 
                 var path = Path.Combine(_folderPath, $"game_{DateTime.Now.Ticks}.png");
 
-                _useCase.ExecuteImage(path);
+                using var capturedBitmap = _useCase.ExecuteImage(path);
+
+                if (capturedBitmap.Width <= 1 || capturedBitmap.Height <= 1)
+                {
+                    LogError($"GetImageWhilePlaying: Captura inválida ({capturedBitmap.Width}x{capturedBitmap.Height})");
+                    return;
+                }
 
                 using var windowImg = Image.FromFile(path);
 
@@ -3617,8 +4010,10 @@ namespace OpenScrape.App
 
                 if (_handle == IntPtr.Zero)
                 {
+                    // Esperar 2s para que el usuario active la ventana de poker
                     Task.Delay(2000).Wait();
-                    _handle = _useCase.GetWindow(CaptureWindowsHelper.User32.GetForegroundWindow());
+                    IntPtr foregroundHandle = CaptureWindowsHelper.User32.GetForegroundWindow();
+                    _handle = _useCase.GetWindow(foregroundHandle);
 
                     User32.GetWindowRect(_handle, ref windowRect);
                     _locWindowRect = windowRect;
@@ -3668,70 +4063,266 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Maneja el evento DoWork del BackgroundWorker
+        /// Maneja el evento DoWork del BackgroundWorker con detección mejorada y logging detallado
         /// </summary>
         private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
             try
             {
                 _backgroundExecute = true;
+                var detectionStats = new { StartTime = DateTime.Now, TotalChecks = 0, Detections = 0, Errors = 0 };
+                var lastLoggedColor = Color.Empty;
+                var colorChangeCount = 0;
 
                 User32.RECT windowRect = new User32.RECT();
                 User32.GetWindowRect(_handle, ref windowRect);
 
+                _detectionLoggerService.LogDetectionError("BackgroundWorker iniciado - Monitoreo de detección activo");
+
                 while (true)
                 {
-                    // Validación de overlay
-                    if (_frmOverlay == null || !_frmOverlay.Visible)
+                    try
                     {
-                        e.Cancel = true;
-                        return;
-                    }
+                        detectionStats = detectionStats with { TotalChecks = detectionStats.TotalChecks + 1 };
 
-                    using var img = _useCase.Execute(_handle);
-
-                    // Validación de regiones
-                    var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
-                    var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
-
-                    if (regionAction == null || flop == null)
-                    {
-                        Task.Delay(100).Wait();
-                        continue;
-                    }
-
-                    using var bitmap = new Bitmap(img);
-                    Color colorAction = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
-                    Color colorFlop = bitmap.GetPixel(flop.PosX, flop.PosY);
-
-                    this.Invoke((MethodInvoker)delegate
-                    {
-                        // Extracción de condiciones a variables
-                        bool shouldCaptureFlop = colorAction.B == 24 && !_executeCapture && colorFlop.B == 255;
-                        bool shouldCapture = colorAction.B == 24 && !_executeCapture;
-
-                        if (shouldCaptureFlop)
+                        // Validación de overlay
+                        if (_frmOverlay == null || !_frmOverlay.Visible)
                         {
-                            _isFlop = true;
+                            _detectionLoggerService.LogDetectionError("Overlay no visible - Cancelando BackgroundWorker");
+                            e.Cancel = true;
+                            return;
                         }
 
-                        if (shouldCapture)
+                        if (_handle == IntPtr.Zero)
                         {
-                            btnCapture_Click(sender, e);
+                            _detectionLoggerService.LogDetectionError("Handle es IntPtr.Zero - no se puede capturar");
+                            Task.Delay(500).Wait();
+                            continue;
                         }
 
-                        if (colorAction.B != 24)
-                            _executeCapture = false;
-                    });
+                        using var img = _useCase.Execute(_handle);
 
-                    btnWindow_Click(sender, e);
+                        if (img == null || img.Width <= 1 || img.Height <= 1)
+                        {
+                            _detectionLoggerService.LogDetectionError($"Captura inválida: {img?.Width}x{img?.Height}");
+                            Task.Delay(500).Wait();
+                            continue;
+                        }
+
+                        // Validación de regiones
+                        var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                        var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
+
+                        if (regionAction == null || flop == null)
+                        {
+                            if (detectionStats.TotalChecks % 100 == 0) // Log cada 100 intentos
+                            {
+                                _detectionLoggerService.LogDetectionError($"Regiones no encontradas - uAction: {regionAction != null}, isFlop: {flop != null}");
+                            }
+                            Task.Delay(100).Wait();
+                            continue;
+                        }
+
+                        using var bitmap = new Bitmap(img);
+                        
+                        // Detección mejorada con múltiples píxeles y tolerancia
+                        var detectionResult = PerformEnhancedDetection(bitmap, regionAction, flop);
+                        
+                        // Log cambios de color significativos
+                        if (!detectionResult.ActionColor.Equals(lastLoggedColor))
+                        {
+                            colorChangeCount++;
+                            if (colorChangeCount % 10 == 0 || Math.Abs(detectionResult.ActionColor.B - lastLoggedColor.B) > 5)
+                            {
+                                _detectionLoggerService.LogColorDetection(
+                                    new Point(regionAction.PosX, regionAction.PosY),
+                                    detectionResult.ActionColor,
+                                    detectionResult.ShouldCapture,
+                                    "uAction"
+                                );
+                                lastLoggedColor = detectionResult.ActionColor;
+                            }
+                        }
+
+                        this.Invoke((MethodInvoker)delegate
+                        {
+                            try
+                            {
+                                // Detección de flop mejorada
+                                if (detectionResult.ShouldCaptureFlop)
+                                {
+                                    _gameLoopStateMachine.TryTransition(GameState.FlopDetected);
+                                    _detectionLoggerService.LogTurnDetected(
+                                        new Point(regionAction.PosX, regionAction.PosY),
+                                        detectionResult.ActionColor,
+                                        "FlopDetected"
+                                    );
+                                }
+
+                                // Detección de turno del Hero mejorada
+                                if (detectionResult.ShouldCapture)
+                                {
+                                    detectionStats = detectionStats with { Detections = detectionStats.Detections + 1 };
+                                    
+                                    _detectionLoggerService.LogTurnDetected(
+                                        new Point(regionAction.PosX, regionAction.PosY),
+                                        detectionResult.ActionColor,
+                                        _gameLoopStateMachine.CurrentState.ToString()
+                                    );
+
+                                    // Guardar screenshot de debug si está habilitado
+                                    if (detectionStats.Detections % 5 == 0) // Cada 5 detecciones
+                                    {
+                                        _detectionLoggerService.SaveDebugScreenshot(
+                                            img,
+                                            new Point(regionAction.PosX, regionAction.PosY),
+                                            detectionResult.ActionColor,
+                                            "turn_detected"
+                                        );
+                                    }
+
+                                    btnCapture_Click(sender, e);
+                                }
+
+                                // Reset del flag de ejecución con lógica mejorada
+                                if (!detectionResult.IsActionColorInRange)
+                                    _executeCapture = false;
+                            }
+                            catch (Exception invokeEx)
+                            {
+                                _detectionLoggerService.LogDetectionError($"Error en Invoke delegate: {invokeEx.Message}", invokeEx);
+                            }
+                        });
+
+                        // Log estadísticas periódicas
+                        if (detectionStats.TotalChecks % 1000 == 0)
+                        {
+                            var sessionDuration = DateTime.Now - detectionStats.StartTime;
+                            _detectionLoggerService.LogDetectionStatistics(
+                                detectionStats.TotalChecks,
+                                detectionStats.Detections,
+                                detectionStats.Errors,
+                                sessionDuration
+                            );
+                        }
+
+                        btnWindow_Click(sender, e);
+                        
+                        // Delay adaptativo basado en la actividad
+                        var delay = detectionResult.ShouldCapture ? 200 : 100; // Más lento después de detección
+                        Task.Delay(delay).Wait();
+                    }
+                    catch (Exception loopEx)
+                    {
+                        detectionStats = detectionStats with { Errors = detectionStats.Errors + 1 };
+                        _detectionLoggerService.LogDetectionError($"Error en bucle de detección: {loopEx.Message}", loopEx);
+                        
+                        // Delay más largo en caso de error para evitar spam
+                        Task.Delay(500).Wait();
+                    }
                 }
             }
             catch (Exception ex)
             {
+                _detectionLoggerService.LogDetectionError($"Error crítico en BackgroundWorker1_DoWork: {ex.Message}", ex);
                 LogError($"Error en BackgroundWorker1_DoWork: {ex.Message}", ex);
                 e.Cancel = true;
             }
+        }
+
+        /// <summary>
+        /// Realiza detección mejorada con múltiples píxeles y tolerancia de color
+        /// </summary>
+        private DetectionResult PerformEnhancedDetection(Bitmap bitmap, Domain.ValueObjects.Region regionAction, Domain.ValueObjects.Region flop)
+        {
+            try
+            {
+                // Obtener color principal
+                Color primaryActionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
+                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+
+                // Muestrear píxeles adicionales alrededor del punto principal para mayor robustez
+                var sampleColors = new List<Color> { primaryActionColor };
+                
+                // Muestrear en un patrón de cruz pequeño (±2 píxeles)
+                var offsets = new[] { (-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1) };
+                
+                foreach (var (dx, dy) in offsets)
+                {
+                    var x = regionAction.PosX + dx;
+                    var y = regionAction.PosY + dy;
+                    
+                    if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
+                    {
+                        sampleColors.Add(bitmap.GetPixel(x, y));
+                    }
+                }
+
+                // Análisis de colores con tolerancia
+                var avgB = sampleColors.Average(c => c.B);
+                var avgR = sampleColors.Average(c => c.R);
+                var avgG = sampleColors.Average(c => c.G);
+                
+                // Detección con rango de tolerancia en lugar de valor exacto
+                const int TARGET_B = 24;
+                const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
+                
+                bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
+                bool shouldCapture = isActionColorInRange && !_executeCapture;
+                
+                // Detección de flop mejorada
+                const int FLOP_TARGET_B = 255;
+                const int FLOP_TOLERANCE = 10;
+                bool isFlopVisible = Math.Abs(flopColor.B - FLOP_TARGET_B) <= FLOP_TOLERANCE;
+                bool shouldCaptureFlop = shouldCapture && isFlopVisible;
+
+                return new DetectionResult
+                {
+                    ActionColor = primaryActionColor,
+                    FlopColor = flopColor,
+                    AverageActionB = avgB,
+                    SampleCount = sampleColors.Count,
+                    IsActionColorInRange = isActionColorInRange,
+                    ShouldCapture = shouldCapture,
+                    ShouldCaptureFlop = shouldCaptureFlop,
+                    IsFlopVisible = isFlopVisible
+                };
+            }
+            catch (Exception ex)
+            {
+                _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
+                
+                // Fallback a detección simple
+                Color actionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
+                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+                
+                return new DetectionResult
+                {
+                    ActionColor = actionColor,
+                    FlopColor = flopColor,
+                    AverageActionB = actionColor.B,
+                    SampleCount = 1,
+                    IsActionColorInRange = actionColor.B == 24,
+                    ShouldCapture = actionColor.B == 24 && !_executeCapture,
+                    ShouldCaptureFlop = actionColor.B == 24 && !_executeCapture && flopColor.B == 255,
+                    IsFlopVisible = flopColor.B == 255
+                };
+            }
+        }
+
+        /// <summary>
+        /// Resultado de la detección mejorada
+        /// </summary>
+        private record DetectionResult
+        {
+            public Color ActionColor { get; init; }
+            public Color FlopColor { get; init; }
+            public double AverageActionB { get; init; }
+            public int SampleCount { get; init; }
+            public bool IsActionColorInRange { get; init; }
+            public bool ShouldCapture { get; init; }
+            public bool ShouldCaptureFlop { get; init; }
+            public bool IsFlopVisible { get; init; }
         }
 
         /// <summary>
@@ -4398,12 +4989,26 @@ namespace OpenScrape.App
         /// <param name="exception">Optional exception details.</param>
         private void LogError(string message, Exception? exception = null)
         {
-            // Example implementation: Log to the console or a file
-            Console.WriteLine($"Error: {message}");
-            if (exception != null)
+            var logLine = exception != null
+                ? $"[{DateTime.Now:HH:mm:ss}] {message} | Exception: {exception.Message}"
+                : $"[{DateTime.Now:HH:mm:ss}] {message}";
+
+            Console.WriteLine(logLine);
+
+            if (tbResume != null && !tbResume.IsDisposed)
             {
-                Console.WriteLine($"Exception: {exception.Message}");
+                if (tbResume.InvokeRequired)
+                    tbResume.Invoke(() => AppendLog(logLine));
+                else
+                    AppendLog(logLine);
             }
+        }
+
+        private void AppendLog(string line)
+        {
+            tbResume.AppendText(line + Environment.NewLine);
+            tbResume.SelectionStart = tbResume.TextLength;
+            tbResume.ScrollToCaret();
         }
 
         /// <summary>
@@ -4412,8 +5017,16 @@ namespace OpenScrape.App
         /// <param name="message"></param>
         private void LogInformation(string message)
         {
-            // Example implementation: Log to the console or a file
-            Console.WriteLine($"Info: {message}");
+            var logLine = $"[{DateTime.Now:HH:mm:ss}] {message}";
+            Console.WriteLine(logLine);
+
+            if (tbResume != null && !tbResume.IsDisposed)
+            {
+                if (tbResume.InvokeRequired)
+                    tbResume.Invoke(() => AppendLog(logLine));
+                else
+                    AppendLog(logLine);
+            }
         }
 
         #endregion

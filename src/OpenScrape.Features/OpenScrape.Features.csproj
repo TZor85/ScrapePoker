@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ardalis.Result" Version="10.1.0" />
-    <PackageReference Include="Marten" Version="8.0.0-alpha-3" />
+    <PackageReference Include="Marten" Version="8.24.0" />
   </ItemGroup>
 
   <ItemGroup>

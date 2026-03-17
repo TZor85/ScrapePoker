@@ -31,7 +31,10 @@ namespace OpenScrape.App.Entities
         public HandSituation HandSituation { get; set; }
 
         // Game data
-        public List<Player> Players { get; set; } = new List<Player>();
+        public List<Player> Players { get; set; } = new List<Player>
+        {
+            new Player { Name = "P0", ValuePosition = 0, Empty = false, SitOut = false, Active = false }
+        };
         public List<BoardData> BoardCards { get; set; } = new List<BoardData>();
 
         // Computed properties

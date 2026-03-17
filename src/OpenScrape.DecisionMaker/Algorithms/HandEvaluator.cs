@@ -23,7 +23,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             // Generate all possible 5-card combinations
             var combinations = GenerateCombinations(cards, 5);
-            HandEvaluation bestHand = null;
+            HandEvaluation? bestHand = null;
 
             foreach (var combination in combinations)
             {
@@ -34,7 +34,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 }
             }
 
-            return bestHand;
+            return bestHand ?? throw new InvalidOperationException("No se pudo evaluar la mano: sin combinaciones válidas");
         }
 
         private List<List<CardDataOuts>> GenerateCombinations(List<CardDataOuts> cards, int k)

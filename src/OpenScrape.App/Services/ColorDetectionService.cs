@@ -43,7 +43,7 @@ public class ColorDetectionService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error al obtener el color: {ex.Message}");
+            throw new Exception($"Error al obtener el color: {ex.Message}", ex);
         }
     }
 

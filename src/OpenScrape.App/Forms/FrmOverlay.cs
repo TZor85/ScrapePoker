@@ -12,16 +12,18 @@ namespace OpenScrape.App.Forms
         private const int WM_NCHITTEST = 0x84;
         private const int HTCLIENT = 1;
 
-        // Alto del header arrastrable en píxeles lógicos (96 DPI)
         private const int HEADER_HEIGHT = 12;
 
-        // Additional labels for enhanced metrics
+        private Label lbPotOdds;
+        private Label lbShouldCall;
+        private Label lbEquity;
+        private Label lbSituacion;
+        private Label lbAction;
         private Label lbFoldEquity;
         private Label lbEVWithFoldEquity;
         private Label lbSuggestedBetSize;
         private Label lbTableName;
 
-        // Animation timer for smooth updates
         private System.Windows.Forms.Timer animationTimer;
         private float currentOpacity = 0.0f;
         private const float MAX_OPACITY = 0.8f;
@@ -37,16 +39,77 @@ namespace OpenScrape.App.Forms
             InitializeComponent();
             this.MouseDown += FrmOverlay_MouseDown;
 
-            // Add new labels for enhanced metrics
-            InitializeAdditionalLabels();
+            InitializeTableLayoutPanel();
 
-            // Apply modern design: rounded corners and gradient
             ApplyModernDesign();
 
-            // Initialize animation timer
             animationTimer = new System.Windows.Forms.Timer();
-            animationTimer.Interval = 50; // 50ms ticks
+            animationTimer.Interval = 50;
             animationTimer.Tick += AnimationTimer_Tick;
+        }
+
+        private void InitializeTableLayoutPanel()
+        {
+            var tableLayout = new TableLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = 2,
+                RowCount = 6,
+                Padding = new Padding(8),
+                CellBorderStyle = TableLayoutPanelCellBorderStyle.None,
+                Location = new Point(5, 5)
+            };
+
+            tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+            for (int i = 0; i < 6; i++)
+            {
+                tableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            }
+
+            lbPotOdds = CreateLabel("PotOdds: --", Color.FromArgb(0, 255, 255), 10);
+            lbShouldCall = CreateLabel("---", Color.FromArgb(0, 255, 255), 10);
+            lbEquity = CreateLabel("Equity: --", Color.FromArgb(50, 255, 50), 10);
+            lbSituacion = CreateLabel("---", Color.FromArgb(255, 150, 255), 12, true);
+            lbAction = CreateLabel("---", Color.FromArgb(255, 100, 100), 14, true);
+            lbFoldEquity = CreateLabel("", Color.FromArgb(255, 200, 100), 10);
+            lbEVWithFoldEquity = CreateLabel("", Color.FromArgb(100, 255, 100), 10);
+            lbSuggestedBetSize = CreateLabel("", Color.FromArgb(255, 255, 180), 10);
+            lbTableName = CreateLabel("", Color.White, 9);
+
+            tableLayout.Controls.Add(lbPotOdds, 0, 0);
+            tableLayout.Controls.Add(lbShouldCall, 1, 0);
+            tableLayout.Controls.Add(lbEquity, 0, 1);
+            tableLayout.Controls.Add(lbSituacion, 1, 1);
+            tableLayout.SetColumnSpan(lbSituacion, 2);
+            tableLayout.Controls.Add(lbAction, 0, 2);
+            tableLayout.SetColumnSpan(lbAction, 2);
+            tableLayout.Controls.Add(lbFoldEquity, 0, 3);
+            tableLayout.SetColumnSpan(lbFoldEquity, 2);
+            tableLayout.Controls.Add(lbEVWithFoldEquity, 0, 4);
+            tableLayout.SetColumnSpan(lbEVWithFoldEquity, 2);
+            tableLayout.Controls.Add(lbSuggestedBetSize, 0, 5);
+            tableLayout.SetColumnSpan(lbSuggestedBetSize, 2);
+
+            this.Controls.Add(tableLayout);
+        }
+
+        private Label CreateLabel(string text, Color foreColor, float fontSize, bool isBold = false)
+        {
+            var label = new Label
+            {
+                Text = text,
+                ForeColor = foreColor,
+                AutoSize = true,
+                Font = isBold 
+                    ? new Font("Segoe UI", fontSize, FontStyle.Bold) 
+                    : new Font("Segoe UI", fontSize, FontStyle.Regular),
+                Padding = new Padding(2),
+                Margin = new Padding(2)
+            };
+            return label;
         }
 
         private void ApplyModernDesign()
@@ -141,7 +204,7 @@ namespace OpenScrape.App.Forms
                 return;
             }
 
-            lbFoldEquity.Text = $"♠ Fold Eq: {foldEquity:F1}%";
+            lbFoldEquity.Text = $"Fold Eq: {foldEquity:F1}%";
             lbFoldEquity.Visible = true;
         }
 
@@ -154,21 +217,20 @@ namespace OpenScrape.App.Forms
                 return;
             }
 
-            lbEVWithFoldEquity.Text = $"💰 EV: {ev:F1}";
+            lbEVWithFoldEquity.Text = $"EV: {ev:F1}";
             lbEVWithFoldEquity.Visible = true;
 
-            // Dynamic color based on EV value
             if (ev > 0)
             {
-                lbEVWithFoldEquity.ForeColor = Color.LimeGreen; // Bright green for positive
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(100, 255, 100);
             }
             else if (ev < 0)
             {
-                lbEVWithFoldEquity.ForeColor = Color.Red; // Red for negative
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 120, 120);
             }
             else
             {
-                lbEVWithFoldEquity.ForeColor = Color.Yellow; // Yellow for zero
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 255, 150);
             }
         }
 
@@ -233,116 +295,6 @@ namespace OpenScrape.App.Forms
             lbSuggestedBetSize.Text = string.Empty;
         }
 
-        private void InitializeAdditionalLabels()
-        {
-            // Create panels for new metrics
-            var panel6 = new Panel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                BackColor = Color.Black,
-                Location = new Point(0, 10), // Arriba para no solaparse con acción
-                Name = "panel6"
-            };
-
-            lbFoldEquity = new Label
-            {
-                AutoSize = true,
-                BackColor = Color.Transparent,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.Orange,
-                Location = new Point(0, 0),
-                Name = "lbFoldEquity",
-                Size = new Size(50, 19),
-                TabIndex = 11,
-                Text = string.Empty,
-                Visible = false
-            };
-            panel6.Controls.Add(lbFoldEquity);
-
-            var panel7 = new Panel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                BackColor = Color.Black,
-                Location = new Point(0, 30),
-                Name = "panel7"
-            };
-
-            lbEVWithFoldEquity = new Label
-            {
-                AutoSize = true,
-                BackColor = Color.Transparent,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.Green,
-                Location = new Point(0, 0),
-                Name = "lbEVWithFoldEquity",
-                Size = new Size(50, 19),
-                TabIndex = 12,
-                Text = string.Empty,
-                Visible = false
-            };
-            panel7.Controls.Add(lbEVWithFoldEquity);
-
-            var panel8 = new Panel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                BackColor = Color.Black,
-                Location = new Point(0, 50),
-                Name = "panel8"
-            };
-
-            lbSuggestedBetSize = new Label
-            {
-                AutoSize = true,
-                BackColor = Color.Transparent,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.Yellow,
-                Location = new Point(0, 0),
-                Name = "lbSuggestedBetSize",
-                Size = new Size(50, 19),
-                TabIndex = 13,
-                Text = string.Empty,
-                Visible = false
-            };
-            panel8.Controls.Add(lbSuggestedBetSize);
-
-            // Add panels to form
-            this.Controls.Add(panel6);
-            this.Controls.Add(panel7);
-            this.Controls.Add(panel8);
-
-            // Add table name panel
-            var panel9 = new Panel
-            {
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                BackColor = Color.Black,
-                Location = new Point(0, 70), // Arriba
-                Name = "panel9"
-            };
-
-            lbTableName = new Label
-            {
-                AutoSize = true,
-                BackColor = Color.Transparent,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(0, 0),
-                Name = "lbTableName",
-                Size = new Size(50, 19),
-                TabIndex = 14,
-                Text = string.Empty
-            };
-            panel9.Controls.Add(lbTableName);
-
-            this.Controls.Add(panel9);
-
-            // Increase form height to accommodate new panels
-            this.ClientSize = new Size(180, 120);
-        }
-
         private void AnimationTimer_Tick(object? sender, EventArgs e)
         {
             currentOpacity += 0.1f;
@@ -352,12 +304,14 @@ namespace OpenScrape.App.Forms
                 animationTimer.Stop();
             }
 
-            // Apply opacity to new labels (simulate fade-in)
-            lbFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbFoldEquity.ForeColor);
-            lbEVWithFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbEVWithFoldEquity.ForeColor);
-            lbSuggestedBetSize.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbSuggestedBetSize.ForeColor);
+            if (lbFoldEquity != null)
+                lbFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbFoldEquity.ForeColor);
+            if (lbEVWithFoldEquity != null)
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbEVWithFoldEquity.ForeColor);
+            if (lbSuggestedBetSize != null)
+                lbSuggestedBetSize.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbSuggestedBetSize.ForeColor);
 
-            this.Invalidate(); // Redraw
+            this.Invalidate();
         }
 
         private void FrmOverlay_MouseDown(object? sender, MouseEventArgs e)

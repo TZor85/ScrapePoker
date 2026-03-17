@@ -13,6 +13,9 @@ public class OcrService
     private readonly string _tessdataPath;
     public event Action<string> OnDebugImageGenerated;
 
+    private const int MaxBitmapCacheSize = 200;
+    private const int MaxOcrCacheSize = 500;
+
     private TesseractEngine _engine;
     private readonly ConcurrentDictionary<string, SKBitmap> _bitmapCache = new();
     private readonly ConcurrentDictionary<ulong, string> _ocrCache = new();
@@ -60,6 +63,15 @@ public class OcrService
             System.Diagnostics.Debug.WriteLine($"Error inicializando OCR: {ex}");
             throw;
         }
+    }
+
+    /// <summary>
+    /// Limpia el cache de resultados OCR para forzar re-lectura en la siguiente llamada.
+    /// Útil cuando se sabe que la imagen ha cambiado (ej: nuevo street, nuevo stack).
+    /// </summary>
+    public void ClearCache()
+    {
+        _ocrCache.Clear();
     }
 
     // Método general para texto normal
@@ -139,72 +151,11 @@ public class OcrService
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Error en OCR: {ex.Message}");
+                    throw new Exception($"Error en OCR: {ex.Message}", ex);
                 }
             }
         });
     }
-
-    //public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double porcentaje = 0, bool onlyNumber = false)
-    //{
-    //    lock (_lock)
-    //    {
-    //        try
-    //        {
-    //            // Asegurarse de que el engine está disponible
-    //            if (_engine == null || _engine.IsDisposed)
-    //            {
-    //                InitializeEngine();
-    //            }
-
-    //            // Crear el resultado fuera para poder manejarlo en el finally si es necesario
-    //            OcrResult result = null;
-
-    //            using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
-    //            using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, porcentaje))
-    //            using (var debugMs = new MemoryStream())
-    //            {
-    //                // Procesar la imagen
-    //                using (var debugImage = SKImage.FromBitmap(processedBitmap))
-    //                {
-    //                    var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
-    //                    encoded.SaveTo(debugMs);
-    //                    encoded.Dispose(); // Asegurar que se libera el encoded
-    //                }
-
-    //                // Configurar Tesseract
-    //                ConfigureTesseract(onlyNumber);
-
-    //                // Convertir a array una sola vez
-    //                byte[] imageData = debugMs.ToArray();
-
-
-    //                // Procesar OCR
-    //                using (var img = Pix.LoadFromMemory(imageData))
-    //                using (var page = _engine.Process(img))
-    //                {
-    //                    var text = ProcessText(page.GetText().Trim());
-
-    //                    // Reset del MemoryStream para crear el bitmap
-    //                    debugMs.Position = 0;
-    //                    result = new OcrResult
-    //                    {
-    //                        Text = text,
-    //                        Image = new Bitmap(debugMs)
-    //                    };
-    //                }
-    //            }
-
-    //            return result;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            _engine?.Dispose(); // Intentar liberar el engine si algo falla
-    //            _engine = null;
-    //            throw new Exception($"Error en OCR: {ex.Message}", ex);
-    //        }
-    //    }
-    //}
 
     public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height, double umbral = 0, bool onlyNumber = false)
     {
@@ -298,7 +249,11 @@ public class OcrService
                         {
                             var text = ProcessText(page.GetText().Trim());
 
-                            // Cache the result
+                            // Cache the result (evict si supera el límite)
+                            if (_ocrCache.Count >= MaxOcrCacheSize)
+                            {
+                                _ocrCache.Clear();
+                            }
                             _ocrCache[hash] = text;
 
                             // Crear el bitmap para el resultado
@@ -345,6 +300,10 @@ public class OcrService
         var sourceRect = new SKRectI(x, y, x + width, y + height);
         canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
 
+        if (_bitmapCache.Count >= MaxBitmapCacheSize)
+        {
+            ClearBitmapCache();
+        }
         _bitmapCache.TryAdd(key, croppedBitmap.Copy());
         return croppedBitmap;
     }
@@ -409,11 +368,8 @@ public class OcrService
 
     private ulong ComputeDHash(SKBitmap bitmap)
     {
-        // First, resize to 64x64 for normalization
-        var normalized = bitmap.Resize(new SKImageInfo(64, 64), SKFilterQuality.Medium);
-
-        // Then resize to 9x8 for dHash
-        var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), SKFilterQuality.None);
+        using var normalized = bitmap.Resize(new SKImageInfo(64, 64), SKFilterQuality.Medium);
+        using var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), SKFilterQuality.None);
 
         ulong hash = 0;
         int bitIndex = 0;

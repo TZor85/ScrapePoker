@@ -6,5 +6,5 @@ public interface IPotOddsCalculator
 {
     PotOddsResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards, decimal currentPotSize,
                             decimal betToCall,
-                            List<CardDataOuts> blockedCards = null);
+                            List<CardDataOuts>? blockedCards = null);
 }
