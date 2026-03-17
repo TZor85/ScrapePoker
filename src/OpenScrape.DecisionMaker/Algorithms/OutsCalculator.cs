@@ -17,6 +17,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public bool HasStraightFlushDraw { get; set; }
             public bool HasOvercards { get; set; }
             public int OvercardCount { get; set; }
+            public bool HasBackdoorFlushDraw { get; set; }
+            public bool HasBackdoorStraightDraw { get; set; }
             public double OutsToEquity { get; set; }
             public List<string> DrawTypes { get; set; } = [];
         }
@@ -94,8 +96,15 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 }
             }
 
-            // Total = flush + straight - overlap + overcards (sin doble conteo)
-            result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts;
+            // 7. Backdoor draws (solo en flop — necesitan 2 cartas runner-runner)
+            int backdoorOuts = 0;
+            if (communityCards.Count == 3)
+            {
+                backdoorOuts = CalculateBackdoorOuts(allCards, myCards, flushOuts > 0, straightCompletingRanks.Count > 0, result);
+            }
+
+            // Total = flush + straight - overlap + overcards + backdoor (sin doble conteo)
+            result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts + backdoorOuts;
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)
@@ -126,6 +135,84 @@ namespace OpenScrape.DecisionMaker.Algorithms
             result.OutsToEquity = result.TotalOuts * cardsToCome * 2.0;
 
             return result;
+        }
+
+        /// <summary>
+        /// Calcula outs implícitos de backdoor draws (solo en flop).
+        /// Backdoor flush: 3 cartas del mismo palo (hero+board) → ~1.5 outs implícitos.
+        /// Backdoor straight: 3 cartas dentro de ventana de 5 → ~1 out implícito.
+        /// Solo se cuentan si NO hay ya un draw principal del mismo tipo.
+        /// </summary>
+        private int CalculateBackdoorOuts(
+            List<CardDataOuts> allCards, List<CardDataOuts> myCards,
+            bool hasFlushDraw, bool hasStraightDraw, OutsResult result)
+        {
+            int backdoorOuts = 0;
+
+            // Backdoor flush: 3 cartas del mismo palo (no si ya hay flush draw o mano hecha)
+            bool hasMadeForBD = HasMadeFlush(allCards) || HasFiveCardStraight(
+                allCards.Select(c => (int)c.Rank).Distinct().ToHashSet());
+            if (!hasFlushDraw && !hasMadeForBD)
+            {
+                var suitCounts = new Dictionary<Suit, int>();
+                foreach (var card in allCards)
+                    suitCounts[card.Suit] = suitCounts.GetValueOrDefault(card.Suit) + 1;
+
+                // Al menos una carta de hero debe ser del suit para que tenga valor
+                var heroSuits = myCards.Select(c => c.Suit).ToHashSet();
+                bool hasBackdoorFlush = suitCounts.Any(kvp => kvp.Value == 3 && heroSuits.Contains(kvp.Key));
+
+                if (hasBackdoorFlush)
+                {
+                    result.HasBackdoorFlushDraw = true;
+                    result.DrawTypes.Add("Backdoor Flush Draw");
+                    backdoorOuts += 1; // ~1.5 outs implícitos, redondeado a 1
+                }
+            }
+
+            // Backdoor straight: 3 cartas dentro de una ventana de 5 consecutivos
+            // (no si ya hay OESD, gutshot, o escalera/flush hecha)
+            bool hasMade = HasMadeFlush(allCards) || HasFiveCardStraight(
+                allCards.Select(c => (int)c.Rank).Distinct().ToHashSet());
+            if (!hasStraightDraw && !hasMade)
+            {
+                var ranks = allCards.Select(c => (int)c.Rank).Distinct().ToHashSet();
+                // Incluir As como 1 para ruedas
+                if (ranks.Contains(14)) ranks.Add(1);
+
+                var heroRanks = myCards.Select(c => (int)c.Rank).ToHashSet();
+
+                bool hasBackdoorStraight = false;
+                for (int low = 1; low <= 10; low++)
+                {
+                    int count = 0;
+                    bool heroContributes = false;
+                    for (int r = low; r < low + 5; r++)
+                    {
+                        if (ranks.Contains(r))
+                        {
+                            count++;
+                            if (heroRanks.Contains(r) || (r == 1 && heroRanks.Contains(14)))
+                                heroContributes = true;
+                        }
+                    }
+                    // 3 cartas en ventana de 5, con al menos 1 carta de hero
+                    if (count >= 3 && heroContributes)
+                    {
+                        hasBackdoorStraight = true;
+                        break;
+                    }
+                }
+
+                if (hasBackdoorStraight)
+                {
+                    result.HasBackdoorStraightDraw = true;
+                    result.DrawTypes.Add("Backdoor Straight Draw");
+                    backdoorOuts += 1; // ~1 out implícito
+                }
+            }
+
+            return backdoorOuts;
         }
 
         /// <summary>

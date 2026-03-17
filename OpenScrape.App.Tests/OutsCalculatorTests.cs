@@ -21,6 +21,7 @@ public class OutsCalculatorTests
     public void CalculateOuts_FlushDraw_DeberiaDetectar9Outs()
     {
         // Hero: Ah 5h, Flop: 2h 7h Kc (4 hearts = flush draw)
+        // + backdoor straight (5-7 en ventana 3-4-5-6-7) = +1
         var myCards = new List<CardDataOuts>
         {
             C(Rank.Ace, Suit.Hearts),
@@ -36,7 +37,7 @@ public class OutsCalculatorTests
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
         Assert.That(result.HasFlushDraw, Is.True);
-        Assert.That(result.TotalOuts, Is.EqualTo(9));
+        Assert.That(result.TotalOuts, Is.EqualTo(10)); // 9 flush + 1 backdoor straight
     }
 
     [Test]
@@ -298,8 +299,9 @@ public class OutsCalculatorTests
     [Test]
     public void CalculateOuts_DosOvercards_Deberia6Outs()
     {
-        // Hero: AK, Flop: 7-5-2 rainbow (sin draws)
+        // Hero: AK, Flop: 7-5-2 rainbow (sin draws principales)
         // 2 overcards: A y K → 3 outs cada una = 6 outs
+        // + backdoor straight (A-2-5 en ventana A-2-3-4-5 wheel) = +1
         var myCards = new List<CardDataOuts>
         {
             C(Rank.Ace, Suit.Spades),
@@ -316,7 +318,7 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasOvercards, Is.True);
         Assert.That(result.OvercardCount, Is.EqualTo(2));
-        Assert.That(result.TotalOuts, Is.EqualTo(6));
+        Assert.That(result.TotalOuts, Is.EqualTo(7)); // 6 overcards + 1 backdoor straight
         Assert.That(result.DrawTypes, Does.Contain("Overcards (2)"));
     }
 
@@ -324,6 +326,7 @@ public class OutsCalculatorTests
     public void CalculateOuts_UnaOvercard_Deberia3Outs()
     {
         // Hero: A2, Flop: K-7-5 (solo Ace es overcard)
+        // + backdoor straight (A-2-5 en ventana A-2-3-4-5 wheel) = +1
         var myCards = new List<CardDataOuts>
         {
             C(Rank.Ace, Suit.Spades),
@@ -340,7 +343,7 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasOvercards, Is.True);
         Assert.That(result.OvercardCount, Is.EqualTo(1));
-        Assert.That(result.TotalOuts, Is.EqualTo(3));
+        Assert.That(result.TotalOuts, Is.EqualTo(4)); // 3 overcards + 1 backdoor straight
     }
 
     [Test]
@@ -387,7 +390,144 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasFlushDraw, Is.True);
         Assert.That(result.HasOvercards, Is.False);
-        // Solo 9 flush outs, sin overcards extra
-        Assert.That(result.TotalOuts, Is.EqualTo(9));
+        // 9 flush outs + 1 backdoor straight (A-2-5 wheel)
+        Assert.That(result.TotalOuts, Is.EqualTo(10));
     }
+
+    #region [Backdoor Draws]
+
+    [Test]
+    public void CalculateOuts_BackdoorFlushDraw_DeberiaDetectar()
+    {
+        // Hero: Ah 5h, Flop: 2h 7c Kc → 3 hearts = backdoor flush draw
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.True);
+        Assert.That(result.HasFlushDraw, Is.False);
+        Assert.That(result.DrawTypes, Does.Contain("Backdoor Flush Draw"));
+    }
+
+    [Test]
+    public void CalculateOuts_BackdoorFlushDraw_NoContarSiYaHayFlushDraw()
+    {
+        // Hero: Ah 5h, Flop: 2h 7h Kc → 4 hearts = flush draw (no backdoor)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.HasBackdoorFlushDraw, Is.False);
+    }
+
+    [Test]
+    public void CalculateOuts_BackdoorFlushDraw_RequiereCartaDeHero()
+    {
+        // Hero: Ac 5d, Flop: 2h 7h Kh → 3 hearts pero hero no tiene hearts
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Clubs),
+            C(Rank.Five, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.False);
+    }
+
+    [Test]
+    public void CalculateOuts_BackdoorStraightDraw_DeberiaDetectar()
+    {
+        // Hero: 9c 2d, Flop: Th 7c 3s → 9-T-7 dentro de ventana 7-8-9-T-J = backdoor straight
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Two, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ten, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.Three, Suit.Spades)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorStraightDraw, Is.True);
+        Assert.That(result.DrawTypes, Does.Contain("Backdoor Straight Draw"));
+    }
+
+    [Test]
+    public void CalculateOuts_BackdoorStraightDraw_NoContarSiYaHayOESD()
+    {
+        // Hero: 9c 8c, Flop: Th 7c 2s → 7-8-9-T = OESD (no backdoor)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Eight, Suit.Clubs)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ten, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.Two, Suit.Spades)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOpenEndedStraightDraw, Is.True);
+        Assert.That(result.HasBackdoorStraightDraw, Is.False);
+    }
+
+    [Test]
+    public void CalculateOuts_BackdoorDraws_NoEnTurnOriver()
+    {
+        // Hero: Ah 5h, Turn: 2h 7c Kc 3d → 3 hearts pero ya no es flop
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.King, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.False);
+        Assert.That(result.HasBackdoorStraightDraw, Is.False);
+    }
+
+    #endregion
 }
