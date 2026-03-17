@@ -1907,8 +1907,8 @@ namespace OpenScrape.App
             // Determinar si estamos en posición
             SetIsInPosition();
 
-            // Analizar el flop y determinar acción
-            DetermineFlopAction();
+            // Analizar el flop y determinar acción usando PostflopDecisionService (unificado con turn/river)
+            DetermineFlopActionUnified();
 
             // Persistir flop board y decisión
             var flopCardNames = _playerGameState.BoardCards
@@ -1981,6 +1981,58 @@ namespace OpenScrape.App
                 default:
                     break;
             }
+        }
+
+        /// <summary>
+        /// Determina la acción del flop usando PostflopDecisionService (unificado con turn/river).
+        /// Usa equity Monte Carlo, pot odds, draws, facing bet, posición, multiway y board texture.
+        /// </summary>
+        private void DetermineFlopActionUnified()
+        {
+            var equity = _flopResult.EquityPercentage;
+            var inPosition = _playerGameState.IsInPosition;
+            var maxBet = _playerGameState.Players.Max(m => m.Bet);
+            var potSize = _playerGameState.PotSize;
+            var betSize = GetOpponentBetSize(maxBet, potSize);
+
+            // Analizar textura del board con BoardTextureAnalyzer
+            var flopCards = _playerGameState.BoardCards
+                .Where(b => b.Position == BoardPosition.Flop)
+                .ToList();
+            var flopRanks = flopCards.Select(c => c.Force).ToList();
+            var flopSuits = flopCards.Select(c => c.Suit).ToList();
+            var boardTexture = _boardTextureAnalyzer.Analyze(flopRanks, flopSuits);
+            var texture = boardTexture.SimplifiedTexture;
+
+            bool villainAggro = maxBet > 0;
+            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
+
+            // En flop no hay board change (es la primera calle comunitaria)
+            var boardChange = DecisionMaker.Algorithms.BoardChangeResult.Safe;
+
+            LogError($"[FLOP] Equity={equity:F1}, Texture={texture}, " +
+                     $"FacingBet={betSize}, Situation={_playerGameState.HandSituation}, " +
+                     $"IP={inPosition}, Opponents={numOpponents}, " +
+                     $"Outs={_flopResult.TotalOuts}, Draws={string.Join(",", _flopResult.DrawTypes)}");
+
+            var decision = _postflopDecisionService.DetermineAction(
+                equity, BoardPosition.Flop, _playerGameState.HandSituation, texture, inPosition,
+                ToBetSizeCategory(betSize),
+                potOdds: _flopResult.PotOddsPercentage,
+                totalOuts: _flopResult.TotalOuts,
+                previousStreetBet: false,
+                villainShowedAggression: villainAggro,
+                boardChange: boardChange,
+                heroBlocksDangerSuit: false,
+                heroStack: _playerGameState.HeroStack,
+                potSize: potSize,
+                hasFlushDraw: _flopResult.DrawTypes.Contains("Flush Draw"),
+                numOpponents: numOpponents);
+
+            LogError($"[FLOP] Decision={decision.Action}, Reason={decision.Reason}");
+
+            _responseAction.Action = decision.Action;
+            _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
         }
 
         private void DetermineTurnAction()

@@ -291,6 +291,37 @@ public class HandEvaluatorTests
     }
 
     [Test]
+    public void EvaluateBestHand_WheelStraight_DeberiaSerMenorQueEscalera6High()
+    {
+        // Wheel (A-2-3-4-5) debe puntuar menos que escalera 6-high (2-3-4-5-6)
+        var wheel = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Three, Suit.Diamonds),
+            C(Rank.Four, Suit.Clubs),
+            C(Rank.Five, Suit.Spades)
+        };
+
+        var seisHigh = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Diamonds),
+            C(Rank.Three, Suit.Clubs),
+            C(Rank.Four, Suit.Spades),
+            C(Rank.Five, Suit.Hearts),
+            C(Rank.Six, Suit.Diamonds)
+        };
+
+        var wheelResult = _evaluator.EvaluateBestHand(wheel);
+        var seisHighResult = _evaluator.EvaluateBestHand(seisHigh);
+
+        Assert.That(wheelResult.Rank, Is.EqualTo(HandRank.Straight));
+        Assert.That(seisHighResult.Rank, Is.EqualTo(HandRank.Straight));
+        Assert.That(wheelResult.Score, Is.LessThan(seisHighResult.Score),
+            "El wheel (A-2-3-4-5) debe puntuar menor que la escalera 6-high");
+    }
+
+    [Test]
     public void EvaluateBestHand_JerarquiaCorrecta_FlushRankMayorQueStraight()
     {
         var flush = new List<CardDataOuts>

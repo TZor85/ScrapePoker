@@ -491,12 +491,16 @@ public class PostflopDecisionService
             "Equity baja OOP");
     }
 
+    /// <summary>
+    /// Reduce el tamaño de apuesta un nivel: Pot→3/4→2/3→1/2→1/3.
+    /// Usa matching exclusivo para evitar reducciones en cascada.
+    /// </summary>
     private static string ReduceBetSize(string bet)
     {
-        return bet
-            .Replace("Pot", "3/4")
-            .Replace("3/4", "2/3")
-            .Replace("2/3", "1/2")
-            .Replace("1/2", "1/3");
+        if (bet.Contains("Pot")) return bet.Replace("Pot", "3/4");
+        if (bet.Contains("3/4")) return bet.Replace("3/4", "2/3");
+        if (bet.Contains("2/3")) return bet.Replace("2/3", "1/2");
+        if (bet.Contains("1/2")) return bet.Replace("1/2", "1/3");
+        return bet;
     }
 }

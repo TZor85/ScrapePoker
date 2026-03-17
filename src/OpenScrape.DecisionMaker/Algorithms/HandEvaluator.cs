@@ -95,7 +95,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             if (isStraight && isFlush)
             {
                 evaluation.Rank = HandRank.StraightFlush;
-                evaluation.Score = STRAIGHT_FLUSH_MULTIPLIER * (int)sortedCards[0].Rank;
+                evaluation.Score = STRAIGHT_FLUSH_MULTIPLIER * GetStraightHighCard(sortedCards);
             }
             else if (sortedRankCounts[0].Value == 4)
             {
@@ -121,7 +121,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             else if (isStraight)
             {
                 evaluation.Rank = HandRank.Straight;
-                evaluation.Score = STRAIGHT_MULTIPLIER * (int)sortedCards[0].Rank;
+                evaluation.Score = STRAIGHT_MULTIPLIER * GetStraightHighCard(sortedCards);
             }
             else if (sortedRankCounts[0].Value == 3)
             {
@@ -168,19 +168,41 @@ namespace OpenScrape.DecisionMaker.Algorithms
         {
             var uniqueRanks = ranks.Distinct().OrderByDescending(r => r).ToList();
 
-            // Check for regular straight
+            // Verificar escalera regular
             for (int i = 0; i <= uniqueRanks.Count - 5; i++)
             {
                 if (uniqueRanks[i] - uniqueRanks[i + 4] == 4)
                     return true;
             }
 
-            // Check for wheel straight (A-2-3-4-5)
-            if (uniqueRanks.Contains(14) && uniqueRanks.Contains(2) &&
-                uniqueRanks.Contains(3) && uniqueRanks.Contains(4) && uniqueRanks.Contains(5))
+            // Verificar wheel (A-2-3-4-5)
+            if (IsWheel(uniqueRanks))
                 return true;
 
             return false;
+        }
+
+        /// <summary>
+        /// Detecta si los rangos forman un wheel (A-2-3-4-5).
+        /// </summary>
+        private static bool IsWheel(List<int> uniqueRanks)
+        {
+            return uniqueRanks.Contains(14) && uniqueRanks.Contains(2) &&
+                uniqueRanks.Contains(3) && uniqueRanks.Contains(4) && uniqueRanks.Contains(5);
+        }
+
+        /// <summary>
+        /// Devuelve la carta alta de la escalera. Para el wheel (A-2-3-4-5) es 5, no el As.
+        /// </summary>
+        private int GetStraightHighCard(List<CardDataOuts> sortedCards)
+        {
+            var uniqueRanks = sortedCards.Select(c => (int)c.Rank).Distinct()
+                .OrderByDescending(r => r).ToList();
+
+            if (IsWheel(uniqueRanks))
+                return 5;
+
+            return (int)sortedCards[0].Rank;
         }
     }
 }

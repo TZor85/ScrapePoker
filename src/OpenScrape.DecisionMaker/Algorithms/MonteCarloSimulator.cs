@@ -133,9 +133,9 @@ namespace OpenScrape.DecisionMaker.Algorithms
             // (son las últimas 5 cartas del handBuffer: desde index 2 hasta 6)
             var simulatedCommunity = handBuffer.GetRange(2, 5);
 
-            // Evaluar manos de oponentes
-            int wins = 0;
-            int ties = 0;
+            // Evaluar manos de oponentes — hero necesita ganar a TODOS para ganar el bote
+            bool heroLost = false;
+            bool heroTied = false;
 
             for (int i = 0; i < numOpponents; i++)
             {
@@ -173,9 +173,13 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 var opponentBestHand = SharedEvaluator.EvaluateBestHand(opponentFullHand);
 
                 var comparison = CompareHands(myBestHand, opponentBestHand);
-                if (comparison > 0) wins++;
-                else if (comparison == 0) ties++;
+                if (comparison < 0) { heroLost = true; break; }
+                else if (comparison == 0) heroTied = true;
             }
+
+            // Win = ganó a todos, Tie = empató con al menos uno sin perder, Loss = perdió contra alguno
+            int wins = (!heroLost && !heroTied) ? 1 : 0;
+            int ties = (!heroLost && heroTied) ? 1 : 0;
 
             return (wins, ties, myBestHand.Rank);
         }

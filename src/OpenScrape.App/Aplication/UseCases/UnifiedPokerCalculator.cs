@@ -91,7 +91,7 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 // 7. Determinar si debe pagar (con factores adicionales para cash games)
                 result.ShouldCall = CalculateShouldCall(result.EquityPercentage, result.PotOddsPercentage,
-                    communityCards.Count, result.TotalOuts > 0, isInPosition, heroStack, villainStack, handSituation);
+                    communityCards.Count, result.TotalOuts > 0, isInPosition, heroStack, currentPotSize, handSituation);
 
                 // 8. Generar acción recomendada con bet sizing
                 var actionResult = GenerateRecommendedAction(result, isInPosition, heroStack, villainStack, currentPotSize);
@@ -176,7 +176,7 @@ namespace OpenScrape.App.Aplication.UseCases
         }
 
         private bool CalculateShouldCall(double equity, double potOdds, int communityCardsCount, bool hasDraws,
-            bool isInPosition, decimal heroStack, decimal villainStack, string handSituation)
+            bool isInPosition, decimal heroStack, decimal potSize, string handSituation)
         {
             // Lógica básica
             bool basicDecision = equity >= potOdds;
@@ -199,10 +199,9 @@ namespace OpenScrape.App.Aplication.UseCases
                 adjustedEquity += _profile.IPEquityBonus;
             }
 
-            if (heroStack > 0 && villainStack > 0)
+            if (heroStack > 0 && potSize > 0)
             {
-                decimal currentPot = heroStack + villainStack;
-                double spr = (double)(heroStack / currentPot);
+                double spr = (double)(heroStack / potSize);
                 if (spr > _profile.BetSizingSPRDeepThreshold)
                 {
                     adjustedEquity += _profile.DeepStackEquityBonus;
