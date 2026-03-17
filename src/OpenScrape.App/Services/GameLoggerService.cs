@@ -10,7 +10,8 @@ public class GameLoggerService
 {
     private readonly IDocumentStore _store;
     private readonly ILogger<GameLoggerService> _logger;
-    private GameRound? _currentRound;
+    private GameSession? _currentSession;
+    private HandRecord? _currentHand;
 
     public GameLoggerService(IDocumentStore store, ILogger<GameLoggerService> logger)
     {
@@ -18,25 +19,55 @@ public class GameLoggerService
         _logger = logger;
     }
 
-    public void StartNewRound(
+    /// <summary>
+    /// Inicia o reanuda una sesión para la mesa dada.
+    /// Si ya hay una sesión activa para la misma mesa, la reutiliza.
+    /// </summary>
+    public void StartSession(string sessionId, string tableName, decimal bigBlind = 0.50m)
+    {
+        if (_currentSession != null && _currentSession.SessionId == sessionId)
+            return; // Misma sesión, no reiniciar
+
+        // Guardar sesión anterior si existe
+        if (_currentSession != null)
+            _ = SaveSessionAsync();
+
+        _currentSession = new GameSession
+        {
+            SessionId = sessionId,
+            TableName = tableName,
+            BigBlind = bigBlind
+        };
+
+        _logger.LogInformation(
+            "Sesión iniciada: {SessionId} en {TableName}",
+            sessionId, tableName);
+    }
+
+    /// <summary>
+    /// Inicia una nueva mano dentro de la sesión activa.
+    /// </summary>
+    public void StartNewHand(
         long handNumber,
-        string tableName,
         string heroCard1,
         string heroCard2,
         TablePosition heroPosition,
         decimal heroStack,
         int numOpponents)
     {
-        // Guardar la ronda anterior si existe
-        if (_currentRound != null)
+        if (_currentSession == null)
         {
-            _ = SaveRoundAsync();
+            _logger.LogWarning("Se intentó iniciar mano sin sesión activa");
+            return;
         }
 
-        _currentRound = new GameRound
+        // Finalizar mano anterior si existe
+        if (_currentHand != null)
+            FinalizeCurrentHand();
+
+        _currentHand = new HandRecord
         {
             HandNumber = handNumber,
-            TableName = tableName,
             HeroCard1 = heroCard1,
             HeroCard2 = heroCard2,
             HeroPosition = heroPosition,
@@ -45,68 +76,58 @@ public class GameLoggerService
         };
 
         _logger.LogInformation(
-            "Nueva ronda iniciada: Hand #{HandNumber} en {TableName}",
-            handNumber, tableName);
+            "Nueva mano iniciada: Hand #{HandNumber}",
+            handNumber);
     }
 
     public void LogStreetDecision(StreetDecision decision)
     {
-        if (_currentRound == null)
+        if (_currentHand == null)
         {
-            _logger.LogWarning("Se intentó registrar decisión sin ronda activa");
+            _logger.LogWarning("Se intentó registrar decisión sin mano activa");
             return;
         }
 
-        _currentRound.Decisions.Add(decision);
-        _currentRound.LastStreetPlayed = decision.Street;
-
-        _logger.LogInformation(
-            "Decisión registrada: {Street} - Equity: {Equity:F1}% - Acción: {Action}",
-            decision.Street, decision.EquityPercent, decision.ActionTaken);
+        _currentHand.Decisions.Add(decision);
+        _currentHand.LastStreetPlayed = decision.Street;
     }
 
     public void UpdateBoard(List<string> flopCards, string? turnCard = null, string? riverCard = null)
     {
-        if (_currentRound == null)
+        if (_currentHand == null)
             return;
 
         if (flopCards.Count > 0)
-            _currentRound.FlopCards = flopCards;
+            _currentHand.FlopCards = flopCards;
         if (turnCard != null)
-            _currentRound.TurnCard = turnCard;
+            _currentHand.TurnCard = turnCard;
         if (riverCard != null)
-            _currentRound.RiverCard = riverCard;
+            _currentHand.RiverCard = riverCard;
     }
 
     public void UpdatePotSize(decimal potSize)
     {
-        if (_currentRound != null)
-            _currentRound.PotSizeFinal = potSize;
+        if (_currentHand != null)
+            _currentHand.PotSizeFinal = potSize;
     }
 
     public void UpdateSituation(HandSituation situation)
     {
-        if (_currentRound != null)
-            _currentRound.Situation = situation;
-    }
-
-    public void UpdateSessionId(string sessionId)
-    {
-        if (_currentRound != null)
-            _currentRound.SessionId = sessionId;
+        if (_currentHand != null)
+            _currentHand.Situation = situation;
     }
 
     /// <summary>
-    /// Finaliza la ronda registrando el stack final y calculando el resultado.
+    /// Finaliza la mano registrando el stack final y calculando el resultado.
     /// </summary>
-    public void EndRound(decimal heroStackEnd)
+    public void EndHand(decimal heroStackEnd)
     {
-        if (_currentRound == null) return;
+        if (_currentHand == null) return;
 
-        _currentRound.HeroStackEnd = heroStackEnd;
+        _currentHand.HeroStackEnd = heroStackEnd;
 
-        decimal diff = heroStackEnd - _currentRound.HeroStackStart;
-        _currentRound.Result = diff switch
+        decimal diff = heroStackEnd - _currentHand.HeroStackStart;
+        _currentHand.Result = diff switch
         {
             > 0 => HandResult.Won,
             < 0 => HandResult.Lost,
@@ -114,43 +135,78 @@ public class GameLoggerService
         };
 
         _logger.LogInformation(
-            "Ronda finalizada: Hand #{HandNumber}, Result={Result}, Diff={Diff:+0.00;-0.00}",
-            _currentRound.HandNumber, _currentRound.Result, diff);
+            "Mano finalizada: Hand #{HandNumber}, Result={Result}, Diff={Diff:+0.00;-0.00}",
+            _currentHand.HandNumber, _currentHand.Result, diff);
     }
 
-    public async Task SaveRoundAsync()
+    /// <summary>
+    /// Agrega la mano actual a la sesión y persiste.
+    /// </summary>
+    private void FinalizeCurrentHand()
     {
-        if (_currentRound == null)
+        if (_currentHand == null || _currentSession == null) return;
+
+        _currentSession.Hands.Add(_currentHand);
+        _currentSession.EndTime = DateTime.UtcNow;
+        _currentHand = null;
+    }
+
+    /// <summary>
+    /// Guarda la sesión actual (con todas sus manos) en la base de datos.
+    /// Se llama después de cada mano finalizada para no perder datos.
+    /// </summary>
+    public async Task SaveSessionAsync()
+    {
+        if (_currentSession == null)
             return;
+
+        // Finalizar mano en progreso si existe
+        FinalizeCurrentHand();
 
         try
         {
             await using var session = _store.LightweightSession();
-            session.Store(_currentRound);
+            session.Store(_currentSession);
             await session.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Ronda guardada: Hand #{HandNumber}, {DecisionCount} decisiones",
-                _currentRound.HandNumber, _currentRound.Decisions.Count);
-
-            _currentRound = null;
+                "Sesión guardada: {SessionId}, {HandCount} manos",
+                _currentSession.SessionId, _currentSession.Hands.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al guardar ronda: Hand #{HandNumber}",
-                _currentRound?.HandNumber);
+            _logger.LogError(ex, "Error al guardar sesión: {SessionId}",
+                _currentSession?.SessionId);
         }
     }
 
-    public async Task<List<GameRound>> GetRecentRoundsAsync(int count = 50)
+    /// <summary>
+    /// Obtiene las sesiones recientes.
+    /// </summary>
+    public async Task<List<GameSession>> GetRecentSessionsAsync(int count = 20)
     {
         await using var session = _store.QuerySession();
-        var results = await session.Query<GameRound>()
-            .OrderByDescending(r => r.Timestamp)
+        var results = await session.Query<GameSession>()
+            .OrderByDescending(s => s.EndTime)
             .Take(count)
             .ToListAsync();
         return results.ToList();
     }
 
-    public bool HasActiveRound => _currentRound != null;
+    /// <summary>
+    /// Extrae todas las manos de las sesiones para análisis.
+    /// </summary>
+    public async Task<List<HandRecord>> GetRecentHandsAsync(int maxHands = 500)
+    {
+        var sessions = await GetRecentSessionsAsync(50);
+        return sessions
+            .SelectMany(s => s.Hands)
+            .OrderByDescending(h => h.Timestamp)
+            .Take(maxHands)
+            .ToList();
+    }
+
+    public bool HasActiveSession => _currentSession != null;
+    public bool HasActiveHand => _currentHand != null;
+    public int CurrentSessionHandCount => _currentSession?.Hands.Count ?? 0;
 }

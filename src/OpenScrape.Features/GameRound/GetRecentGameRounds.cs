@@ -1,4 +1,5 @@
 using Marten;
+using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.Features.GameRound;
 
@@ -11,11 +12,11 @@ public class GetRecentGameRounds
         _documentStore = documentStore;
     }
 
-    public async Task<List<Domain.Entities.GameRound>> Execute(int count = 50)
+    public async Task<List<GameSession>> Execute(int count = 20)
     {
         await using var session = _documentStore.QuerySession();
-        var results = await session.Query<Domain.Entities.GameRound>()
-            .OrderByDescending(r => r.Timestamp)
+        var results = await session.Query<GameSession>()
+            .OrderByDescending(s => s.EndTime)
             .Take(count)
             .ToListAsync();
         return results.ToList();

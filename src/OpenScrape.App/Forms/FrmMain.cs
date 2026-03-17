@@ -2643,30 +2643,31 @@ namespace OpenScrape.App
         /// </summary>
         private async Task HandleNewHandAsync()
         {
-            // Finalizar la ronda anterior antes de empezar una nueva
-            if (_gameLoggerService.HasActiveRound)
+            // Finalizar la mano anterior y guardar sesión
+            if (_gameLoggerService.HasActiveHand)
             {
-                _gameLoggerService.EndRound(_playerGameState?.HeroStack ?? 0);
-                await _gameLoggerService.SaveRoundAsync();
+                _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+                await _gameLoggerService.SaveSessionAsync();
             }
 
             _previousStreetWasBet = false;
             _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
 
-            // Registrar nueva ronda en el game logger
+            // Asegurar que hay sesión activa e iniciar nueva mano
+            if (!_gameLoggerService.HasActiveSession)
+                _gameLoggerService.StartSession(_session, _tableName);
+
             if (long.TryParse(_tableHand, out var handNum))
             {
                 var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
-                _gameLoggerService.StartNewRound(
+                _gameLoggerService.StartNewHand(
                     handNum,
-                    _tableName,
                     _playerGameState?.HoleCard1Face ?? string.Empty,
                     _playerGameState?.HoleCard2Face ?? string.Empty,
                     _playerGameState?.Position ?? TablePosition.None,
                     _playerGameState?.HeroStack ?? 0,
                     activePlayers);
-                _gameLoggerService.UpdateSessionId(_session);
             }
 
             _folderPath = Path.Combine(

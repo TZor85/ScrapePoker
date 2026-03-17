@@ -2,6 +2,9 @@ using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
+// StrategyAnalyzerService trabaja con HandRecord (manos individuales)
+// extraídas de GameSession.Hands
+
 namespace OpenScrape.DecisionMaker.Services;
 
 /// <summary>
@@ -78,6 +81,7 @@ public class SituationStats
 public class SessionSummary
 {
     public string SessionId { get; set; } = string.Empty;
+    public string TableName { get; set; } = string.Empty;
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public int Hands { get; set; }
@@ -99,9 +103,36 @@ public class EquityVsOutcome
 public class StrategyAnalyzerService
 {
     /// <summary>
-    /// Analiza un conjunto de GameRounds y genera métricas completas.
+    /// Analiza todas las sesiones y genera métricas completas.
     /// </summary>
-    public StrategyAnalysisResult Analyze(List<GameRound> rounds, decimal bigBlind = 0.50m)
+    public StrategyAnalysisResult AnalyzeSessions(List<GameSession> sessions)
+    {
+        var allHands = sessions.SelectMany(s => s.Hands).ToList();
+        var bigBlind = sessions.FirstOrDefault()?.BigBlind ?? 0.50m;
+        var result = Analyze(allHands, bigBlind);
+
+        // Generar resumen de sesiones directamente desde GameSession
+        result.Sessions = sessions
+            .OrderByDescending(s => s.StartTime)
+            .Select(s => new SessionSummary
+            {
+                SessionId = s.SessionId,
+                TableName = s.TableName,
+                StartTime = s.StartTime,
+                EndTime = s.EndTime,
+                Hands = s.Hands.Count,
+                Profit = s.TotalProfit,
+                BBPer100 = s.BBPer100
+            })
+            .ToList();
+
+        return result;
+    }
+
+    /// <summary>
+    /// Analiza un conjunto de manos y genera métricas completas.
+    /// </summary>
+    public StrategyAnalysisResult Analyze(List<HandRecord> rounds, decimal bigBlind = 0.50m)
     {
         var result = new StrategyAnalysisResult
         {
@@ -143,9 +174,6 @@ public class StrategyAnalyzerService
         // Stats por situación
         result.StatsBySituation = AnalyzeBySituation(rounds);
 
-        // Sesiones
-        result.Sessions = AnalyzeSessions(rounds, bigBlind);
-
         // Equity vs Outcome
         result.EquityVsOutcomes = BuildEquityVsOutcome(rounds);
         result.EquityAccuracy = CalculateEquityAccuracy(result.EquityVsOutcomes);
@@ -153,7 +181,7 @@ public class StrategyAnalyzerService
         return result;
     }
 
-    private Dictionary<TablePosition, PositionStats> AnalyzeByPosition(List<GameRound> rounds)
+    private Dictionary<TablePosition, PositionStats> AnalyzeByPosition(List<HandRecord> rounds)
     {
         var stats = new Dictionary<TablePosition, PositionStats>();
 
@@ -174,7 +202,7 @@ public class StrategyAnalyzerService
         return stats;
     }
 
-    private Dictionary<BoardPosition, StreetStats> AnalyzeByStreet(List<GameRound> rounds)
+    private Dictionary<BoardPosition, StreetStats> AnalyzeByStreet(List<HandRecord> rounds)
     {
         var stats = new Dictionary<BoardPosition, StreetStats>();
         var allDecisions = rounds.SelectMany(r => r.Decisions).ToList();
@@ -199,7 +227,7 @@ public class StrategyAnalyzerService
         return stats;
     }
 
-    private Dictionary<HandSituation, SituationStats> AnalyzeBySituation(List<GameRound> rounds)
+    private Dictionary<HandSituation, SituationStats> AnalyzeBySituation(List<HandRecord> rounds)
     {
         var stats = new Dictionary<HandSituation, SituationStats>();
 
@@ -219,38 +247,12 @@ public class StrategyAnalyzerService
         return stats;
     }
 
-    private List<SessionSummary> AnalyzeSessions(List<GameRound> rounds, decimal bigBlind)
-    {
-        var sessions = new List<SessionSummary>();
-
-        foreach (var group in rounds.Where(r => !string.IsNullOrEmpty(r.SessionId)).GroupBy(r => r.SessionId))
-        {
-            var list = group.OrderBy(r => r.Timestamp).ToList();
-            decimal profit = list.Where(r => r.Result != HandResult.Unknown)
-                .Sum(r => r.HeroStackEnd - r.HeroStackStart);
-
-            double bbPer100 = bigBlind > 0 && list.Count > 0
-                ? (double)(profit / bigBlind) / list.Count * 100
-                : 0;
-
-            sessions.Add(new SessionSummary
-            {
-                SessionId = group.Key,
-                StartTime = list.First().Timestamp,
-                EndTime = list.Last().Timestamp,
-                Hands = list.Count,
-                Profit = profit,
-                BBPer100 = bbPer100
-            });
-        }
-
-        return sessions.OrderByDescending(s => s.StartTime).ToList();
-    }
+    // AnalyzeSessions ahora es un método público que recibe List<GameSession> directamente
 
     /// <summary>
     /// Construye pares (equity predicha, resultado real) para cada decisión de la última calle jugada.
     /// </summary>
-    private List<EquityVsOutcome> BuildEquityVsOutcome(List<GameRound> rounds)
+    private List<EquityVsOutcome> BuildEquityVsOutcome(List<HandRecord> rounds)
     {
         var items = new List<EquityVsOutcome>();
 
@@ -367,7 +369,8 @@ public class StrategyAnalyzerService
             foreach (var session in analysis.Sessions.Take(10))
             {
                 var duration = session.EndTime - session.StartTime;
-                sb.AppendLine($"  {session.StartTime:dd/MM HH:mm} | {session.Hands,4} manos | " +
+                var table = string.IsNullOrEmpty(session.TableName) ? "" : $"{session.TableName} | ";
+                sb.AppendLine($"  {session.StartTime:dd/MM HH:mm} | {table}{session.Hands,4} manos | " +
                     $"{duration.TotalMinutes:F0}min | BB/100: {session.BBPer100:+0.0;-0.0} | " +
                     $"Profit: {session.Profit:+0.00;-0.00}");
             }
