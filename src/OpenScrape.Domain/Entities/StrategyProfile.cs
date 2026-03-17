@@ -66,6 +66,18 @@ public class StrategyProfile
     public double ImpliedOddsFlopMultiplier { get; set; } = 0.90;      // Flop: 2 calles por extraer valor
     public double ImpliedOddsTurnMultiplier { get; set; } = 0.95;      // Turn: 1 calle
 
+    // C-bet y Range Advantage (usado en DetermineFlopActionUnified)
+    // Bonus de equity cuando hero fue agresor preflop y tiene ventaja de rango
+    public double CbetRangeAdvantageBonus { get; set; } = 8.0;
+    // Bonus de equity base para c-bet como agresor preflop (incluso sin range advantage)
+    public double CbetAggressorBonus { get; set; } = 4.0;
+    // Penalización cuando hero es caller y el board favorece al raiser
+    public double CbetCallerDisadvantage { get; set; } = -3.0;
+    // Reducción del bonus en boards monotone (flush possible equaliza rangos)
+    public double CbetMonotoneReduction { get; set; } = 0.5;
+    // Reducción por cada oponente extra en multiway (c-bet menos efectivo multiway)
+    public double CbetMultiwayReduction { get; set; } = 3.0;
+
     // Decision Adjustments (usado en UnifiedPokerCalculator)
     public double DrawEquityBonus { get; set; } = 2.0;
     public double RiverEquityPenalty { get; set; } = -1.0;

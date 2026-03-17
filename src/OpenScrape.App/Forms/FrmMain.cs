@@ -1926,12 +1926,12 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Determina la acción del flop usando PostflopDecisionService (unificado con turn/river).
-        /// Usa equity Monte Carlo, pot odds, draws, facing bet, posición, multiway y board texture.
+        /// Determina la acción del flop usando PostflopDecisionService + C-bet awareness + Range Advantage.
+        /// Ajusta equity efectiva según: agresor preflop, textura favorable al rango, posición, multiway.
         /// </summary>
         private void DetermineFlopActionUnified()
         {
-            var equity = _flopResult.EquityPercentage;
+            var rawEquity = _flopResult.EquityPercentage;
             var inPosition = _playerGameState.IsInPosition;
             var maxBet = _playerGameState.Players.Max(m => m.Bet);
             var potSize = _playerGameState.PotSize;
@@ -1948,17 +1948,23 @@ namespace OpenScrape.App
 
             bool villainAggro = maxBet > 0;
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-
-            // En flop no hay board change (es la primera calle comunitaria)
             var boardChange = DecisionMaker.Algorithms.BoardChangeResult.Safe;
 
-            LogError($"[FLOP] Equity={equity:F1}, Texture={texture}, " +
+            // C-bet awareness: ajustar equity según rol preflop y ventaja de rango
+            bool isPreflopAggressor = IsPreflopAggressor(_playerGameState.HandSituation);
+            bool hasRangeAdvantage = HasRangeAdvantageOnBoard(flopRanks, boardTexture, isPreflopAggressor);
+            double cbetAdjustment = CalculateCbetAdjustment(
+                isPreflopAggressor, hasRangeAdvantage, boardTexture, inPosition, numOpponents);
+            double effectiveEquity = Math.Min(99, rawEquity + cbetAdjustment);
+
+            LogError($"[FLOP] Equity={rawEquity:F1}, CbetAdj={cbetAdjustment:+0.0;-0.0}, EffEquity={effectiveEquity:F1}, " +
+                     $"Aggressor={isPreflopAggressor}, RangeAdv={hasRangeAdvantage}, Texture={texture}, " +
                      $"FacingBet={betSize}, Situation={_playerGameState.HandSituation}, " +
                      $"IP={inPosition}, Opponents={numOpponents}, " +
                      $"Outs={_flopResult.TotalOuts}, Draws={string.Join(",", _flopResult.DrawTypes)}");
 
             var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.Flop, _playerGameState.HandSituation, texture, inPosition,
+                effectiveEquity, BoardPosition.Flop, _playerGameState.HandSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _flopResult.PotOddsPercentage,
                 totalOuts: _flopResult.TotalOuts,
@@ -1975,6 +1981,82 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+        }
+
+        /// <summary>
+        /// Determina si hero fue el agresor preflop basado en la HandSituation.
+        /// </summary>
+        private static bool IsPreflopAggressor(HandSituation situation) => situation switch
+        {
+            HandSituation.OpenRaise => true,
+            HandSituation.RaiseOverLimper => true,
+            HandSituation.ThreeBet => true,
+            HandSituation.FourBet => true,
+            HandSituation.Cold4Bet => true,
+            HandSituation.Squeeze => true,
+            _ => false // Call, OpenRaiseVs3Bet, VsSqueeze, DonkBet, etc.
+        };
+
+        /// <summary>
+        /// Evalúa si hero tiene ventaja de rango en este board.
+        /// Boards altos (A, K, Q) favorecen al raiser; boards bajos conectados favorecen al caller.
+        /// </summary>
+        private static bool HasRangeAdvantageOnBoard(
+            List<int> flopRanks, DecisionMaker.Algorithms.BoardTextureResult boardTexture, bool isPreflopAggressor)
+        {
+            int highCards = flopRanks.Count(r => r >= 12); // Q=12, K=13, A=14
+            bool hasAceOrKing = flopRanks.Any(r => r >= 13);
+            bool isLowBoard = flopRanks.All(r => r <= 9);
+
+            if (isPreflopAggressor)
+            {
+                // Agresor tiene range advantage en boards altos (más Ax, Kx, QQ+ en su rango)
+                return hasAceOrKing || highCards >= 2;
+            }
+            else
+            {
+                // Caller tiene range advantage en boards bajos conectados
+                return isLowBoard && boardTexture.IsConnected;
+            }
+        }
+
+        /// <summary>
+        /// Calcula el ajuste de equity para c-bet basado en rol preflop, range advantage y board.
+        /// Positivo = más agresivo (agresor con ventaja), Negativo = más conservador (caller sin ventaja).
+        /// </summary>
+        private double CalculateCbetAdjustment(
+            bool isPreflopAggressor, bool hasRangeAdvantage,
+            DecisionMaker.Algorithms.BoardTextureResult boardTexture,
+            bool isInPosition, int numOpponents)
+        {
+            var profile = _strategyProfileService.Profile;
+            double adjustment = 0;
+
+            if (isPreflopAggressor)
+            {
+                // Bonus base por ser agresor preflop (c-bet equity)
+                adjustment += profile.CbetAggressorBonus;
+
+                // Bonus adicional por ventaja de rango
+                if (hasRangeAdvantage)
+                    adjustment += profile.CbetRangeAdvantageBonus;
+            }
+            else
+            {
+                // Caller en board que favorece al raiser → desventaja
+                if (!hasRangeAdvantage)
+                    adjustment += profile.CbetCallerDisadvantage;
+            }
+
+            // Reducción en boards monotone (flush possible equaliza rangos)
+            if (boardTexture.IsMonotone)
+                adjustment *= profile.CbetMonotoneReduction;
+
+            // Reducción por multiway (c-bet menos efectivo con más oponentes)
+            if (numOpponents > 1)
+                adjustment -= profile.CbetMultiwayReduction * (numOpponents - 1);
+
+            return adjustment;
         }
 
         private void DetermineTurnAction()
