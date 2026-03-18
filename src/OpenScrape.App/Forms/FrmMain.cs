@@ -83,9 +83,9 @@ namespace OpenScrape.App
         private bool _executeCapture;
         // Street flags derivados del state machine
         private bool IsPreflop => _gameLoopStateMachine.IsPreflop;
-        private bool IsFlop => _gameLoopStateMachine.CurrentState == GameState.FlopDetected;
-        private bool IsTurn => _gameLoopStateMachine.CurrentState == GameState.TurnDetected;
-        private bool IsRiver => _gameLoopStateMachine.CurrentState == GameState.RiverDetected;
+        private bool IsFlop => _gameLoopStateMachine.IsFlop;
+        private bool IsTurn => _gameLoopStateMachine.IsTurn;
+        private bool IsRiver => _gameLoopStateMachine.IsRiver;
         private string _tableName = string.Empty;
         private long _newTableHand;
         private bool _newHand;
@@ -569,6 +569,14 @@ namespace OpenScrape.App
                 else
                 {
                     SetActivePlayer();
+
+                    // Reintentar detección de dealer si la posición no se detectó en la primera captura
+                    if (_playerGameState.Position == TablePosition.None)
+                    {
+                        SetDealerPlayer();
+                        if (_dealerValuePosition >= 0 && _playerGameState.Position != TablePosition.None)
+                            SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
+                    }
                 }
 
                 SetBetPlayer();
@@ -786,19 +794,20 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
-            if (IsFlop)
+            // Solo procesar cuando estamos en estado *Detected (no *Action, que indica ya procesado)
+            if (_gameLoopStateMachine.CurrentState == GameState.FlopDetected)
             {
                 _gameLoopStateMachine.TryTransition(GameState.FlopAction);
                 await ProcessFlopAsync(potOddsResult);
             }
 
-            if (IsTurn)
+            if (_gameLoopStateMachine.CurrentState == GameState.TurnDetected)
             {
                 _gameLoopStateMachine.TryTransition(GameState.TurnAction);
                 await ProcessTurnAsync();
             }
 
-            if (IsRiver)
+            if (_gameLoopStateMachine.CurrentState == GameState.RiverDetected)
             {
                 _gameLoopStateMachine.TryTransition(GameState.RiverAction);
                 await ProcessRiverAsync();
