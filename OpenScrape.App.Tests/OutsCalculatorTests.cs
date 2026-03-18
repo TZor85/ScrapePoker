@@ -636,4 +636,54 @@ public class OutsCalculatorTests
     }
 
     #endregion
+
+    #region Combo Draw
+
+    [Test]
+    public void ComboDraw_FlushDraw_MasOESD_EsComboDraw()
+    {
+        // Hero: 8h 9h, Flop: 7h Th 2c → flush draw (4 hearts) + OESD (6 o J completan)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Eight, Suit.Hearts),
+            C(Rank.Nine, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.Ten, Suit.Hearts),
+            C(Rank.Two, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasComboDraw, Is.True);
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.HasOpenEndedStraightDraw, Is.True);
+        Assert.That(result.DrawTypes, Does.Contain("Combo Draw"));
+    }
+
+    [Test]
+    public void ComboDraw_SoloFlushDraw_NoEsComboDraw()
+    {
+        // Hero: Ah 5h, Flop: 2h 7h Kc → solo flush draw, sin straight draw
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasComboDraw, Is.False);
+        Assert.That(result.HasFlushDraw, Is.True);
+    }
+
+    #endregion
 }

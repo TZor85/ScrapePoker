@@ -52,6 +52,11 @@ public record StreetThresholds
     public string ComboDrawBetSize { get; init; } = "Bet 3/4";
     public int ComboDrawOutsThreshold { get; init; } = 12;
 
+    // Probe bet: bet pequeño cuando agresor preflop checkeó en street anterior
+    public bool CanProbeBet { get; init; }
+    public string ProbeBetSize { get; init; } = "Bet 1/3";
+    public double ProbeBetMinEquity { get; init; } = 25.0;
+
     // Modo simplificado (RaiseOverLimper: IP/OOP con bets fijos, sin board texture)
     public bool IsSimplified { get; init; }
     public string SimplifiedIPStrongBet { get; init; } = "Bet 1/2 (Value)";

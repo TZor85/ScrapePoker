@@ -185,7 +185,9 @@ public class PostflopDecisionService
         bool hasFlushDraw = false,
         int numOpponents = 1,
         bool heroIsAggressor = false,
-        HandRank heroHandRank = HandRank.HighCard)
+        HandRank heroHandRank = HandRank.HighCard,
+        bool hasComboDraw = false,
+        bool villainAggressorCheckedPreviousStreet = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -200,6 +202,10 @@ public class PostflopDecisionService
             ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet)
             : 0;
         double effectiveEquity = equity - dangerPenalty;
+
+        // Combo draw bonus: flush + straight draw = semi-bluff premium
+        if (hasComboDraw && street != BoardPosition.River)
+            effectiveEquity += _profile.ComboDrawEquityBonus;
 
         // Tope de equity para APOSTAR en boards con draw completado que hero no tiene.
         // Apostar solo consigue que nos paguen flushes/straights (peores foldean, mejores pagan).
@@ -267,7 +273,8 @@ public class PostflopDecisionService
 
         // --- NO FACING BET: decidir entre Check y Bet ---
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
-            street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway);
+            street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
+            villainAggressorCheckedPreviousStreet);
     }
 
     /// <summary>
@@ -365,7 +372,8 @@ public class PostflopDecisionService
         bool previousStreetBet,
         bool heroIsAggressor = false,
         HandRank heroHandRank = HandRank.HighCard,
-        bool isMultiway = false)
+        bool isMultiway = false,
+        bool villainAggressorCheckedPreviousStreet = false)
     {
         // Check-raise: OOP con mano premium, esperando bet del villano para raise
         if (thresholds.CanCheckRaise && !isInPosition && !isMultiway &&
@@ -377,6 +385,16 @@ public class PostflopDecisionService
                 "Check (Check-Raise)",
                 $"Check-raise trap — {heroHandRank} OOP",
                 IsCheckRaise: true);
+        }
+
+        // Probe bet: villano agresor checkeó en street anterior → debilidad
+        if (thresholds.CanProbeBet && villainAggressorCheckedPreviousStreet &&
+            !isInPosition && !isMultiway &&
+            equity >= thresholds.ProbeBetMinEquity)
+        {
+            return new PostflopDecisionResult(
+                thresholds.ProbeBetSize + " (Probe)",
+                "Probe bet — agresor checkeó en street anterior");
         }
 
         // Determinar bet size base por textura de board
@@ -407,7 +425,7 @@ public class PostflopDecisionService
                 "Overbet — board seco con ventaja de rango");
         }
 
-        // Strong value → bet grande (con sizing boost para manos nuts)
+        // Strong value → bet grande (con sizing boost para manos nuts o TPTK)
         if (equity > adjStrongValue)
         {
             bool isBarrel = previousStreetBet && street == BoardPosition.River;
@@ -420,7 +438,7 @@ public class PostflopDecisionService
                 IsBarrel: isBarrel);
         }
 
-        // Value → bet
+        // Value → bet (ajustar sizing por kicker strength con OnePair)
         if (equity > adjValue)
         {
             return new PostflopDecisionResult(

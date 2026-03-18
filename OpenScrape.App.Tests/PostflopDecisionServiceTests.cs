@@ -1084,4 +1084,111 @@ public class PostflopDecisionServiceTests
         };
         return profile;
     }
+
+    // ─── Tests Combo Draw Equity Bonus (Mejora 3) ─────────────────────
+
+    [Test]
+    public void ComboDraw_Bonus_SaleDeHandleLowEquity()
+    {
+        // Turn_OpenRaise: FoldBelow=45
+        // Equity 42 sin combo draw: < 45 → HandleLowEquity → semi-bluff
+        var sinCombo = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 14, hasComboDraw: false);
+
+        // Equity 42 + combo draw bonus (+6) = 48 > 45 → sale de HandleLowEquity
+        var conCombo = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 14, hasComboDraw: true);
+
+        Assert.That(sinCombo.IsBluff, Is.True); // Semi-bluff en HandleLowEquity
+        Assert.That(conCombo.IsBluff, Is.False); // Sale de HandleLowEquity con bonus
+    }
+
+    [Test]
+    public void ComboDraw_River_SinBonus()
+    {
+        // River_OpenRaise: FoldBelow=40. En river no hay bonus de combo draw
+        // Equity 38 < 40 → HandleLowEquity → check (sin facing bet, river)
+        var result = _service.DetermineAction(
+            equity: 38, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 0, hasComboDraw: true);
+
+        Assert.That(result.Action, Does.Contain("Check"));
+    }
+
+    // ─── Tests Probe Bet (Mejora 4) ───────────────────────────────────
+
+    [Test]
+    public void ProbeBet_AgresorCheckeoFlop_OOP_DeberiaProbe()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        // Equity 42 > FoldBelow(40) → llega a HandleNoBet → probe bet (equity > ProbeBetMinEquity 25)
+        var result = service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: true);
+
+        Assert.That(result.Action, Does.Contain("Probe"));
+    }
+
+    [Test]
+    public void ProbeBet_AgresorAposto_SinProbe()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        var result = service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: false);
+
+        Assert.That(result.Action, Does.Not.Contain("Probe"));
+    }
+
+    [Test]
+    public void ProbeBet_IP_SinProbe()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        var result = service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: true);
+
+        Assert.That(result.Action, Does.Not.Contain("Probe"));
+    }
+
+    [Test]
+    public void ProbeBet_EquityMuyBaja_SinProbe()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        // Equity 15 < ProbeBetMinEquity(25) → no probe
+        var result = service.DetermineAction(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: true);
+
+        Assert.That(result.Action, Does.Not.Contain("Probe"));
+    }
+
+    private static StrategyProfile CreateProfileConProbeBet()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Turn_OpenRaiseVs3BetAndCall"] = new StreetThresholds
+        {
+            FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
+            CanProbeBet = true, ProbeBetSize = "Bet 1/3", ProbeBetMinEquity = 25,
+            LowEquityAction = "Call"
+        };
+        return profile;
+    }
 }

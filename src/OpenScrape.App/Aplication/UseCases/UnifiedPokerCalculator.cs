@@ -32,6 +32,8 @@ namespace OpenScrape.App.Aplication.UseCases
         public string RecommendedAction { get; set; } = string.Empty; // Acción recomendada
         public double? SuggestedBetSize { get; set; }    // Tamaño de apuesta sugerido (como porcentaje del pote)
         public HandRank HeroHandRank { get; set; }        // Ranking de la mano actual de hero
+        public bool HasComboDraw { get; set; }             // Flush draw + straight draw
+        public KickerStrength HeroKickerStrength { get; set; } // Fuerza del kicker con top pair
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -81,6 +83,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
                 result.TotalOuts = outsResult.TotalOuts;
                 result.DrawTypes = outsResult.DrawTypes;
+                result.HasComboDraw = outsResult.HasComboDraw;
 
                 // 3b. Evaluar la mano actual de hero (postflop con 5+ cartas)
                 var allCards = playerHand.Concat(communityCards).ToList();
@@ -88,6 +91,23 @@ namespace OpenScrape.App.Aplication.UseCases
                 {
                     var handEval = _handEvaluator.EvaluateBestHand(allCards);
                     result.HeroHandRank = handEval.Rank;
+
+                    // Kicker strength: solo para OnePair que sea top pair
+                    if (handEval.Rank == HandRank.OnePair && communityCards.Count >= 3)
+                    {
+                        var pairRank = handEval.Cards
+                            .GroupBy(c => c.Rank).FirstOrDefault(g => g.Count() == 2)?.Key;
+                        int topBoardRank = communityCards.Max(c => (int)c.Rank);
+                        bool isTopPair = pairRank.HasValue && (int)pairRank.Value == topBoardRank;
+
+                        if (isTopPair && handEval.Kickers.Count > 0)
+                        {
+                            int bestKicker = handEval.Kickers[0];
+                            result.HeroKickerStrength = bestKicker >= 13 ? KickerStrength.Strong
+                                : bestKicker >= 10 ? KickerStrength.Medium
+                                : KickerStrength.Weak;
+                        }
+                    }
                 }
 
                 // 4. Calcular fold equity basado en posición y situación

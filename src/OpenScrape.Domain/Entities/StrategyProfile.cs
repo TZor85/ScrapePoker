@@ -78,6 +78,10 @@ public class StrategyProfile
     // Reducción por cada oponente extra en multiway (c-bet menos efectivo multiway)
     public double CbetMultiwayReduction { get; set; } = 3.0;
 
+    // Combo Draw Bonus (usado en PostflopDecisionService)
+    // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
+    public double ComboDrawEquityBonus { get; set; } = 6.0;
+
     // Tainted Outs (usado en OutsCalculator)
     // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
     public double TaintedOutsDiscount { get; set; } = 0.5;

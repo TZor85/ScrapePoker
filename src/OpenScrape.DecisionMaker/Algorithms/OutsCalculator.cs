@@ -24,6 +24,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public int OvercardCount { get; set; }
             public bool HasBackdoorFlushDraw { get; set; }
             public bool HasBackdoorStraightDraw { get; set; }
+            public bool HasComboDraw { get; set; }
             public double OutsToEquity { get; set; }
             public List<string> DrawTypes { get; set; } = [];
         }
@@ -142,6 +143,12 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 result.HasStraightFlushDraw = true;
                 result.DrawTypes.Add("Straight Flush Draw");
             }
+
+            // Combo draw: flush draw + straight draw (OESD o gutshot) = semi-bluff premium
+            result.HasComboDraw = result.HasFlushDraw &&
+                (result.HasOpenEndedStraightDraw || result.HasGutshotStraightDraw);
+            if (result.HasComboDraw)
+                result.DrawTypes.Add("Combo Draw");
 
             // Convertir outs a equity (Regla del 2 y 4)
             int cardsToCome = 5 - communityCards.Count;

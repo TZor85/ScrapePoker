@@ -168,6 +168,7 @@ namespace OpenScrape.App
         private readonly PostflopDecisionService _postflopDecisionService;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private bool _previousStreetWasBet;
+        private bool _villainAggressorCheckedFlop;
         private BoardChangeResult _lastBoardChange = BoardChangeResult.Safe;
         #endregion
 
@@ -1275,7 +1276,8 @@ namespace OpenScrape.App
                 hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"),
                 numOpponents: Math.Max(1, numOpponents),
                 heroIsAggressor: riverIsAggressor,
-                heroHandRank: _riverResult.HeroHandRank);
+                heroHandRank: _riverResult.HeroHandRank,
+                hasComboDraw: _riverResult.HasComboDraw);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1974,7 +1976,8 @@ namespace OpenScrape.App
 
             // C-bet awareness: ajustar equity según rol preflop y ventaja de rango
             bool isPreflopAggressor = IsPreflopAggressor(_playerGameState.HandSituation);
-            bool hasRangeAdvantage = HasRangeAdvantageOnBoard(flopRanks, boardTexture, isPreflopAggressor);
+            bool hasRangeAdvantage = HasRangeAdvantageOnBoard(
+                flopRanks, boardTexture, isPreflopAggressor, _playerGameState.HandSituation);
             double cbetAdjustment = CalculateCbetAdjustment(
                 isPreflopAggressor, hasRangeAdvantage, boardTexture, inPosition, numOpponents);
             double effectiveEquity = Math.Min(99, rawEquity + cbetAdjustment);
@@ -1993,7 +1996,8 @@ namespace OpenScrape.App
                 hasFlushDraw: _flopResult.DrawTypes.Contains("Flush Draw"),
                 numOpponents: numOpponents,
                 heroIsAggressor: isPreflopAggressor,
-                heroHandRank: _flopResult.HeroHandRank);
+                heroHandRank: _flopResult.HeroHandRank,
+                hasComboDraw: _flopResult.HasComboDraw);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -2010,6 +2014,9 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+
+            // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
+            _villainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSize.NoBet;
         }
 
         /// <summary>
@@ -2031,20 +2038,38 @@ namespace OpenScrape.App
         /// Boards altos (A, K, Q) favorecen al raiser; boards bajos conectados favorecen al caller.
         /// </summary>
         private static bool HasRangeAdvantageOnBoard(
-            List<int> flopRanks, DecisionMaker.Algorithms.BoardTextureResult boardTexture, bool isPreflopAggressor)
+            List<int> flopRanks, DecisionMaker.Algorithms.BoardTextureResult boardTexture,
+            bool isPreflopAggressor, HandSituation situation)
         {
             int highCards = flopRanks.Count(r => r >= 12); // Q=12, K=13, A=14
             bool hasAceOrKing = flopRanks.Any(r => r >= 13);
             bool isLowBoard = flopRanks.All(r => r <= 9);
+            bool isMediumBoard = flopRanks.All(r => r >= 7 && r <= 11);
+
+            // En 3bet/4bet pots el agresor tiene rango más estrecho con overpairs (AA-QQ)
+            bool is3BetPot = situation is HandSituation.ThreeBet or HandSituation.FourBet
+                or HandSituation.Cold4Bet or HandSituation.Squeeze
+                or HandSituation.OpenRaiseVs3Bet or HandSituation.VsSqueeze;
 
             if (isPreflopAggressor)
             {
-                // Agresor tiene range advantage en boards altos (más Ax, Kx, QQ+ en su rango)
+                if (is3BetPot)
+                {
+                    // En 3bet pot, agresor mantiene ventaja incluso en boards bajos (overpairs)
+                    // Solo pierde ventaja en boards bajos + conectados (favorecen caller)
+                    return !(isLowBoard && boardTexture.IsConnected);
+                }
+                // SRP: agresor tiene range advantage en boards altos
                 return hasAceOrKing || highCards >= 2;
             }
             else
             {
-                // Caller tiene range advantage en boards bajos conectados
+                if (is3BetPot)
+                {
+                    // Caller en 3bet pot: ventaja solo en boards medios conectados (89T)
+                    return isMediumBoard && boardTexture.IsConnected;
+                }
+                // SRP: caller tiene range advantage en boards bajos conectados
                 return isLowBoard && boardTexture.IsConnected;
             }
         }
@@ -2128,7 +2153,9 @@ namespace OpenScrape.App
                 hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"),
                 numOpponents: Math.Max(1, numOpponents),
                 heroIsAggressor: turnIsAggressor,
-                heroHandRank: _turnResult.HeroHandRank);
+                heroHandRank: _turnResult.HeroHandRank,
+                hasComboDraw: _turnResult.HasComboDraw,
+                villainAggressorCheckedPreviousStreet: _villainAggressorCheckedFlop);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -2376,6 +2403,7 @@ namespace OpenScrape.App
             }
 
             _previousStreetWasBet = false;
+            _villainAggressorCheckedFlop = false;
             _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
 

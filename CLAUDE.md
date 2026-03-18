@@ -60,28 +60,36 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 
 ## Decision Engine (DecisionMaker)
 
-Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo 1000 iterations) → outs/draws → fold equity → EV.
+Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo 1000 iterations) → outs/draws (with tainted outs + combo draw detection) → hand evaluation (HandRank + KickerStrength) → fold equity → EV.
 
 **Algorithms:**
 - `HandEvaluator` — Hand strength ranking
 - `MonteCarloSimulator` — Postflop equity via simulation
 - `PreflopEquityCalculator` — Preflop equity lookup
-- `OutsCalculator` — Draw detection and outs counting
+- `OutsCalculator` — Draw detection, outs counting, tainted outs, combo draw detection
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
 
-**PostflopDecisionService — Three decision paths:**
-1. **Facing Bet** → Call/Raise/Fold with bet-size penalties (Small+1, Medium+4, Large+8 over FoldBelow; VillainAggro+3)
-2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired bet sizes)
-3. **Low Equity** → Semi-bluff (only without facing bet), implied odds, pot odds marginal calls
+**PostflopDecisionService — Five decision paths:**
+1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2.
+2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards as aggressor (1.25x pot).
+3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`.
+4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Cross-street state via `_villainAggressorCheckedFlop`.
+5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls.
+
+**Additional decision modifiers:**
+- `heroIsAggressor` / `heroHandRank` / `heroKickerStrength` — affect raise/call/sizing decisions
+- `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus)
+- Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
+- Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
 
 **Danger card penalty system:**
-- Percentage penalties (proportional): FlushComplete = equity×25%, StraightComplete = equity×18%
-- Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5
+- Percentage penalties (proportional): FlushComplete = equity×25% (requires 4+ same suit on board), StraightComplete = equity×18%
+- Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5 (3 same suit on board)
 - FacingBetMultiplier ×1.4 (villain represents completed draw)
 - Hero blocker effect: penalty ×0.5 if hero holds danger suit
 - NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board)
 - Danger propagation: turn `_lastBoardChange` carries to river via `CombineBoardChanges()`
-- `effectiveEquity = equity - dangerPenalty`, then cap if applicable
+- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap if applicable
 - Never folds without facing bet → Check instead
 
 ## Game State Machine
@@ -100,7 +108,7 @@ Properties `IsFlop`, `IsTurn`, `IsRiver` are derived from `CurrentState` (not se
 Three-tier hierarchy, all via `IOptions<StrategyProfile>` from `appsettings.json`:
 
 1. **StrategyProfile** (global) — Fold equity base/adjustments, bet sizing multipliers (SPR-based, board texture, position), bluff frequencies (flop/turn/river), all 8 danger penalty parameters.
-2. **StreetThresholds** (per situation) — 20 configs (10 Turn + 10 River). Key format: `"{BoardPosition}_{HandSituation}"` (e.g., `"Turn_OpenRaise"`). Contains equity tiers (FoldBelow, ThinValueAbove, ValueAbove, StrongValueAbove), board-texture bet sizes, bluff controls (CanBluff, BluffFrequencyMultiplier, BluffCondition), position handling (ThinValueIPOnly, ThinValueOOPFallback).
+2. **StreetThresholds** (per situation) — 30 configs (10 Flop + 10 Turn + 10 River). Key format: `"{BoardPosition}_{HandSituation}"` (e.g., `"Flop_OpenRaise"`, `"Turn_OpenRaise"`). Contains equity tiers (FoldBelow, ThinValueAbove, ValueAbove, StrongValueAbove), board-texture bet sizes, bluff controls (CanBluff, BluffFrequencyMultiplier, BluffCondition), position handling (ThinValueIPOnly, ThinValueOOPFallback), check-raise (CanCheckRaise, CheckRaiseThreshold), overbet (CanOverbet, OverbetBetSize, OverbetMinEquity), combo draw sizing (ComboDrawBetSize, ComboDrawOutsThreshold), probe bet (CanProbeBet, ProbeBetSize, ProbeBetMinEquity).
 3. **Simplified mode** (RaiseOverLimper) — `IsSimplified=true` skips board texture analysis, uses fixed IP/OOP bet sizing.
 
 JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.json`, `ThreeBet.json`, `VsThreeBet.json`, `Squeeze.json`, `tableMap.json`.
@@ -109,14 +117,16 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 - `GameRound` entity stores hand data; `StreetDecision` value object logs per-street decisions (equity%, action, reason, bet sizing)
 - `GameLoggerService` persists to Marten (PostgreSQL) and writes to `tbResume` UI control (Logs tab)
-- Log format: `[TURN]`/`[RIVER]` + Equity, DangerLevel, Penalty, EffEquity, Decision
-- `LogError()` writes to both tbResume and Console
+- Log format: structured blocks per street with `═══ [FLOP/TURN/RIVER] ═══` separator, showing: cards (hero + board), pot/bet/stack/SPR, situation/position/opponents, equity pipeline, hand rank, board texture, draws, and final decision with tags ([CHECK-RAISE], [BLUFF], [BARREL])
+- `LogError()` writes to both tbResume and Console; `LogDebug()` writes only to Console (dealer, positions, OCR readings)
 
 ## Key Enums
 
 - `BoardPosition`: Hand, Flop, Turn, River (not "Street")
-- `HandSituation`: OpenRaise, RaiseOverLimper, ThreeBet, OpenRaiseVs3Bet, FourBet, Squeeze, DonkBet, etc.
+- `HandSituation`: OpenRaise, RaiseOverLimper, ThreeBet, OpenRaiseVs3Bet, FourBet, Squeeze, DonkBet, DonkBetVsOpenRaise, etc.
 - `TablePosition`: Early, Middle, CutOff, Button, SmallBlind, BigBlind
+- `HandRank`: HighCard, OnePair, TwoPair, ThreeOfAKind, Straight, Flush, FullHouse, FourOfAKind, StraightFlush, RoyalFlush
+- `KickerStrength`: None, Weak, Medium, Strong (top pair kicker classification)
 
 ## Key Dependencies
 
@@ -124,7 +134,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (160 tests, no mocking framework)
+- **NUnit** — Testing framework (266 tests, no mocking framework)
 
 ## Code Style
 

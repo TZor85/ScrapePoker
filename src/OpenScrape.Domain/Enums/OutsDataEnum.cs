@@ -21,3 +21,11 @@ public enum HandRank : byte
     StraightFlush = 9,
     RoyalFlush = 10
 }
+
+public enum KickerStrength : byte
+{
+    None = 0,
+    Weak = 1,
+    Medium = 2,
+    Strong = 3
+}
