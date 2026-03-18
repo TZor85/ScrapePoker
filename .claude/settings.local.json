@@ -18,7 +18,9 @@
       "Bash(git log:*)",
       "Bash(find /c/Code/Poker/ScrapePoker -type f -name \"*.md\" | xargs grep -l \"mejora\\\\|improve\\\\|refactor\\\\|analiza\\\\|analysis\" -i 2>/dev/null | head -10)",
       "Bash(ls -la /c/Code/Poker/ScrapePoker/*.md 2>/dev/null)",
-      "Bash(ls C:CodePokerScrapePoker.claudeworktreesagent-aa942120/*.sln)"
+      "Bash(ls C:CodePokerScrapePoker.claudeworktreesagent-aa942120/*.sln)",
+      "Bash(find:*)",
+      "Bash(__NEW_LINE_7d79eaa1e8ec8be4__ grep:*)"
     ]
   }
 }
