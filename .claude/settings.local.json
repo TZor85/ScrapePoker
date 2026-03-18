@@ -27,7 +27,8 @@
       "Bash(cd:*)",
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f''''{item[Id]}: {[r[Name] for r in item.get\\(Regions,[]\\)] }''''\\) for item in data]\")",
       "Bash(python3:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(grep -E \"\\\\.\\(json|xml|cs\\)$\")"
     ]
   }
 }

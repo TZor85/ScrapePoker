@@ -72,7 +72,7 @@ namespace OpenScrape.App
         private List<RegionTableMap>? _regionsTableMap;
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
-        private readonly List<int> _colorDealer = new() { 250, 251, 252, 253, 254, 255 };
+        private readonly List<int> _colorDealer = new() { 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
         private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
         private readonly List<int> _colorPlaying = new() { 17 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
@@ -532,6 +532,8 @@ namespace OpenScrape.App
                     _playerGameState = new PlayerGameState();
                     _responseAction = new ResponseAction();
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
+                    _dealerValuePosition = -1;
+                    _dealerPosition = string.Empty;
                     _newHand = false;
 
                     // State machine: transicionar a nueva mano (reset limpia todos los street flags)
@@ -647,6 +649,24 @@ namespace OpenScrape.App
             {
                 // Las cartas y jugadores ya se obtienen antes
                 SetDealerPlayer();
+
+                // Log diagnóstico cuando no se detecta dealer
+                if (_dealerValuePosition < 0 && _formImage.pbImage.Image != null)
+                {
+                    using var diagBitmap = new Bitmap(_formImage.pbImage.Image);
+                    var dealerRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer")?.Regions;
+                    if (dealerRegions != null)
+                    {
+                        var colorInfo = string.Join(", ", dealerRegions
+                            .Where(x => x.IsColor.GetValueOrDefault())
+                            .Select(r => {
+                                var c = diagBitmap.GetPixel(r.PosX, r.PosY);
+                                return $"{r.Name}({r.PosX},{r.PosY})=RGB({c.R},{c.G},{c.B})";
+                            }));
+                        LogInformation($"Dealer no detectado. Colores en regiones: {colorInfo}. Imagen: {diagBitmap.Width}x{diagBitmap.Height}");
+                    }
+                }
+
                 if (_dealerValuePosition >= 0)
                     SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
                 SetAliasVillain();
@@ -2152,7 +2172,7 @@ namespace OpenScrape.App
             // Si no hay jugadores, no podemos determinar el dealer
             if (_playerGameState.Players.Count == 0)
                 return;
-            
+
             var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
@@ -2169,10 +2189,35 @@ namespace OpenScrape.App
 
             foreach (var region in regionTableMap.Regions.Where(x => x.IsColor.GetValueOrDefault()))
             {
-                var color = bitmap.GetPixel(region.PosX, region.PosY);
-                if (!_colorDealer.Contains(color.R))
+                // Verificar pixel central y área de 3x3 alrededor para mayor tolerancia
+                bool isDealerFound = false;
+                int searchRadius = 2;
+
+                for (int dx = -searchRadius; dx <= searchRadius && !isDealerFound; dx++)
                 {
-                    LogDebug($"Dealer region {region.Name} color R:{color.R} does not match dealer color set {_colorDealer.Min()}-{_colorDealer.Max()}");
+                    for (int dy = -searchRadius; dy <= searchRadius && !isDealerFound; dy++)
+                    {
+                        int px = region.PosX + dx;
+                        int py = region.PosY + dy;
+
+                        if (px < 0 || py < 0 || px >= bitmap.Width || py >= bitmap.Height)
+                            continue;
+
+                        var color = bitmap.GetPixel(px, py);
+
+                        // Verificar: R alto (dealer amarillo/dorado) y G > 150 (no es blanco puro)
+                        if (_colorDealer.Contains(color.R) && color.G > 150)
+                        {
+                            isDealerFound = true;
+                            LogDebug($"Dealer encontrado en {region.Name} en ({px},{py}) RGB({color.R},{color.G},{color.B})");
+                        }
+                    }
+                }
+
+                if (!isDealerFound)
+                {
+                    var centerColor = bitmap.GetPixel(region.PosX, region.PosY);
+                    LogDebug($"Dealer region {region.Name} ({region.PosX},{region.PosY}) RGB({centerColor.R},{centerColor.G},{centerColor.B}) no coincide con dealer");
                     continue;
                 }
 
