@@ -78,6 +78,24 @@ public class StrategyProfile
     // Reducción por cada oponente extra en multiway (c-bet menos efectivo multiway)
     public double CbetMultiwayReduction { get; set; } = 3.0;
 
+    // Barrel Detection (usado en PostflopDecisionService)
+    // Penalización cuando villano apuesta en 2 calles consecutivas (rango más estrecho)
+    public double VillainBarrelFoldIncrease { get; set; } = 5.0;
+    public double VillainBarrelThinValueIncrease { get; set; } = 3.0;
+
+    // SPR Push/Fold (usado en PostflopDecisionService)
+    // Con SPR corto, decisiones más binarias (commit o fold)
+    public double SPRPushFoldThreshold { get; set; } = 2.0;
+    public double SPRPushFoldFoldReduction { get; set; } = 8.0;
+    public double SPRPushFoldValueIncrease { get; set; } = 10.0;
+    public double SPRDeepCautionThreshold { get; set; } = 4.0;
+    public double SPRDeepFoldIncrease { get; set; } = 3.0;
+
+    // Reverse Implied Odds (penalización en turn al facing bet con mano vulnerable en board con draws)
+    public double ReverseImpliedFlushDrawPenalty { get; set; } = 4.0;
+    public double ReverseImpliedCoordinatedPenalty { get; set; } = 2.0;
+    public double ReverseImpliedOnePairMultiplier { get; set; } = 1.5;
+
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
     public double ComboDrawEquityBonus { get; set; } = 6.0;

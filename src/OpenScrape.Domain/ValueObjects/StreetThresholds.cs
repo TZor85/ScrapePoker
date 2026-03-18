@@ -52,6 +52,9 @@ public record StreetThresholds
     public string ComboDrawBetSize { get; init; } = "Bet 3/4";
     public int ComboDrawOutsThreshold { get; init; } = 12;
 
+    // Double barrel: seguir apostando en turn por consistencia de rango
+    public bool CanDoubleBarrel { get; init; } = true;
+
     // Probe bet: bet pequeño cuando agresor preflop checkeó en street anterior
     public bool CanProbeBet { get; init; }
     public string ProbeBetSize { get; init; } = "Bet 1/3";

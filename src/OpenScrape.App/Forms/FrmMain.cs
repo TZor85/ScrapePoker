@@ -169,6 +169,10 @@ namespace OpenScrape.App
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private bool _previousStreetWasBet;
         private bool _villainAggressorCheckedFlop;
+        private bool _villainBetFlop;
+        private bool _villainBetTurn;
+        private bool _heroBetFlop;
+        private bool _heroBetTurn;
         private BoardChangeResult _lastBoardChange = BoardChangeResult.Safe;
         #endregion
 
@@ -1277,7 +1281,8 @@ namespace OpenScrape.App
                 numOpponents: Math.Max(1, numOpponents),
                 heroIsAggressor: riverIsAggressor,
                 heroHandRank: _riverResult.HeroHandRank,
-                hasComboDraw: _riverResult.HasComboDraw);
+                hasComboDraw: _riverResult.HasComboDraw,
+                villainBarreling: _villainBetTurn && maxBet > 0);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -2014,6 +2019,8 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+            _heroBetFlop = _previousStreetWasBet;
+            _villainBetFlop = maxBet > 0;
 
             // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
             _villainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSize.NoBet;
@@ -2155,7 +2162,8 @@ namespace OpenScrape.App
                 heroIsAggressor: turnIsAggressor,
                 heroHandRank: _turnResult.HeroHandRank,
                 hasComboDraw: _turnResult.HasComboDraw,
-                villainAggressorCheckedPreviousStreet: _villainAggressorCheckedFlop);
+                villainAggressorCheckedPreviousStreet: _villainAggressorCheckedFlop,
+                villainBarreling: _villainBetFlop && maxBet > 0);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -2180,6 +2188,8 @@ namespace OpenScrape.App
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
+            _heroBetTurn = _previousStreetWasBet;
+            _villainBetTurn = maxBet > 0;
 
             // Persistir decisión y board en game logger
             _gameLoggerService.LogStreetDecision(new StreetDecision(
@@ -2404,6 +2414,10 @@ namespace OpenScrape.App
 
             _previousStreetWasBet = false;
             _villainAggressorCheckedFlop = false;
+            _villainBetFlop = false;
+            _villainBetTurn = false;
+            _heroBetFlop = false;
+            _heroBetTurn = false;
             _lastBoardChange = BoardChangeResult.Safe;
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
 

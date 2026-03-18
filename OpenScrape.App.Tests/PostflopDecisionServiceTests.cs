@@ -1191,4 +1191,240 @@ public class PostflopDecisionServiceTests
         };
         return profile;
     }
+
+    // ─── Tests Barrel Detection (Mejora Turn 1) ───────────────────────
+
+    [Test]
+    public void VillainBarreling_AumentaFoldBelow_DeberiaFold()
+    {
+        // Turn_OpenRaise FoldBelow=45, medium +4, callerVsCbet +2 = 51
+        // + villain barrel +5 = 56. Equity 54 < 56 → fold
+        var result = _service.DetermineAction(
+            equity: 54, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            villainBarreling: true);
+
+        Assert.That(result.Action, Does.Contain("Fold"));
+    }
+
+    [Test]
+    public void VillainBarreling_EquityAlta_DeberiaCall()
+    {
+        // Equity 60 supera barrel penalty → call
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            villainBarreling: true);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"));
+    }
+
+    [Test]
+    public void VillainBarreling_NoBet_NoAfecta()
+    {
+        // Sin facing bet el barrel flag no afecta
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            villainBarreling: true);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"));
+    }
+
+    [Test]
+    public void HeroBarrel_Turn_DeberiaMarcarIsBarrel()
+    {
+        // Hero bet flop + bet turn = IsBarrel
+        var result = _service.DetermineAction(
+            equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            previousStreetBet: true, heroHandRank: HandRank.ThreeOfAKind);
+
+        Assert.That(result.IsBarrel, Is.True);
+    }
+
+    // ─── Tests SPR Push/Fold (Mejora Turn 2) ──────────────────────────
+
+    [Test]
+    public void SPRCorto_FacingBet_DeberiaAllIn()
+    {
+        // SPR 1.5 < 2.0, equity 60 > ValueAbove(55), OnePair → All-In
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Contain("All-In"));
+    }
+
+    [Test]
+    public void SPRCorto_NoBet_DeberiaAllIn()
+    {
+        // SPR 1.5, sin facing bet, equity > ValueAbove → All-In push
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Contain("All-In"));
+    }
+
+    [Test]
+    public void SPRCorto_HighCard_NoPush()
+    {
+        // SPR corto pero HighCard no hace all-in
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroStack: 15, potSize: 10, heroHandRank: HandRank.HighCard);
+
+        Assert.That(result.Action, Does.Not.Contain("All-In"));
+    }
+
+    [Test]
+    public void SPRCorto_Flop_NoAfecta()
+    {
+        // En flop no se activa push/fold
+        var profile = CreateProfileConSemiBluffAgresivo();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        var result = service.DetermineAction(
+            equity: 60, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Not.Contain("All-In"));
+    }
+
+    [Test]
+    public void SPRDeep_AumentaFoldBelow()
+    {
+        // SPR 5 > 4.0, FoldBelow +3 = 48 + medium(4) + caller(2) = 54
+        // Equity 53 < 54 → fold (vs sin SPR deep que sería 51 → 53 pasa)
+        var result = _service.DetermineAction(
+            equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            heroStack: 500, potSize: 100);
+
+        Assert.That(result.Action, Does.Contain("Fold"));
+    }
+
+    // ─── Tests Bet Sizing SPR (Mejora Turn 3) ─────────────────────────
+
+    [Test]
+    public void BetSizing_SPRCorto_AumentaBet()
+    {
+        // SPR 1.5, equity 50 (bajo ValueAbove=55 → no push/fold, pero sí bet sizing ajust)
+        // equity > ThinValueAbove(45) → thin value bet. ThinValueBetSize "Bet 1/3" → +1 → "Bet 1/2"
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroStack: 30, potSize: 20, heroHandRank: HandRank.TwoPair);
+
+        Assert.That(result.Action, Does.Contain("1/2"));
+    }
+
+    [Test]
+    public void BetSizing_SPRNormal_SinCambio()
+    {
+        // SPR 2.5, sin ajuste
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroStack: 50, potSize: 20, heroHandRank: HandRank.TwoPair);
+
+        Assert.That(result.Action, Does.Contain("1/2"));
+    }
+
+    // ─── Tests Double Barrel (Mejora Turn 5) ──────────────────────────
+
+    [Test]
+    public void DoubleBarrel_HeroBetFlop_EquityMarginal_DeberiaBarrel()
+    {
+        // Turn_Call: FoldBelow=40, ThinValueAbove=40, ValueAbove=55
+        // Equity 42: > FoldBelow(40), > ThinValueAbove(40) → thin value primero
+        // Necesitamos equity en [FoldBelow, ThinValueAbove) para barrel, pero son iguales
+        // Usamos Turn_ThreeBet: FoldBelow=40, ThinValueAbove=45, ValueAbove=55
+        // Equity 42: > FoldBelow(40), < ThinValueAbove(45), < ValueAbove(55) → barrel range
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            previousStreetBet: true, heroIsAggressor: true);
+
+        Assert.That(result.IsBarrel, Is.True);
+        Assert.That(result.Action, Does.Contain("Barrel"));
+    }
+
+    [Test]
+    public void DoubleBarrel_SinPreviousBet_NoBarrel()
+    {
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            previousStreetBet: false, heroIsAggressor: true);
+
+        Assert.That(result.IsBarrel, Is.False);
+    }
+
+    [Test]
+    public void DoubleBarrel_NoCaller_NoBarrel()
+    {
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            previousStreetBet: true, heroIsAggressor: false);
+
+        Assert.That(result.IsBarrel, Is.False);
+    }
+
+    // ─── Tests Reverse Implied Odds (Mejora Turn 6) ───────────────────
+
+    [Test]
+    public void ReverseImplied_OnePair_FlushDraw_Turn_ReduceEquity()
+    {
+        var flushDrawBoard = new BoardChangeResult(
+            FlushCompleted: false, FlushDrawAppeared: true, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 2);
+
+        // Equity 52, penalty = 4.0 * 1.5 (OnePair) = 6.0 → effectiveEquity = 46
+        // + medium(4) + callerVsCbet(2) = adjustedFoldBelow 51. 46 < 51 → fold
+        var result = _service.DetermineAction(
+            equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Contain("Fold"));
+    }
+
+    [Test]
+    public void ReverseImplied_StrongHand_NoPenalty()
+    {
+        var flushDrawBoard = new BoardChangeResult(
+            FlushCompleted: false, FlushDrawAppeared: true, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 2);
+
+        // Flush+ no se penaliza por reverse implied odds → no foldea
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: flushDrawBoard, heroHandRank: HandRank.Flush);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"));
+    }
+
+    [Test]
+    public void ReverseImplied_River_NoPenalty()
+    {
+        var flushDrawBoard = new BoardChangeResult(
+            FlushCompleted: false, FlushDrawAppeared: true, StraightCompleted: false,
+            BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 2);
+
+        // En river no aplica reverse implied odds → no penaliza extra
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
+            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"));
+    }
 }
