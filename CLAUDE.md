@@ -105,7 +105,14 @@ WaitingForHand → HandDetected → PreflopAction → FlopDetected → FlopActio
 TurnDetected → TurnAction → RiverDetected → RiverAction → HandComplete → (loop)
 ```
 
-Properties `IsFlop`, `IsTurn`, `IsRiver` are derived from `CurrentState` (not separate booleans). Includes `ForceState()` for test/debug mode and `MaxOcrRetries` for OCR failure handling.
+Properties `IsFlop`, `IsTurn`, `IsRiver` cover both `*Detected` and `*Action` states (e.g., `IsFlop` = `FlopDetected || FlopAction`). `FrmMain` uses these combined properties for street detection, while `ProcessPostFlopAsync` checks `CurrentState` directly for `*Detected` to avoid re-processing.
+
+**Street detection in real play:**
+- **Flop**: `ShouldCaptureFlop` in detection loop → `TryTransition(FlopDetected)`
+- **Turn/River**: `IsBoardCardVisible("Card4"/"Card5")` in `ProcessPostFlopAsync` checks board card regions via image hash comparison (>80% confidence threshold) to detect new street cards. When in `FlopAction`/`TurnAction` and next card is visible → transitions to `TurnDetected`/`RiverDetected`. If no new card → reprocesses current street with updated bet info (villain raise scenario).
+- **Dealer detection**: `SetDealerPlayer()` retries on each loop iteration while `Position == None`, allowing detection even if first capture misses the dealer button.
+
+Includes `ForceState()` for test/debug mode and `MaxOcrRetries` for OCR failure handling.
 
 ## Strategy Configuration
 

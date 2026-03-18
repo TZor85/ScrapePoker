@@ -24,9 +24,16 @@ public class GameSession
     public decimal TotalProfit => Hands
         .Where(h => h.Result != HandResult.Unknown)
         .Sum(h => h.HeroStackEnd - h.HeroStackStart);
-    public double BBPer100 => BigBlind > 0 && TotalHands > 0
+    public double BBPer100 => BigBlind > 0m && TotalHands > 0
         ? (double)(TotalProfit / BigBlind) / TotalHands * 100
         : 0;
+
+    /// <summary>
+    /// Valida que la sesión tenga datos mínimos consistentes.
+    /// </summary>
+    public bool IsValid => !string.IsNullOrWhiteSpace(SessionId) &&
+        !string.IsNullOrWhiteSpace(TableName) &&
+        BigBlind > 0m;
 }
 
 /// <summary>

@@ -49,7 +49,7 @@ public class OcrService
             var trainedDataPath = Path.Combine(tessdataDir, "eng.traineddata");
             if (!File.Exists(trainedDataPath))
             {
-                using var stream = GetType().Assembly.GetManifestResourceStream("Dealytics.App.Resources.tessdata.eng.traineddata");
+                using var stream = GetType().Assembly.GetManifestResourceStream("OpenScrape.App.Resources.tessdata.eng.traineddata");
                 if (stream == null)
                 {
                     throw new Exception("No se pudo encontrar el archivo eng.traineddata en los recursos.");

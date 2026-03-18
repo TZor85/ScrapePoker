@@ -10,14 +10,13 @@ using VillainCombo = (OpenScrape.Domain.ValueObjects.CardDataOuts Card1, OpenScr
 
 namespace OpenScrape.DecisionMaker.Algorithms
 {
-    public class MonteCarloSimulator
+    public class MonteCarloSimulator : IMonteCarloSimulator
     {
-        private const int DeckSize = 52;
-        private const int DefaultIterations = 10000;
         private const int HandRankCount = 11; // HandRank values 1-10, índice 0 no usado
 
         // Deck preconstruido una sola vez — se copia con Array.Copy por iteración
         private static readonly CardDataOuts[] DeckTemplate = CreateDeckTemplate();
+        private const int DeckSize = PokerConstants.DeckSize;
 
         // HandEvaluator es stateless (solo constantes) → instancia única compartida
         private static readonly HandEvaluator SharedEvaluator = new();
@@ -47,7 +46,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
         public EquityResult CalculateEquity(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
             int numOpponents, int? iterations = null, VillainRange? villainRange = null)
         {
-            int simulationCount = iterations ?? DefaultIterations;
+            int simulationCount = iterations ?? PokerConstants.DefaultMonteCarloIterations;
 
             // Pre-expandir combos del villano si hay rango definido
             var villainCombos = villainRange != null

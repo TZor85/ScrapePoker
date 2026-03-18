@@ -44,7 +44,7 @@ public record BoardChangeResult(
     public static BoardChangeResult Safe => new(false, false, false, false, false, -1, 0);
 }
 
-public class BoardTextureAnalyzer
+public class BoardTextureAnalyzer : IBoardTextureAnalyzer
 {
     /// <summary>
     /// Analiza la textura del board basándose en las cartas comunitarias.
@@ -253,27 +253,26 @@ public class BoardTextureAnalyzer
         double score = 0;
 
         // Suit-based wetness
-        if (isMonotone) score += 35;
-        else if (isTwoTone) score += 15;
-        else if (isRainbow) score += 0;
+        if (isMonotone) score += PokerConstants.WetnessMonotoneScore;
+        else if (isTwoTone) score += PokerConstants.WetnessTwoToneScore;
 
         // Connectivity
-        if (isConnected) score += 20;
-        else score += connectedCount * 8;
+        if (isConnected) score += PokerConstants.WetnessConnectedScore;
+        else score += connectedCount * PokerConstants.WetnessConnectedPerCount;
 
         // Draws
-        if (hasFlushPossibility) score += 15;
-        if (hasStraightPossibility) score += 15;
+        if (hasFlushPossibility) score += PokerConstants.WetnessFlushPossibilityScore;
+        if (hasStraightPossibility) score += PokerConstants.WetnessStraightPossibilityScore;
 
         // Broadway heavy boards son más dinámicos
-        if (isBroadwayHeavy) score += 10;
+        if (isBroadwayHeavy) score += PokerConstants.WetnessBroadwayScore;
 
         // Paired reduce wetness (menos combinaciones de draws)
-        if (isPaired) score -= 10;
-        if (hasTrips) score -= 15;
+        if (isPaired) score += PokerConstants.WetnessPairedReduction;
+        if (hasTrips) score += PokerConstants.WetnessTripsReduction;
 
         // Más cartas = más posibilidades
-        if (cardCount >= 5) score += 5;
+        if (cardCount >= 5) score += PokerConstants.WetnessExtraCardsBonus;
 
         return Math.Max(0, Math.Min(100, score));
     }
@@ -285,9 +284,9 @@ public class BoardTextureAnalyzer
 
         return wetnessScore switch
         {
-            >= 60 => BoardTextureCategory.Wet,
-            >= 35 => BoardTextureCategory.SemiWet,
-            >= 15 => BoardTextureCategory.SemiDry,
+            >= PokerConstants.WetnessSemiWetMax => BoardTextureCategory.Wet,
+            >= PokerConstants.WetnessSemiDryMax => BoardTextureCategory.SemiWet,
+            >= PokerConstants.WetnessDryMax => BoardTextureCategory.SemiDry,
             _ => BoardTextureCategory.Dry
         };
     }

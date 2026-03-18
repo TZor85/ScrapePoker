@@ -1,3 +1,5 @@
+using OpenScrape.Domain.Enums;
+
 namespace OpenScrape.Domain.ValueObjects;
 
 /// <summary>
@@ -25,7 +27,7 @@ public record StreetThresholds
     public bool CanBluff { get; init; }
     public double BluffFrequencyMultiplier { get; init; } = 1.0;
     public string BluffBetSize { get; init; } = "Bet 1/3";
-    public string BluffCondition { get; init; } = "None"; // "None", "Always", "OOPOnly", "IPCoordinatedSmallOnly"
+    public BluffConditionType BluffCondition { get; init; } = BluffConditionType.None;
 
     // Accion por defecto cuando equity < FoldBelow y no se blufea
     public string LowEquityAction { get; init; } = "Fold"; // "Fold" o "Call"
