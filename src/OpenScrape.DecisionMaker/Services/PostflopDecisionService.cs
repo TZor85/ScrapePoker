@@ -13,7 +13,8 @@ public record PostflopDecisionResult(
     string Action,
     string? Reason = null,
     bool IsBluff = false,
-    bool IsBarrel = false);
+    bool IsBarrel = false,
+    bool IsCheckRaise = false);
 
 public class PostflopDecisionService
 {
@@ -40,6 +41,11 @@ public class PostflopDecisionService
     private const double MultiwayThinValuePerOpponent = 3.0;
     // Multi-way: no bluffear con 3+ oponentes
     private const int MaxOpponentsForBluff = 2;
+
+    // Agresor vs caller: ajustes de threshold al facing bet
+    private const double AggressorVsDonkFoldReduction = 5.0;
+    private const double AggressorVsDonkThinValueReduction = 3.0;
+    private const double CallerVsCbetFoldIncrease = 2.0;
 
     public PostflopDecisionService(IOptions<StrategyProfile> profileOptions)
     {
@@ -177,7 +183,9 @@ public class PostflopDecisionService
         decimal heroStack = 0,
         decimal potSize = 0,
         bool hasFlushDraw = false,
-        int numOpponents = 1)
+        int numOpponents = 1,
+        bool heroIsAggressor = false,
+        HandRank heroHandRank = HandRank.HighCard)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -235,6 +243,17 @@ public class PostflopDecisionService
             adjustedThinValueAbove += extraOpponents * MultiwayThinValuePerOpponent;
         }
 
+        // Agresor vs caller: donk bet del villano contra hero agresor → respuesta agresiva
+        if (isFacingBet && heroIsAggressor)
+        {
+            adjustedFoldBelow -= AggressorVsDonkFoldReduction;
+            adjustedThinValueAbove -= AggressorVsDonkThinValueReduction;
+        }
+        else if (isFacingBet && !heroIsAggressor)
+        {
+            adjustedFoldBelow += CallerVsCbetFoldIncrease;
+        }
+
         // Equity baja (debajo del threshold ajustado)
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
@@ -243,11 +262,12 @@ public class PostflopDecisionService
         // --- FACING BET: decidir entre Call y Raise ---
         if (isFacingBet)
             return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
-                street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor);
+                street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
+                heroIsAggressor, heroHandRank);
 
         // --- NO FACING BET: decidir entre Check y Bet ---
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
-            street, previousStreetBet);
+            street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway);
     }
 
     /// <summary>
@@ -263,19 +283,41 @@ public class PostflopDecisionService
         double potOdds,
         double adjustedThinValueAbove,
         bool previousStreetBet,
-        double impliedOddsFactor)
+        double impliedOddsFactor,
+        bool heroIsAggressor = false,
+        HandRank heroHandRank = HandRank.HighCard)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
 
-        // Equity muy alta → raise for value
+        // Equity muy alta → raise solo con mano fuerte (TwoPair+), call con parejas
+        // Con OnePair raise hincha el pote con mano vulnerable, foldea peores y solo nos pagan mejores
         if (equity > thresholds.StrongValueAbove)
         {
-            var raiseSize = villainBetSize == BetSizeCategory.Large
-                ? "Raise Pot"
-                : "Raise 3x";
-            bool isBarrel = previousStreetBet && street == BoardPosition.River;
-            return new PostflopDecisionResult(raiseSize + " (Value)", "Raise for value vs bet", IsBarrel: isBarrel);
+            if (heroHandRank >= HandRank.TwoPair)
+            {
+                var raiseSize = villainBetSize == BetSizeCategory.Large
+                    ? "Raise Pot"
+                    : "Raise 3x";
+                bool isBarrel = previousStreetBet && street == BoardPosition.River;
+                return new PostflopDecisionResult(raiseSize + " (Value)",
+                    $"Raise for value vs bet — {heroHandRank}", IsBarrel: isBarrel);
+            }
+
+            // OnePair o menos con equity alta → call (proteger, no hinchar pote)
+            return new PostflopDecisionResult("Call",
+                $"Call — equity alta pero mano vulnerable ({heroHandRank})");
+        }
+
+        // Hero agresor vs donk bet → raise con mano fuerte, call con pareja
+        if (heroIsAggressor && equity > thresholds.ValueAbove)
+        {
+            if (heroHandRank >= HandRank.TwoPair)
+                return new PostflopDecisionResult("Raise 3x (Value)",
+                    $"Raise — hero agresor vs donk bet ({heroHandRank})");
+
+            return new PostflopDecisionResult("Call",
+                "Call — hero agresor vs donk bet, mano vulnerable");
         }
 
         // Equity buena → call (no raise, el villano ya mostró fuerza)
@@ -320,8 +362,23 @@ public class PostflopDecisionService
         bool isInPosition,
         string boardTexture,
         BoardPosition street,
-        bool previousStreetBet)
+        bool previousStreetBet,
+        bool heroIsAggressor = false,
+        HandRank heroHandRank = HandRank.HighCard,
+        bool isMultiway = false)
     {
+        // Check-raise: OOP con mano premium, esperando bet del villano para raise
+        if (thresholds.CanCheckRaise && !isInPosition && !isMultiway &&
+            equity > thresholds.CheckRaiseThreshold &&
+            heroHandRank >= HandRank.TwoPair &&
+            !heroIsAggressor)
+        {
+            return new PostflopDecisionResult(
+                "Check (Check-Raise)",
+                $"Check-raise trap — {heroHandRank} OOP",
+                IsCheckRaise: true);
+        }
+
         // Determinar bet size base por textura de board
         var baseBet = boardTexture switch
         {
@@ -335,18 +392,36 @@ public class PostflopDecisionService
         if (thresholds.ReduceSizeForOOP && !isInPosition)
             baseBet = ReduceBetSize(baseBet);
 
-        // Strong value → bet grande
-        if (equity > thresholds.StrongValueAbove)
+        // Hand strength relativa: ajustar thresholds según vulnerabilidad de la mano
+        double vulnerabilityAdjust = GetHandVulnerabilityAdjustment(heroHandRank, boardTexture);
+        double adjStrongValue = thresholds.StrongValueAbove + vulnerabilityAdjust;
+        double adjValue = thresholds.ValueAbove + vulnerabilityAdjust;
+
+        // Overbet en boards muy secos con mano premium (solo agresor, no river)
+        if (thresholds.CanOverbet && heroIsAggressor &&
+            equity > thresholds.OverbetMinEquity &&
+            boardTexture == "Dry" && street != BoardPosition.River)
+        {
+            return new PostflopDecisionResult(
+                thresholds.OverbetBetSize + " (Value)",
+                "Overbet — board seco con ventaja de rango");
+        }
+
+        // Strong value → bet grande (con sizing boost para manos nuts)
+        if (equity > adjStrongValue)
         {
             bool isBarrel = previousStreetBet && street == BoardPosition.River;
+            var betSize = heroHandRank >= HandRank.ThreeOfAKind
+                ? IncreaseBetSize(thresholds.StrongValueBetSize)
+                : thresholds.StrongValueBetSize;
             return new PostflopDecisionResult(
-                thresholds.StrongValueBetSize + " (Value)",
-                "Bet — strong value",
+                betSize + " (Value)",
+                $"Bet — strong value ({heroHandRank})",
                 IsBarrel: isBarrel);
         }
 
         // Value → bet
-        if (equity > thresholds.ValueAbove)
+        if (equity > adjValue)
         {
             return new PostflopDecisionResult(
                 thresholds.ValueBetSize + " (Value)",
@@ -376,6 +451,39 @@ public class PostflopDecisionService
     }
 
     /// <summary>
+    /// Calcula ajuste de vulnerabilidad basado en la fuerza relativa de la mano.
+    /// Positivo = mano vulnerable (necesita más equity), Negativo = mano nuts (necesita menos).
+    /// </summary>
+    private static double GetHandVulnerabilityAdjustment(HandRank rank, string boardTexture)
+    {
+        double factor = rank switch
+        {
+            HandRank.RoyalFlush or HandRank.StraightFlush => -8.0,
+            HandRank.FourOfAKind => -8.0,
+            HandRank.FullHouse => -5.0,
+            HandRank.Flush => boardTexture == "Paired" ? -2.0 : -4.0,
+            HandRank.Straight => boardTexture == "Coordinated" ? 2.0 : -2.0,
+            HandRank.ThreeOfAKind => -4.0,
+            HandRank.TwoPair => boardTexture == "Coordinated" ? 3.0 : 0.0,
+            HandRank.OnePair => 2.0,
+            _ => 4.0
+        };
+        return factor;
+    }
+
+    /// <summary>
+    /// Aumenta el tamaño de apuesta un nivel: 1/3→1/2→2/3→3/4→Pot.
+    /// </summary>
+    private static string IncreaseBetSize(string bet)
+    {
+        if (bet.Contains("1/3")) return bet.Replace("1/3", "1/2");
+        if (bet.Contains("1/2")) return bet.Replace("1/2", "2/3");
+        if (bet.Contains("2/3")) return bet.Replace("2/3", "3/4");
+        if (bet.Contains("3/4")) return bet.Replace("3/4", "Pot");
+        return bet;
+    }
+
+    /// <summary>
     /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales (con implied odds), o fold.
     /// </summary>
     private PostflopDecisionResult HandleLowEquity(
@@ -394,9 +502,18 @@ public class PostflopDecisionService
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
         if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
         {
+            // Combo draw (12+ outs) en flop: sizing agresivo (3/4 pot)
+            bool isComboDrawOnFlop = totalOuts >= thresholds.ComboDrawOutsThreshold
+                && street == BoardPosition.Flop;
+            var semiBluffSize = isComboDrawOnFlop
+                ? thresholds.ComboDrawBetSize
+                : thresholds.BluffBetSize;
+
             return new PostflopDecisionResult(
-                thresholds.BluffBetSize + " (Semi-Bluff)",
-                $"Semi-bluff con {totalOuts} outs",
+                semiBluffSize + " (Semi-Bluff)",
+                isComboDrawOnFlop
+                    ? $"Semi-bluff agresivo: combo draw con {totalOuts} outs"
+                    : $"Semi-bluff con {totalOuts} outs",
                 IsBluff: true);
         }
 

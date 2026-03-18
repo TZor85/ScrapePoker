@@ -140,24 +140,18 @@ public class BoardTextureAnalyzer
         var suitGroups = allSuits.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
         var prevSuitGroups = previousSuits.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
 
-        // Flush completado: 3+ del mismo suit en board completo (en turn con 4 cartas, 3 del mismo suit
-        // ya es flush posible; en river con 5 cartas, 3+ del mismo suit)
-        bool flushCompleted = suitGroups.Values.Any(c => c >= 3) && !prevSuitGroups.Values.Any(c => c >= 3);
-        // Si ya había 3 del mismo suit y ahora hay 4+, también es peligroso (refuerza flush)
-        if (!flushCompleted && suitGroups.Values.Any(c => c >= 4))
-            flushCompleted = true;
+        // Flush completado: 4+ del mismo suit en board (villano solo necesita 1 carta de ese palo)
+        bool flushCompleted = suitGroups.Values.Any(c => c >= 4) && !prevSuitGroups.Values.Any(c => c >= 4);
 
         int completedFlushSuit = flushCompleted
-            ? suitGroups.Where(g => g.Value >= 3).OrderByDescending(g => g.Value).First().Key
+            ? suitGroups.Where(g => g.Value >= 4).OrderByDescending(g => g.Value).First().Key
             : -1;
 
-        // Flush draw appeared: 2 del mismo suit pasa a 3 (para el turn, nuevo draw)
+        // Flush draw en board: 3 del mismo suit (villano necesita 1 carta suited para flush)
+        // Se activa cuando la nueva carta crea el tercer palo igual (2→3)
         bool flushDrawAppeared = !flushCompleted &&
-            suitGroups.Values.Any(c => c >= 2) &&
-            newCardSuit == previousSuits.GroupBy(s => s)
-                .Where(g => g.Count() >= 2)
-                .Select(g => g.Key)
-                .FirstOrDefault(-1);
+            suitGroups.Values.Any(c => c >= 3) &&
+            !prevSuitGroups.Values.Any(c => c >= 3);
 
         // --- Straight analysis ---
         var prevUnique = previousRanks.Distinct().OrderBy(r => r).ToList();

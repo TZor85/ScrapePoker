@@ -178,12 +178,26 @@ public class BoardTextureAnalyzerTests
     // --- Tests de BoardChangeResult / AnalyzeBoardChange ---
 
     [Test]
-    public void AnalyzeBoardChange_FlushCompleted_Turn2hEnQh3h7s()
+    public void AnalyzeBoardChange_FlushDraw_Turn2hEnQh3h7s()
     {
-        // Flop: Qh(12,1) 3h(3,1) 7s(7,4) → Turn: 2h(2,1) → 3 hearts = flush completado
+        // Flop: Qh(12,1) 3h(3,1) 7s(7,4) → Turn: 2h(2,1) → 3 hearts = flush draw (no completado)
+        // Flush completado requiere 4+ del mismo palo en board
         var prevRanks = new List<int> { 12, 3, 7 };
         var prevSuits = new List<int> { 1, 1, 4 }; // hearts=1, spades=4
         var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 2, 1); // 2h
+
+        Assert.That(result.FlushCompleted, Is.False);
+        Assert.That(result.FlushDrawAppeared, Is.True);
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public void AnalyzeBoardChange_FlushCompleted_4DelMismoPalo()
+    {
+        // Board: Qh 3h 7h → Turn: 2h → 4 hearts = flush completado
+        var prevRanks = new List<int> { 12, 3, 7 };
+        var prevSuits = new List<int> { 1, 1, 1 }; // 3 hearts
+        var result = _analyzer.AnalyzeBoardChange(prevRanks, prevSuits, 2, 1); // 2h → 4 hearts
 
         Assert.That(result.FlushCompleted, Is.True);
         Assert.That(result.CompletedFlushSuit, Is.EqualTo(1));

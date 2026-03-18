@@ -8,9 +8,14 @@ namespace OpenScrape.DecisionMaker.Algorithms
 {
     public class OutsCalculator
     {
+        // Descuento para outs que también completan draws del villano
+        private const double TaintedOutsDiscount = 0.5;
         public class OutsResult
         {
             public int TotalOuts { get; set; }
+            public int TaintedOuts { get; set; }
+            public int CleanOuts { get; set; }
+            public double EffectiveOuts { get; set; }
             public bool HasFlushDraw { get; set; }
             public bool HasOpenEndedStraightDraw { get; set; }
             public bool HasGutshotStraightDraw { get; set; }
@@ -105,6 +110,14 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             // Total = flush + straight - overlap + overcards + backdoor (sin doble conteo)
             result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts + backdoorOuts;
+
+            // Calcular tainted outs: outs que también mejoran la mano del villano
+            var allOutCards = new HashSet<CardDataOuts>(CardComparer.Instance);
+            foreach (var c in flushOutCards) allOutCards.Add(c);
+            foreach (var c in straightOutCards) allOutCards.Add(c);
+            result.TaintedOuts = CalculateTaintedOuts(allOutCards, communityCards);
+            result.CleanOuts = result.TotalOuts - result.TaintedOuts;
+            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * TaintedOutsDiscount);
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)
@@ -213,6 +226,62 @@ namespace OpenScrape.DecisionMaker.Algorithms
             }
 
             return backdoorOuts;
+        }
+
+        /// <summary>
+        /// Calcula cuántos outs están "sucios" (tainted): al completar la mano de hero,
+        /// también crean una amenaza para el villano (3+ del mismo palo, 3 consecutivas, board pair).
+        /// </summary>
+        private int CalculateTaintedOuts(HashSet<CardDataOuts> outCards, List<CardDataOuts> communityCards)
+        {
+            int tainted = 0;
+            var boardSuitCounts = new Dictionary<Suit, int>();
+            foreach (var c in communityCards)
+                boardSuitCounts[c.Suit] = boardSuitCounts.GetValueOrDefault(c.Suit) + 1;
+
+            var boardRanks = communityCards.Select(c => (int)c.Rank).ToHashSet();
+
+            foreach (var outCard in outCards)
+            {
+                bool isTainted = false;
+
+                // ¿Añadir esta carta pone 3+ del mismo palo en el board? (flush draw para villano)
+                int suitCount = boardSuitCounts.GetValueOrDefault(outCard.Suit);
+                if (suitCount >= 2)
+                    isTainted = true;
+
+                // ¿Añadir esta carta parea el board? (trips/full para villano)
+                if (!isTainted && boardRanks.Contains((int)outCard.Rank))
+                    isTainted = true;
+
+                // ¿Añadir esta carta crea 3 consecutivas en el board? (straight draw para villano)
+                if (!isTainted)
+                {
+                    int rank = (int)outCard.Rank;
+                    var extendedRanks = new HashSet<int>(boardRanks) { rank };
+                    if (rank == 14) extendedRanks.Add(1);
+
+                    for (int low = 1; low <= 10; low++)
+                    {
+                        int consecutive = 0;
+                        for (int r = low; r < low + 5; r++)
+                        {
+                            if (extendedRanks.Contains(r))
+                                consecutive++;
+                        }
+                        if (consecutive >= 3)
+                        {
+                            isTainted = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isTainted)
+                    tainted++;
+            }
+
+            return tainted;
         }
 
         /// <summary>

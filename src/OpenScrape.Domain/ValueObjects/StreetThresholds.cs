@@ -38,6 +38,20 @@ public record StreetThresholds
     public bool ReduceSizeForLargeBet { get; init; } = true;
     public bool ReduceSizeForOOP { get; init; }
 
+    // Check-raise: OOP con mano premium espera bet del villano para raise
+    public bool CanCheckRaise { get; init; }
+    public double CheckRaiseThreshold { get; init; } = 75.0;
+    public string CheckRaiseBetSize { get; init; } = "Raise 3x";
+
+    // Overbet: boards muy secos con ventaja de rango
+    public bool CanOverbet { get; init; }
+    public string OverbetBetSize { get; init; } = "Bet 1.25x Pot";
+    public double OverbetMinEquity { get; init; } = 80.0;
+
+    // Semi-bluff sizing agresivo: combo draws (12+ outs) en flop
+    public string ComboDrawBetSize { get; init; } = "Bet 3/4";
+    public int ComboDrawOutsThreshold { get; init; } = 12;
+
     // Modo simplificado (RaiseOverLimper: IP/OOP con bets fijos, sin board texture)
     public bool IsSimplified { get; init; }
     public string SimplifiedIPStrongBet { get; init; } = "Bet 1/2 (Value)";

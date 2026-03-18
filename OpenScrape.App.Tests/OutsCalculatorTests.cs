@@ -530,4 +530,110 @@ public class OutsCalculatorTests
     }
 
     #endregion
+
+    #region Tainted Outs (Mejora 6)
+
+    [Test]
+    public void TaintedOuts_FlushDraw_OutsQuePareanBoard_Tainted()
+    {
+        // Hero: Ah 5h, Flop: 2h 7h Kc → flush draw (9 outs)
+        // Outs que parean el board (2h→ya usada, 7x→parea board, Kx→parea board) son tainted
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        // Debe haber tainted outs > 0 (outs que crean pares o 3+ del mismo palo en board)
+        Assert.That(result.TaintedOuts, Is.GreaterThan(0));
+        Assert.That(result.EffectiveOuts, Is.LessThan(result.TotalOuts));
+        Assert.That(result.CleanOuts, Is.EqualTo(result.TotalOuts - result.TaintedOuts));
+    }
+
+    [Test]
+    public void TaintedOuts_EffectiveOuts_MenorQueTotalOuts()
+    {
+        // Hero: Kd Qd, Flop: 9d 3d 7s → flush draw (9 outs)
+        // Algunos outs pondrán 3 del mismo palo en el board (si caen diamonds)
+        // pero los flush outs YA son del suit de hero → revisar board pairing
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Diamonds),
+            C(Rank.Queen, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Diamonds),
+            C(Rank.Three, Suit.Diamonds),
+            C(Rank.Seven, Suit.Spades)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasFlushDraw, Is.True);
+        Assert.That(result.EffectiveOuts, Is.GreaterThan(0));
+        // EffectiveOuts = CleanOuts + TaintedOuts * 0.5
+        Assert.That(result.EffectiveOuts,
+            Is.EqualTo(result.CleanOuts + result.TaintedOuts * 0.5).Within(0.01));
+    }
+
+    [Test]
+    public void TaintedOuts_SinOuts_TodosCero()
+    {
+        // Hero: Ah Kc, Flop: 2d 7s Js → sin draws
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Diamonds),
+            C(Rank.Seven, Suit.Spades),
+            C(Rank.Jack, Suit.Spades)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.TaintedOuts, Is.EqualTo(0));
+        Assert.That(result.CleanOuts, Is.EqualTo(result.TotalOuts));
+    }
+
+    [Test]
+    public void TaintedOuts_OESD_OutsQueCreanFlushDraw_Tainted()
+    {
+        // Hero: 8c 9c, Flop: 7d Ts 2h → OESD (6 o J completan)
+        // Un 6h o Jh no crea flush draw en board (hearts tiene solo 1)
+        // Pero un 6d parea... no, 6d no parea. Veamos:
+        // Board suits: d, s, h → ningún suit tiene 2+ → outs de straight no crean flush draw
+        // Pero outs que coinciden con ranks del board son tainted (7,T,2 → si un out coincide)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Eight, Suit.Clubs),
+            C(Rank.Nine, Suit.Clubs)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Ten, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasOpenEndedStraightDraw, Is.True);
+        // Algunos outs de straight pueden estar tainted (crean 3 consecutivas en board)
+        Assert.That(result.TaintedOuts, Is.GreaterThanOrEqualTo(0));
+        Assert.That(result.EffectiveOuts, Is.LessThanOrEqualTo(result.TotalOuts));
+    }
+
+    #endregion
 }

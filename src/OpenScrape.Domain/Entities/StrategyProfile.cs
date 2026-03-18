@@ -78,6 +78,10 @@ public class StrategyProfile
     // Reducción por cada oponente extra en multiway (c-bet menos efectivo multiway)
     public double CbetMultiwayReduction { get; set; } = 3.0;
 
+    // Tainted Outs (usado en OutsCalculator)
+    // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
+    public double TaintedOutsDiscount { get; set; } = 0.5;
+
     // Decision Adjustments (usado en UnifiedPokerCalculator)
     public double DrawEquityBonus { get; set; } = 2.0;
     public double RiverEquityPenalty { get; set; } = -1.0;

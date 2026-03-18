@@ -31,6 +31,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public string Street { get; set; } = string.Empty; // Calle actual
         public string RecommendedAction { get; set; } = string.Empty; // Acción recomendada
         public double? SuggestedBetSize { get; set; }    // Tamaño de apuesta sugerido (como porcentaje del pote)
+        public HandRank HeroHandRank { get; set; }        // Ranking de la mano actual de hero
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -38,6 +39,7 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
+        private readonly HandEvaluator _handEvaluator;
         private readonly StrategyProfile _profile;
         private readonly ILogger<UnifiedPokerCalculator> _logger;
 
@@ -45,12 +47,14 @@ namespace OpenScrape.App.Aplication.UseCases
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
+            HandEvaluator handEvaluator,
             IOptions<StrategyProfile> profileOptions,
             ILogger<UnifiedPokerCalculator> logger)
         {
             _monteCarloSimulator = monteCarloSimulator;
             _outsCalculator = outsCalculator;
             _preflopEquityCalculator = preflopEquityCalculator;
+            _handEvaluator = handEvaluator;
             _profile = profileOptions.Value;
             _logger = logger;
         }
@@ -77,6 +81,14 @@ namespace OpenScrape.App.Aplication.UseCases
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
                 result.TotalOuts = outsResult.TotalOuts;
                 result.DrawTypes = outsResult.DrawTypes;
+
+                // 3b. Evaluar la mano actual de hero (postflop con 5+ cartas)
+                var allCards = playerHand.Concat(communityCards).ToList();
+                if (allCards.Count >= 5)
+                {
+                    var handEval = _handEvaluator.EvaluateBestHand(allCards);
+                    result.HeroHandRank = handEval.Rank;
+                }
 
                 // 4. Calcular fold equity basado en posición y situación
                 result.FoldEquity = CalculateFoldEquity(result.PotOddsPercentage, isInPosition, handSituation, communityCards.Count);

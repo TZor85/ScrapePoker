@@ -1258,13 +1258,9 @@ namespace OpenScrape.App
 
             bool isFacingBet = betSize != BetSize.NoBet;
             var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
-            LogError($"[RIVER] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
-                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
-                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
-                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}, Arrastrado={_lastBoardChange.DangerLevel > 0}");
 
             var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            bool riverIsAggressor = IsPreflopAggressor(effectiveSituation);
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.River, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
@@ -1277,9 +1273,31 @@ namespace OpenScrape.App
                 heroStack: _playerGameState.HeroStack,
                 potSize: _playerGameState.PotSize,
                 hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: Math.Max(1, numOpponents));
+                numOpponents: Math.Max(1, numOpponents),
+                heroIsAggressor: riverIsAggressor,
+                heroHandRank: _riverResult.HeroHandRank);
 
-            LogError($"[RIVER] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
+            double effectiveEquity = equity - dangerPenalty;
+            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
+            var dangerFlags = new List<string>();
+            if (boardChange.FlushCompleted) dangerFlags.Add("Flush completado");
+            if (boardChange.StraightCompleted) dangerFlags.Add("Straight completado");
+            if (boardChange.FlushDrawAppeared) dangerFlags.Add("Flush draw");
+            if (boardChange.BoardPaired) dangerFlags.Add("Board paired");
+            if (boardChange.OvercardAppeared) dangerFlags.Add("Overcard");
+            if (_lastBoardChange.DangerLevel > 0) dangerFlags.Add("Arrastrado del turn");
+            var dangerInfo = dangerFlags.Count > 0 ? string.Join(", ", dangerFlags) : "Ninguno";
+            var draws = _riverResult.DrawTypes.Count > 0
+                ? string.Join(", ", _riverResult.DrawTypes)
+                : "Ninguno";
+            LogError($"═══ [RIVER] ══════════════════════════════════════");
+            LogError($"  {FormatCardsForLog(BoardPosition.River)}");
+            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
+            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
+            LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_riverResult.PotOddsPercentage:F1}%");
+            LogError($"  Mano hero: {_riverResult.HeroHandRank}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_riverResult.TotalOuts}  |  Draws: {draws}");
+            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}{(decision.IsBarrel ? "  [BARREL]" : "")}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -1808,7 +1826,7 @@ namespace OpenScrape.App
             bool indicator7 = !string.IsNullOrEmpty(currentBBPlayerName) && currentBBPlayerName != _previousBBPlayerName;
 
             // Log indicadores para debugging
-            LogError($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
+            LogDebug($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
 
             // Lógica: Al menos 1 indicador positivo para confirmar nueva mano
             int indicatorsCount = (indicator1 ? 1 : 0) + (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
@@ -1950,6 +1968,10 @@ namespace OpenScrape.App
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
             var boardChange = DecisionMaker.Algorithms.BoardChangeResult.Safe;
 
+            // Detectar donk bet en flop (villano apuesta sin ser agresor preflop)
+            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
+            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
+
             // C-bet awareness: ajustar equity según rol preflop y ventaja de rango
             bool isPreflopAggressor = IsPreflopAggressor(_playerGameState.HandSituation);
             bool hasRangeAdvantage = HasRangeAdvantageOnBoard(flopRanks, boardTexture, isPreflopAggressor);
@@ -1957,14 +1979,8 @@ namespace OpenScrape.App
                 isPreflopAggressor, hasRangeAdvantage, boardTexture, inPosition, numOpponents);
             double effectiveEquity = Math.Min(99, rawEquity + cbetAdjustment);
 
-            LogError($"[FLOP] Equity={rawEquity:F1}, CbetAdj={cbetAdjustment:+0.0;-0.0}, EffEquity={effectiveEquity:F1}, " +
-                     $"Aggressor={isPreflopAggressor}, RangeAdv={hasRangeAdvantage}, Texture={texture}, " +
-                     $"FacingBet={betSize}, Situation={_playerGameState.HandSituation}, " +
-                     $"IP={inPosition}, Opponents={numOpponents}, " +
-                     $"Outs={_flopResult.TotalOuts}, Draws={string.Join(",", _flopResult.DrawTypes)}");
-
             var decision = _postflopDecisionService.DetermineAction(
-                effectiveEquity, BoardPosition.Flop, _playerGameState.HandSituation, texture, inPosition,
+                effectiveEquity, BoardPosition.Flop, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
                 potOdds: _flopResult.PotOddsPercentage,
                 totalOuts: _flopResult.TotalOuts,
@@ -1975,9 +1991,22 @@ namespace OpenScrape.App
                 heroStack: _playerGameState.HeroStack,
                 potSize: potSize,
                 hasFlushDraw: _flopResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: numOpponents);
+                numOpponents: numOpponents,
+                heroIsAggressor: isPreflopAggressor,
+                heroHandRank: _flopResult.HeroHandRank);
 
-            LogError($"[FLOP] Decision={decision.Action}, Reason={decision.Reason}");
+            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
+            var draws = _flopResult.DrawTypes.Count > 0
+                ? string.Join(", ", _flopResult.DrawTypes)
+                : "Ninguno";
+            LogError($"═══ [FLOP] ═══════════════════════════════════════");
+            LogError($"  {FormatCardsForLog(BoardPosition.Flop)}");
+            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
+            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {numOpponents}");
+            LogError($"  Equity: {rawEquity:F1}%  |  C-bet adj: {cbetAdjustment:+0.0;-0.0}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_flopResult.PotOddsPercentage:F1}%");
+            LogError($"  Mano hero: {_flopResult.HeroHandRank}  |  Agresor preflop: {(isPreflopAggressor ? "Sí" : "No")}  |  Range advantage: {(hasRangeAdvantage ? "Sí" : "No")}");
+            LogError($"  Board: {texture}  |  Outs: {_flopResult.TotalOuts}  |  Draws: {draws}");
+            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -2080,15 +2109,11 @@ namespace OpenScrape.App
 
             bool isFacingBet = betSize != BetSize.NoBet;
             var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet);
-            LogError($"[TURN] Equity={equity:F1}, DangerLevel={boardChange.DangerLevel}, " +
-                     $"Penalty={dangerPenalty:F1}, EffEquity={equity - dangerPenalty:F1}, " +
-                     $"FlushComplete={boardChange.FlushCompleted}, StraightComplete={boardChange.StraightCompleted}, " +
-                     $"HeroBlocks={heroBlocks}, Texture={texture}, FacingBet={betSize}, " +
-                     $"Situation={effectiveSituation}, IsDonkBet={isDonkBet}");
 
             _lastBoardChange = boardChange;
 
             var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            bool turnIsAggressor = IsPreflopAggressor(effectiveSituation);
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
                 ToBetSizeCategory(betSize),
@@ -2101,9 +2126,30 @@ namespace OpenScrape.App
                 heroStack: _playerGameState.HeroStack,
                 potSize: _playerGameState.PotSize,
                 hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: Math.Max(1, numOpponents));
+                numOpponents: Math.Max(1, numOpponents),
+                heroIsAggressor: turnIsAggressor,
+                heroHandRank: _turnResult.HeroHandRank);
 
-            LogError($"[TURN] Decision={decision.Action}, Reason={decision.Reason}, Opponents={numOpponents}");
+            double effectiveEquity = equity - dangerPenalty;
+            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
+            var dangerFlags = new List<string>();
+            if (boardChange.FlushCompleted) dangerFlags.Add("Flush completado");
+            if (boardChange.StraightCompleted) dangerFlags.Add("Straight completado");
+            if (boardChange.FlushDrawAppeared) dangerFlags.Add("Flush draw");
+            if (boardChange.BoardPaired) dangerFlags.Add("Board paired");
+            if (boardChange.OvercardAppeared) dangerFlags.Add("Overcard");
+            var dangerInfo = dangerFlags.Count > 0 ? string.Join(", ", dangerFlags) : "Ninguno";
+            var draws = _turnResult.DrawTypes.Count > 0
+                ? string.Join(", ", _turnResult.DrawTypes)
+                : "Ninguno";
+            LogError($"═══ [TURN] ═══════════════════════════════════════");
+            LogError($"  {FormatCardsForLog(BoardPosition.Turn)}");
+            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
+            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
+            LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_turnResult.PotOddsPercentage:F1}%");
+            LogError($"  Mano hero: {_turnResult.HeroHandRank}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_turnResult.TotalOuts}  |  Draws: {draws}");
+            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
 
             _responseAction.Action = decision.Action;
             _previousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
@@ -2150,7 +2196,7 @@ namespace OpenScrape.App
                 var hasBigBlind = players.Any(p => p.Position == TablePosition.BigBlind);
                 if (!hasSmallBlind || !hasBigBlind)
                 {
-                    LogInformation("Advertencia: Faltan asignar SmallBlind o BigBlind.");
+                    LogDebug("Advertencia: Faltan asignar SmallBlind o BigBlind.");
                 }
             }
 
@@ -2160,7 +2206,7 @@ namespace OpenScrape.App
                 var hasButton = players.Any(p => p.Position == TablePosition.Button);
                 if (!hasButton)
                 {
-                    LogInformation("Advertencia: Falta asignar Button.");
+                    LogDebug("Advertencia: Falta asignar Button.");
                 }
             }
         }
@@ -2212,13 +2258,13 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
             };
 
-            var communityCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
-                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
-                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force),
-                new CardDataOuts((Suit)dataBoard[3].Suit, (Rank)dataBoard[3].Force)
-            };
+            // Filtrar solo cartas comunitarias (excluir hole cards que se añaden en el flop)
+            var boardOnly = dataBoard
+                .Where(d => d.Position != BoardPosition.Hand)
+                .OrderBy(d => d.Location)
+                .ToList();
+            var communityCards = boardOnly.Select(d =>
+                new CardDataOuts((Suit)d.Suit, (Rank)d.Force)).ToList();
 
             var result = _pokerCalculator.Calculate(
                 myCards,
@@ -2285,14 +2331,13 @@ namespace OpenScrape.App
                 new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
             };
 
-            var communityCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)dataBoard[0].Suit, (Rank)dataBoard[0].Force),
-                new CardDataOuts((Suit)dataBoard[1].Suit, (Rank)dataBoard[1].Force),
-                new CardDataOuts((Suit)dataBoard[2].Suit, (Rank)dataBoard[2].Force),
-                new CardDataOuts((Suit)dataBoard[3].Suit, (Rank)dataBoard[3].Force),
-                new CardDataOuts((Suit)dataBoard[4].Suit, (Rank)dataBoard[4].Force)
-            };
+            // Filtrar solo cartas comunitarias (excluir hole cards que se añaden en el flop)
+            var boardOnly = dataBoard
+                .Where(d => d.Position != BoardPosition.Hand)
+                .OrderBy(d => d.Location)
+                .ToList();
+            var communityCards = boardOnly.Select(d =>
+                new CardDataOuts((Suit)d.Suit, (Rank)d.Force)).ToList();
 
             var result = _pokerCalculator.Calculate(
                 myCards,
@@ -2690,7 +2735,7 @@ namespace OpenScrape.App
                     if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
                         System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
                     {
-                        LogError($"[STACK] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                        LogDebug($"[STACK] OCR artefacto '8' corregido: {rawStr} → {corrected}");
                         return correctedValue;
                     }
                 }
@@ -2955,7 +3000,7 @@ namespace OpenScrape.App
                 var color = bitmap.GetPixel(region.PosX, region.PosY);
                 if (!_colorDealer.Contains(color.R))
                 {
-                    LogInformation($"Dealer region {region.Name} color R:{color.R} does not match dealer color set {_colorDealer.Min()}-{_colorDealer.Max()}");
+                    LogDebug($"Dealer region {region.Name} color R:{color.R} does not match dealer color set {_colorDealer.Min()}-{_colorDealer.Max()}");
                     continue;
                 }
 
@@ -2999,11 +3044,11 @@ namespace OpenScrape.App
 
             // Actualizar estado del jugador
             player.Dealer = true;
-            LogInformation($"Dealer assigned to player P{playerNumber}");
+            LogDebug($"Dealer assigned to player P{playerNumber}");
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
             var p0Pos = DetermineP0Position(playerNumber, emptyPositions);
-            LogInformation($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
+            LogDebug($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
             _playerGameState.Position = p0Pos;
             
             // Establecer la posición del jugador P0 (héroe)
@@ -3011,7 +3056,7 @@ namespace OpenScrape.App
             if (heroPlayer != null)
             {
                 heroPlayer.Position = p0Pos;
-                LogInformation($"Héroe P0 position establecida: {p0Pos}");
+                LogDebug($"Héroe P0 position establecida: {p0Pos}");
             }
             
             _previousDealerPlayerName = _dealerPosition;
@@ -3038,7 +3083,7 @@ namespace OpenScrape.App
                 .OrderBy(s => s)
                 .ToList();
             
-            LogInformation($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
+            LogDebug($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
             return position;
         }
 
@@ -3171,7 +3216,7 @@ namespace OpenScrape.App
             if (!activePlayers.Any())
                 return;
 
-            LogInformation($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {p0Position}, Dealer: {dealerPosition}");
+            LogDebug($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {p0Position}, Dealer: {dealerPosition}");
 
             // Limpiar posiciones previas de jugadores activos (excepto héroe P0)
             foreach (var p in activePlayers.Where(p => p.ValuePosition != 0))
@@ -3192,7 +3237,7 @@ namespace OpenScrape.App
             }
 
             var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
-            LogInformation($"Posiciones asignadas: {positionLog}");
+            LogDebug($"Posiciones asignadas: {positionLog}");
 
             ValidatePositionAssignments(activePlayers);
         }
@@ -3573,7 +3618,7 @@ namespace OpenScrape.App
 
                 result = best.ToString();
 
-                LogError($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
+                LogDebug($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
             }
 
 
@@ -4693,6 +4738,37 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Formatea las cartas del hero y del board para logs legibles.
+        /// Ejemplo: "Hero: [As Qc]  Board: [Qh 3h 7s] + [5d]"
+        /// </summary>
+        private string FormatCardsForLog(BoardPosition street)
+        {
+            var hero = $"[{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]";
+            var boardCards = _playerGameState.BoardCards
+                .Where(b => b.Position != BoardPosition.Hand)
+                .OrderBy(b => b.Location)
+                .ToList();
+
+            var flopCards = boardCards.Where(b => b.Position == BoardPosition.Flop)
+                .Select(b => b.Name ?? "??").ToList();
+            var flop = flopCards.Count > 0 ? $"[{string.Join(" ", flopCards)}]" : "";
+
+            if (street == BoardPosition.Flop)
+                return $"Hero: {hero}  Board: {flop}";
+
+            var turnCard = boardCards.FirstOrDefault(b => b.Position == BoardPosition.Turn);
+            var turn = turnCard != null ? $"[{turnCard.Name ?? "??"}]" : "";
+
+            if (street == BoardPosition.Turn)
+                return $"Hero: {hero}  Board: {flop} + {turn}";
+
+            var riverCard = boardCards.FirstOrDefault(b => b.Position == BoardPosition.River);
+            var river = riverCard != null ? $"[{riverCard.Name ?? "??"}]" : "";
+
+            return $"Hero: {hero}  Board: {flop} + {turn} + {river}";
+        }
+
+        /// <summary>
         /// Logs an informational message to the output or a log file.
         /// </summary>
         /// <param name="message"></param>
@@ -4708,6 +4784,14 @@ namespace OpenScrape.App
                 else
                     AppendLog(logLine);
             }
+        }
+
+        /// <summary>
+        /// Solo escribe a Console (debug). No aparece en la pestaña de logs del usuario.
+        /// </summary>
+        private static void LogDebug(string message)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [DEBUG] {message}");
         }
 
         #endregion
