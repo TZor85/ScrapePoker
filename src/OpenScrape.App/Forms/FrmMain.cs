@@ -794,7 +794,29 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
-            // Solo procesar cuando estamos en estado *Detected (no *Action, que indica ya procesado)
+            // Detectar transición a nueva calle verificando si hay carta visible en el board
+            if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
+            {
+                if (IsBoardCardVisible("Card4"))
+                    _gameLoopStateMachine.TryTransition(GameState.TurnDetected);
+                else
+                {
+                    // Misma calle, reprocessar flop con info actualizada (villain apostó/raise)
+                    await ProcessFlopAsync(potOddsResult);
+                }
+            }
+
+            if (_gameLoopStateMachine.CurrentState == GameState.TurnAction)
+            {
+                if (IsBoardCardVisible("Card5"))
+                    _gameLoopStateMachine.TryTransition(GameState.RiverDetected);
+                else
+                {
+                    // Misma calle, reprocessar turn con info actualizada
+                    await ProcessTurnAsync();
+                }
+            }
+
             if (_gameLoopStateMachine.CurrentState == GameState.FlopDetected)
             {
                 _gameLoopStateMachine.TryTransition(GameState.FlopAction);
@@ -818,6 +840,33 @@ namespace OpenScrape.App
                 : _responseAction.Action;
 
             _frmOverlay.UpdateAction(_responseAction.Action);
+        }
+
+        /// <summary>
+        /// Verifica si una carta del board (Card4=turn, Card5=river) es visible en la mesa
+        /// comparando la imagen de la región contra las cartas conocidas.
+        /// </summary>
+        private bool IsBoardCardVisible(string cardRegionName)
+        {
+            if (_formImage.pbImage.Image == null || _cardsImages == null || !_cardsImages.Any())
+                return false;
+
+            var boardRegion = _regionsTableMap?.FirstOrDefault(f => f.Id == "Board");
+            var cardRegion = boardRegion?.Regions?.FirstOrDefault(r => r.Name == cardRegionName && r.IsHash == true);
+            if (cardRegion == null)
+                return false;
+
+            var imageToBase64 = _imageCropperService.CropImageToBase64(
+                _formImage.pbImage.Image, cardRegion.PosX, cardRegion.PosY, cardRegion.Width, cardRegion.Height);
+
+            var bestMatch = _cardsImages
+                .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
+                .Select(item => _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            // Umbral de confianza: >80% indica carta real, <80% indica fondo de mesa
+            return bestMatch > 80.0;
         }
 
         #region [Legacy Turn/River Handlers - REMOVED]
@@ -2154,27 +2203,25 @@ namespace OpenScrape.App
                 return;
             }
 
+            // Marcar dealer en el jugador si existe en la lista
             var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-            if (player == null)
+            if (player != null)
             {
-                LogError($"No se encontró el jugador P{playerNumber}");
-                return;
+                // Skip dealer assignment if the seat is truly empty (no active, no playing)
+                // Un jugador puede estar marcado Empty por detección de color pero Active por Playing
+                if ((player.Empty || player.SitOut) && !player.Active)
+                    return;
+
+                player.Dealer = true;
             }
 
-            // Skip dealer assignment if the seat is truly empty (no active, no playing)
-            // Un jugador puede estar marcado Empty por detección de color pero Active por Playing
-            if ((player.Empty || player.SitOut) && !player.Active)
-                return;
-
-            // Actualizar estado del jugador
-            player.Dealer = true;
             LogDebug($"Dealer assigned to player P{playerNumber}");
 
             // Determinar posición P0 basado en la posición del dealer y asientos vacíos
             var p0Pos = DetermineP0Position(playerNumber, emptyPositions);
             LogDebug($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
             _playerGameState.Position = p0Pos;
-            
+
             // Establecer la posición del jugador P0 (héroe)
             var heroPlayer = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
             if (heroPlayer != null)
@@ -2182,9 +2229,9 @@ namespace OpenScrape.App
                 heroPlayer.Position = p0Pos;
                 LogDebug($"Héroe P0 position establecida: {p0Pos}");
             }
-            
+
             _previousDealerPlayerName = _dealerPosition;
-            _dealerPosition = player.Name;
+            _dealerPosition = player?.Name ?? $"P{playerNumber}";
             _dealerValuePosition = playerNumber;
 
             // Asignar posiciones a villanos usando la posición del dealer
