@@ -20,33 +20,6 @@ public class PostflopDecisionService
 {
     private readonly StrategyProfile _profile;
 
-    // Penalización de equity al facing bet según tamaño (se suma a FoldBelow)
-    private const double FacingBetPenaltyLarge = 8.0;
-    private const double FacingBetPenaltyMedium = 4.0;
-    private const double FacingBetPenaltySmall = 1.0;
-    private const double VillainAggressionPenalty = 3.0;
-
-    // Regla del 2 y del 4: multiplicador de outs → equity aproximada
-    private const double TurnOutsMultiplier = 2.17;
-    private const double RiverOutsMultiplier = 4.35;
-
-    // Outs mínimos para considerar semi-bluff o call con draws
-    private const int MinOutsForDraw = 8;
-
-    // Margen para pot odds marginales (80% de las pot odds requeridas)
-    private const double MarginalPotOddsFactor = 0.80;
-
-    // Multi-way: penalización por oponente adicional (más de 1)
-    private const double MultiwayFoldBelowPerOpponent = 4.0;
-    private const double MultiwayThinValuePerOpponent = 3.0;
-    // Multi-way: no bluffear con 3+ oponentes
-    private const int MaxOpponentsForBluff = 2;
-
-    // Agresor vs caller: ajustes de threshold al facing bet
-    private const double AggressorVsDonkFoldReduction = 5.0;
-    private const double AggressorVsDonkThinValueReduction = 3.0;
-    private const double CallerVsCbetFoldIncrease = 2.0;
-
     public PostflopDecisionService(IOptions<StrategyProfile> profileOptions)
     {
         _profile = profileOptions.Value;
@@ -76,44 +49,13 @@ public class PostflopDecisionService
 
     /// <summary>
     /// Calcula la penalización de equity por carta peligrosa en el board.
-    /// Flush/straight usan penalización porcentual (proporcional a la equity).
-    /// Facing bet multiplica la penalización (villano representa el draw completado).
+    /// Delega a DangerPenaltyCalculator.
     /// </summary>
     public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet)
-    {
-        if (boardChange.DangerLevel == 0)
-            return 0;
-
-        double penalty = 0;
-
-        // Completaciones mayores: porcentual sobre equity (escala con la fuerza de la mano)
-        if (boardChange.FlushCompleted)
-            penalty += rawEquity * (_profile.DangerFlushCompletePct / 100.0);
-        else if (boardChange.FlushDrawAppeared)
-            penalty += _profile.DangerFlushDrawPenalty;
-
-        if (boardChange.StraightCompleted)
-            penalty += rawEquity * (_profile.DangerStraightCompletePct / 100.0);
-
-        // Cambios menores: flat
-        if (boardChange.BoardPaired) penalty += _profile.DangerBoardPairedPenalty;
-        if (boardChange.OvercardAppeared) penalty += _profile.DangerOvercardPenalty;
-
-        // Facing bet en board peligroso → villano representando el draw completado
-        if (isFacingBet)
-            penalty *= _profile.DangerFacingBetMultiplier;
-
-        // Blocker effect: hero tiene carta del suit peligroso, reduce penalización
-        if (heroBlocksDangerSuit)
-            penalty *= _profile.DangerHeroBlocksReduction;
-
-        return penalty;
-    }
+        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile);
 
     /// <summary>
-    /// Calcula el factor de implied odds basado en SPR, posición, street y tipo de draw.
-    /// Retorna un valor entre 0 y 1: menor = mejores implied odds (necesitas menos equity).
-    /// En river no hay implied odds (no hay más calles).
+    /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
     /// </summary>
     public double CalculateImpliedOddsFactor(
         BoardPosition street,
@@ -121,48 +63,8 @@ public class PostflopDecisionService
         bool hasFlushDraw,
         decimal heroStack = 0,
         decimal potSize = 0)
-    {
-        // River: no hay implied odds (última calle)
-        if (street == BoardPosition.River)
-            return 1.0;
-
-        // Sin datos de stack/pot: factor neutro
-        if (heroStack <= 0 || potSize <= 0)
-            return 1.0;
-
-        // 1. Factor base por SPR (Stack-to-Pot Ratio)
-        double spr = (double)(heroStack / potSize);
-        double sprFactor;
-        if (spr >= _profile.ImpliedOddsSPRDeepThreshold)
-            sprFactor = _profile.ImpliedOddsSPRDeepFactor;
-        else if (spr <= _profile.ImpliedOddsSPRShallowThreshold)
-            sprFactor = _profile.ImpliedOddsSPRShallowFactor;
-        else
-        {
-            // Interpolación lineal entre shallow y deep
-            double range = _profile.ImpliedOddsSPRDeepThreshold - _profile.ImpliedOddsSPRShallowThreshold;
-            double position = (spr - _profile.ImpliedOddsSPRShallowThreshold) / range;
-            sprFactor = _profile.ImpliedOddsSPRShallowFactor +
-                (position * (_profile.ImpliedOddsSPRDeepFactor - _profile.ImpliedOddsSPRShallowFactor));
-        }
-
-        // 2. Multiplicar por factor de calle (flop tiene 2 calles por extraer, turn solo 1)
-        double streetFactor = street == BoardPosition.Turn
-            ? _profile.ImpliedOddsTurnMultiplier
-            : _profile.ImpliedOddsFlopMultiplier;
-        sprFactor *= streetFactor;
-
-        // 3. Bonus por posición (IP controla tamaño del pote futuro)
-        if (isInPosition)
-            sprFactor *= _profile.ImpliedOddsIPBonus;
-
-        // 4. Bonus por flush draw (más difícil de leer para el villano)
-        if (hasFlushDraw)
-            sprFactor *= _profile.ImpliedOddsFlushDrawBonus;
-
-        // Limitar entre 0.5 y 1.0 (no reducir más del 50% las odds requeridas)
-        return Math.Max(0.50, Math.Min(1.0, sprFactor));
-    }
+        => ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            street, isInPosition, hasFlushDraw, heroStack, potSize, _profile);
 
     /// <summary>
     /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
@@ -231,35 +133,35 @@ public class PostflopDecisionService
         {
             double facingBetPenalty = villainBetSize switch
             {
-                BetSizeCategory.Large => FacingBetPenaltyLarge,
-                BetSizeCategory.Medium => FacingBetPenaltyMedium,
-                BetSizeCategory.Small => FacingBetPenaltySmall,
+                BetSizeCategory.Large => PokerConstants.FacingBetPenaltyLarge,
+                BetSizeCategory.Medium => PokerConstants.FacingBetPenaltyMedium,
+                BetSizeCategory.Small => PokerConstants.FacingBetPenaltySmall,
                 _ => 0
             };
             adjustedFoldBelow += facingBetPenalty;
             adjustedThinValueAbove += facingBetPenalty / 2;
 
             if (villainShowedAggression)
-                adjustedFoldBelow += VillainAggressionPenalty;
+                adjustedFoldBelow += PokerConstants.VillainAggressionPenalty;
         }
 
         // Multi-way penalty
         if (isMultiway)
         {
             int extraOpponents = numOpponents - 1;
-            adjustedFoldBelow += extraOpponents * MultiwayFoldBelowPerOpponent;
-            adjustedThinValueAbove += extraOpponents * MultiwayThinValuePerOpponent;
+            adjustedFoldBelow += extraOpponents * PokerConstants.MultiwayFoldBelowPerOpponent;
+            adjustedThinValueAbove += extraOpponents * PokerConstants.MultiwayThinValuePerOpponent;
         }
 
         // Agresor vs caller
         if (isFacingBet && heroIsAggressor)
         {
-            adjustedFoldBelow -= AggressorVsDonkFoldReduction;
-            adjustedThinValueAbove -= AggressorVsDonkThinValueReduction;
+            adjustedFoldBelow -= PokerConstants.AggressorVsDonkFoldReduction;
+            adjustedThinValueAbove -= PokerConstants.AggressorVsDonkThinValueReduction;
         }
         else if (isFacingBet && !heroIsAggressor)
         {
-            adjustedFoldBelow += CallerVsCbetFoldIncrease;
+            adjustedFoldBelow += PokerConstants.CallerVsCbetFoldIncrease;
         }
 
         // Villain barreling: apuesta 2 calles seguidas → rango más estrecho
@@ -597,35 +499,13 @@ public class PostflopDecisionService
     }
 
     /// <summary>
-    /// Calcula penalización por reverse implied odds.
-    /// Solo en turn facing bet con mano vulnerable (OnePair/TwoPair) en board con draws.
+    /// Calcula penalización por reverse implied odds. Delega a ImpliedOddsCalculator.
     /// </summary>
     public double CalculateReverseImpliedOdds(
         BoardChangeResult? boardChange, HandRank heroHandRank, bool hasFlushDraw,
         BoardPosition street, bool isFacingBet)
-    {
-        if (street != BoardPosition.Turn || !isFacingBet || boardChange == null)
-            return 0;
-
-        if (heroHandRank > HandRank.TwoPair)
-            return 0;
-
-        double penalty = 0;
-
-        // Board con flush draw que hero no tiene → river puede completar flush del villano
-        if (boardChange.FlushDrawAppeared && !hasFlushDraw)
-            penalty += _profile.ReverseImpliedFlushDrawPenalty;
-
-        // Board coordinado con danger level alto
-        if (boardChange.DangerLevel >= 2 && !boardChange.FlushCompleted)
-            penalty += _profile.ReverseImpliedCoordinatedPenalty;
-
-        // OnePair es más vulnerable que TwoPair
-        if (heroHandRank == HandRank.OnePair)
-            penalty *= _profile.ReverseImpliedOnePairMultiplier;
-
-        return penalty;
-    }
+        => ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, _profile);
 
     /// <summary>
     /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales (con implied odds), o fold.
@@ -645,7 +525,7 @@ public class PostflopDecisionService
         HandRank heroHandRank = HandRank.HighCard)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
-        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
+        if (totalOuts >= PokerConstants.MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
         {
             // Combo draw (12+ outs) en flop: sizing agresivo (3/4 pot)
             bool isComboDrawOnFlop = totalOuts >= thresholds.ComboDrawOutsThreshold
@@ -663,10 +543,10 @@ public class PostflopDecisionService
         }
 
         // Con draws y facing bet → call si implied odds lo justifican
-        if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && isFacingBet)
+        if (totalOuts >= PokerConstants.MinOutsForDraw && street != BoardPosition.River && isFacingBet)
         {
             double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 999;
-            double drawEquity = totalOuts * (street == BoardPosition.Turn ? TurnOutsMultiplier : RiverOutsMultiplier);
+            double drawEquity = totalOuts * (street == BoardPosition.Turn ? PokerConstants.TurnOutsMultiplier : PokerConstants.RiverOutsMultiplier);
             if (drawEquity >= adjustedPotOdds)
                 return new PostflopDecisionResult("Call",
                     $"Call — draw con {totalOuts} outs (implied odds, SPR factor={impliedOddsFactor:F2})");
@@ -683,7 +563,7 @@ public class PostflopDecisionService
         }
 
         // Pot odds marginales con implied odds
-        if (isFacingBet && potOdds > 0 && equity >= potOdds * MarginalPotOddsFactor * impliedOddsFactor)
+        if (isFacingBet && potOdds > 0 && equity >= potOdds * PokerConstants.MarginalPotOddsFactor * impliedOddsFactor)
         {
             return new PostflopDecisionResult("Call",
                 $"Call — pot odds marginales (implied factor={impliedOddsFactor:F2})");
@@ -714,9 +594,9 @@ public class PostflopDecisionService
 
         return thresholds.BluffCondition switch
         {
-            "Always" => Random.Shared.NextDouble() < bluffFreq,
-            "OOPOnly" => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
-            "IPCoordinatedSmallOnly" => isInPosition && boardTexture == "Coordinated" && betSize == BetSizeCategory.Small && Random.Shared.NextDouble() < bluffFreq,
+            BluffConditionType.Always => Random.Shared.NextDouble() < bluffFreq,
+            BluffConditionType.OOPOnly => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
+            BluffConditionType.IPCoordinatedSmallOnly => isInPosition && boardTexture == "Coordinated" && betSize == BetSizeCategory.Small && Random.Shared.NextDouble() < bluffFreq,
             _ => false
         };
     }

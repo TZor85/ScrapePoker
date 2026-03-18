@@ -642,7 +642,7 @@ public class PostflopDecisionServiceTests
                     FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
                     DryBoardBetSize = "Bet 1/2", CoordinatedBoardBetSize = "Bet 1/2", PairedBoardBetSize = "Bet 3/4",
                     StrongValueBetSize = "Bet 3/4", ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
-                    CanBluff = true, BluffCondition = "IPCoordinatedSmallOnly", LowEquityAction = "Fold"
+                    CanBluff = true, BluffCondition = BluffConditionType.IPCoordinatedSmallOnly, LowEquityAction = "Fold"
                 },
                 ["Turn_OpenRaiseVs3BetAndCall"] = new()
                 {
@@ -1077,7 +1077,7 @@ public class PostflopDecisionServiceTests
         {
             FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
             BluffBetSize = "Bet 1/3", ComboDrawBetSize = "Bet 3/4", ComboDrawOutsThreshold = 12,
-            CanBluff = true, BluffCondition = "Always", LowEquityAction = "Fold"
+            CanBluff = true, BluffCondition = BluffConditionType.Always, LowEquityAction = "Fold"
         };
         return profile;
     }

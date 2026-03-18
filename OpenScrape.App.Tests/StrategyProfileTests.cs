@@ -37,7 +37,7 @@ public class StrategyProfileTests
                     CoordinatedBoardBetSize = "Bet 1/2",
                     PairedBoardBetSize = "Bet 3/4",
                     CanBluff = true,
-                    BluffCondition = "IPCoordinatedSmallOnly",
+                    BluffCondition = BluffConditionType.IPCoordinatedSmallOnly,
                     LowEquityAction = "Fold",
                     ThinValueIPOnly = true,
                     ThinValueOOPFallback = "CheckFold",
@@ -109,7 +109,7 @@ public class StrategyProfileTests
         var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.CanBluff, Is.True);
-        Assert.That(thresholds.BluffCondition, Is.EqualTo("IPCoordinatedSmallOnly"));
+        Assert.That(thresholds.BluffCondition, Is.EqualTo(BluffConditionType.IPCoordinatedSmallOnly));
     }
 
     [Test]

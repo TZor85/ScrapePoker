@@ -40,18 +40,23 @@ namespace OpenScrape.App
 
                     //services.AddScoped<OcrService>();
 
-                    // Register equity calculation components
-                    services.AddSingleton<MonteCarloSimulator>();
-                    services.AddSingleton<HandEvaluator>();
-                    services.AddSingleton<OutsCalculator>();
-                    services.AddSingleton<PreflopEquityCalculator>();
-                    services.AddSingleton<EquityCalculatorService>();
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
 
-                    services.AddSingleton<BetSizingService>();
+                    // Algoritmos registrados por interfaz
+                    services.AddSingleton<IMonteCarloSimulator, MonteCarloSimulator>();
+                    services.AddSingleton<MonteCarloSimulator>();
+                    services.AddSingleton<IHandEvaluator, HandEvaluator>();
+                    services.AddSingleton<HandEvaluator>();
+                    services.AddSingleton<IOutsCalculator, OutsCalculator>();
+                    services.AddSingleton<OutsCalculator>();
+                    services.AddSingleton<IBoardTextureAnalyzer, BoardTextureAnalyzer>();
                     services.AddSingleton<BoardTextureAnalyzer>();
+                    services.AddSingleton<PreflopEquityCalculator>();
+                    services.AddSingleton<EquityCalculatorService>();
+
+                    services.AddSingleton<BetSizingService>();
                     services.AddSingleton<PostflopDecisionService>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<StrategyAnalyzerService>();

@@ -3,18 +3,8 @@ using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Algorithms
 {
-    public class HandEvaluator
+    public class HandEvaluator : IHandEvaluator
     {
-        // Multipliers for different hand ranks
-        private const long HIGH_CARD_MULTIPLIER = 1;
-        private const long PAIR_MULTIPLIER = 1000000;
-        private const long TWO_PAIR_MULTIPLIER = 10000000;
-        private const long THREE_OF_A_KIND_MULTIPLIER = 100000000;
-        private const long STRAIGHT_MULTIPLIER = 1000000000;
-        private const long FLUSH_MULTIPLIER = 10000000000;
-        private const long FULL_HOUSE_MULTIPLIER = 100000000000;
-        private const long FOUR_OF_A_KIND_MULTIPLIER = 1000000000000;
-        private const long STRAIGHT_FLUSH_MULTIPLIER = 10000000000000;
 
         public HandEvaluation EvaluateBestHand(List<CardDataOuts> cards)
         {
@@ -95,24 +85,24 @@ namespace OpenScrape.DecisionMaker.Algorithms
             if (isStraight && isFlush)
             {
                 evaluation.Rank = HandRank.StraightFlush;
-                evaluation.Score = STRAIGHT_FLUSH_MULTIPLIER * GetStraightHighCard(sortedCards);
+                evaluation.Score = PokerConstants.StraightFlushMultiplier * GetStraightHighCard(sortedCards);
             }
             else if (sortedRankCounts[0].Value == 4)
             {
                 evaluation.Rank = HandRank.FourOfAKind;
-                evaluation.Score = FOUR_OF_A_KIND_MULTIPLIER * (int)sortedRankCounts[0].Key;
+                evaluation.Score = PokerConstants.FourOfAKindMultiplier * (int)sortedRankCounts[0].Key;
                 evaluation.Kickers.Add((int)sortedRankCounts[1].Key);
             }
             else if (sortedRankCounts[0].Value == 3 && sortedRankCounts[1].Value == 2)
             {
                 evaluation.Rank = HandRank.FullHouse;
-                evaluation.Score = FULL_HOUSE_MULTIPLIER * (int)sortedRankCounts[0].Key;
+                evaluation.Score = PokerConstants.FullHouseMultiplier * (int)sortedRankCounts[0].Key;
                 evaluation.Kickers.Add((int)sortedRankCounts[1].Key);
             }
             else if (isFlush)
             {
                 evaluation.Rank = HandRank.Flush;
-                evaluation.Score = FLUSH_MULTIPLIER;
+                evaluation.Score = PokerConstants.FlushMultiplier;
                 foreach (var card in sortedCards)
                 {
                     evaluation.Kickers.Add((int)card.Rank);
@@ -121,12 +111,12 @@ namespace OpenScrape.DecisionMaker.Algorithms
             else if (isStraight)
             {
                 evaluation.Rank = HandRank.Straight;
-                evaluation.Score = STRAIGHT_MULTIPLIER * GetStraightHighCard(sortedCards);
+                evaluation.Score = PokerConstants.StraightMultiplier * GetStraightHighCard(sortedCards);
             }
             else if (sortedRankCounts[0].Value == 3)
             {
                 evaluation.Rank = HandRank.ThreeOfAKind;
-                evaluation.Score = THREE_OF_A_KIND_MULTIPLIER * (int)sortedRankCounts[0].Key;
+                evaluation.Score = PokerConstants.ThreeOfAKindMultiplier * (int)sortedRankCounts[0].Key;
                 foreach (var kvp in sortedRankCounts.Where(kvp => kvp.Value == 1))
                 {
                     evaluation.Kickers.Add((int)kvp.Key);
@@ -135,7 +125,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             else if (sortedRankCounts[0].Value == 2 && sortedRankCounts[1].Value == 2)
             {
                 evaluation.Rank = HandRank.TwoPair;
-                evaluation.Score = TWO_PAIR_MULTIPLIER * (int)sortedRankCounts[0].Key;
+                evaluation.Score = PokerConstants.TwoPairMultiplier * (int)sortedRankCounts[0].Key;
                 evaluation.Kickers.Add((int)sortedRankCounts[1].Key);
                 foreach (var kvp in sortedRankCounts.Where(kvp => kvp.Value == 1))
                 {
@@ -145,7 +135,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             else if (sortedRankCounts[0].Value == 2)
             {
                 evaluation.Rank = HandRank.OnePair;
-                evaluation.Score = PAIR_MULTIPLIER * (int)sortedRankCounts[0].Key;
+                evaluation.Score = PokerConstants.PairMultiplier * (int)sortedRankCounts[0].Key;
                 foreach (var kvp in sortedRankCounts.Where(kvp => kvp.Value == 1))
                 {
                     evaluation.Kickers.Add((int)kvp.Key);
@@ -154,7 +144,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             else
             {
                 evaluation.Rank = HandRank.HighCard;
-                evaluation.Score = HIGH_CARD_MULTIPLIER;
+                evaluation.Score = PokerConstants.HighCardMultiplier;
                 foreach (var card in sortedCards)
                 {
                     evaluation.Kickers.Add((int)card.Rank);

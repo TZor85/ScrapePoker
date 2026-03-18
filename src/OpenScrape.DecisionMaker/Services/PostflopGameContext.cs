@@ -1,0 +1,92 @@
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Domain.Enums;
+
+namespace OpenScrape.DecisionMaker.Services;
+
+/// <summary>
+/// Contexto de estado cross-street para decisiones postflop.
+/// Mantiene el estado que persiste entre flop → turn → river dentro de una mano.
+/// </summary>
+public class PostflopGameContext
+{
+    // === Estado cross-street: quién apostó en qué calle ===
+    public bool VillainBetFlop { get; set; }
+    public bool VillainBetTurn { get; set; }
+    public bool HeroBetFlop { get; set; }
+    public bool HeroBetTurn { get; set; }
+    public bool PreviousStreetWasBet { get; set; }
+
+    /// <summary>
+    /// El agresor preflop checkeó en el flop → señal de debilidad para probe bet.
+    /// </summary>
+    public bool VillainAggressorCheckedFlop { get; set; }
+
+    /// <summary>
+    /// Resultado del análisis de cambio de board (peligro de turn/river card).
+    /// Se propaga entre streets para acumular peligro.
+    /// </summary>
+    public BoardChangeResult LastBoardChange { get; set; } = BoardChangeResult.Safe;
+
+    /// <summary>
+    /// Detecta si el villano está barreling (apostó en 2+ calles consecutivas).
+    /// </summary>
+    public bool IsVillainBarreling => VillainBetFlop && VillainBetTurn;
+
+    /// <summary>
+    /// Reinicia el contexto para una nueva mano.
+    /// </summary>
+    public void Reset()
+    {
+        VillainBetFlop = false;
+        VillainBetTurn = false;
+        HeroBetFlop = false;
+        HeroBetTurn = false;
+        PreviousStreetWasBet = false;
+        VillainAggressorCheckedFlop = false;
+        LastBoardChange = BoardChangeResult.Safe;
+    }
+
+    /// <summary>
+    /// Actualiza el estado al finalizar una calle del flop.
+    /// </summary>
+    public void UpdateFlopState(bool heroBet, bool villainBet, bool isPreflopAggressor)
+    {
+        HeroBetFlop = heroBet;
+        VillainBetFlop = villainBet;
+        PreviousStreetWasBet = heroBet;
+        VillainAggressorCheckedFlop = !isPreflopAggressor && !villainBet;
+    }
+
+    /// <summary>
+    /// Actualiza el estado al finalizar el turn.
+    /// </summary>
+    public void UpdateTurnState(bool heroBet, bool villainBet)
+    {
+        HeroBetTurn = heroBet;
+        VillainBetTurn = villainBet;
+        PreviousStreetWasBet = heroBet;
+    }
+
+    /// <summary>
+    /// Combina el peligro del turn con el nuevo peligro del river.
+    /// </summary>
+    public static BoardChangeResult CombineBoardChanges(
+        BoardChangeResult previous, BoardChangeResult current)
+    {
+        if (previous.DangerLevel == 0)
+            return current;
+        if (current.DangerLevel == 0)
+            return previous;
+
+        return new BoardChangeResult(
+            FlushCompleted: previous.FlushCompleted || current.FlushCompleted,
+            FlushDrawAppeared: previous.FlushDrawAppeared || current.FlushDrawAppeared,
+            StraightCompleted: previous.StraightCompleted || current.StraightCompleted,
+            BoardPaired: previous.BoardPaired || current.BoardPaired,
+            OvercardAppeared: previous.OvercardAppeared || current.OvercardAppeared,
+            CompletedFlushSuit: current.CompletedFlushSuit >= 0
+                ? current.CompletedFlushSuit
+                : previous.CompletedFlushSuit,
+            DangerLevel: Math.Min(10, previous.DangerLevel + current.DangerLevel));
+    }
+}
