@@ -957,15 +957,32 @@ public class PostflopDecisionServiceTests
     }
 
     [Test]
-    public void Overbet_River_NoDeberiaOverbet()
+    public void Overbet_River_NutsDeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
         var service = new PostflopDecisionService(Options.Create(profile));
 
+        // River con TwoPair+ en board seco → overbet por máximo valor
         var result = service.DetermineAction(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind);
+
+        Assert.That(result.Action, Does.Contain("1.25x Pot"));
+        Assert.That(result.Reason, Does.Contain("river"));
+    }
+
+    [Test]
+    public void Overbet_River_OnePair_NoDeberiaOverbet()
+    {
+        var profile = CreateProfileConOverbet();
+        var service = new PostflopDecisionService(Options.Create(profile));
+
+        // River con OnePair → no overbet (mano vulnerable)
+        var result = service.DetermineAction(
+            equity: 85, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            heroIsAggressor: true, heroHandRank: HandRank.OnePair);
 
         Assert.That(result.Action, Does.Not.Contain("1.25x Pot"));
     }
@@ -1426,5 +1443,57 @@ public class PostflopDecisionServiceTests
             boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair);
 
         Assert.That(result.Action, Does.Not.Contain("Fold"));
+    }
+
+    // ─── Tests Bluff Catching River ───────────────────────────────────
+
+    [Test]
+    public void BluffCatch_River_OnePair_SmallBet_DeberiaCall()
+    {
+        // River_OpenRaise FoldBelow=40. Equity 35 < 40, pero 35 >= 40*0.85=34 → bluff catch
+        // OnePair + small/medium bet → call para atrapar bluffs
+        var result = _service.DetermineAction(
+            equity: 35, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Action, Does.Contain("Call"));
+        Assert.That(result.Reason, Does.Contain("bluff catch"));
+    }
+
+    [Test]
+    public void BluffCatch_River_LargeBet_NoBluffCatch()
+    {
+        // Large bet → no bluff catch (villano probablemente tiene valor)
+        var result = _service.DetermineAction(
+            equity: 35, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Large,
+            heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
+    }
+
+    [Test]
+    public void BluffCatch_River_HighCard_NoBluffCatch()
+    {
+        // HighCard → no bluff catch (necesita al menos OnePair)
+        var result = _service.DetermineAction(
+            equity: 35, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.HighCard);
+
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
+    }
+
+    [Test]
+    public void BluffCatch_Turn_NoAplica()
+    {
+        // Bluff catching solo en river
+        var result = _service.DetermineAction(
+            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair);
+
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
     }
 }

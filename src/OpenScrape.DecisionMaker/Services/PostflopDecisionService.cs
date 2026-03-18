@@ -277,7 +277,8 @@ public class PostflopDecisionService
         // Equity baja
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
-                villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway);
+                villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
+                heroHandRank);
 
         // --- FACING BET ---
         if (isFacingBet)
@@ -441,14 +442,22 @@ public class PostflopDecisionService
         double adjStrongValue = thresholds.StrongValueAbove + vulnerabilityAdjust;
         double adjValue = thresholds.ValueAbove + vulnerabilityAdjust;
 
-        // Overbet en boards muy secos con mano premium (solo agresor, no river)
-        if (thresholds.CanOverbet && heroIsAggressor &&
-            equity > thresholds.OverbetMinEquity &&
-            boardTexture == "Dry" && street != BoardPosition.River)
+        // Overbet en boards secos con mano premium
+        // Flop/Turn: agresor con ventaja de rango. River: NUTS (TwoPair+) para máximo valor.
+        if (thresholds.CanOverbet && equity > thresholds.OverbetMinEquity && boardTexture == "Dry")
         {
-            return new PostflopDecisionResult(
-                thresholds.OverbetBetSize + " (Value)",
-                "Overbet — board seco con ventaja de rango");
+            bool canOverbetHere = street == BoardPosition.River
+                ? heroHandRank >= HandRank.TwoPair
+                : heroIsAggressor;
+
+            if (canOverbetHere)
+            {
+                return new PostflopDecisionResult(
+                    thresholds.OverbetBetSize + " (Value)",
+                    street == BoardPosition.River
+                        ? $"Overbet river — NUTS en board seco ({heroHandRank})"
+                        : "Overbet — board seco con ventaja de rango");
+            }
         }
 
         // Strong value → bet grande (con sizing boost para manos nuts o TPTK)
@@ -632,7 +641,8 @@ public class PostflopDecisionService
         int totalOuts,
         bool isFacingBet,
         double impliedOddsFactor,
-        bool isMultiway = false)
+        bool isMultiway = false,
+        HandRank heroHandRank = HandRank.HighCard)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
         if (totalOuts >= MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
@@ -682,6 +692,16 @@ public class PostflopDecisionService
         // Sin facing bet → check (no fold sin apuesta)
         if (!isFacingBet)
             return new PostflopDecisionResult("Check", "Check — equity baja");
+
+        // Bluff catching en river: hero con pareja decente puede call para atrapar bluffs
+        // Solo con bet small/medium (large bet = villano probablemente tiene valor)
+        if (street == BoardPosition.River && heroHandRank >= HandRank.OnePair &&
+            equity >= thresholds.FoldBelow * _profile.BluffCatchFoldBelowMultiplier &&
+            villainBetSize != BetSizeCategory.Large)
+        {
+            return new PostflopDecisionResult("Call",
+                $"Call — bluff catch river ({heroHandRank})");
+        }
 
         // Facing bet → fold o call según config
         var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";

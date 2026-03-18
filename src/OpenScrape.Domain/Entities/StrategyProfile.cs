@@ -96,6 +96,10 @@ public class StrategyProfile
     public double ReverseImpliedCoordinatedPenalty { get; set; } = 2.0;
     public double ReverseImpliedOnePairMultiplier { get; set; } = 1.5;
 
+    // Bluff Catching (usado en PostflopDecisionService)
+    // Multiplicador sobre FoldBelow: equity >= FoldBelow * multiplier → call para atrapar bluffs
+    public double BluffCatchFoldBelowMultiplier { get; set; } = 0.85;
+
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
     public double ComboDrawEquityBonus { get; set; } = 6.0;

@@ -20,7 +20,8 @@
       "Bash(ls -la /c/Code/Poker/ScrapePoker/*.md 2>/dev/null)",
       "Bash(ls C:CodePokerScrapePoker.claudeworktreesagent-aa942120/*.sln)",
       "Bash(find:*)",
-      "Bash(__NEW_LINE_7d79eaa1e8ec8be4__ grep:*)"
+      "Bash(__NEW_LINE_7d79eaa1e8ec8be4__ grep:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
