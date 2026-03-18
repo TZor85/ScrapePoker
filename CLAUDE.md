@@ -70,17 +70,21 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
 
 **PostflopDecisionService — Five decision paths:**
-1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2.
-2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards as aggressor (1.25x pot).
-3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`.
+1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2. Bluff catching on river (OnePair+ with equity >= FoldBelow×0.85, non-large bet → call).
+2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards (flop/turn: aggressor; river: TwoPair+ NUTS). Bet sizing adjusted by SPR (short +1-2 levels, deep -1 level). Double barrel on turn/river (aggressor with marginal equity + previous street bet → barrel for range consistency).
+3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`. Active on all streets (flop/turn/river).
 4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Cross-street state via `_villainAggressorCheckedFlop`.
-5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls.
+5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls, bluff catching river.
 
 **Additional decision modifiers:**
 - `heroIsAggressor` / `heroHandRank` / `heroKickerStrength` — affect raise/call/sizing decisions
 - `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus)
+- `villainBarreling` — villain bet 2+ consecutive streets → FoldBelow+5, ThinValue+3 (narrower range)
+- SPR push/fold — SPR < 2: FoldBelow−8, equity > ValueAbove → All-In. SPR > 4: FoldBelow+3 (deep caution). Only turn/river.
+- Reverse implied odds — turn facing bet with OnePair/TwoPair on draw-heavy board: −4 to −6 equity penalty
 - Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
 - Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
+- Cross-street state — `_villainBetFlop/Turn`, `_heroBetFlop/Turn`, `_villainAggressorCheckedFlop` tracked across streets
 
 **Danger card penalty system:**
 - Percentage penalties (proportional): FlushComplete = equity×25% (requires 4+ same suit on board), StraightComplete = equity×18%
@@ -89,7 +93,7 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - Hero blocker effect: penalty ×0.5 if hero holds danger suit
 - NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board)
 - Danger propagation: turn `_lastBoardChange` carries to river via `CombineBoardChanges()`
-- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap if applicable
+- `effectiveEquity = equity - dangerPenalty + comboDrawBonus - reverseImpliedPenalty`, then cap if applicable
 - Never folds without facing bet → Check instead
 
 ## Game State Machine
@@ -107,8 +111,8 @@ Properties `IsFlop`, `IsTurn`, `IsRiver` are derived from `CurrentState` (not se
 
 Three-tier hierarchy, all via `IOptions<StrategyProfile>` from `appsettings.json`:
 
-1. **StrategyProfile** (global) — Fold equity base/adjustments, bet sizing multipliers (SPR-based, board texture, position), bluff frequencies (flop/turn/river), all 8 danger penalty parameters.
-2. **StreetThresholds** (per situation) — 30 configs (10 Flop + 10 Turn + 10 River). Key format: `"{BoardPosition}_{HandSituation}"` (e.g., `"Flop_OpenRaise"`, `"Turn_OpenRaise"`). Contains equity tiers (FoldBelow, ThinValueAbove, ValueAbove, StrongValueAbove), board-texture bet sizes, bluff controls (CanBluff, BluffFrequencyMultiplier, BluffCondition), position handling (ThinValueIPOnly, ThinValueOOPFallback), check-raise (CanCheckRaise, CheckRaiseThreshold), overbet (CanOverbet, OverbetBetSize, OverbetMinEquity), combo draw sizing (ComboDrawBetSize, ComboDrawOutsThreshold), probe bet (CanProbeBet, ProbeBetSize, ProbeBetMinEquity).
+1. **StrategyProfile** (global) — Fold equity base/adjustments, bet sizing multipliers (SPR-based, board texture, position), bluff frequencies (flop/turn/river), all 8 danger penalty parameters, barrel detection penalties, SPR push/fold thresholds, reverse implied odds penalties, bluff catch multiplier, combo draw equity bonus.
+2. **StreetThresholds** (per situation) — 30+ configs (10 Flop + 12 Turn + 12 River). Key format: `"{BoardPosition}_{HandSituation}"` (e.g., `"Flop_OpenRaise"`, `"Turn_OpenRaise"`). Contains equity tiers (FoldBelow, ThinValueAbove, ValueAbove, StrongValueAbove), board-texture bet sizes, bluff controls (CanBluff, BluffFrequencyMultiplier, BluffCondition), position handling (ThinValueIPOnly, ThinValueOOPFallback), check-raise (CanCheckRaise, CheckRaiseThreshold), overbet (CanOverbet, OverbetBetSize, OverbetMinEquity), combo draw sizing (ComboDrawBetSize, ComboDrawOutsThreshold), probe bet (CanProbeBet, ProbeBetSize, ProbeBetMinEquity), double barrel (CanDoubleBarrel).
 3. **Simplified mode** (RaiseOverLimper) — `IsSimplified=true` skips board texture analysis, uses fixed IP/OOP bet sizing.
 
 JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.json`, `ThreeBet.json`, `VsThreeBet.json`, `Squeeze.json`, `tableMap.json`.
@@ -134,7 +138,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (266 tests, no mocking framework)
+- **NUnit** — Testing framework (288 tests, no mocking framework)
 
 ## Code Style
 
