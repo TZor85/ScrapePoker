@@ -650,8 +650,8 @@ namespace OpenScrape.App
                 // Las cartas y jugadores ya se obtienen antes
                 SetDealerPlayer();
 
-                // Log diagnóstico cuando no se detecta dealer
-                if (_dealerValuePosition < 0 && _formImage.pbImage.Image != null)
+                // Log diagnóstico de detección de dealer
+                if (_formImage.pbImage.Image != null)
                 {
                     using var diagBitmap = new Bitmap(_formImage.pbImage.Image);
                     var dealerRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer")?.Regions;
@@ -663,7 +663,11 @@ namespace OpenScrape.App
                                 var c = diagBitmap.GetPixel(r.PosX, r.PosY);
                                 return $"{r.Name}({r.PosX},{r.PosY})=RGB({c.R},{c.G},{c.B})";
                             }));
-                        LogInformation($"Dealer no detectado. Colores en regiones: {colorInfo}. Imagen: {diagBitmap.Width}x{diagBitmap.Height}");
+
+                        if (_dealerValuePosition < 0)
+                            LogInformation($"Dealer no detectado. Colores: {colorInfo}. Imagen: {diagBitmap.Width}x{diagBitmap.Height}");
+                        else
+                            LogDebug($"Dealer detectado en P{_dealerValuePosition}. Posición: {_playerGameState.Position}. Colores: {colorInfo}");
                     }
                 }
 
@@ -1960,6 +1964,14 @@ namespace OpenScrape.App
             if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
+            // P0 (héroe) siempre está activo — no tiene región Empty/Playing en Regiones.json
+            if (!_playerGameState.Players.Any(p => p.ValuePosition == 0))
+            {
+                var heroPlayer = CreatePlayerData(0);
+                heroPlayer.Active = true;
+                _playerGameState.Players.Add(heroPlayer);
+            }
+
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
             foreach (var region in regionTableMap.Regions)
@@ -2226,6 +2238,7 @@ namespace OpenScrape.App
                     continue;
 
                 SetDealerForPlayer(playerNumber.Value, emptyPositions);
+                break; // Solo un dealer por mano, evitar falsos positivos que sobrescriban
             }
         }
 
@@ -2240,11 +2253,25 @@ namespace OpenScrape.App
             if (emptyPositions == null)
                 throw new ArgumentNullException(nameof(emptyPositions));
 
-            // Para P0 (caso especial)
+            // Para P0 (caso especial: héroe es el dealer)
             if (playerNumber == 0)
             {
                 _playerGameState.IsDealer = true;
                 _playerGameState.Position = TablePosition.Button;
+                _dealerValuePosition = 0;
+
+                // Establecer la posición del jugador P0 (héroe)
+                var heroP0 = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
+                if (heroP0 != null)
+                {
+                    heroP0.Position = TablePosition.Button;
+                    heroP0.Dealer = true;
+                }
+
+                LogDebug("Dealer assigned to hero P0 (Button)");
+
+                // Asignar posiciones a villanos
+                SetVillainPosition(TablePosition.Button, 0);
                 return;
             }
 
