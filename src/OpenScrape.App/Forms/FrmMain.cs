@@ -524,10 +524,22 @@ namespace OpenScrape.App
                 // En modo test, determinar si es postflop (flop/turn/river seleccionado)
                 bool isTestPostflop = cbTest.Checked && (rbFlop.Checked || rbTurn.Checked || rbRiver.Checked);
 
+                // Guardar el número de mano ANTES de SetTableHand para detectar si cambió
+                var handNumberBeforeUpdate = _tableHand;
+
                 await SetTableHand();
 
                 if (_newHand && !isTestPostflop)
                 {
+                    // Guardar datos antes de resetear PlayerGameState para poder loguearlos y
+                    // pasarlos a StartNewHand (SetTableHand ya los leyó via ObtainCardsPlayerAsync)
+                    var prevPot = _playerGameState?.PotSize ?? 0;
+                    var prevHoleCards = $"{_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}".Trim();
+                    var prevHoleCard1 = _playerGameState?.HoleCard1Face ?? string.Empty;
+                    var prevHoleCard2 = _playerGameState?.HoleCard2Face ?? string.Empty;
+                    var prevPosition = _playerGameState?.Position ?? TablePosition.None;
+                    var prevHeroStack = _playerGameState?.HeroStack ?? 0;
+
                     _frmOverlay?.ClearAll();
                     _playerGameState = new PlayerGameState();
                     _responseAction = new ResponseAction();
@@ -536,12 +548,40 @@ namespace OpenScrape.App
                     _dealerPosition = string.Empty;
                     _newHand = false;
 
-                    // State machine: transicionar a nueva mano (reset limpia todos los street flags)
+                    // Guardar estado postflop solo si ya estábamos en postflop Y el número de mano
+                    // NO cambió (es una re-captura dentro de la misma mano, no una mano nueva)
+                    GameState? savedPostflopState = null;
+                    bool sameHand = !string.IsNullOrEmpty(handNumberBeforeUpdate) && handNumberBeforeUpdate == _tableHand;
+                    if (!cbTest.Checked && sameHand &&
+                        (_gameLoopStateMachine.IsFlop ||
+                         _gameLoopStateMachine.IsTurn ||
+                         _gameLoopStateMachine.IsRiver))
+                    {
+                        savedPostflopState = _gameLoopStateMachine.CurrentState;
+                        LogInformation($"Guardando estado postflop antes de reset: {savedPostflopState}");
+                    }
+
+                    // State machine: transicionar a nueva mano
                     _gameLoopStateMachine.Reset();
                     _gameLoopStateMachine.TryTransition(GameState.HandDetected);
 
                     if (!cbTest.Checked)
-                        await HandleNewHandAsync();
+                        await HandleNewHandAsync(prevPot, prevHoleCards, prevHoleCard1, prevHoleCard2, prevPosition, prevHeroStack);
+
+                    // Restaurar estado postflop solo si es la misma mano.
+                    // Si el número de mano cambió es una mano nueva y debe fluir por preflop.
+                    // Usar ForceState porque HandDetected → FlopDetected/TurnDetected/RiverDetected
+                    // no son transiciones válidas en la máquina de estados.
+                    if (savedPostflopState.HasValue)
+                    {
+                        LogInformation($"Restaurando estado postflop: {savedPostflopState}");
+                        _gameLoopStateMachine.ForceState(savedPostflopState.Value);
+                    }
+                    else
+                    {
+                        // Solo resetear contexto postflop si NO se está restaurando un estado postflop
+                        _postflopContext.Reset();
+                    }
                 }
                 else if (_newHand && isTestPostflop)
                 {
@@ -559,12 +599,20 @@ namespace OpenScrape.App
                         _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                 }
 
-                if (_playerGameState.Players.Count() == 0 || (cbTest.Checked && !isTestPostflop))
+                LogInformation($"ProcessNewHand: Players.Count={_playerGameState.Players.Count()}, cbTest={cbTest.Checked}, isTestPostflop={isTestPostflop}");
+
+                // Inicializar jugadores si:
+                // 1. No hay jugadores, O
+                // 2. Es modo Test y no es postflop, O
+                // 3. El dealer no se ha detectado correctamente
+                bool needsInitialization = _playerGameState.Players.Count() == 0 ||
+                                          (cbTest.Checked && !isTestPostflop) ||
+                                          _playerGameState.Position == TablePosition.None;
+
+                if (needsInitialization)
                 {
                     SetEmptyPlayer();
                     SetSitOutPlayer();
-                    // Marcar jugadores activos ANTES de detectar dealer,
-                    // para que SetDealerPlayer no salte al dealer marcado como empty
                     SetActivePlayer();
                     await InitializePlayersAsync();
                 }
@@ -572,7 +620,6 @@ namespace OpenScrape.App
                 {
                     SetActivePlayer();
 
-                    // Reintentar detección de dealer si la posición no se detectó en la primera captura
                     if (_playerGameState.Position == TablePosition.None)
                     {
                         SetDealerPlayer();
@@ -800,6 +847,8 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
+            LogInformation($"ProcessPostFlopAsync: Estado actual = {_gameLoopStateMachine.CurrentState}");
+
             // Detectar transición a nueva calle verificando si hay carta visible en el board
             if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
             {
@@ -862,8 +911,9 @@ namespace OpenScrape.App
             if (cardRegion == null)
                 return false;
 
+            var scaled = GetScaledRegion(cardRegion);
             var imageToBase64 = _imageCropperService.CropImageToBase64(
-                _formImage.pbImage.Image, cardRegion.PosX, cardRegion.PosY, cardRegion.Width, cardRegion.Height);
+                _formImage.pbImage.Image, scaled.X, scaled.Y, scaled.Width, scaled.Height);
 
             var bestMatch = _cardsImages
                 .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
@@ -1064,9 +1114,11 @@ namespace OpenScrape.App
             // Log indicadores para debugging
             LogDebug($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
 
-            // Lógica: Al menos 1 indicador positivo para confirmar nueva mano
+            // Lógica: el número de mano debe haber cambiado (indicator1 obligatorio).
+            // Se requieren además al menos 2 indicadores adicionales para confirmar
+            // y evitar falsos positivos por OCR inestable en el mismo número de mano.
             int indicatorsCount = (indicator1 ? 1 : 0) + (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
-            bool isNewHand = indicatorsCount >= 1;
+            bool isNewHand = indicator1 && indicatorsCount >= 2;
 
             // Actualizar nombres previos si se detectó nueva mano
             if (isNewHand)
@@ -1080,10 +1132,12 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Procesa la fase de turn
+        /// Procesa la fase de flop
         /// </summary>
         private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
+            LogInformation($"ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: {_gameLoopStateMachine.CurrentState}");
+
             // Capturar cartas del flop con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
@@ -1092,10 +1146,13 @@ namespace OpenScrape.App
                 var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
                 {
                     Image = bitmap,
-                    RegionsTableMap = _regionsTableMap
+                    RegionsTableMap = _regionsTableMap,
+                    CurrentImageWidth = bitmap.Width,
+                    CurrentImageHeight = bitmap.Height
                 });
 
                 dataBoard = flopResponse.DataBoard;
+                LogInformation($"ProcessFlopAsync: Intento {attempt + 1} - Cartas detectadas: {dataBoard.Count}, Flop cards: {dataBoard.Count(d => d.Position == BoardPosition.Flop)}");
 
                 if (dataBoard.Count(d => d.Position == BoardPosition.Flop) >= 3)
                     break;
@@ -1395,6 +1452,8 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
+            LogInformation($"ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: {_gameLoopStateMachine.CurrentState}");
+
             // Capturar carta del turn con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
@@ -1404,10 +1463,13 @@ namespace OpenScrape.App
                 {
                     Image = bitmap,
                     RegionsTableMap = _regionsTableMap,
-                    DataBoard = _playerGameState.BoardCards
+                    DataBoard = _playerGameState.BoardCards,
+                    CurrentImageWidth = bitmap.Width,
+                    CurrentImageHeight = bitmap.Height
                 });
 
                 dataBoard = turnResponse.DataBoard;
+                LogInformation($"ProcessTurnAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}");
 
                 if (dataBoard.Count >= 4)
                     break;
@@ -1471,6 +1533,8 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
+            LogInformation($"ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: {_gameLoopStateMachine.CurrentState}");
+
             // Capturar carta del river con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
@@ -1480,10 +1544,13 @@ namespace OpenScrape.App
                 {
                     Image = bitmap,
                     RegionsTableMap = _regionsTableMap,
-                    DataBoard = _playerGameState.BoardCards
+                    DataBoard = _playerGameState.BoardCards,
+                    CurrentImageWidth = bitmap.Width,
+                    CurrentImageHeight = bitmap.Height
                 });
 
                 dataBoard = riverResponse.DataBoard;
+                LogInformation($"ProcessRiverAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}");
 
                 if (dataBoard.Count >= 5)
                     break;
@@ -1545,7 +1612,13 @@ namespace OpenScrape.App
         /// <summary>
         /// Maneja la inicialización de una nueva mano
         /// </summary>
-        private async Task HandleNewHandAsync()
+        private async Task HandleNewHandAsync(
+            decimal prevPot = 0,
+            string prevHoleCards = "",
+            string prevHoleCard1 = "",
+            string prevHoleCard2 = "",
+            TablePosition prevPosition = TablePosition.None,
+            decimal prevHeroStack = 0)
         {
             // Finalizar la mano anterior y guardar sesión
             if (_gameLoggerService.HasActiveHand)
@@ -1554,8 +1627,9 @@ namespace OpenScrape.App
                 await _gameLoggerService.SaveSessionAsync();
             }
 
-            _postflopContext.Reset();
-            LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {_playerGameState?.PotSize}, HoleCards: {_playerGameState?.HoleCard1Face} {_playerGameState?.HoleCard2Face}");
+            // _postflopContext.Reset() se hace condicionalmente en btnCapture_Click
+            // para no perder el contexto cuando se restaura un estado postflop guardado
+            LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {prevPot}, HoleCards: {prevHoleCards}");
 
             // Asegurar que hay sesión activa e iniciar nueva mano
             if (!_gameLoggerService.HasActiveSession)
@@ -1566,10 +1640,10 @@ namespace OpenScrape.App
                 var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
                 _gameLoggerService.StartNewHand(
                     handNum,
-                    _playerGameState?.HoleCard1Face ?? string.Empty,
-                    _playerGameState?.HoleCard2Face ?? string.Empty,
-                    _playerGameState?.Position ?? TablePosition.None,
-                    _playerGameState?.HeroStack ?? 0,
+                    prevHoleCard1,
+                    prevHoleCard2,
+                    prevPosition,
+                    prevHeroStack,
                     activePlayers);
             }
 
@@ -1816,7 +1890,8 @@ namespace OpenScrape.App
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
                 if (playerNumber == null) continue;
 
-                var betValue = SetBetValue(region.PosX, region.PosY, region.Width, region.Height,
+                var scaled = GetScaledRegion(region);
+                var betValue = SetBetValue(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
                 // Validación y limpieza de valores
@@ -1862,9 +1937,11 @@ namespace OpenScrape.App
             decimal stackValue = 0;
             int maxRetries = 2;
 
+            var scaled = GetScaledRegion(region);
+
             for (int attempt = 0; attempt <= maxRetries; attempt++)
             {
-                var rawValue = SetStackValue(region.PosX, region.PosY, region.Width, region.Height,
+                var rawValue = SetStackValue(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
                 stackValue = NormalizeStackValue(rawValue);
@@ -1962,12 +2039,14 @@ namespace OpenScrape.App
                 if (playerNumber == null)
                     continue;
 
-                var color = bitmap.GetPixel(region.PosX, region.PosY);
+                var scaled = GetScaledRegion(region);
+                var color = bitmap.GetPixel(scaled.X, scaled.Y);
+                var colorMatch = _colorEmpty.Contains(color.B);
 
                 _playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
 
                 // Verificamos si el jugador está vacío
-                if (region.Name.Contains("empty") && _colorEmpty.Contains(color.B))
+                if (region.Name.Contains("empty") && colorMatch)
                 {
                     var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
                     if (player != null)
@@ -1993,7 +2072,8 @@ namespace OpenScrape.App
                 if (playerNumber == null)
                     continue;
 
-                var color = bitmap.GetPixel(region.PosX, region.PosY);
+                var scaled = GetScaledRegion(region);
+                var color = bitmap.GetPixel(scaled.X, scaled.Y);
 
                 //_playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
 
@@ -2034,7 +2114,8 @@ namespace OpenScrape.App
                 var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
                 if (player != null)
                 {
-                    player.Alias = SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                    var scaled = GetScaledRegion(region);
+                    player.Alias = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
                 }
             }
@@ -2078,7 +2159,8 @@ namespace OpenScrape.App
             if (regionPot != null)
             {
                 decimal potValue = 0;
-                var pot = SetTextOCR(regionPot.PosX, regionPot.PosY, regionPot.Width, regionPot.Height,
+                var scaled = GetScaledRegion(regionPot);
+                var pot = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber);
                 try
                 {
@@ -2116,22 +2198,23 @@ namespace OpenScrape.App
             var regionTableHand = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablehand");
             if (regionTableHand != null)
             {
+                var scaled = GetScaledRegion(regionTableHand);
                 if (string.IsNullOrEmpty(_tableHand))
                 {
-                    _tableHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
+                    _tableHand = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     _newHand = true;
                 }
                 else
                 {
-                    var currentHand = SetTextOCR(regionTableHand.PosX, regionTableHand.PosY, regionTableHand.Width, regionTableHand.Height,
+                    var currentHand = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     if (long.TryParse(_tableHand, out var oldTableHand) &&
                         long.TryParse(currentHand, out var newTableHand))
                     {
-                        if (oldTableHand != newTableHand || _previousDealerPlayerName != _dealerPosition)
+                        if (oldTableHand != newTableHand)
                         {
-                            _newHand = DetectNewHand(oldTableHand != newTableHand, currentHand);
+                            _newHand = DetectNewHand(true, currentHand);
                             if (_newHand) _tableHand = newTableHand.ToString();
                         }
                         else if (newTableHand == 0)
@@ -2150,7 +2233,8 @@ namespace OpenScrape.App
             var regionTableName = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablename");
             if (regionTableName != null && string.IsNullOrEmpty(_tableName))
             {
-                _tableName = SetTextOCR(regionTableName.PosX, regionTableName.PosY, regionTableName.Width, regionTableName.Height,
+                var scaledName = GetScaledRegion(regionTableName);
+                _tableName = SetTextOCR(scaledName.X, scaledName.Y, scaledName.Width, scaledName.Height,
                     regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
                 // Remove numbers from table name
                 _tableName = Regex.Replace(_tableName, @"\d", "");
@@ -2187,12 +2271,13 @@ namespace OpenScrape.App
 
             foreach (var region in regionTableMap.Regions.Where(x => x.IsColor.GetValueOrDefault()))
             {
-                var centerColor = bitmap.GetPixel(region.PosX, region.PosY);
+                var scaled = GetScaledRegion(region);
+                var centerColor = bitmap.GetPixel(scaled.X, scaled.Y);
                 allColorsLog.Append($"{region.Name}=RGB({centerColor.R},{centerColor.G},{centerColor.B}) ");
 
                 // Detección robusta: color dorado/amarillo del dealer button
                 // #ffd800 = R:255, G:216, B:0 — verificar los 3 canales
-                bool isDealerColor = IsDealerButtonColor(bitmap, region.PosX, region.PosY, searchRadius: 3);
+                bool isDealerColor = IsDealerButtonColor(bitmap, scaled.X, scaled.Y, searchRadius: 3);
 
                 if (isDealerColor)
                 {
@@ -2265,8 +2350,6 @@ namespace OpenScrape.App
                     heroP0.Dealer = true;
                 }
 
-                LogDebug("Dealer assigned to hero P0 (Button)");
-
                 // Asignar posiciones a villanos
                 SetVillainPosition(TablePosition.Button, 0);
                 return;
@@ -2274,6 +2357,7 @@ namespace OpenScrape.App
 
             // Marcar dealer en el jugador si existe en la lista
             var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+
             if (player != null)
             {
                 // Skip dealer assignment if the seat is truly empty (no active, no playing)
@@ -2382,12 +2466,13 @@ namespace OpenScrape.App
 
                 var active = !player.Active;
                 var empty = !player.Empty;
-                var textoo = TryMultipleOCRThresholds(region.PosX, region.PosY, region.Width, region.Height,
+                var scaled = GetScaledRegion(region);
+                var textoo = TryMultipleOCRThresholds(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
                 // Extracción de condición compleja a variable
                 bool isSittingOut = !player.Empty && !player.Active &&
-                    SetTextOCR(region.PosX, region.PosY, region.Width, region.Height,
+                    SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                                region.Umbral, region.InactiveUmbral, region.IsOnlyNumber)
                     .Contains("SIT");
 
@@ -2639,6 +2724,8 @@ namespace OpenScrape.App
             if (regionTableMap?.Regions == null || _formImage.pbImage.Image == null)
                 return;
 
+            var hashRegions = regionTableMap.Regions.Where(w => w.IsHash == true).ToList();
+
             // Carga de cartas una sola vez
             if (_cardsImages == null)
             {
@@ -2646,14 +2733,16 @@ namespace OpenScrape.App
                 _cardsImages = cards.Select(item => item.ToDto()).ToList();
             }
 
-            foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
+            foreach (var region in hashRegions)
             {
+                var scaled = GetScaledRegion(region);
+
                 var imageToBase64 = _imageCropperService.CropImageToBase64(
                     _formImage.pbImage.Image,
-                    region.PosX,
-                    region.PosY,
-                    region.Width,
-                    region.Height);
+                    scaled.X,
+                    scaled.Y,
+                    scaled.Width,
+                    scaled.Height);
 
                 if (_cardsImages == null || !_cardsImages.Any())
                     continue;
@@ -2940,6 +3029,13 @@ namespace OpenScrape.App
                     return;
                 }
 
+                // Inicializar CoordinateScaler en primera captura y guardar en configuración
+                if (!CoordinateScaler.IsInitialized)
+                {
+                    CoordinateScaler.Initialize(capturedBitmap.Width, capturedBitmap.Height);
+                    SaveReferenceDimensionsToConfig(capturedBitmap.Width, capturedBitmap.Height);
+                }
+
                 using var windowImg = Image.FromFile(path);
 
                 // Ajuste de tamaño de formulario
@@ -2959,6 +3055,105 @@ namespace OpenScrape.App
             {
                 LogError($"Error al obtener imagen: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Guarda las dimensiones de referencia en appsettings.json
+        /// </summary>
+        private void SaveReferenceDimensionsToConfig(int width, int height)
+        {
+            try
+            {
+                var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                if (!File.Exists(configPath))
+                {
+                    LogError("SaveReferenceDimensionsToConfig: appsettings.json no encontrado");
+                    return;
+                }
+
+                var json = File.ReadAllText(configPath);
+                var doc = System.Text.Json.JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                using var ms = new MemoryStream();
+                using var writer = new StreamWriter(ms);
+                using var reader = new StreamReader(ms);
+
+                writer.Write("{");
+                bool isFirst = true;
+
+                foreach (var property in root.EnumerateObject())
+                {
+                    if (!isFirst) writer.Write(",");
+                    isFirst = false;
+
+                    if (property.Name == "CaptureSettings")
+                    {
+                        writer.Write($"\"CaptureSettings\":{{");
+                        bool innerFirst = true;
+                        foreach (var captureProp in property.Value.EnumerateObject())
+                        {
+                            if (!innerFirst) writer.Write(",");
+                            innerFirst = false;
+
+                            if (captureProp.Name == "ReferenceImageWidth")
+                                writer.Write($"\"ReferenceImageWidth\":{width}");
+                            else if (captureProp.Name == "ReferenceImageHeight")
+                                writer.Write($"\"ReferenceImageHeight\":{height}");
+                            else if (captureProp.Name == "IsReferenceSet")
+                                writer.Write($"\"IsReferenceSet\":true");
+                            else
+                                writer.Write($"\"{captureProp.Name}\":{GetJsonValue(captureProp.Value)}");
+                        }
+                        writer.Write("}");
+                    }
+                    else
+                    {
+                        writer.Write($"\"{property.Name}\":{GetJsonValue(property.Value)}");
+                    }
+                }
+
+                writer.Write("}");
+                writer.Flush();
+
+                ms.Position = 0;
+                File.WriteAllText(configPath, reader.ReadToEnd());
+
+                LogInformation($"Guardadas dimensiones de referencia: {width}x{height}");
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al guardar dimensiones de referencia: {ex.Message}");
+            }
+        }
+
+        private static string GetJsonValue(System.Text.Json.JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.String => $"\"{element.GetString()}\"",
+                System.Text.Json.JsonValueKind.Number => element.GetRawText(),
+                System.Text.Json.JsonValueKind.True => "true",
+                System.Text.Json.JsonValueKind.False => "false",
+                System.Text.Json.JsonValueKind.Null => "null",
+                _ => element.GetRawText()
+            };
+        }
+
+        /// <summary>
+        /// Escala las coordenadas de una región según el ratio entre la imagen actual y la imagen de referencia
+        /// </summary>
+        private (int X, int Y, int Width, int Height) GetScaledRegion(OpenScrape.Domain.ValueObjects.Region region)
+        {
+            if (_formImage.pbImage.Image == null)
+                return (region.PosX, region.PosY, region.Width, region.Height);
+
+            int currentWidth = _formImage.pbImage.Image.Width;
+            int currentHeight = _formImage.pbImage.Image.Height;
+
+            return CoordinateScaler.ScaleRegion(
+                region.PosX, region.PosY, region.Width, region.Height,
+                currentWidth, currentHeight);
         }
 
         #endregion
@@ -3203,9 +3398,13 @@ namespace OpenScrape.App
         {
             try
             {
+                // Escalar coordenadas de las regiones
+                var scaledAction = GetScaledRegion(regionAction);
+                var scaledFlop = GetScaledRegion(flop);
+
                 // Obtener color principal
-                Color primaryActionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
-                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+                Color primaryActionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
+                Color flopColor = bitmap.GetPixel(scaledFlop.X, scaledFlop.Y);
 
                 // Muestrear píxeles adicionales alrededor del punto principal para mayor robustez
                 var sampleColors = new List<Color> { primaryActionColor };
@@ -3215,8 +3414,8 @@ namespace OpenScrape.App
                 
                 foreach (var (dx, dy) in offsets)
                 {
-                    var x = regionAction.PosX + dx;
-                    var y = regionAction.PosY + dy;
+                    var x = scaledAction.X + dx;
+                    var y = scaledAction.Y + dy;
                     
                     if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
                     {
@@ -3259,8 +3458,10 @@ namespace OpenScrape.App
                 _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
                 
                 // Fallback a detección simple
-                Color actionColor = bitmap.GetPixel(regionAction.PosX, regionAction.PosY);
-                Color flopColor = bitmap.GetPixel(flop.PosX, flop.PosY);
+                var scaledAction = GetScaledRegion(regionAction);
+                var scaledFlop = GetScaledRegion(flop);
+                Color actionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
+                Color flopColor = bitmap.GetPixel(scaledFlop.X, scaledFlop.Y);
                 
                 return new DetectionResult
                 {

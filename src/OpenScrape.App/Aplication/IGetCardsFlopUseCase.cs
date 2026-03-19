@@ -11,6 +11,8 @@ public class GetCardsFlopUseCaseRequest : BaseRequest
     //public List<ImageRegion> ImageRegions { get; set; } = new List<ImageRegion>();
     public Image? Image { get; set; }
     public List<RegionTableMap> RegionsTableMap { get; set; } = new List<RegionTableMap>();
+    public int CurrentImageWidth { get; set; }
+    public int CurrentImageHeight { get; set; }
 }
 
 public class GetCardsFlopUseCaseResponse : BaseResponse

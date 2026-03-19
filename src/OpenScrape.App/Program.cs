@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
@@ -75,6 +76,16 @@ namespace OpenScrape.App
             var host = builder.Build();
 
             Configuration = host.Services.GetRequiredService<IConfiguration>();
+
+            // Inicializar CoordinateScaler desde configuración
+            var captureSettings = Configuration.GetSection("CaptureSettings");
+            if (captureSettings["IsReferenceSet"] == "true" &&
+                int.TryParse(captureSettings["ReferenceImageWidth"], out var refWidth) &&
+                int.TryParse(captureSettings["ReferenceImageHeight"], out var refHeight) &&
+                refWidth > 0 && refHeight > 0)
+            {
+                CoordinateScaler.Initialize(refWidth, refHeight);
+            }
 
             // Obtener el formulario principal desde un scope para resolver dependencias scoped
             using var scope = host.Services.CreateScope();
