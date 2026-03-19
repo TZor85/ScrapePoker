@@ -650,26 +650,8 @@ namespace OpenScrape.App
                 // Las cartas y jugadores ya se obtienen antes
                 SetDealerPlayer();
 
-                // Log diagnóstico de detección de dealer
-                if (_formImage.pbImage.Image != null)
-                {
-                    using var diagBitmap = new Bitmap(_formImage.pbImage.Image);
-                    var dealerRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer")?.Regions;
-                    if (dealerRegions != null)
-                    {
-                        var colorInfo = string.Join(", ", dealerRegions
-                            .Where(x => x.IsColor.GetValueOrDefault())
-                            .Select(r => {
-                                var c = diagBitmap.GetPixel(r.PosX, r.PosY);
-                                return $"{r.Name}({r.PosX},{r.PosY})=RGB({c.R},{c.G},{c.B})";
-                            }));
-
-                        if (_dealerValuePosition < 0)
-                            LogInformation($"Dealer no detectado. Colores: {colorInfo}. Imagen: {diagBitmap.Width}x{diagBitmap.Height}");
-                        else
-                            LogDebug($"Dealer detectado en P{_dealerValuePosition}. Posición: {_playerGameState.Position}. Colores: {colorInfo}");
-                    }
-                }
+                // Log resultado de detección de dealer
+                LogInformation($"Dealer result: P{_dealerValuePosition}, Position: {_playerGameState.Position}, IsDealer: {_playerGameState.IsDealer}, Players: {_playerGameState.Players.Count}");
 
                 if (_dealerValuePosition >= 0)
                     SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
@@ -2199,47 +2181,62 @@ namespace OpenScrape.App
                 .Select(s => s.ValuePosition)
                 .ToList();
 
+            // Log de todas las regiones para diagnóstico
+            var allColorsLog = new System.Text.StringBuilder();
+            int? detectedDealerPosition = null;
+
             foreach (var region in regionTableMap.Regions.Where(x => x.IsColor.GetValueOrDefault()))
             {
-                // Verificar pixel central y área de 3x3 alrededor para mayor tolerancia
-                bool isDealerFound = false;
-                int searchRadius = 2;
+                var centerColor = bitmap.GetPixel(region.PosX, region.PosY);
+                allColorsLog.Append($"{region.Name}=RGB({centerColor.R},{centerColor.G},{centerColor.B}) ");
 
-                for (int dx = -searchRadius; dx <= searchRadius && !isDealerFound; dx++)
+                // Detección robusta: color dorado/amarillo del dealer button
+                // #ffd800 = R:255, G:216, B:0 — verificar los 3 canales
+                bool isDealerColor = IsDealerButtonColor(bitmap, region.PosX, region.PosY, searchRadius: 3);
+
+                if (isDealerColor)
                 {
-                    for (int dy = -searchRadius; dy <= searchRadius && !isDealerFound; dy++)
+                    var playerNumber = GetPlayerNumber(region.Name, "dealer");
+                    if (playerNumber != null && detectedDealerPosition == null)
                     {
-                        int px = region.PosX + dx;
-                        int py = region.PosY + dy;
-
-                        if (px < 0 || py < 0 || px >= bitmap.Width || py >= bitmap.Height)
-                            continue;
-
-                        var color = bitmap.GetPixel(px, py);
-
-                        // Verificar: R alto (dealer amarillo/dorado) y G > 150 (no es blanco puro)
-                        if (_colorDealer.Contains(color.R) && color.G > 150)
-                        {
-                            isDealerFound = true;
-                            LogDebug($"Dealer encontrado en {region.Name} en ({px},{py}) RGB({color.R},{color.G},{color.B})");
-                        }
+                        detectedDealerPosition = playerNumber.Value;
                     }
                 }
-
-                if (!isDealerFound)
-                {
-                    var centerColor = bitmap.GetPixel(region.PosX, region.PosY);
-                    LogDebug($"Dealer region {region.Name} ({region.PosX},{region.PosY}) RGB({centerColor.R},{centerColor.G},{centerColor.B}) no coincide con dealer");
-                    continue;
-                }
-
-                var playerNumber = GetPlayerNumber(region.Name, "dealer");
-                if (playerNumber == null)
-                    continue;
-
-                SetDealerForPlayer(playerNumber.Value, emptyPositions);
-                break; // Solo un dealer por mano, evitar falsos positivos que sobrescriban
             }
+
+            LogInformation($"Dealer scan: {allColorsLog}| Detectado: {(detectedDealerPosition.HasValue ? $"P{detectedDealerPosition}" : "NINGUNO")} | Imagen: {bitmap.Width}x{bitmap.Height}");
+
+            if (detectedDealerPosition.HasValue)
+            {
+                SetDealerForPlayer(detectedDealerPosition.Value, emptyPositions);
+            }
+        }
+
+        /// <summary>
+        /// Verifica si el pixel y su entorno corresponden al color del dealer button (dorado/amarillo)
+        /// </summary>
+        private bool IsDealerButtonColor(Bitmap bitmap, int centerX, int centerY, int searchRadius)
+        {
+            for (int dx = -searchRadius; dx <= searchRadius; dx++)
+            {
+                for (int dy = -searchRadius; dy <= searchRadius; dy++)
+                {
+                    int px = centerX + dx;
+                    int py = centerY + dy;
+
+                    if (px < 0 || py < 0 || px >= bitmap.Width || py >= bitmap.Height)
+                        continue;
+
+                    var c = bitmap.GetPixel(px, py);
+
+                    // Dealer button dorado: R alto (>=200), G medio-alto (>=140), B bajo (<=80)
+                    // Esto excluye blancos (B alto), grises, fondos oscuros, etc.
+                    if (c.R >= 200 && c.G >= 140 && c.B <= 80)
+                        return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
