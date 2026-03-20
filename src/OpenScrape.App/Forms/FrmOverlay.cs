@@ -15,8 +15,6 @@ namespace OpenScrape.App.Forms
         private const int WM_NCHITTEST = 0x84;
         private const int HTCLIENT = 1;
 
-        private const int HEADER_HEIGHT = 12;
-
         private Label lbPotOdds;
         private Label lbShouldCall;
         private Label lbEquity;
@@ -28,6 +26,7 @@ namespace OpenScrape.App.Forms
         private Label lbEVWithFoldEquity;
         private Label lbSuggestedBetSize;
         private Label lbTableName;
+        private Panel actionPanel;
         private TableLayoutPanel tableLayout;
 
         private readonly OverlayConfig _config;
@@ -35,7 +34,7 @@ namespace OpenScrape.App.Forms
 
         private System.Windows.Forms.Timer animationTimer;
         private float currentOpacity = 0.0f;
-        private const float MAX_OPACITY = 0.8f;
+        private const float MAX_OPACITY = 0.95f;
 
         [DllImport("user32.dll")]
         private static extern bool ReleaseCapture();
@@ -53,9 +52,9 @@ namespace OpenScrape.App.Forms
             this.MouseDown += FrmOverlay_MouseDown;
             this.MaximumSize = new Size(500, 400);
             this.Opacity = _config.Opacity;
+            this.DoubleBuffered = true;
 
             InitializeTableLayoutPanel();
-
             ApplyModernDesign();
 
             animationTimer = new System.Windows.Forms.Timer();
@@ -71,10 +70,11 @@ namespace OpenScrape.App.Forms
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 2,
                 RowCount = 9,
-                Padding = new Padding(4, 3, 4, 3),
+                Padding = new Padding(6, 4, 6, 4),
                 CellBorderStyle = TableLayoutPanelCellBorderStyle.None,
-                Location = new Point(3, 3),
-                MaximumSize = new Size(490, 390)
+                Location = new Point(3, 5),
+                MaximumSize = new Size(490, 390),
+                BackColor = Color.Transparent
             };
 
             tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -85,28 +85,50 @@ namespace OpenScrape.App.Forms
                 tableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             }
 
-            lbPotOdds = CreateLabel("PotOdds: --", Color.FromArgb(0, 255, 255), _config.FontSize);
-            lbShouldCall = CreateLabel("---", Color.FromArgb(0, 255, 255), _config.FontSize);
-            lbEquity = CreateLabel("Equity: --", Color.FromArgb(50, 255, 50), _config.FontSize);
-            lbSituacion = CreateLabel("---", Color.FromArgb(255, 150, 255), _config.FontSize + 2, true);
-            lbAction = CreateLabel("---", Color.FromArgb(255, 100, 100), _config.ActionFontSize, true);
-            lbHandStrength = CreateLabel("", Color.FromArgb(200, 180, 255), _config.FontSize);
-            lbBoardTexture = CreateLabel("", Color.FromArgb(180, 200, 220), _config.FontSize);
-            lbFoldEquity = CreateLabel("", Color.FromArgb(255, 200, 100), _config.FontSize);
-            lbEVWithFoldEquity = CreateLabel("", Color.FromArgb(100, 255, 100), _config.FontSize);
-            lbSuggestedBetSize = CreateLabel("", Color.FromArgb(255, 255, 180), _config.FontSize);
-            lbTableName = CreateLabel("", Color.White, _config.FontSize - 1);
+            // Colores con alto contraste sobre fondo oscuro
+            lbPotOdds = CreateLabel("PotOdds: --", Color.FromArgb(100, 220, 255), _config.FontSize);
+            lbShouldCall = CreateLabel("---", Color.FromArgb(100, 220, 255), _config.FontSize);
+            lbEquity = CreateLabel("Equity: --", Color.FromArgb(80, 255, 80), _config.FontSize, true);
+            lbSituacion = CreateLabel("---", Color.FromArgb(255, 180, 255), _config.FontSize, true);
+
+            // Panel destacado para la acción principal
+            actionPanel = new Panel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Color.FromArgb(40, 40, 60),
+                Padding = new Padding(6, 2, 6, 2),
+                Margin = new Padding(0, 2, 0, 2)
+            };
+            lbAction = new Label
+            {
+                Text = "---",
+                ForeColor = Color.White,
+                AutoSize = true,
+                Font = new Font("Segoe UI", _config.ActionFontSize, FontStyle.Bold),
+                Padding = new Padding(0),
+                Margin = new Padding(0),
+                BackColor = Color.Transparent
+            };
+            actionPanel.Controls.Add(lbAction);
+
+            lbHandStrength = CreateLabel("", Color.FromArgb(220, 200, 255), _config.FontSize);
+            lbBoardTexture = CreateLabel("", Color.FromArgb(200, 220, 240), _config.FontSize);
+            lbFoldEquity = CreateLabel("", Color.FromArgb(255, 220, 120), _config.FontSize);
+            lbEVWithFoldEquity = CreateLabel("", Color.FromArgb(120, 255, 120), _config.FontSize);
+            lbSuggestedBetSize = CreateLabel("", Color.FromArgb(255, 255, 200), _config.FontSize);
+            lbTableName = CreateLabel("", Color.FromArgb(160, 160, 180), _config.FontSize - 1);
 
             // Fila 0: PotOdds + ShouldCall
             tableLayout.Controls.Add(lbPotOdds, 0, 0);
             tableLayout.Controls.Add(lbShouldCall, 1, 0);
             // Fila 1: Equity + Situación
             tableLayout.Controls.Add(lbEquity, 0, 1);
-            tableLayout.Controls.Add(lbSituacion, 1, 1);
+            tableLayout.Controls.Add(lbSituacion, 0, 1);
             tableLayout.SetColumnSpan(lbSituacion, 2);
-            // Fila 2: Acción recomendada
-            tableLayout.Controls.Add(lbAction, 0, 2);
-            tableLayout.SetColumnSpan(lbAction, 2);
+            // Fila 2: Acción recomendada (panel destacado)
+            tableLayout.Controls.Add(actionPanel, 0, 2);
+            tableLayout.SetColumnSpan(actionPanel, 2);
             // Fila 3: Fuerza de mano
             tableLayout.Controls.Add(lbHandStrength, 0, 3);
             tableLayout.SetColumnSpan(lbHandStrength, 2);
@@ -135,6 +157,7 @@ namespace OpenScrape.App.Forms
             {
                 Text = text,
                 ForeColor = foreColor,
+                BackColor = Color.Transparent,
                 AutoSize = true,
                 Font = isBold
                     ? new Font("Segoe UI", fontSize, FontStyle.Bold)
@@ -162,7 +185,7 @@ namespace OpenScrape.App.Forms
         {
             if (this.Width > 0 && this.Height > 0)
             {
-                int radius = 15;
+                int radius = 12;
                 this.Region = new Region(CreateRoundedRectanglePath(
                     new Rectangle(0, 0, this.Width, this.Height), radius));
             }
@@ -185,27 +208,69 @@ namespace OpenScrape.App.Forms
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-            // Fondo con gradiente
+            // Fondo sólido oscuro con ligero gradiente (más opaco = más legible)
             using (var brush = new LinearGradientBrush(
                 this.ClientRectangle,
-                Color.FromArgb(26, 26, 46),
-                Color.FromArgb(15, 15, 15),
+                Color.FromArgb(20, 22, 40),
+                Color.FromArgb(12, 12, 18),
                 LinearGradientMode.Vertical))
             {
                 e.Graphics.FillRectangle(brush, this.ClientRectangle);
             }
 
-            // Borde superior con color de street (indicador visual)
-            using (var pen = new Pen(_streetBorderColor, 3))
+            // Borde completo con color de street (más grueso y visible)
+            using (var pen = new Pen(_streetBorderColor, 2))
             {
-                e.Graphics.DrawLine(pen, 15, 0, this.Width - 15, 0);
+                var borderRect = new Rectangle(1, 1, this.Width - 3, this.Height - 3);
+                int radius = 12;
+                using (var borderPath = CreateRoundedRectanglePath(borderRect, radius))
+                {
+                    e.Graphics.DrawPath(pen, borderPath);
+                }
+            }
+
+            // Línea separadora debajo de la acción (entre fila 2 y 3)
+            if (actionPanel.Visible && actionPanel.Bottom > 0)
+            {
+                int separatorY = actionPanel.Parent != null
+                    ? tableLayout.Location.Y + actionPanel.Bottom + 2
+                    : 0;
+                if (separatorY > 0 && separatorY < this.Height)
+                {
+                    using var pen = new Pen(Color.FromArgb(60, 70, 90), 1);
+                    e.Graphics.DrawLine(pen, 10, separatorY, this.Width - 10, separatorY);
+                }
             }
         }
 
         public void UpdateAction(string action)
         {
             lbAction.Text = action;
+
+            // Color de acción según tipo
+            actionPanel.BackColor = action.ToUpperInvariant() switch
+            {
+                "FOLD" => Color.FromArgb(80, 30, 30),
+                "CALL" => Color.FromArgb(30, 60, 30),
+                "CHECK" => Color.FromArgb(30, 50, 60),
+                _ when action.ToUpperInvariant().Contains("RAISE") => Color.FromArgb(70, 50, 20),
+                _ when action.ToUpperInvariant().Contains("BET") => Color.FromArgb(50, 50, 20),
+                _ when action.ToUpperInvariant().Contains("ALL") => Color.FromArgb(80, 20, 60),
+                _ => Color.FromArgb(40, 40, 60)
+            };
+
+            lbAction.ForeColor = action.ToUpperInvariant() switch
+            {
+                "FOLD" => Color.FromArgb(255, 130, 130),
+                "CALL" => Color.FromArgb(130, 255, 130),
+                "CHECK" => Color.FromArgb(130, 220, 255),
+                _ when action.ToUpperInvariant().Contains("RAISE") => Color.FromArgb(255, 220, 100),
+                _ when action.ToUpperInvariant().Contains("BET") => Color.FromArgb(255, 255, 130),
+                _ when action.ToUpperInvariant().Contains("ALL") => Color.FromArgb(255, 130, 220),
+                _ => Color.White
+            };
         }
 
         public void UpdatePotOddsPercentage(string potOdds)
@@ -239,6 +304,9 @@ namespace OpenScrape.App.Forms
             }
 
             lbShouldCall.Text = shouldCall.Value ? "Pagar" : "No Pagar";
+            lbShouldCall.ForeColor = shouldCall.Value
+                ? Color.FromArgb(130, 255, 130)
+                : Color.FromArgb(255, 130, 130);
         }
 
         public void UpdateSituacion(string situacion)
@@ -266,10 +334,10 @@ namespace OpenScrape.App.Forms
 
             lbHandStrength.ForeColor = handRank switch
             {
-                >= HandRank.Straight => Color.FromArgb(100, 255, 100),
-                >= HandRank.TwoPair => Color.FromArgb(255, 255, 100),
-                HandRank.OnePair when kicker == KickerStrength.Strong => Color.FromArgb(255, 255, 100),
-                _ => Color.FromArgb(200, 180, 255)
+                >= HandRank.Straight => Color.FromArgb(120, 255, 120),
+                >= HandRank.TwoPair => Color.FromArgb(255, 255, 120),
+                HandRank.OnePair when kicker == KickerStrength.Strong => Color.FromArgb(255, 255, 120),
+                _ => Color.FromArgb(220, 200, 255)
             };
 
             SetConditionalVisibility(lbHandStrength, true);
@@ -287,19 +355,19 @@ namespace OpenScrape.App.Forms
 
             lbBoardTexture.ForeColor = category.Value switch
             {
-                BoardTextureCategory.Dry => Color.FromArgb(150, 200, 255),
-                BoardTextureCategory.SemiDry => Color.FromArgb(180, 200, 220),
-                BoardTextureCategory.SemiWet => Color.FromArgb(255, 220, 150),
-                BoardTextureCategory.Wet => Color.FromArgb(255, 150, 100),
-                BoardTextureCategory.Paired => Color.FromArgb(200, 180, 255),
-                _ => Color.FromArgb(180, 200, 220)
+                BoardTextureCategory.Dry => Color.FromArgb(160, 210, 255),
+                BoardTextureCategory.SemiDry => Color.FromArgb(200, 220, 240),
+                BoardTextureCategory.SemiWet => Color.FromArgb(255, 230, 160),
+                BoardTextureCategory.Wet => Color.FromArgb(255, 170, 120),
+                BoardTextureCategory.Paired => Color.FromArgb(220, 200, 255),
+                _ => Color.FromArgb(200, 220, 240)
             };
 
             SetConditionalVisibility(lbBoardTexture, true);
         }
 
         /// <summary>
-        /// Actualiza el color del borde superior según la street actual.
+        /// Actualiza el color del borde según la street actual.
         /// Preflop=gris, Flop=azul, Turn=naranja, River=rojo.
         /// </summary>
         public void UpdateStreetIndicator(string street)
@@ -338,11 +406,11 @@ namespace OpenScrape.App.Forms
             SetConditionalVisibility(lbEVWithFoldEquity, true);
 
             if (ev > 0)
-                lbEVWithFoldEquity.ForeColor = Color.FromArgb(100, 255, 100);
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(120, 255, 120);
             else if (ev < 0)
-                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 120, 120);
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 130, 130);
             else
-                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 255, 150);
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 255, 160);
         }
 
         public void UpdateSuggestedBetSize(double? betSize)
@@ -369,7 +437,7 @@ namespace OpenScrape.App.Forms
             UpdateShouldCall(result.ShouldCall);
             UpdateAction(result.RecommendedAction);
 
-            // Indicador de street (borde superior)
+            // Indicador de street (borde)
             UpdateStreetIndicator(result.Street);
 
             // Situación con draws
@@ -408,6 +476,8 @@ namespace OpenScrape.App.Forms
             lbFoldEquity.Text = string.Empty;
             lbEVWithFoldEquity.Text = string.Empty;
             lbSuggestedBetSize.Text = string.Empty;
+            actionPanel.BackColor = Color.FromArgb(40, 40, 60);
+            lbAction.ForeColor = Color.White;
 
             _streetBorderColor = Color.FromArgb(60, 60, 80);
             this.Invalidate();
@@ -450,7 +520,7 @@ namespace OpenScrape.App.Forms
 
         private void AnimationTimer_Tick(object? sender, EventArgs e)
         {
-            currentOpacity += 0.1f;
+            currentOpacity += 0.15f;
             if (currentOpacity >= MAX_OPACITY)
             {
                 currentOpacity = MAX_OPACITY;
