@@ -1,5 +1,8 @@
 using System.Runtime.InteropServices;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 using System.Drawing.Drawing2D;
 
 namespace OpenScrape.App.Forms
@@ -19,10 +22,16 @@ namespace OpenScrape.App.Forms
         private Label lbEquity;
         private Label lbSituacion;
         private Label lbAction;
+        private Label lbHandStrength;
+        private Label lbBoardTexture;
         private Label lbFoldEquity;
         private Label lbEVWithFoldEquity;
         private Label lbSuggestedBetSize;
         private Label lbTableName;
+        private TableLayoutPanel tableLayout;
+
+        private readonly OverlayConfig _config;
+        private Color _streetBorderColor = Color.FromArgb(60, 60, 80);
 
         private System.Windows.Forms.Timer animationTimer;
         private float currentOpacity = 0.0f;
@@ -34,10 +43,16 @@ namespace OpenScrape.App.Forms
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
 
-        public FrmOverlay()
+        public FrmOverlay() : this(new OverlayConfig()) { }
+
+        public FrmOverlay(OverlayConfig config)
         {
+            _config = config;
+
             InitializeComponent();
             this.MouseDown += FrmOverlay_MouseDown;
+            this.MaximumSize = new Size(500, 400);
+            this.Opacity = _config.Opacity;
 
             InitializeTableLayoutPanel();
 
@@ -50,48 +65,66 @@ namespace OpenScrape.App.Forms
 
         private void InitializeTableLayoutPanel()
         {
-            var tableLayout = new TableLayoutPanel
+            tableLayout = new TableLayoutPanel
             {
                 AutoSize = true,
                 AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 ColumnCount = 2,
-                RowCount = 6,
-                Padding = new Padding(8),
+                RowCount = 9,
+                Padding = new Padding(4, 3, 4, 3),
                 CellBorderStyle = TableLayoutPanelCellBorderStyle.None,
-                Location = new Point(5, 5)
+                Location = new Point(3, 3),
+                MaximumSize = new Size(490, 390)
             };
 
             tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             tableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 9; i++)
             {
                 tableLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             }
 
-            lbPotOdds = CreateLabel("PotOdds: --", Color.FromArgb(0, 255, 255), 10);
-            lbShouldCall = CreateLabel("---", Color.FromArgb(0, 255, 255), 10);
-            lbEquity = CreateLabel("Equity: --", Color.FromArgb(50, 255, 50), 10);
-            lbSituacion = CreateLabel("---", Color.FromArgb(255, 150, 255), 12, true);
-            lbAction = CreateLabel("---", Color.FromArgb(255, 100, 100), 14, true);
-            lbFoldEquity = CreateLabel("", Color.FromArgb(255, 200, 100), 10);
-            lbEVWithFoldEquity = CreateLabel("", Color.FromArgb(100, 255, 100), 10);
-            lbSuggestedBetSize = CreateLabel("", Color.FromArgb(255, 255, 180), 10);
-            lbTableName = CreateLabel("", Color.White, 9);
+            lbPotOdds = CreateLabel("PotOdds: --", Color.FromArgb(0, 255, 255), _config.FontSize);
+            lbShouldCall = CreateLabel("---", Color.FromArgb(0, 255, 255), _config.FontSize);
+            lbEquity = CreateLabel("Equity: --", Color.FromArgb(50, 255, 50), _config.FontSize);
+            lbSituacion = CreateLabel("---", Color.FromArgb(255, 150, 255), _config.FontSize + 2, true);
+            lbAction = CreateLabel("---", Color.FromArgb(255, 100, 100), _config.ActionFontSize, true);
+            lbHandStrength = CreateLabel("", Color.FromArgb(200, 180, 255), _config.FontSize);
+            lbBoardTexture = CreateLabel("", Color.FromArgb(180, 200, 220), _config.FontSize);
+            lbFoldEquity = CreateLabel("", Color.FromArgb(255, 200, 100), _config.FontSize);
+            lbEVWithFoldEquity = CreateLabel("", Color.FromArgb(100, 255, 100), _config.FontSize);
+            lbSuggestedBetSize = CreateLabel("", Color.FromArgb(255, 255, 180), _config.FontSize);
+            lbTableName = CreateLabel("", Color.White, _config.FontSize - 1);
 
+            // Fila 0: PotOdds + ShouldCall
             tableLayout.Controls.Add(lbPotOdds, 0, 0);
             tableLayout.Controls.Add(lbShouldCall, 1, 0);
+            // Fila 1: Equity + Situación
             tableLayout.Controls.Add(lbEquity, 0, 1);
             tableLayout.Controls.Add(lbSituacion, 1, 1);
             tableLayout.SetColumnSpan(lbSituacion, 2);
+            // Fila 2: Acción recomendada
             tableLayout.Controls.Add(lbAction, 0, 2);
             tableLayout.SetColumnSpan(lbAction, 2);
-            tableLayout.Controls.Add(lbFoldEquity, 0, 3);
+            // Fila 3: Fuerza de mano
+            tableLayout.Controls.Add(lbHandStrength, 0, 3);
+            tableLayout.SetColumnSpan(lbHandStrength, 2);
+            // Fila 4: Board texture
+            tableLayout.Controls.Add(lbBoardTexture, 0, 4);
+            tableLayout.SetColumnSpan(lbBoardTexture, 2);
+            // Fila 5: Fold Equity
+            tableLayout.Controls.Add(lbFoldEquity, 0, 5);
             tableLayout.SetColumnSpan(lbFoldEquity, 2);
-            tableLayout.Controls.Add(lbEVWithFoldEquity, 0, 4);
+            // Fila 6: EV
+            tableLayout.Controls.Add(lbEVWithFoldEquity, 0, 6);
             tableLayout.SetColumnSpan(lbEVWithFoldEquity, 2);
-            tableLayout.Controls.Add(lbSuggestedBetSize, 0, 5);
+            // Fila 7: Bet Size sugerido
+            tableLayout.Controls.Add(lbSuggestedBetSize, 0, 7);
             tableLayout.SetColumnSpan(lbSuggestedBetSize, 2);
+            // Fila 8: Nombre de mesa
+            tableLayout.Controls.Add(lbTableName, 0, 8);
+            tableLayout.SetColumnSpan(lbTableName, 2);
 
             this.Controls.Add(tableLayout);
         }
@@ -103,24 +136,36 @@ namespace OpenScrape.App.Forms
                 Text = text,
                 ForeColor = foreColor,
                 AutoSize = true,
-                Font = isBold 
-                    ? new Font("Segoe UI", fontSize, FontStyle.Bold) 
+                Font = isBold
+                    ? new Font("Segoe UI", fontSize, FontStyle.Bold)
                     : new Font("Segoe UI", fontSize, FontStyle.Regular),
-                Padding = new Padding(2),
-                Margin = new Padding(2)
+                Padding = new Padding(1, 0, 1, 0),
+                Margin = new Padding(1, 1, 1, 1)
             };
             return label;
         }
 
         private void ApplyModernDesign()
         {
-            // Set rounded corners
-            int radius = 15;
-            this.Region = new Region(CreateRoundedRectanglePath(new Rectangle(0, 0, this.Width, this.Height), radius));
-
-            // Change transparency key to a color not in gradient
             this.TransparencyKey = Color.Magenta;
-            this.BackColor = Color.Magenta; // Will be overridden by gradient
+            this.BackColor = Color.Magenta;
+            UpdateRoundedCorners();
+        }
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+            UpdateRoundedCorners();
+        }
+
+        private void UpdateRoundedCorners()
+        {
+            if (this.Width > 0 && this.Height > 0)
+            {
+                int radius = 15;
+                this.Region = new Region(CreateRoundedRectanglePath(
+                    new Rectangle(0, 0, this.Width, this.Height), radius));
+            }
         }
 
         private GraphicsPath CreateRoundedRectanglePath(Rectangle rect, int radius)
@@ -141,14 +186,20 @@ namespace OpenScrape.App.Forms
         {
             base.OnPaint(e);
 
-            // Draw gradient background
-            using (LinearGradientBrush brush = new LinearGradientBrush(
+            // Fondo con gradiente
+            using (var brush = new LinearGradientBrush(
                 this.ClientRectangle,
-                Color.FromArgb(26, 26, 46), // Dark blue
-                Color.FromArgb(15, 15, 15), // Dark
+                Color.FromArgb(26, 26, 46),
+                Color.FromArgb(15, 15, 15),
                 LinearGradientMode.Vertical))
             {
                 e.Graphics.FillRectangle(brush, this.ClientRectangle);
+            }
+
+            // Borde superior con color de street (indicador visual)
+            using (var pen = new Pen(_streetBorderColor, 3))
+            {
+                e.Graphics.DrawLine(pen, 15, 0, this.Width - 15, 0);
             }
         }
 
@@ -187,7 +238,7 @@ namespace OpenScrape.App.Forms
                 return;
             }
 
-            lbShouldCall.Text = shouldCall.HasValue == true ? "Pagar" : "No Pagar";
+            lbShouldCall.Text = shouldCall.Value ? "Pagar" : "No Pagar";
         }
 
         public void UpdateSituacion(string situacion)
@@ -195,56 +246,115 @@ namespace OpenScrape.App.Forms
             lbSituacion.Text = situacion;
         }
 
+        public void UpdateHandStrength(HandRank handRank, KickerStrength kicker, bool hasComboDraw)
+        {
+            if (handRank == 0)
+            {
+                SetConditionalVisibility(lbHandStrength, false);
+                return;
+            }
+
+            var text = FormatHandRank(handRank);
+
+            if (handRank == HandRank.OnePair && kicker != KickerStrength.None)
+                text += $" (K: {kicker})";
+
+            if (hasComboDraw)
+                text += " + Combo Draw";
+
+            lbHandStrength.Text = text;
+
+            lbHandStrength.ForeColor = handRank switch
+            {
+                >= HandRank.Straight => Color.FromArgb(100, 255, 100),
+                >= HandRank.TwoPair => Color.FromArgb(255, 255, 100),
+                HandRank.OnePair when kicker == KickerStrength.Strong => Color.FromArgb(255, 255, 100),
+                _ => Color.FromArgb(200, 180, 255)
+            };
+
+            SetConditionalVisibility(lbHandStrength, true);
+        }
+
+        public void UpdateBoardTexture(BoardTextureCategory? category, double wetnessScore)
+        {
+            if (!category.HasValue)
+            {
+                SetConditionalVisibility(lbBoardTexture, false);
+                return;
+            }
+
+            lbBoardTexture.Text = $"Board: {FormatBoardTexture(category.Value)} ({wetnessScore:F0})";
+
+            lbBoardTexture.ForeColor = category.Value switch
+            {
+                BoardTextureCategory.Dry => Color.FromArgb(150, 200, 255),
+                BoardTextureCategory.SemiDry => Color.FromArgb(180, 200, 220),
+                BoardTextureCategory.SemiWet => Color.FromArgb(255, 220, 150),
+                BoardTextureCategory.Wet => Color.FromArgb(255, 150, 100),
+                BoardTextureCategory.Paired => Color.FromArgb(200, 180, 255),
+                _ => Color.FromArgb(180, 200, 220)
+            };
+
+            SetConditionalVisibility(lbBoardTexture, true);
+        }
+
+        /// <summary>
+        /// Actualiza el color del borde superior según la street actual.
+        /// Preflop=gris, Flop=azul, Turn=naranja, River=rojo.
+        /// </summary>
+        public void UpdateStreetIndicator(string street)
+        {
+            _streetBorderColor = street.ToUpperInvariant() switch
+            {
+                "FLOP" => Color.FromArgb(80, 160, 255),
+                "TURN" => Color.FromArgb(255, 180, 50),
+                "RIVER" => Color.FromArgb(255, 80, 80),
+                _ => Color.FromArgb(60, 60, 80)
+            };
+            this.Invalidate();
+        }
+
         public void UpdateFoldEquity(double foldEquity)
         {
             if (foldEquity <= 0)
             {
-                lbFoldEquity.Text = string.Empty;
-                lbFoldEquity.Visible = false;
+                SetConditionalVisibility(lbFoldEquity, false);
                 return;
             }
 
             lbFoldEquity.Text = $"Fold Eq: {foldEquity:F1}%";
-            lbFoldEquity.Visible = true;
+            SetConditionalVisibility(lbFoldEquity, true);
         }
 
         public void UpdateEVWithFoldEquity(double ev)
         {
             if (ev == 0)
             {
-                lbEVWithFoldEquity.Text = string.Empty;
-                lbEVWithFoldEquity.Visible = false;
+                SetConditionalVisibility(lbEVWithFoldEquity, false);
                 return;
             }
 
             lbEVWithFoldEquity.Text = $"EV: {ev:F1}";
-            lbEVWithFoldEquity.Visible = true;
+            SetConditionalVisibility(lbEVWithFoldEquity, true);
 
             if (ev > 0)
-            {
                 lbEVWithFoldEquity.ForeColor = Color.FromArgb(100, 255, 100);
-            }
             else if (ev < 0)
-            {
                 lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 120, 120);
-            }
             else
-            {
                 lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 255, 150);
-            }
         }
 
         public void UpdateSuggestedBetSize(double? betSize)
         {
             if (!betSize.HasValue)
             {
-                lbSuggestedBetSize.Text = string.Empty;
-                lbSuggestedBetSize.Visible = false;
+                SetConditionalVisibility(lbSuggestedBetSize, false);
                 return;
             }
 
             lbSuggestedBetSize.Text = $"Bet: {Math.Round(betSize.Value, 2)}";
-            lbSuggestedBetSize.Visible = true;
+            SetConditionalVisibility(lbSuggestedBetSize, true);
         }
 
         public void UpdateTableName(string tableName)
@@ -252,7 +362,6 @@ namespace OpenScrape.App.Forms
             lbTableName.Text = tableName ?? string.Empty;
         }
 
-        // Nuevo método para actualizar con el resultado unificado
         public void UpdateWithCalculationResult(PokerCalculationResult result)
         {
             UpdatePotOddsPercentage(result.PotOddsPercentage.ToString("F1"));
@@ -260,29 +369,33 @@ namespace OpenScrape.App.Forms
             UpdateShouldCall(result.ShouldCall);
             UpdateAction(result.RecommendedAction);
 
-            // Actualizar situación con información adicional
+            // Indicador de street (borde superior)
+            UpdateStreetIndicator(result.Street);
+
+            // Situación con draws
             string situacionText = result.Street;
             if (result.TotalOuts > 0)
-            {
                 situacionText += $" | Outs: {result.TotalOuts}";
-            }
             if (result.DrawTypes.Any())
-            {
                 situacionText += $" | {string.Join(", ", result.DrawTypes)}";
-            }
             UpdateSituacion(situacionText);
 
-            // Nuevas métricas avanzadas
+            // Fuerza de mano
+            UpdateHandStrength(result.HeroHandRank, result.HeroKickerStrength, result.HasComboDraw);
+
+            // Board texture
+            UpdateBoardTexture(result.BoardTexture, result.BoardWetnessScore);
+
+            // Métricas avanzadas
             UpdateFoldEquity(result.FoldEquity);
             UpdateEVWithFoldEquity(result.EVWithFoldEquity);
             UpdateSuggestedBetSize(result.SuggestedBetSize);
 
-            // Start fade-in animation for new metrics
+            // Animación fade-in para métricas avanzadas
             currentOpacity = 0.0f;
             animationTimer.Start();
         }
 
-        // Método para limpiar todos los datos
         public void ClearAll()
         {
             lbPotOdds.Text = string.Empty;
@@ -290,10 +403,50 @@ namespace OpenScrape.App.Forms
             lbShouldCall.Text = string.Empty;
             lbAction.Text = string.Empty;
             lbSituacion.Text = "Esperando datos...";
+            lbHandStrength.Text = string.Empty;
+            lbBoardTexture.Text = string.Empty;
             lbFoldEquity.Text = string.Empty;
             lbEVWithFoldEquity.Text = string.Empty;
             lbSuggestedBetSize.Text = string.Empty;
+
+            _streetBorderColor = Color.FromArgb(60, 60, 80);
+            this.Invalidate();
         }
+
+        /// <summary>
+        /// Muestra u oculta un label condicional colapsando su fila en el TableLayoutPanel.
+        /// </summary>
+        private static void SetConditionalVisibility(Label label, bool visible)
+        {
+            label.Visible = visible;
+            label.Text = visible ? label.Text : string.Empty;
+            label.Margin = visible ? new Padding(1, 1, 1, 1) : new Padding(0);
+        }
+
+        private static string FormatHandRank(HandRank rank) => rank switch
+        {
+            HandRank.HighCard => "High Card",
+            HandRank.OnePair => "One Pair",
+            HandRank.TwoPair => "Two Pair",
+            HandRank.ThreeOfAKind => "Three of a Kind",
+            HandRank.Straight => "Straight",
+            HandRank.Flush => "Flush",
+            HandRank.FullHouse => "Full House",
+            HandRank.FourOfAKind => "Four of a Kind",
+            HandRank.StraightFlush => "Straight Flush",
+            HandRank.RoyalFlush => "Royal Flush",
+            _ => rank.ToString()
+        };
+
+        private static string FormatBoardTexture(BoardTextureCategory category) => category switch
+        {
+            BoardTextureCategory.Dry => "Dry",
+            BoardTextureCategory.SemiDry => "Semi-Dry",
+            BoardTextureCategory.SemiWet => "Semi-Wet",
+            BoardTextureCategory.Wet => "Wet",
+            BoardTextureCategory.Paired => "Paired",
+            _ => category.ToString()
+        };
 
         private void AnimationTimer_Tick(object? sender, EventArgs e)
         {
@@ -304,12 +457,17 @@ namespace OpenScrape.App.Forms
                 animationTimer.Stop();
             }
 
+            int alpha = (int)(currentOpacity * 255);
+            if (lbHandStrength != null)
+                lbHandStrength.ForeColor = Color.FromArgb(alpha, lbHandStrength.ForeColor.R, lbHandStrength.ForeColor.G, lbHandStrength.ForeColor.B);
+            if (lbBoardTexture != null)
+                lbBoardTexture.ForeColor = Color.FromArgb(alpha, lbBoardTexture.ForeColor.R, lbBoardTexture.ForeColor.G, lbBoardTexture.ForeColor.B);
             if (lbFoldEquity != null)
-                lbFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbFoldEquity.ForeColor);
+                lbFoldEquity.ForeColor = Color.FromArgb(alpha, lbFoldEquity.ForeColor.R, lbFoldEquity.ForeColor.G, lbFoldEquity.ForeColor.B);
             if (lbEVWithFoldEquity != null)
-                lbEVWithFoldEquity.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbEVWithFoldEquity.ForeColor);
+                lbEVWithFoldEquity.ForeColor = Color.FromArgb(alpha, lbEVWithFoldEquity.ForeColor.R, lbEVWithFoldEquity.ForeColor.G, lbEVWithFoldEquity.ForeColor.B);
             if (lbSuggestedBetSize != null)
-                lbSuggestedBetSize.ForeColor = Color.FromArgb((int)(currentOpacity * 255), lbSuggestedBetSize.ForeColor);
+                lbSuggestedBetSize.ForeColor = Color.FromArgb(alpha, lbSuggestedBetSize.ForeColor.R, lbSuggestedBetSize.ForeColor.G, lbSuggestedBetSize.ForeColor.B);
 
             this.Invalidate();
         }

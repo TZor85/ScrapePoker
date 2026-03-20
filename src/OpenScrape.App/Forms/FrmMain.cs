@@ -1,5 +1,6 @@
 using JasperFx.Core;
 using Marten;
+using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
@@ -150,6 +151,7 @@ namespace OpenScrape.App
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
+        private readonly OverlayConfig _overlayConfig;
         private readonly PostflopGameContext _postflopContext = new();
         #endregion
 
@@ -166,7 +168,8 @@ namespace OpenScrape.App
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
                         PostflopDecisionService postflopDecisionService,
-                        BoardTextureAnalyzer boardTextureAnalyzer)
+                        BoardTextureAnalyzer boardTextureAnalyzer,
+                        IOptions<OverlayConfig> overlayConfigOptions)
         {
             InitializeComponent();
 
@@ -195,6 +198,7 @@ namespace OpenScrape.App
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
             _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
+            _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -218,7 +222,7 @@ namespace OpenScrape.App
             try
             {
                 _formImage = new FormImage();
-                _frmOverlay = new FrmOverlay();
+                _frmOverlay = new FrmOverlay(_overlayConfig);
                 cbSpeed.SelectedIndex = 0;
 
                 await LoadRegionTableMapAsync();
@@ -3277,6 +3281,22 @@ namespace OpenScrape.App
                 currentWidth, currentHeight);
         }
 
+        /// <summary>
+        /// Calcula la posición del overlay relativa a la ventana de poker.
+        /// Centra horizontalmente con un offset proporcional al 15% del ancho de la ventana
+        /// (desplaza a la izquierda para no tapar el centro de la mesa).
+        /// Posiciona verticalmente a 75px del borde inferior.
+        /// </summary>
+        private Point CalculateOverlayPosition(User32.RECT windowRect, int overlayWidth)
+        {
+            int windowWidth = windowRect.right - windowRect.left;
+            int horizontalOffset = (int)(windowWidth * _overlayConfig.HorizontalOffsetPercent);
+            int centerX = windowRect.left + (windowWidth / 2);
+            int x = centerX - (overlayWidth / 2) - horizontalOffset;
+            int y = windowRect.bottom - _overlayConfig.VerticalOffset;
+            return new Point(x, y);
+        }
+
         #endregion
 
         #region [UI Events]
@@ -3300,14 +3320,12 @@ namespace OpenScrape.App
                     User32.GetWindowRect(_handle, ref windowRect);
                     _locWindowRect = windowRect;
 
-                    // Inicialización de overlay
-                    _frmOverlay = new FrmOverlay
-                    {
-                        Location = new Point(
-                            windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 117)), // Ajustado para nuevo tamaño
-                            windowRect.bottom - 75) // Más bajo: reducido de -125 a -75
-                    };
+                    // Inicialización de overlay: crear y mostrar primero para que AutoSize
+                    // calcule el tamaño real, luego posicionar con offset proporcional
+                    _frmOverlay = new FrmOverlay(_overlayConfig);
                     _frmOverlay.Show();
+
+                    _frmOverlay.Location = CalculateOverlayPosition(windowRect, _frmOverlay.Size.Width);
                 }
 
                 if (_handle != IntPtr.Zero)
@@ -3327,9 +3345,7 @@ namespace OpenScrape.App
                         {
                             if (_frmOverlay != null)
                             {
-                                _frmOverlay.Location = new Point(
-                                    windowRect.left + (((windowRect.right - windowRect.left) / 2) - ((_frmOverlay.Size.Width / 2) + 117)),
-                                    windowRect.bottom - 125);
+                                _frmOverlay.Location = CalculateOverlayPosition(windowRect, _frmOverlay.Size.Width);
                             }
                         });
                     }

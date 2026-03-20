@@ -34,6 +34,8 @@ namespace OpenScrape.App.Aplication.UseCases
         public HandRank HeroHandRank { get; set; }        // Ranking de la mano actual de hero
         public bool HasComboDraw { get; set; }             // Flush draw + straight draw
         public KickerStrength HeroKickerStrength { get; set; } // Fuerza del kicker con top pair
+        public BoardTextureCategory? BoardTexture { get; set; } // Textura del board (Dry/SemiDry/SemiWet/Wet/Paired)
+        public double BoardWetnessScore { get; set; }           // Puntuación de humedad del board (0-100)
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -42,6 +44,7 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
         private readonly HandEvaluator _handEvaluator;
+        private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly StrategyProfile _profile;
         private readonly ILogger<UnifiedPokerCalculator> _logger;
 
@@ -50,6 +53,7 @@ namespace OpenScrape.App.Aplication.UseCases
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
             HandEvaluator handEvaluator,
+            BoardTextureAnalyzer boardTextureAnalyzer,
             IOptions<StrategyProfile> profileOptions,
             ILogger<UnifiedPokerCalculator> logger)
         {
@@ -57,6 +61,7 @@ namespace OpenScrape.App.Aplication.UseCases
             _outsCalculator = outsCalculator;
             _preflopEquityCalculator = preflopEquityCalculator;
             _handEvaluator = handEvaluator;
+            _boardTextureAnalyzer = boardTextureAnalyzer;
             _profile = profileOptions.Value;
             _logger = logger;
         }
@@ -108,6 +113,14 @@ namespace OpenScrape.App.Aplication.UseCases
                                 : KickerStrength.Weak;
                         }
                     }
+                }
+
+                // 3c. Analizar textura del board (postflop con 3+ community cards)
+                if (communityCards.Count >= 3)
+                {
+                    var textureResult = _boardTextureAnalyzer.Analyze(communityCards);
+                    result.BoardTexture = textureResult.Category;
+                    result.BoardWetnessScore = textureResult.WetnessScore;
                 }
 
                 // 4. Calcular fold equity basado en posición y situación

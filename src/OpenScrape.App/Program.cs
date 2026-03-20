@@ -41,6 +41,9 @@ namespace OpenScrape.App
 
                     //services.AddScoped<OcrService>();
 
+                    // Configuración del overlay
+                    services.Configure<OverlayConfig>(context.Configuration.GetSection("OverlayConfig"));
+
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();

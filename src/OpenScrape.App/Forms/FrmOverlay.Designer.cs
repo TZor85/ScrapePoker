@@ -34,8 +34,10 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
+            AutoSize = true;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
             BackColor = Color.Magenta;
-            ClientSize = new Size(200, 150);
+            MinimumSize = new Size(200, 100);
             FormBorderStyle = FormBorderStyle.None;
             Name = "FrmOverlay";
             Opacity = 0.8D;
