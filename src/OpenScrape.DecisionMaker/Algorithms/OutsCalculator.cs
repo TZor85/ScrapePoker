@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
@@ -6,10 +8,22 @@ using System.Linq;
 
 namespace OpenScrape.DecisionMaker.Algorithms
 {
-    public class OutsCalculator
+    public class OutsCalculator : IOutsCalculator
     {
-        // Descuento para outs que también completan draws del villano
-        private const double TaintedOutsDiscount = 0.5;
+        private readonly StrategyProfile _profile;
+
+        public OutsCalculator(IOptions<StrategyProfile> profileOptions)
+        {
+            _profile = profileOptions.Value;
+        }
+
+        /// <summary>
+        /// Constructor para tests y uso sin DI (usa StrategyProfile por defecto).
+        /// </summary>
+        public OutsCalculator() : this(Options.Create(new StrategyProfile()))
+        {
+        }
+
         public class OutsResult
         {
             public int TotalOuts { get; set; }
@@ -118,7 +132,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             foreach (var c in straightOutCards) allOutCards.Add(c);
             result.TaintedOuts = CalculateTaintedOuts(allOutCards, communityCards);
             result.CleanOuts = result.TotalOuts - result.TaintedOuts;
-            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * TaintedOutsDiscount);
+            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * _profile.TaintedOutsDiscount);
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)

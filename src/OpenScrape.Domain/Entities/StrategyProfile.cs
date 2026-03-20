@@ -114,4 +114,42 @@ public class StrategyProfile
     public double IPEquityBonus { get; set; } = 3.0;
     public double DeepStackEquityBonus { get; set; } = 1.0;
     public double BetEVThreshold { get; set; } = 5.0;
+
+    /// <summary>
+    /// Valida que los parámetros del perfil sean consistentes.
+    /// Retorna lista de errores encontrados (vacía si todo es correcto).
+    /// </summary>
+    public List<string> Validate()
+    {
+        var errors = new List<string>();
+
+        // Rango de equity: FoldBelow < ThinValueAbove < ValueAbove < StrongValueAbove
+        foreach (var (key, t) in Thresholds)
+        {
+            if (t.FoldBelow >= t.ThinValueAbove)
+                errors.Add($"{key}: FoldBelow ({t.FoldBelow}) debe ser menor que ThinValueAbove ({t.ThinValueAbove})");
+            if (t.ThinValueAbove >= t.ValueAbove)
+                errors.Add($"{key}: ThinValueAbove ({t.ThinValueAbove}) debe ser menor que ValueAbove ({t.ValueAbove})");
+            if (t.ValueAbove >= t.StrongValueAbove)
+                errors.Add($"{key}: ValueAbove ({t.ValueAbove}) debe ser menor que StrongValueAbove ({t.StrongValueAbove})");
+        }
+
+        // Fold equity en rango razonable
+        if (FoldEquityMin >= FoldEquityMax)
+            errors.Add($"FoldEquityMin ({FoldEquityMin}) debe ser menor que FoldEquityMax ({FoldEquityMax})");
+
+        // SPR thresholds
+        if (SPRPushFoldThreshold >= SPRDeepCautionThreshold)
+            errors.Add($"SPRPushFoldThreshold ({SPRPushFoldThreshold}) debe ser menor que SPRDeepCautionThreshold ({SPRDeepCautionThreshold})");
+
+        // Danger penalties no negativos
+        if (DangerFlushCompletePct < 0 || DangerStraightCompletePct < 0)
+            errors.Add("DangerFlush/StraightCompletePct no pueden ser negativos");
+
+        // TaintedOutsDiscount en rango [0, 1]
+        if (TaintedOutsDiscount < 0 || TaintedOutsDiscount > 1)
+            errors.Add($"TaintedOutsDiscount ({TaintedOutsDiscount}) debe estar entre 0 y 1");
+
+        return errors;
+    }
 }

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
@@ -40,18 +41,23 @@ namespace OpenScrape.App
 
                     //services.AddScoped<OcrService>();
 
-                    // Register equity calculation components
-                    services.AddSingleton<MonteCarloSimulator>();
-                    services.AddSingleton<HandEvaluator>();
-                    services.AddSingleton<OutsCalculator>();
-                    services.AddSingleton<PreflopEquityCalculator>();
-                    services.AddSingleton<EquityCalculatorService>();
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
 
-                    services.AddSingleton<BetSizingService>();
+                    // Algoritmos registrados por interfaz
+                    services.AddSingleton<IMonteCarloSimulator, MonteCarloSimulator>();
+                    services.AddSingleton<MonteCarloSimulator>();
+                    services.AddSingleton<IHandEvaluator, HandEvaluator>();
+                    services.AddSingleton<HandEvaluator>();
+                    services.AddSingleton<IOutsCalculator, OutsCalculator>();
+                    services.AddSingleton<OutsCalculator>();
+                    services.AddSingleton<IBoardTextureAnalyzer, BoardTextureAnalyzer>();
                     services.AddSingleton<BoardTextureAnalyzer>();
+                    services.AddSingleton<PreflopEquityCalculator>();
+                    services.AddSingleton<EquityCalculatorService>();
+
+                    services.AddSingleton<BetSizingService>();
                     services.AddSingleton<PostflopDecisionService>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<StrategyAnalyzerService>();
@@ -70,6 +76,16 @@ namespace OpenScrape.App
             var host = builder.Build();
 
             Configuration = host.Services.GetRequiredService<IConfiguration>();
+
+            // Inicializar CoordinateScaler desde configuración
+            var captureSettings = Configuration.GetSection("CaptureSettings");
+            if (captureSettings["IsReferenceSet"] == "true" &&
+                int.TryParse(captureSettings["ReferenceImageWidth"], out var refWidth) &&
+                int.TryParse(captureSettings["ReferenceImageHeight"], out var refHeight) &&
+                refWidth > 0 && refHeight > 0)
+            {
+                CoordinateScaler.Initialize(refWidth, refHeight);
+            }
 
             // Obtener el formulario principal desde un scope para resolver dependencias scoped
             using var scope = host.Services.CreateScope();

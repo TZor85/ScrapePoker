@@ -14,6 +14,8 @@ public class GetCardsRiverUseCaseRequest : BaseRequest
     public List<BoardData>? DataBoard { get; set; }
     public Image? Image { get; set; }
     public List<RegionTableMap> RegionsTableMap { get; set; } = new List<RegionTableMap>();
+    public int CurrentImageWidth { get; set; }
+    public int CurrentImageHeight { get; set; }
 }
 
 public class GetCardsRiverUseCaseResponse : BaseResponse

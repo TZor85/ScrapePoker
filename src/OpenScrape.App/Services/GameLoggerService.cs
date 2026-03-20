@@ -28,9 +28,13 @@ public class GameLoggerService
         if (_currentSession != null && _currentSession.SessionId == sessionId)
             return; // Misma sesión, no reiniciar
 
-        // Guardar sesión anterior si existe
+        // Guardar sesión anterior si existe (fire-and-forget con logging de errores)
         if (_currentSession != null)
-            _ = SaveSessionAsync();
+            _ = Task.Run(async () =>
+            {
+                try { await SaveSessionAsync(); }
+                catch (Exception ex) { _logger.LogError(ex, "Error crítico guardando sesión anterior"); }
+            });
 
         _currentSession = new GameSession
         {

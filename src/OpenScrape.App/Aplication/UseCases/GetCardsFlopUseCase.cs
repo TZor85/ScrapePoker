@@ -1,5 +1,6 @@
 ﻿using Marten;
 using OpenScrape.App.Entities;
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
@@ -31,7 +32,11 @@ namespace OpenScrape.App.Aplication.UseCases
 
             foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
             {
-                var imageToBase64 = _imageCropperService.CropImageToBase64(request.Image, region.PosX, region.PosY, region.Width, region.Height);
+                var (x, y, width, height) = ScaleCoordinates(
+                    region.PosX, region.PosY, region.Width, region.Height,
+                    request.CurrentImageWidth, request.CurrentImageHeight);
+
+                var imageToBase64 = _imageCropperService.CropImageToBase64(request.Image, x, y, width, height);
 
                 if (_cardsImages == null)
                 {
@@ -106,6 +111,18 @@ namespace OpenScrape.App.Aplication.UseCases
             }
 
             return response;
+        }
+
+        private (int X, int Y, int Width, int Height) ScaleCoordinates(
+            int posX, int posY, int width, int height,
+            int currentWidth, int currentHeight)
+        {
+            if (currentWidth <= 0 || currentHeight <= 0 || !CoordinateScaler.IsInitialized)
+            {
+                return (posX, posY, width, height);
+            }
+
+            return CoordinateScaler.ScaleRegion(posX, posY, width, height, currentWidth, currentHeight);
         }
     }
 }

@@ -224,7 +224,7 @@ public class DecisionIntegrationTests
                     FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
                     DryBoardBetSize = "Bet 1/2", CoordinatedBoardBetSize = "Bet 1/2", PairedBoardBetSize = "Bet 3/4",
                     StrongValueBetSize = "Bet 3/4", ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
-                    CanBluff = true, BluffCondition = "IPCoordinatedSmallOnly", LowEquityAction = "Fold"
+                    CanBluff = true, BluffCondition = BluffConditionType.IPCoordinatedSmallOnly, LowEquityAction = "Fold"
                 },
                 ["Turn_Call"] = new()
                 {
