@@ -1967,8 +1967,10 @@ namespace OpenScrape.App
 
         /// <summary>
         /// Normaliza el valor raw del OCR a un decimal válido de stack.
-        /// Maneja artefactos comunes del OCR: prefijo "8" espurio con separador decimal.
-        /// Los stacks sin separador decimal se devuelven tal cual (son valores enteros en BB).
+        /// Maneja artefactos comunes del OCR:
+        /// - Prefijo "8" espurio con separador decimal (ej: "812,50" → "12,50")
+        /// - Separador decimal perdido (ej: 9950 → 99.50) cuando el valor supera el umbral razonable
+        /// Los stacks en BB raramente superan 300, así que valores > 500 sin decimal indican separador perdido.
         /// </summary>
         private decimal NormalizeStackValue(decimal rawValue)
         {
@@ -1976,9 +1978,10 @@ namespace OpenScrape.App
                 return 0;
 
             var rawStr = rawValue.ToString();
+            bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
 
             // Solo corregir artefacto "8" cuando ya tiene separador decimal
-            if (rawStr.Contains(',') || rawStr.Contains('.'))
+            if (hasDecimalSeparator)
             {
                 var separator = rawStr.Contains(',') ? ',' : '.';
                 var parts = rawStr.Split(separator);
@@ -1996,7 +1999,20 @@ namespace OpenScrape.App
                 }
             }
 
-            // Sin separador decimal → valor entero, devolver tal cual
+            // Separador decimal perdido: el cliente siempre muestra 2 decimales,
+            // si el OCR pierde el punto/coma el valor se infla ~100x (ej: 99.50 → 9950)
+            if (!hasDecimalSeparator && rawValue >= 500 && rawStr.Length >= 4)
+            {
+                var corrected = rawStr[..^2] + "," + rawStr[^2..];
+                if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
+                {
+                    LogDebug($"[STACK] OCR separador decimal perdido corregido: {rawStr} → {corrected}");
+                    return correctedValue;
+                }
+            }
+
+            // Sin separador decimal y valor razonable → valor entero, devolver tal cual
             return rawValue;
         }
 
