@@ -1114,11 +1114,13 @@ namespace OpenScrape.App
             // Log indicadores para debugging
             LogDebug($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
 
-            // Lógica: el número de mano debe haber cambiado (indicator1 obligatorio).
-            // Se requieren además al menos 2 indicadores adicionales para confirmar
-            // y evitar falsos positivos por OCR inestable en el mismo número de mano.
-            int indicatorsCount = (indicator1 ? 1 : 0) + (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
-            bool isNewHand = indicator1 && indicatorsCount >= 2;
+            int secondaryCount = (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
+
+            // Ruta principal: hand number cambió + al menos 1 indicador secundario
+            // Ruta fallback: hand number no disponible (OCR falló) + al menos 3 indicadores secundarios
+            bool isNewHand = indicator1
+                ? secondaryCount >= 1
+                : secondaryCount >= 3;
 
             // Actualizar nombres previos si se detectó nueva mano
             if (isNewHand)
@@ -2217,30 +2219,65 @@ namespace OpenScrape.App
                 var scaled = GetScaledRegion(regionTableHand);
                 if (string.IsNullOrEmpty(_tableHand))
                 {
-                    _tableHand = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
+                    _tableHand = SetHandNumberOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     _newHand = true;
                 }
                 else
                 {
-                    var currentHand = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
+                    var currentHand = SetHandNumberOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
-                    if (long.TryParse(_tableHand, out var oldTableHand) &&
-                        long.TryParse(currentHand, out var newTableHand))
+
+                    bool handNumberChanged = false;
+                    long oldTableHand = 0;
+                    long newTableHand = 0;
+                    bool handNumberParseable = long.TryParse(_tableHand, out oldTableHand) &&
+                                               long.TryParse(currentHand, out newTableHand);
+
+                    if (handNumberParseable)
                     {
                         if (oldTableHand != newTableHand)
                         {
-                            _newHand = DetectNewHand(true, currentHand);
-                            if (_newHand) _tableHand = newTableHand.ToString();
+                            handNumberChanged = true;
                         }
                         else if (newTableHand == 0)
                         {
-                            _newHand = DetectNewHand(true, currentHand);
-                            if (_newHand)
+                            handNumberChanged = true;
+                        }
+                    }
+                    else
+                    {
+                        // OCR no pudo parsear el hand number — comparar como texto
+                        LogDebug($"[HAND#] Parsing fallido: prev='{_tableHand}', current='{currentHand}' — comparando como texto");
+                        if (!string.IsNullOrEmpty(currentHand) && _tableHand != currentHand)
+                            handNumberChanged = true;
+                    }
+
+                    if (handNumberChanged)
+                    {
+                        _newHand = DetectNewHand(true, currentHand);
+                        if (_newHand)
+                        {
+                            if (handNumberParseable && newTableHand > 0)
+                                _tableHand = newTableHand.ToString();
+                            else if (!string.IsNullOrEmpty(currentHand))
+                                _tableHand = currentHand;
+                            else
                             {
                                 _newTableHand++;
                                 _tableHand = _newTableHand.ToString();
                             }
+                        }
+                    }
+                    else if (!handNumberParseable && string.IsNullOrEmpty(currentHand))
+                    {
+                        // OCR falló completamente — evaluar indicadores secundarios
+                        LogDebug("[HAND#] OCR falló completamente, evaluando indicadores secundarios");
+                        _newHand = DetectNewHand(false, currentHand);
+                        if (_newHand)
+                        {
+                            _newTableHand++;
+                            _tableHand = _newTableHand.ToString();
                         }
                     }
                 }
@@ -2971,6 +3008,74 @@ namespace OpenScrape.App
                 return stack;
 
             return 0;
+        }
+
+        /// <summary>
+        /// Lee el número de mano con 3 lecturas OCR + preprocesamiento + consenso.
+        /// Misma estrategia robusta que SetStackValue para evitar lecturas erróneas.
+        /// </summary>
+        private string SetHandNumberOCR(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
+        {
+            if (_formImage.pbImage.Image == null)
+                return string.Empty;
+
+            var firstOcr = new OcrResult();
+            var secondOcr = new OcrResult();
+
+            // Lectura 1: con umbral principal y preprocesamiento
+            using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+            {
+                firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                    preprocessed, 0, 0, width, height,
+                    umbral ?? 0, isOnlyNumber ?? false);
+            }
+
+            // Lectura 2: con umbral inactivo y preprocesamiento
+            using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+            {
+                secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                    preprocessed, 0, 0, width, height,
+                    inactiveUmbral ?? 0, isOnlyNumber ?? false);
+            }
+
+            // Lectura 3: directa sin preprocesamiento (fallback)
+            var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image, posX, posY, width, height,
+                umbral ?? 0, isOnlyNumber ?? false);
+
+            // Limpiar textos: solo dígitos para hand number
+            var clean1 = CleanOcrHandNumber(firstOcr.Text);
+            var clean2 = CleanOcrHandNumber(secondOcr.Text);
+            var clean3 = CleanOcrHandNumber(thirdOcr.Text);
+
+            // Consenso: si 2+ lecturas coinciden, usar ese valor
+            string best;
+            if (clean1 == clean2 && clean1 == clean3)
+                best = clean1;
+            else if (clean1 == clean2)
+                best = clean1;
+            else if (clean1 == clean3)
+                best = clean1;
+            else if (clean2 == clean3)
+                best = clean2;
+            else
+                best = clean3; // Sin consenso → preferir lectura directa
+
+            LogDebug($"[HAND#] OCR lecturas: '{firstOcr.Text}'→{clean1}, '{secondOcr.Text}'→{clean2}, '{thirdOcr.Text}'→{clean3}, best={best}");
+
+            return best;
+        }
+
+        /// <summary>
+        /// Limpia el texto OCR del número de mano dejando solo dígitos.
+        /// </summary>
+        private static string CleanOcrHandNumber(string? ocrText)
+        {
+            if (string.IsNullOrWhiteSpace(ocrText))
+                return string.Empty;
+
+            var cleaned = new string(ocrText.Where(char.IsDigit).ToArray());
+            return cleaned;
         }
 
         /// <summary>
