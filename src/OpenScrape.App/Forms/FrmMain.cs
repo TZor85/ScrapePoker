@@ -212,6 +212,27 @@ namespace OpenScrape.App
 
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
+
+            FormClosing += FrmMain_FormClosing;
+        }
+
+        /// <summary>
+        /// Al cerrar la aplicación, persiste la última mano y sesión activas para no perder datos.
+        /// </summary>
+        private async void FrmMain_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (_gameLoggerService.HasActiveHand)
+                    _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+
+                if (_gameLoggerService.HasActiveSession)
+                    await _gameLoggerService.SaveSessionAsync();
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al guardar datos al cerrar: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -988,7 +1009,8 @@ namespace OpenScrape.App
                 heroIsAggressor: riverIsAggressor,
                 heroHandRank: _riverResult.HeroHandRank,
                 hasComboDraw: _riverResult.HasComboDraw,
-                villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0);
+                villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
+                pairClassification: _riverResult.PairType);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1008,7 +1030,7 @@ namespace OpenScrape.App
             LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
             LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
             LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_riverResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_riverResult.HeroHandRank}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Mano hero: {_riverResult.HeroHandRank}{(_riverResult.PairType != PairClassification.None ? $" ({_riverResult.PairType})" : "")}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
             LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_riverResult.TotalOuts}  |  Draws: {draws}");
             LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}{(decision.IsBarrel ? "  [BARREL]" : "")}");
 
@@ -1306,7 +1328,8 @@ namespace OpenScrape.App
                 numOpponents: numOpponents,
                 heroIsAggressor: isPreflopAggressor,
                 heroHandRank: _flopResult.HeroHandRank,
-                hasComboDraw: _flopResult.HasComboDraw);
+                hasComboDraw: _flopResult.HasComboDraw,
+                pairClassification: _flopResult.PairType);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -1379,7 +1402,8 @@ namespace OpenScrape.App
                 heroHandRank: _turnResult.HeroHandRank,
                 hasComboDraw: _turnResult.HasComboDraw,
                 villainAggressorCheckedPreviousStreet: _postflopContext.VillainAggressorCheckedFlop,
-                villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0);
+                villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0,
+                pairClassification: _turnResult.PairType);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1398,7 +1422,7 @@ namespace OpenScrape.App
             LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
             LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
             LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_turnResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_turnResult.HeroHandRank}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Mano hero: {_turnResult.HeroHandRank}{(_turnResult.PairType != PairClassification.None ? $" ({_turnResult.PairType})" : "")}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
             LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_turnResult.TotalOuts}  |  Draws: {draws}");
             LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
 

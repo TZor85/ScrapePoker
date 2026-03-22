@@ -90,6 +90,27 @@ namespace OpenScrape.Domain.Enums
         VsThreeBetAndCall
     }
 
+    /// <summary>
+    /// Clasificación de sub-tipo de par para decisiones postflop en turn/river.
+    /// Ordinal refleja fuerza relativa: mayor valor = par más fuerte.
+    /// </summary>
+    public enum PairClassification : byte
+    {
+        None = 0,
+        /// <summary>El par existe solo en el board; hero no contribuye con ninguna hole card.</summary>
+        BoardPaired = 1,
+        /// <summary>Hero empareja la carta más baja del board.</summary>
+        BottomPair = 2,
+        /// <summary>Pocket pair inferior a la carta más alta del board.</summary>
+        PocketPairUnder = 3,
+        /// <summary>Hero empareja una carta intermedia del board.</summary>
+        MiddlePair = 4,
+        /// <summary>Hero empareja la carta más alta del board.</summary>
+        TopPair = 5,
+        /// <summary>Pocket pair superior a todas las cartas del board.</summary>
+        Overpair = 6
+    }
+
     // Método para obtener la descripción
     public static class EnumExtensions
     {

@@ -192,29 +192,8 @@ public class GameLoggerService
     }
 
     /// <summary>
-    /// Agrega la mano actual a la sesión en memoria (sin persistir). Uso interno síncrono.
-    /// </summary>
-    private void FinalizeCurrentHand()
-    {
-        if (_currentHand == null || _currentSession == null) return;
-
-        _currentHand.GameSessionId = _currentSession.Id;
-        _currentSession.EndTime = DateTime.UtcNow;
-
-        _sessionTotalHands++;
-        if (_currentHand.Result != HandResult.Unknown)
-            _sessionTotalProfit += _currentHand.HeroStackEnd - _currentHand.HeroStackStart;
-
-        _currentSession.Hands.Add(_currentHand);
-        if (_currentSession.Hands.Count > MaxHandsInMemory)
-            _currentSession.Hands.RemoveAt(0);
-
-        _currentHand = null;
-    }
-
-    /// <summary>
     /// Guarda la sesión actual en la base de datos.
-    /// Las manos se persisten individualmente en FinalizeAndPersistHandAsync.
+    /// Si hay una mano en progreso, la persiste primero como documento HandRecord individual.
     /// Se llama después de cada mano finalizada para actualizar EndTime y metadata.
     /// </summary>
     public async Task SaveSessionAsync()
@@ -222,8 +201,9 @@ public class GameLoggerService
         if (_currentSession == null)
             return;
 
-        // Finalizar mano en progreso si existe (solo en memoria, sin persistir individualmente aquí)
-        FinalizeCurrentHand();
+        // Finalizar y persistir mano en progreso si existe
+        if (_currentHand != null)
+            await FinalizeAndPersistHandAsync();
 
         try
         {
@@ -232,8 +212,8 @@ public class GameLoggerService
             await session.SaveChangesAsync();
 
             _logger.LogInformation(
-                "Sesión guardada: {SessionId}, {HandCount} manos",
-                _currentSession.SessionId, _currentSession.Hands.Count);
+                "Sesión guardada: {SessionId}, {HandCount} manos acumuladas",
+                _currentSession.SessionId, _sessionTotalHands);
         }
         catch (Exception ex)
         {

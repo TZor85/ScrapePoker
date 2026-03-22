@@ -37,6 +37,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public KickerStrength HeroKickerStrength { get; set; } // Fuerza del kicker con top pair
         public BoardTextureCategory? BoardTexture { get; set; } // Textura del board (Dry/SemiDry/SemiWet/Wet/Paired)
         public double BoardWetnessScore { get; set; }           // Puntuación de humedad del board (0-100)
+        public PairClassification PairType { get; set; }        // Sub-tipo de par (solo relevante cuando HeroHandRank == OnePair)
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -119,6 +120,9 @@ namespace OpenScrape.App.Aplication.UseCases
                                 : bestKicker >= 10 ? KickerStrength.Medium
                                 : KickerStrength.Weak;
                         }
+
+                        // Clasificar sub-tipo de par para decisiones turn/river diferenciadas
+                        result.PairType = ClassifyPair(handEval, playerHand, communityCards);
                     }
                 }
 
@@ -348,6 +352,62 @@ namespace OpenScrape.App.Aplication.UseCases
                 5 => "River",
                 _ => "Unknown"
             };
+        }
+
+        /// <summary>
+        /// Clasifica el sub-tipo de par cuando hero tiene OnePair.
+        /// Distingue Overpair, TopPair, MiddlePair, BottomPair, PocketPairUnder y BoardPaired.
+        /// </summary>
+        public static PairClassification ClassifyPair(
+            HandEvaluation handEval,
+            List<CardDataOuts> playerHand,
+            List<CardDataOuts> communityCards)
+        {
+            if (communityCards.Count == 0)
+                return PairClassification.None;
+
+            // Rank que forma el par en la evaluación
+            var pairGroup = handEval.Cards
+                .GroupBy(c => c.Rank)
+                .FirstOrDefault(g => g.Count() == 2);
+            if (pairGroup == null)
+                return PairClassification.None;
+
+            int pairRankValue = (int)pairGroup.Key;
+
+            // Ranks del board (sin las hole cards)
+            var boardRanks = communityCards.Select(c => (int)c.Rank).ToList();
+            int maxBoard = boardRanks.Max();
+            int minBoard = boardRanks.Min();
+
+            // Ranks de las hole cards de hero
+            var holeRanks = playerHand.Select(c => (int)c.Rank).ToList();
+            bool holeCard1ContributesPair = holeRanks.Count > 0 && holeRanks[0] == pairRankValue;
+            bool holeCard2ContributesPair = holeRanks.Count > 1 && holeRanks[1] == pairRankValue;
+            bool heroContributesPair = holeCard1ContributesPair || holeCard2ContributesPair;
+
+            // El par está solo en el board — hero no aporta ninguna hole card al par
+            if (!heroContributesPair)
+                return PairClassification.BoardPaired;
+
+            // Pocket pair: ambas hole cards tienen el mismo rank y ese rank forma el par
+            bool isPocketPair = holeCard1ContributesPair && holeCard2ContributesPair;
+            if (isPocketPair)
+            {
+                // Overpair: pocket pair superior a todas las cartas del board
+                return pairRankValue > maxBoard
+                    ? PairClassification.Overpair
+                    : PairClassification.PocketPairUnder;
+            }
+
+            // Par formado por una hole card que empareja una carta del board
+            if (pairRankValue == maxBoard)
+                return PairClassification.TopPair;
+
+            if (pairRankValue == minBoard)
+                return PairClassification.BottomPair;
+
+            return PairClassification.MiddlePair;
         }
     }
 }
