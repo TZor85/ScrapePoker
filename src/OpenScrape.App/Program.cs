@@ -51,7 +51,7 @@ namespace OpenScrape.App
                     // Algoritmos registrados por interfaz
                     services.AddSingleton<IMonteCarloSimulator, MonteCarloSimulator>();
                     services.AddSingleton<MonteCarloSimulator>();
-                    services.AddSingleton<IHandEvaluator, HandEvaluator>();
+                    services.AddSingleton<IHandEvaluator, BitHandEvaluator>();
                     services.AddSingleton<HandEvaluator>();
                     services.AddSingleton<IOutsCalculator, OutsCalculator>();
                     services.AddSingleton<OutsCalculator>();

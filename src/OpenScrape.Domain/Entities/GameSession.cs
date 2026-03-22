@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
@@ -16,14 +17,20 @@ public class GameSession
     public DateTime EndTime { get; set; } = DateTime.UtcNow;
     public decimal BigBlind { get; set; } = 0.50m;
 
-    // Todas las manos de esta sesión
+    // Manos de esta sesión — no se persisten embebidas; cada HandRecord
+    // vive en su propia colección Marten con FK GameSessionId.
+    // Esta lista se usa solo en memoria durante la sesión activa.
+    [JsonIgnore]
     public List<HandRecord> Hands { get; set; } = new();
 
-    // Métricas agregadas (actualizadas al cerrar cada mano)
+    // Métricas agregadas — calculadas en memoria, no persistidas en Marten
+    [JsonIgnore]
     public int TotalHands => Hands.Count;
+    [JsonIgnore]
     public decimal TotalProfit => Hands
         .Where(h => h.Result != HandResult.Unknown)
         .Sum(h => h.HeroStackEnd - h.HeroStackStart);
+    [JsonIgnore]
     public double BBPer100 => BigBlind > 0m && TotalHands > 0
         ? (double)(TotalProfit / BigBlind) / TotalHands * 100
         : 0;
@@ -31,17 +38,24 @@ public class GameSession
     /// <summary>
     /// Valida que la sesión tenga datos mínimos consistentes.
     /// </summary>
+    [JsonIgnore]
     public bool IsValid => !string.IsNullOrWhiteSpace(SessionId) &&
         !string.IsNullOrWhiteSpace(TableName) &&
         BigBlind > 0m;
 }
 
 /// <summary>
-/// Registro de una mano individual dentro de una sesión.
-/// Value object almacenado como parte del documento GameSession.
+/// Registro de una mano individual. Documento Marten independiente
+/// vinculado a su GameSession mediante GameSessionId.
 /// </summary>
 public class HandRecord
 {
+    // Identificador único del documento Marten
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+
+    // FK hacia el GameSession padre
+    public string GameSessionId { get; set; } = string.Empty;
+
     public long HandNumber { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 

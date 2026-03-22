@@ -6,6 +6,7 @@ using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -43,16 +44,22 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
-        private readonly HandEvaluator _handEvaluator;
+        private readonly IHandEvaluator _handEvaluator;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly StrategyProfile _profile;
         private readonly ILogger<UnifiedPokerCalculator> _logger;
+
+        // Cache de equity postflop: evita re-ejecutar Monte Carlo cuando las cartas no cambian.
+        // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion"
+        // Valor: equity en porcentaje (0-100)
+        private readonly ConcurrentDictionary<string, double> _equityCache = new();
+        private const int EquityCacheMaxSize = 256;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
-            HandEvaluator handEvaluator,
+            IHandEvaluator handEvaluator,
             BoardTextureAnalyzer boardTextureAnalyzer,
             IOptions<StrategyProfile> profileOptions,
             ILogger<UnifiedPokerCalculator> logger)
@@ -182,8 +189,12 @@ namespace OpenScrape.App.Aplication.UseCases
             {
                 return _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
             }
-            else // Postflop
+            else // Postflop — usar cache para evitar re-ejecutar Monte Carlo
             {
+                string cacheKey = BuildEquityCacheKey(playerHand, communityCards, numOpponents, handSituation);
+                if (_equityCache.TryGetValue(cacheKey, out double cached))
+                    return cached;
+
                 // Obtener rango del villano según la situación de la mano
                 VillainRange? villainRange = null;
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var situation))
@@ -193,8 +204,24 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(
                     playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
-                return monteCarloResult.Equity * 100;
+                double equity = monteCarloResult.Equity * 100;
+
+                // Guardar en cache, con límite de tamaño para evitar crecimiento descontrolado
+                if (_equityCache.Count >= EquityCacheMaxSize)
+                    _equityCache.Clear();
+                _equityCache[cacheKey] = equity;
+
+                return equity;
             }
+        }
+
+        private static string BuildEquityCacheKey(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
+            int numOpponents, string? handSituation)
+        {
+            // Ordenar cartas para que el orden no afecte la clave
+            var hand = string.Join(",", playerHand.Select(c => c.Id).OrderBy(x => x));
+            var comm = string.Join(",", communityCards.Select(c => c.Id).OrderBy(x => x));
+            return $"{hand}|{comm}|{numOpponents}|{handSituation ?? ""}";
         }
 
         private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)

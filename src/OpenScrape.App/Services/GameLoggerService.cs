@@ -8,10 +8,18 @@ namespace OpenScrape.App.Services;
 
 public class GameLoggerService
 {
+    // Máximo de manos que se mantienen en la lista en memoria por sesión.
+    // Las manos anteriores ya están persistidas como documentos HandRecord individuales.
+    private const int MaxHandsInMemory = 20;
+
     private readonly IDocumentStore _store;
     private readonly ILogger<GameLoggerService> _logger;
     private GameSession? _currentSession;
     private HandRecord? _currentHand;
+
+    // Acumuladores de sesión: necesarios porque la lista Hands en memoria está truncada
+    private int _sessionTotalHands;
+    private decimal _sessionTotalProfit;
 
     public GameLoggerService(IDocumentStore store, ILogger<GameLoggerService> logger)
     {
@@ -22,19 +30,19 @@ public class GameLoggerService
     /// <summary>
     /// Inicia o reanuda una sesión para la mesa dada.
     /// Si ya hay una sesión activa para la misma mesa, la reutiliza.
+    /// Si hay una sesión anterior distinta, la guarda antes de cambiar.
     /// </summary>
-    public void StartSession(string sessionId, string tableName, decimal bigBlind = 0.50m)
+    public async Task StartSessionAsync(string sessionId, string tableName, decimal bigBlind = 0.50m)
     {
         if (_currentSession != null && _currentSession.SessionId == sessionId)
             return; // Misma sesión, no reiniciar
 
-        // Guardar sesión anterior si existe (fire-and-forget con logging de errores)
+        // Guardar sesión anterior con await — evita pérdida silenciosa de datos
         if (_currentSession != null)
-            _ = Task.Run(async () =>
-            {
-                try { await SaveSessionAsync(); }
-                catch (Exception ex) { _logger.LogError(ex, "Error crítico guardando sesión anterior"); }
-            });
+        {
+            try { await SaveSessionAsync(); }
+            catch (Exception ex) { _logger.LogError(ex, "Error guardando sesión anterior al cambiar de mesa"); }
+        }
 
         _currentSession = new GameSession
         {
@@ -42,6 +50,10 @@ public class GameLoggerService
             TableName = tableName,
             BigBlind = bigBlind
         };
+
+        // Resetear acumuladores para la nueva sesión
+        _sessionTotalHands = 0;
+        _sessionTotalProfit = 0;
 
         _logger.LogInformation(
             "Sesión iniciada: {SessionId} en {TableName}",
@@ -51,7 +63,7 @@ public class GameLoggerService
     /// <summary>
     /// Inicia una nueva mano dentro de la sesión activa.
     /// </summary>
-    public void StartNewHand(
+    public async Task StartNewHandAsync(
         long handNumber,
         string heroCard1,
         string heroCard2,
@@ -65,9 +77,9 @@ public class GameLoggerService
             return;
         }
 
-        // Finalizar mano anterior si existe
+        // Finalizar y persistir mano anterior si existe
         if (_currentHand != null)
-            FinalizeCurrentHand();
+            await FinalizeAndPersistHandAsync();
 
         _currentHand = new HandRecord
         {
@@ -144,27 +156,73 @@ public class GameLoggerService
     }
 
     /// <summary>
-    /// Agrega la mano actual a la sesión y persiste.
+    /// Agrega la mano actual a la sesión en memoria y la persiste como documento individual.
+    /// Mantiene solo las últimas MaxHandsInMemory manos en la lista para controlar el consumo de RAM.
+    /// </summary>
+    private async Task FinalizeAndPersistHandAsync()
+    {
+        if (_currentHand == null || _currentSession == null) return;
+
+        _currentHand.GameSessionId = _currentSession.Id;
+        _currentSession.EndTime = DateTime.UtcNow;
+
+        // Actualizar acumuladores antes de truncar
+        _sessionTotalHands++;
+        if (_currentHand.Result != HandResult.Unknown)
+            _sessionTotalProfit += _currentHand.HeroStackEnd - _currentHand.HeroStackStart;
+
+        // Agregar a la lista en memoria y mantener solo las últimas N manos
+        _currentSession.Hands.Add(_currentHand);
+        if (_currentSession.Hands.Count > MaxHandsInMemory)
+            _currentSession.Hands.RemoveAt(0);
+
+        // Persistir la mano como documento Marten independiente
+        try
+        {
+            await using var session = _store.LightweightSession();
+            session.Store(_currentHand);
+            await session.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al persistir HandRecord #{HandNumber}", _currentHand.HandNumber);
+        }
+
+        _currentHand = null;
+    }
+
+    /// <summary>
+    /// Agrega la mano actual a la sesión en memoria (sin persistir). Uso interno síncrono.
     /// </summary>
     private void FinalizeCurrentHand()
     {
         if (_currentHand == null || _currentSession == null) return;
 
-        _currentSession.Hands.Add(_currentHand);
+        _currentHand.GameSessionId = _currentSession.Id;
         _currentSession.EndTime = DateTime.UtcNow;
+
+        _sessionTotalHands++;
+        if (_currentHand.Result != HandResult.Unknown)
+            _sessionTotalProfit += _currentHand.HeroStackEnd - _currentHand.HeroStackStart;
+
+        _currentSession.Hands.Add(_currentHand);
+        if (_currentSession.Hands.Count > MaxHandsInMemory)
+            _currentSession.Hands.RemoveAt(0);
+
         _currentHand = null;
     }
 
     /// <summary>
-    /// Guarda la sesión actual (con todas sus manos) en la base de datos.
-    /// Se llama después de cada mano finalizada para no perder datos.
+    /// Guarda la sesión actual en la base de datos.
+    /// Las manos se persisten individualmente en FinalizeAndPersistHandAsync.
+    /// Se llama después de cada mano finalizada para actualizar EndTime y metadata.
     /// </summary>
     public async Task SaveSessionAsync()
     {
         if (_currentSession == null)
             return;
 
-        // Finalizar mano en progreso si existe
+        // Finalizar mano en progreso si existe (solo en memoria, sin persistir individualmente aquí)
         FinalizeCurrentHand();
 
         try
@@ -198,19 +256,37 @@ public class GameLoggerService
     }
 
     /// <summary>
-    /// Extrae todas las manos de las sesiones para análisis.
+    /// Extrae las manos más recientes consultando directamente la colección HandRecord.
     /// </summary>
     public async Task<List<HandRecord>> GetRecentHandsAsync(int maxHands = 500)
     {
-        var sessions = await GetRecentSessionsAsync(50);
-        return sessions
-            .SelectMany(s => s.Hands)
+        await using var session = _store.QuerySession();
+        var results = await session.Query<HandRecord>()
             .OrderByDescending(h => h.Timestamp)
             .Take(maxHands)
-            .ToList();
+            .ToListAsync();
+        return results.ToList();
+    }
+
+    /// <summary>
+    /// Obtiene todas las manos de una sesión específica.
+    /// </summary>
+    public async Task<List<HandRecord>> GetHandsForSessionAsync(string gameSessionId)
+    {
+        await using var session = _store.QuerySession();
+        var results = await session.Query<HandRecord>()
+            .Where(h => h.GameSessionId == gameSessionId)
+            .OrderBy(h => h.Timestamp)
+            .ToListAsync();
+        return results.ToList();
     }
 
     public bool HasActiveSession => _currentSession != null;
     public bool HasActiveHand => _currentHand != null;
-    public int CurrentSessionHandCount => _currentSession?.Hands.Count ?? 0;
+
+    /// <summary>Total acumulado de manos en la sesión (incluye las ya desalojadas de memoria).</summary>
+    public int CurrentSessionHandCount => _sessionTotalHands;
+
+    /// <summary>Profit acumulado de la sesión actual (incluye manos ya desalojadas de memoria).</summary>
+    public decimal CurrentSessionProfit => _sessionTotalProfit;
 }

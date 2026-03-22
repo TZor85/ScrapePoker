@@ -37,7 +37,7 @@ public class StrategyAnalyzerServiceTests
 
     private GameSession CreateSession(string sessionId, string tableName, List<HandRecord> hands)
     {
-        return new GameSession
+        var session = new GameSession
         {
             SessionId = sessionId,
             TableName = tableName,
@@ -45,6 +45,10 @@ public class StrategyAnalyzerServiceTests
             EndTime = hands.Max(h => h.Timestamp),
             Hands = hands
         };
+        // Asignar FK de cada mano al Id del GameSession
+        foreach (var hand in hands)
+            hand.GameSessionId = session.Id;
+        return session;
     }
 
     private StreetDecision CreateDecision(
@@ -197,7 +201,8 @@ public class StrategyAnalyzerServiceTests
             CreateSession("s2", "Mesa2", s2Hands),
         };
 
-        var result = _analyzer.AnalyzeSessions(sessions);
+        var allHands = s1Hands.Concat(s2Hands).ToList();
+        var result = _analyzer.AnalyzeSessions(sessions, allHands);
 
         Assert.That(result.TotalHands, Is.EqualTo(3));
         Assert.That(result.Sessions.Count, Is.EqualTo(2));
