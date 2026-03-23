@@ -155,13 +155,43 @@ public class StrategyProfile
         if (SPRPushFoldThreshold >= SPRDeepCautionThreshold)
             errors.Add($"SPRPushFoldThreshold ({SPRPushFoldThreshold}) debe ser menor que SPRDeepCautionThreshold ({SPRDeepCautionThreshold})");
 
-        // Danger penalties no negativos
-        if (DangerFlushCompletePct < 0 || DangerStraightCompletePct < 0)
-            errors.Add("DangerFlush/StraightCompletePct no pueden ser negativos");
+        // Danger penalties: no negativos y porcentuales <= 100
+        if (DangerFlushCompletePct < 0 || DangerFlushCompletePct > 100)
+            errors.Add($"DangerFlushCompletePct ({DangerFlushCompletePct}) debe estar entre 0 y 100");
+        if (DangerStraightCompletePct < 0 || DangerStraightCompletePct > 100)
+            errors.Add($"DangerStraightCompletePct ({DangerStraightCompletePct}) debe estar entre 0 y 100");
 
         // TaintedOutsDiscount en rango [0, 1]
         if (TaintedOutsDiscount < 0 || TaintedOutsDiscount > 1)
             errors.Add($"TaintedOutsDiscount ({TaintedOutsDiscount}) debe estar entre 0 y 1");
+
+        // Bluff frequencies en rango [0, 1]
+        if (FlopBluffFrequency < 0 || FlopBluffFrequency > 1)
+            errors.Add($"FlopBluffFrequency ({FlopBluffFrequency}) debe estar entre 0 y 1");
+        if (TurnBluffFrequency < 0 || TurnBluffFrequency > 1)
+            errors.Add($"TurnBluffFrequency ({TurnBluffFrequency}) debe estar entre 0 y 1");
+        if (RiverBluffFrequency < 0 || RiverBluffFrequency > 1)
+            errors.Add($"RiverBluffFrequency ({RiverBluffFrequency}) debe estar entre 0 y 1");
+
+        // BluffCatch multiplier en rango (0, 1]
+        if (BluffCatchFoldBelowMultiplier <= 0 || BluffCatchFoldBelowMultiplier > 1)
+            errors.Add($"BluffCatchFoldBelowMultiplier ({BluffCatchFoldBelowMultiplier}) debe estar entre 0 (excl.) y 1");
+
+        // Bet sizing multipliers deben ser > 0
+        if (BetSizingSPRDeepMultiplier <= 0)
+            errors.Add($"BetSizingSPRDeepMultiplier ({BetSizingSPRDeepMultiplier}) debe ser > 0");
+        if (BetSizingSPRShallowMultiplier <= 0)
+            errors.Add($"BetSizingSPRShallowMultiplier ({BetSizingSPRShallowMultiplier}) debe ser > 0");
+
+        // Implied odds factors en rango (0, 1]
+        if (ImpliedOddsSPRDeepFactor <= 0 || ImpliedOddsSPRDeepFactor > 1)
+            errors.Add($"ImpliedOddsSPRDeepFactor ({ImpliedOddsSPRDeepFactor}) debe estar entre 0 (excl.) y 1");
+        if (ImpliedOddsSPRShallowFactor <= 0 || ImpliedOddsSPRShallowFactor > 1)
+            errors.Add($"ImpliedOddsSPRShallowFactor ({ImpliedOddsSPRShallowFactor}) debe estar entre 0 (excl.) y 1");
+
+        // Implied odds SPR thresholds coherentes
+        if (ImpliedOddsSPRShallowThreshold >= ImpliedOddsSPRDeepThreshold)
+            errors.Add($"ImpliedOddsSPRShallowThreshold ({ImpliedOddsSPRShallowThreshold}) debe ser menor que Deep ({ImpliedOddsSPRDeepThreshold})");
 
         return errors;
     }

@@ -48,15 +48,15 @@ namespace OpenScrape.App
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
 
-                    // Algoritmos registrados por interfaz
-                    services.AddSingleton<IMonteCarloSimulator, MonteCarloSimulator>();
+                    // Algoritmos: registro por clase concreta + forwarding por interfaz (misma instancia)
                     services.AddSingleton<MonteCarloSimulator>();
-                    services.AddSingleton<IHandEvaluator, BitHandEvaluator>();
-                    services.AddSingleton<HandEvaluator>();
-                    services.AddSingleton<IOutsCalculator, OutsCalculator>();
+                    services.AddSingleton<IMonteCarloSimulator>(sp => sp.GetRequiredService<MonteCarloSimulator>());
+                    services.AddSingleton<BitHandEvaluator>();
+                    services.AddSingleton<IHandEvaluator>(sp => sp.GetRequiredService<BitHandEvaluator>());
                     services.AddSingleton<OutsCalculator>();
-                    services.AddSingleton<IBoardTextureAnalyzer, BoardTextureAnalyzer>();
+                    services.AddSingleton<IOutsCalculator>(sp => sp.GetRequiredService<OutsCalculator>());
                     services.AddSingleton<BoardTextureAnalyzer>();
+                    services.AddSingleton<IBoardTextureAnalyzer>(sp => sp.GetRequiredService<BoardTextureAnalyzer>());
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
 

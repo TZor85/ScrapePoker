@@ -115,8 +115,6 @@ namespace OpenScrape.App
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
-        private double _flopBluffFrequency = 0.15;
-        private double _turnBluffFrequency = 0.15;
         private PokerCalculationResult _flopResult;
         private PokerCalculationResult _turnResult;
         private TurnBoardTexture _turnBoardTexture;
@@ -176,16 +174,6 @@ namespace OpenScrape.App
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
 
-            // Load config
-            var pokerStrategy = Program.Configuration?.GetSection("PokerStrategy");
-            if (pokerStrategy != null && double.TryParse(pokerStrategy["FlopBluffFrequency"], out var flopFreq))
-            {
-                _flopBluffFrequency = flopFreq;
-            }
-            if (pokerStrategy != null && double.TryParse(pokerStrategy["TurnBluffFrequency"], out var turnFreq))
-            {
-                _turnBluffFrequency = turnFreq;
-            }
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
             _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
