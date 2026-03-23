@@ -387,6 +387,6 @@ public class PairClassificationTests
             PairClassification.BottomPair);
 
         Assert.That(penaltyFlop, Is.EqualTo(0.0), "Reverse implied no aplica en flop");
-        Assert.That(penaltyRiver, Is.EqualTo(0.0), "Reverse implied no aplica en river");
+        Assert.That(penaltyRiver, Is.GreaterThan(0.0), "Reverse implied ahora aplica en river (reducido ×0.6)");
     }
 }

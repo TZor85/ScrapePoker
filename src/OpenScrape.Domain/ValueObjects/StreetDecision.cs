@@ -12,5 +12,9 @@ public record StreetDecision(
     decimal PotSizeAtDecision,
     decimal BetSize,
     HandSituation Situation,
-    bool IsInPosition
+    bool IsInPosition,
+    string? Reason = null,
+    string? BoardTexture = null,
+    int TotalOuts = 0,
+    double SPR = 0
 );

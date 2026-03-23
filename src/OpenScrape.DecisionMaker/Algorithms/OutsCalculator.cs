@@ -77,6 +77,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             // 6. Overcards: cartas de hero más altas que todas las del board
             // Solo se cuentan cuando NO hay flush draw ni OESD (draws principales ya dominan)
+            // Gutshot (1 completing rank) NO es "main draw" → overcards sí cuentan con gutshot
             // y NO tienes ya una mano hecha (flush o straight completados)
             int overcardOuts = 0;
             bool hasMainDraw = flushOuts > 0 || straightCompletingRanks.Count >= 2;

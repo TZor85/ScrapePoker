@@ -59,7 +59,9 @@ public class ImpliedOddsCalculator
 
     /// <summary>
     /// Calcula penalización por reverse implied odds.
-    /// Solo en turn facing bet con mano vulnerable (OnePair/TwoPair) en board con draws.
+    /// Turn y river facing bet con mano vulnerable (OnePair/TwoPair) en board con draws.
+    /// River aplica penalización reducida (×0.6) porque ya no hay más cartas peligrosas,
+    /// pero el villano puede representar draws completados en el river card.
     /// Cuando pairClassification está disponible, el multiplicador de OnePair varía por sub-tipo:
     ///   Overpair (×1.0) → MiddlePair (×1.5) → BottomPair (×1.8) → BoardPaired (×2.0)
     /// </summary>
@@ -69,7 +71,7 @@ public class ImpliedOddsCalculator
         StrategyProfile profile,
         PairClassification pairClassification = PairClassification.None)
     {
-        if (street != BoardPosition.Turn || !isFacingBet || boardChange == null)
+        if ((street != BoardPosition.Turn && street != BoardPosition.River) || !isFacingBet || boardChange == null)
             return 0;
 
         if (heroHandRank > HandRank.TwoPair)
@@ -98,6 +100,10 @@ public class ImpliedOddsCalculator
             };
             penalty *= multiplier;
         }
+
+        // River: penalización reducida (no hay más cartas por venir)
+        if (street == BoardPosition.River)
+            penalty *= 0.6;
 
         return penalty;
     }

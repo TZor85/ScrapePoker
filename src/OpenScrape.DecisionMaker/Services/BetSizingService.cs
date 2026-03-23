@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
 
@@ -9,6 +10,11 @@ namespace OpenScrape.DecisionMaker.Services
     public class BetSizingService
     {
         private readonly StrategyProfile _profile;
+
+        // Factor de street: flop más pequeño (inducir/proteger), river más grande (extraer valor)
+        private const double FlopStreetFactor = 0.90;
+        private const double TurnStreetFactor = 1.0;
+        private const double RiverStreetFactor = 1.10;
 
         public BetSizingService(IOptions<StrategyProfile> profileOptions)
         {
@@ -23,7 +29,8 @@ namespace OpenScrape.DecisionMaker.Services
             bool isPaired,
             bool isCoordinated,
             bool isDry,
-            bool isInPosition)
+            bool isInPosition,
+            BoardPosition street = BoardPosition.None)
         {
             if (heroStack == 0 || potSize == 0)
                 return GetBetSizeString(baseSize);
@@ -41,14 +48,10 @@ namespace OpenScrape.DecisionMaker.Services
                 adjustedSize *= _profile.BetSizingSPRShallowMultiplier;
             }
 
-            // Ajustar por número de oponentes
+            // Ajustar por número de oponentes (multiway → sizing más pequeño para proteger)
             if (numOpponents >= 3)
             {
                 adjustedSize *= _profile.BetSizingMultiOpponentMultiplier;
-            }
-            else if (numOpponents == 1)
-            {
-                adjustedSize *= 1.1;
             }
 
             // Ajustar por textura de board
@@ -66,6 +69,15 @@ namespace OpenScrape.DecisionMaker.Services
             {
                 adjustedSize *= _profile.BetSizingOOPMultiplier;
             }
+
+            // Ajustar por street: flop más pequeño, river más grande
+            adjustedSize *= street switch
+            {
+                BoardPosition.Flop => FlopStreetFactor,
+                BoardPosition.Turn => TurnStreetFactor,
+                BoardPosition.River => RiverStreetFactor,
+                _ => 1.0
+            };
 
             // Limitar tamaño
             adjustedSize = Math.Min(adjustedSize, 1.0);

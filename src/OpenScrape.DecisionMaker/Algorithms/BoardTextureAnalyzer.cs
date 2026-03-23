@@ -221,19 +221,27 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
         return false;
     }
 
+    /// <summary>
+    /// Detecta si el board tiene potencial de straight draw.
+    /// Condición: 3+ cartas únicas que encajen en una ventana de 5 ranks consecutivos.
+    /// Ventana de 5 = máximo gap de 4 entre la menor y la mayor de 3 cartas.
+    /// Ejemplo: [9, 11, 13] (K-J-9) gap=4 → Q-T completa escalera → true.
+    /// </summary>
     private static bool HasStraightDraw(List<int> sortedRanks)
     {
         if (sortedRanks.Count < 3) return false;
 
-        var unique = sortedRanks.Distinct().ToList();
+        var unique = sortedRanks.Distinct().OrderBy(r => r).ToList();
+
+        // Verificar ventanas de 3+ cartas con gap total <= 4
         for (int i = 0; i <= unique.Count - 3; i++)
         {
             if (unique[i + 2] - unique[i] <= 4)
                 return true;
         }
 
-        // Wheel check (A-2-3-4-5): si hay Ace (14) y cartas bajas
-        if (unique.Contains(14) && unique.Any(r => r <= 5))
+        // Wheel check (A-2-3-4-5): Ace actúa como 1
+        if (unique.Contains(14))
         {
             var lowCards = unique.Where(r => r <= 5).ToList();
             if (lowCards.Count >= 2)

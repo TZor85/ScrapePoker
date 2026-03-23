@@ -1047,10 +1047,13 @@ namespace OpenScrape.App
             _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
 
             // Persistir decisión y board en game logger
+            double riverSpr = _playerGameState.PotSize > 0
+                ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
             _gameLoggerService.LogStreetDecision(new StreetDecision(
                 BoardPosition.River, equity, _riverResult.PotOddsPercentage, _riverResult.ExpectedValue,
                 _riverResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
-                maxBet, effectiveSituation, inPosition));
+                maxBet, effectiveSituation, inPosition,
+                Reason: decision.Reason, BoardTexture: texture, TotalOuts: _riverResult.TotalOuts, SPR: riverSpr));
             var riverCardName = _playerGameState.BoardCards
                 .FirstOrDefault(b => b.Position == BoardPosition.River)?.Name;
             _gameLoggerService.UpdateBoard([], riverCard: riverCardName);
@@ -1276,11 +1279,14 @@ namespace OpenScrape.App
                 .Select(b => b.Name ?? string.Empty)
                 .ToList();
             _gameLoggerService.UpdateBoard(flopCardNames);
+            decimal flopMaxBet = _playerGameState.Players.Max(m => m.Bet);
+            double flopSpr = _playerGameState.PotSize > 0
+                ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
             _gameLoggerService.LogStreetDecision(new StreetDecision(
                 BoardPosition.Flop, result.EquityPercentage, result.PotOddsPercentage, result.ExpectedValue,
                 result.RecommendedAction, _responseAction.Action ?? "Unknown", _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet), _playerGameState.HandSituation,
-                _playerGameState.IsInPosition));
+                flopMaxBet, _playerGameState.HandSituation, _playerGameState.IsInPosition,
+                Reason: result.RecommendedAction, TotalOuts: result.TotalOuts, SPR: flopSpr));
             _gameLoggerService.UpdateSituation(_playerGameState.HandSituation);
         }
 
@@ -1441,10 +1447,13 @@ namespace OpenScrape.App
             _postflopContext.VillainBetTurn = maxBet > 0;
 
             // Persistir decisión y board en game logger
+            double turnSpr = _playerGameState.PotSize > 0
+                ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
             _gameLoggerService.LogStreetDecision(new StreetDecision(
                 BoardPosition.Turn, equity, _turnResult.PotOddsPercentage, _turnResult.ExpectedValue,
                 _turnResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
-                maxBet, effectiveSituation, inPosition));
+                maxBet, effectiveSituation, inPosition,
+                Reason: decision.Reason, BoardTexture: texture, TotalOuts: _turnResult.TotalOuts, SPR: turnSpr));
             var turnCardName = _playerGameState.BoardCards
                 .FirstOrDefault(b => b.Position == BoardPosition.Turn)?.Name;
             _gameLoggerService.UpdateBoard([], turnCard: turnCardName);

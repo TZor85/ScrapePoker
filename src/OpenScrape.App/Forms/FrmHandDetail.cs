@@ -56,8 +56,25 @@ public class FrmHandDetail : Form
         {
             string boardStr = FormatBoardForStreet(hand, decision.Street);
             Append($"*** {decision.Street.ToString().ToUpper()} *** {boardStr}\n", Color.DodgerBlue);
-            Append($"  Equity: {decision.EquityPercent:0.0}% | Pot Odds: {decision.PotOddsPercent:0.0}% | EV: {decision.ExpectedValue:+0.00;-0.00}\n", AppThemeHelper.PrimaryLight);
+
+            // Stats línea 1: equity, pot odds, EV, SPR, outs
+            var statsLine = $"  Equity: {decision.EquityPercent:0.0}% | Pot Odds: {decision.PotOddsPercent:0.0}% | EV: {decision.ExpectedValue:+0.00;-0.00}";
+            if (decision.SPR > 0)
+                statsLine += $" | SPR: {decision.SPR:0.0}";
+            if (decision.TotalOuts > 0)
+                statsLine += $" | Outs: {decision.TotalOuts}";
+            Append(statsLine + "\n", AppThemeHelper.PrimaryLight);
+
+            // Board texture si disponible
+            if (!string.IsNullOrEmpty(decision.BoardTexture))
+                Append($"  Board: {decision.BoardTexture}\n", AppThemeHelper.PrimaryLight);
+
             Append($"  Recomendado: {decision.RecommendedAction}\n", Color.White);
+
+            // Reason si disponible y diferente de la acción recomendada
+            if (!string.IsNullOrEmpty(decision.Reason) && decision.Reason != decision.RecommendedAction)
+                Append($"  Razón: {decision.Reason}\n", Color.FromArgb(180, 180, 200));
+
             Append($"  Acción: {decision.ActionTaken} ${decision.BetSize:0.00} | Pot: ${decision.PotSizeAtDecision:0.00}\n\n", Color.DarkGoldenrod);
         }
 

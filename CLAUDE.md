@@ -49,7 +49,7 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 
 **Data flow:** Screen capture → Image preprocessing (OpenCvSharp/SkiaSharp) → OCR (Tesseract) → Domain model → Decision engine (equity calculation, hand evaluation) → Action recommendation.
 
-**DI pattern:** `FrmMain` is resolved from a scoped `ServiceProvider` (not root) because it depends on scoped use cases. All DecisionMaker services are singletons.
+**DI pattern:** `FrmMain` is resolved from a scoped `ServiceProvider` (not root) because it depends on scoped use cases. All DecisionMaker services are singletons. Algorithms use forwarding pattern (concrete + interface factory → single shared instance). Database sessions use `using` per operation (no long-lived sessions).
 
 ## Configuration & Secrets
 
@@ -81,7 +81,7 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus)
 - `villainBarreling` — villain bet 2+ consecutive streets → FoldBelow+5, ThinValue+3 (narrower range)
 - SPR push/fold — SPR < 2: FoldBelow−8, equity > ValueAbove → All-In. SPR > 4: FoldBelow+3 (deep caution). Only turn/river.
-- Reverse implied odds — turn facing bet with OnePair/TwoPair on draw-heavy board: −4 to −6 equity penalty
+- Reverse implied odds — turn/river facing bet with OnePair/TwoPair on draw-heavy board: −4 to −6 equity penalty (river ×0.6 reduced)
 - Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
 - Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
 - Cross-street state — `_villainBetFlop/Turn`, `_heroBetFlop/Turn`, `_villainAggressorCheckedFlop` tracked across streets
@@ -91,9 +91,9 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5 (3 same suit on board)
 - FacingBetMultiplier ×1.4 (villain represents completed draw)
 - Hero blocker effect: penalty ×0.5 if hero holds danger suit
-- NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board)
+- NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board, skipped if hero has the completed draw)
 - Danger propagation: turn `_lastBoardChange` carries to river via `CombineBoardChanges()`
-- `effectiveEquity = equity - dangerPenalty + comboDrawBonus - reverseImpliedPenalty`, then cap if applicable
+- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap if applicable, then `- reverseImpliedPenalty`
 - Never folds without facing bet → Check instead
 
 ## Game State Machine
@@ -128,7 +128,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 - **`GameSession`** — Marten document, one per table session. Contains SessionId, TableName, StartTime, EndTime, BigBlind. Keeps last 20 `HandRecord` in memory; older hands already persisted individually. Computed properties: TotalHands, TotalProfit, BBPer100.
 - **`HandRecord`** — Marten document, one per hand. FK `GameSessionId` → `GameSession.Id`. Stores hero cards, position, stack start/end, board cards (flop/turn/river), `List<StreetDecision>`, result (`HandResult`: Won/Lost/Push/Unknown), situation, opponents count.
-- **`StreetDecision`** — Record (value object) with: Street, EquityPercent, PotOddsPercent, ExpectedValue, RecommendedAction, ActionTaken, PotSizeAtDecision, BetSize, Situation, IsInPosition.
+- **`StreetDecision`** — Record (value object) with: Street, EquityPercent, PotOddsPercent, ExpectedValue, RecommendedAction, ActionTaken, PotSizeAtDecision, BetSize, Situation, IsInPosition, and optional: Reason, BoardTexture, TotalOuts, SPR.
 - **`GameLoggerService`** — Manages session/hand lifecycle: `StartSessionAsync` → `StartNewHandAsync` → `LogStreetDecision` → `EndHand` → `SaveSessionAsync`. Persists to Marten (PostgreSQL). Query methods: `GetRecentSessionsWithStatsAsync`, `GetHandsForSessionAsync`. Note: `EndHand` must receive the hero stack **before** `PlayerGameState` is reset (use `prevHeroStack`).
 - **Historial tab** — `dgvSessions` (sessions with stats) + `dgvSessionHands` (hands per session). Double-click on a hand opens `FrmHandDetail` popup with colored Hand History.
 - **Logs tab** — `tbResume` TextBox with structured blocks per street (`═══ [FLOP/TURN/RIVER] ═══`), showing equity pipeline, hand rank, board texture, draws, and final decision with tags ([CHECK-RAISE], [BLUFF], [BARREL]).
@@ -148,7 +148,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (322+ tests, no mocking framework)
+- **NUnit** — Testing framework (385+ tests, no mocking framework)
 
 ## Code Style
 
