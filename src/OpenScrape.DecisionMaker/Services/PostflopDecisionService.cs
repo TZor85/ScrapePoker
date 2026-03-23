@@ -37,6 +37,9 @@ public class PostflopDecisionService
         if (_profile.Thresholds.TryGetValue(key, out var thresholds))
             return thresholds;
 
+        // Fallback: loguear warning para detectar configuración faltante
+        Console.WriteLine($"[WARNING] Threshold no encontrado: '{key}'. Usando fallback genérico.");
+
         return new StreetThresholds
         {
             FoldBelow = 40,
@@ -115,17 +118,21 @@ public class PostflopDecisionService
         if (hasComboDraw && street != BoardPosition.River)
             effectiveEquity += _profile.ComboDrawEquityBonus;
 
-        // Reverse implied odds: penalizar calls en turn con mano vulnerable en board con draws
-        double reverseImpliedPenalty = CalculateReverseImpliedOdds(
-            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification);
-        effectiveEquity -= reverseImpliedPenalty;
-
         // Tope de equity para APOSTAR en boards con draw completado que hero no tiene.
-        if (!isFacingBet && boardChange != null && !heroBlocksDangerSuit &&
+        // Aplicar ANTES de reverse implied odds para que el cap sea más conservador.
+        // No aplicar si hero completó la escalera (HandRank >= Straight) o tiene flush (HandRank >= Flush).
+        bool heroHasCompletedDraw = (boardChange?.StraightCompleted == true && heroHandRank >= HandRank.Straight) ||
+                                    (boardChange?.FlushCompleted == true && heroHandRank >= HandRank.Flush);
+        if (!isFacingBet && boardChange != null && !heroBlocksDangerSuit && !heroHasCompletedDraw &&
             (boardChange.FlushCompleted || boardChange.StraightCompleted))
         {
             effectiveEquity = Math.Min(effectiveEquity, _profile.DangerCompletedDrawNoBetCap);
         }
+
+        // Reverse implied odds: penalizar calls en turn con mano vulnerable en board con draws
+        double reverseImpliedPenalty = CalculateReverseImpliedOdds(
+            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification);
+        effectiveEquity -= reverseImpliedPenalty;
 
         // Modo simplificado (RaiseOverLimper)
         if (thresholds.IsSimplified)

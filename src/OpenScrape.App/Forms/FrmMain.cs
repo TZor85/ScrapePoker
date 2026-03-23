@@ -4809,9 +4809,9 @@ namespace OpenScrape.App
                 new DataGridViewTextBoxColumn { Name = "TableName", HeaderText = "Mesa", DataPropertyName = "TableName", Width = 120 },
                 new DataGridViewTextBoxColumn { Name = "StartTime", HeaderText = "Inicio", DataPropertyName = "StartTime", Width = 130 },
                 new DataGridViewTextBoxColumn { Name = "Duration", HeaderText = "Duración", DataPropertyName = "Duration", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "TotalHands", HeaderText = "Manos", DataPropertyName = "TotalHands", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "TotalProfit", HeaderText = "Profit", DataPropertyName = "TotalProfit", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 }
+                new DataGridViewTextBoxColumn { Name = "TotalHands", HeaderText = "Manos", DataPropertyName = "TotalHands", Width = 60 }
+                //new DataGridViewTextBoxColumn { Name = "TotalProfit", HeaderText = "Profit", DataPropertyName = "TotalProfit", Width = 80 },
+                //new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 }
             );
 
             // Configurar columnas de manos
