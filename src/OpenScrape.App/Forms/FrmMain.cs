@@ -214,6 +214,8 @@ namespace OpenScrape.App
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
 
             FormClosing += FrmMain_FormClosing;
+
+            InitializeHistorialTab();
         }
 
         /// <summary>
@@ -1661,10 +1663,11 @@ namespace OpenScrape.App
             TablePosition prevPosition = TablePosition.None,
             decimal prevHeroStack = 0)
         {
-            // Finalizar la mano anterior y guardar sesión
+            // Finalizar la mano anterior y guardar sesión.
+            // Usar prevHeroStack porque _playerGameState ya fue reseteado antes de esta llamada.
             if (_gameLoggerService.HasActiveHand)
             {
-                _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+                _gameLoggerService.EndHand(prevHeroStack);
                 await _gameLoggerService.SaveSessionAsync();
             }
 
@@ -4498,6 +4501,9 @@ namespace OpenScrape.App
                     case "tbLogs":
                         ApplyLogsTabStyle(tab);
                         break;
+                    case "tpHistorial":
+                        ApplyHistorialTabStyle(tab);
+                        break;
                 }
             }
 
@@ -4708,6 +4714,52 @@ namespace OpenScrape.App
 
         #endregion
 
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de historial
+        /// </summary>
+        private void ApplyHistorialTabStyle(TabPage historialTab)
+        {
+            historialTab.SuspendLayout();
+
+            // Labels título
+            foreach (var lbl in new[] { lblSesionesTitle, lblManosTitle })
+            {
+                lbl.BackColor = AppThemeHelper.PrimaryDark;
+                lbl.ForeColor = Color.White;
+                lbl.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+                lbl.Padding = new Padding(6, 0, 0, 0);
+            }
+
+            // Estilizar ambas grillas
+            foreach (var dgv in new[] { dgvSessions, dgvSessionHands })
+            {
+                dgv.EnableHeadersVisualStyles = false;
+                dgv.BackgroundColor = AppThemeHelper.BackgroundMain;
+                dgv.BorderStyle = BorderStyle.None;
+                dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+                dgv.GridColor = AppThemeHelper.BorderLight;
+                dgv.Font = new Font("Segoe UI", 9F);
+                dgv.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+                dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+                dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+                dgv.ColumnHeadersHeight = 35;
+                dgv.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+                dgv.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+                dgv.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+                dgv.DefaultCellStyle.SelectionForeColor = Color.White;
+                dgv.RowTemplate.Height = 28;
+                dgv.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+            }
+
+            // Label de stats
+            lblSessionStats.BackColor = AppThemeHelper.BackgroundMain;
+            lblSessionStats.ForeColor = AppThemeHelper.PrimaryDark;
+            lblSessionStats.Font = new Font("Segoe UI", 9F);
+
+            historialTab.ResumeLayout(true);
+        }
+
         private void tbJuego_Click(object sender, EventArgs e)
         {
 
@@ -4738,6 +4790,197 @@ namespace OpenScrape.App
             var reason = action.Contains('(') ? action.Substring(action.IndexOf('(')) : "";
             return adjustedBet + reason;
         }
+
+        #region Pestaña Historial
+
+        private bool _historialLoaded;
+        private List<SessionStatsDto>? _loadedSessions;
+        private List<HandRecord>? _loadedHands;
+
+        /// <summary>
+        /// Inicializa la pestaña Historial: columnas, estilos y eventos
+        /// </summary>
+        private void InitializeHistorialTab()
+        {
+            // Configurar columnas de sesiones
+            dgvSessions.AutoGenerateColumns = false;
+            dgvSessions.Columns.AddRange(
+                new DataGridViewTextBoxColumn { Name = "TableName", HeaderText = "Mesa", DataPropertyName = "TableName", Width = 120 },
+                new DataGridViewTextBoxColumn { Name = "StartTime", HeaderText = "Inicio", DataPropertyName = "StartTime", Width = 130 },
+                new DataGridViewTextBoxColumn { Name = "Duration", HeaderText = "Duración", DataPropertyName = "Duration", Width = 80 },
+                new DataGridViewTextBoxColumn { Name = "TotalHands", HeaderText = "Manos", DataPropertyName = "TotalHands", Width = 60 },
+                new DataGridViewTextBoxColumn { Name = "TotalProfit", HeaderText = "Profit", DataPropertyName = "TotalProfit", Width = 80 },
+                new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 }
+            );
+
+            // Configurar columnas de manos
+            dgvSessionHands.AutoGenerateColumns = false;
+            dgvSessionHands.Columns.AddRange(
+                new DataGridViewTextBoxColumn { Name = "HandNumber", HeaderText = "Hand#", DataPropertyName = "HandNumber", Width = 70 },
+                new DataGridViewTextBoxColumn { Name = "Cards", HeaderText = "Cartas", DataPropertyName = "Cards", Width = 80 },
+                new DataGridViewTextBoxColumn { Name = "Position", HeaderText = "Pos", DataPropertyName = "Position", Width = 60 },
+                new DataGridViewTextBoxColumn { Name = "LastStreet", HeaderText = "Street", DataPropertyName = "LastStreet", Width = 60 },
+                new DataGridViewTextBoxColumn { Name = "Result", HeaderText = "Resultado", DataPropertyName = "Result", Width = 70 },
+                new DataGridViewTextBoxColumn { Name = "ProfitLoss", HeaderText = "P/L", DataPropertyName = "ProfitLoss", Width = 70 }
+            );
+
+            // Eventos
+            tpHistorial.Enter += async (s, e) =>
+            {
+                if (!_historialLoaded)
+                    await LoadSessionsWithStatsAsync();
+            };
+            dgvSessions.SelectionChanged += DgvSessions_SelectionChanged;
+            dgvSessionHands.CellDoubleClick += DgvSessionHands_CellDoubleClick;
+            dgvSessions.CellFormatting += DgvSessions_CellFormatting;
+            dgvSessionHands.CellFormatting += DgvSessionHands_CellFormatting;
+        }
+
+        /// <summary>
+        /// Carga las sesiones recientes con sus estadísticas
+        /// </summary>
+        private async Task LoadSessionsWithStatsAsync()
+        {
+            try
+            {
+                _loadedSessions = await _gameLoggerService.GetRecentSessionsWithStatsAsync(50);
+
+                var displayData = _loadedSessions.Select(s => new
+                {
+                    s.TableName,
+                    StartTime = s.StartTime.ToString("dd/MM HH:mm"),
+                    Duration = FormatDuration(s.EndTime - s.StartTime),
+                    s.TotalHands,
+                    TotalProfit = s.TotalProfit.ToString("+0.00;-0.00"),
+                    BBPer100 = s.BBPer100.ToString("+0.0;-0.0")
+                }).ToList();
+
+                dgvSessions.DataSource = displayData;
+                _historialLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando sesiones: {ex.Message}");
+            }
+        }
+
+        private static string FormatDuration(TimeSpan duration)
+        {
+            if (duration.TotalMinutes < 1)
+                return "< 1m";
+            return duration.TotalHours >= 1
+                ? $"{(int)duration.TotalHours}h {duration.Minutes}m"
+                : $"{duration.Minutes}m";
+        }
+
+        private async void DgvSessions_SelectionChanged(object? sender, EventArgs e)
+        {
+            if (dgvSessions.SelectedRows.Count == 0 || _loadedSessions == null)
+                return;
+
+            int idx = dgvSessions.SelectedRows[0].Index;
+            if (idx < 0 || idx >= _loadedSessions.Count)
+                return;
+
+            var session = _loadedSessions[idx];
+
+            try
+            {
+                _loadedHands = await _gameLoggerService.GetHandsForSessionAsync(session.Id);
+
+                var displayData = _loadedHands.Select(h => new
+                {
+                    h.HandNumber,
+                    Cards = $"{h.HeroCard1} {h.HeroCard2}",
+                    Position = FormatPosition(h.HeroPosition),
+                    LastStreet = h.LastStreetPlayed.ToString(),
+                    Result = h.Result.ToString(),
+                    ProfitLoss = (h.HeroStackEnd - h.HeroStackStart).ToString("+0.00;-0.00")
+                }).ToList();
+
+                dgvSessionHands.DataSource = displayData;
+
+                lblSessionStats.Text = $"Sesión: {session.TableName} | {session.TotalHands} manos | " +
+                    $"{session.TotalProfit:+0.00;-0.00} | {session.BBPer100:+0.0;-0.0} BB/100";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando manos: {ex.Message}");
+            }
+        }
+
+        private static string FormatPosition(TablePosition pos) => pos switch
+        {
+            TablePosition.Button => "BTN",
+            TablePosition.CutOff => "CO",
+            TablePosition.Middle => "MP",
+            TablePosition.Early => "EP",
+            TablePosition.SmallBlind => "SB",
+            TablePosition.BigBlind => "BB",
+            _ => pos.ToString()
+        };
+
+        private void DgvSessionHands_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || _loadedHands == null || e.RowIndex >= _loadedHands.Count)
+                return;
+
+            var hand = _loadedHands[e.RowIndex];
+            decimal bigBlind = _loadedSessions != null && dgvSessions.SelectedRows.Count > 0
+                ? _loadedSessions[dgvSessions.SelectedRows[0].Index].BigBlind
+                : 0.50m;
+
+            using var frm = new FrmHandDetail(hand, bigBlind);
+            frm.ShowDialog(this);
+        }
+
+        /// <summary>
+        /// Aplica colores condicionales verde/rojo a las columnas Profit y BB/100
+        /// </summary>
+        private void DgvSessions_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.Value == null) return;
+
+            string colName = dgvSessions.Columns[e.ColumnIndex].Name;
+            if (colName is "TotalProfit" or "BBPer100")
+            {
+                string val = e.Value.ToString() ?? "";
+                if (val.StartsWith('+'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Success;
+                else if (val.StartsWith('-'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
+            }
+        }
+
+        /// <summary>
+        /// Aplica colores condicionales a Result y P/L en la grilla de manos
+        /// </summary>
+        private void DgvSessionHands_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.Value == null) return;
+
+            string colName = dgvSessionHands.Columns[e.ColumnIndex].Name;
+            string val = e.Value.ToString() ?? "";
+
+            if (colName == "Result")
+            {
+                e.CellStyle.ForeColor = val switch
+                {
+                    "Won" => AppThemeHelper.Success,
+                    "Lost" => AppThemeHelper.Danger,
+                    _ => AppThemeHelper.PrimaryLight
+                };
+            }
+            else if (colName == "ProfitLoss")
+            {
+                if (val.StartsWith('+'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Success;
+                else if (val.StartsWith('-'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
+            }
+        }
+
+        #endregion
     }
 
 

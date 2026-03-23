@@ -138,6 +138,13 @@
             twTables = new TreeView();
             tbLogs = new TabPage();
             tbResume = new TextBox();
+            tpHistorial = new TabPage();
+            splitHistorialLeft = new SplitContainer();
+            lblSesionesTitle = new Label();
+            dgvSessions = new DataGridView();
+            lblManosTitle = new Label();
+            dgvSessionHands = new DataGridView();
+            lblSessionStats = new Label();
             lbNamePlayerOne = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
@@ -180,6 +187,13 @@
             tbTables.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
+            tpHistorial.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).BeginInit();
+            splitHistorialLeft.Panel1.SuspendLayout();
+            splitHistorialLeft.Panel2.SuspendLayout();
+            splitHistorialLeft.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvSessions).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvSessionHands).BeginInit();
             SuspendLayout();
             // 
             // backgroundWorker1
@@ -192,6 +206,7 @@
             tbControl.Controls.Add(tbConfig);
             tbControl.Controls.Add(tbTables);
             tbControl.Controls.Add(tbLogs);
+            tbControl.Controls.Add(tpHistorial);
             tbControl.Dock = DockStyle.Fill;
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
@@ -1327,7 +1342,93 @@
             tbResume.Name = "tbResume";
             tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
-            // 
+            //
+            // tpHistorial
+            //
+            tpHistorial.Controls.Add(splitHistorialLeft);
+            tpHistorial.Controls.Add(lblSessionStats);
+            tpHistorial.Location = new Point(4, 24);
+            tpHistorial.Name = "tpHistorial";
+            tpHistorial.Size = new Size(569, 392);
+            tpHistorial.TabIndex = 4;
+            tpHistorial.Text = "Historial";
+            tpHistorial.UseVisualStyleBackColor = true;
+            //
+            // splitHistorialLeft
+            //
+            splitHistorialLeft.Dock = DockStyle.Fill;
+            splitHistorialLeft.Location = new Point(0, 0);
+            splitHistorialLeft.Name = "splitHistorialLeft";
+            splitHistorialLeft.Orientation = Orientation.Horizontal;
+            //
+            // splitHistorialLeft.Panel1
+            //
+            splitHistorialLeft.Panel1.Controls.Add(dgvSessions);
+            splitHistorialLeft.Panel1.Controls.Add(lblSesionesTitle);
+            //
+            // splitHistorialLeft.Panel2
+            //
+            splitHistorialLeft.Panel2.Controls.Add(dgvSessionHands);
+            splitHistorialLeft.Panel2.Controls.Add(lblManosTitle);
+            splitHistorialLeft.Size = new Size(569, 362);
+            splitHistorialLeft.SplitterDistance = 180;
+            splitHistorialLeft.TabIndex = 0;
+            //
+            // lblSesionesTitle
+            //
+            lblSesionesTitle.Dock = DockStyle.Top;
+            lblSesionesTitle.Location = new Point(0, 0);
+            lblSesionesTitle.Name = "lblSesionesTitle";
+            lblSesionesTitle.Size = new Size(350, 30);
+            lblSesionesTitle.TabIndex = 0;
+            lblSesionesTitle.Text = "Sesiones";
+            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
+            //
+            // dgvSessions
+            //
+            dgvSessions.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvSessions.Dock = DockStyle.Fill;
+            dgvSessions.Location = new Point(0, 30);
+            dgvSessions.Name = "dgvSessions";
+            dgvSessions.ReadOnly = true;
+            dgvSessions.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvSessions.MultiSelect = false;
+            dgvSessions.AllowUserToAddRows = false;
+            dgvSessions.Size = new Size(569, 150);
+            dgvSessions.TabIndex = 1;
+            //
+            // lblManosTitle
+            //
+            lblManosTitle.Dock = DockStyle.Top;
+            lblManosTitle.Location = new Point(0, 0);
+            lblManosTitle.Name = "lblManosTitle";
+            lblManosTitle.Size = new Size(350, 30);
+            lblManosTitle.TabIndex = 0;
+            lblManosTitle.Text = "Manos";
+            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
+            //
+            // dgvSessionHands
+            //
+            dgvSessionHands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvSessionHands.Dock = DockStyle.Fill;
+            dgvSessionHands.Location = new Point(0, 30);
+            dgvSessionHands.Name = "dgvSessionHands";
+            dgvSessionHands.ReadOnly = true;
+            dgvSessionHands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvSessionHands.MultiSelect = false;
+            dgvSessionHands.AllowUserToAddRows = false;
+            dgvSessionHands.Size = new Size(569, 152);
+            dgvSessionHands.TabIndex = 1;
+            //
+            // lblSessionStats
+            //
+            lblSessionStats.Dock = DockStyle.Bottom;
+            lblSessionStats.Location = new Point(0, 362);
+            lblSessionStats.Name = "lblSessionStats";
+            lblSessionStats.Size = new Size(569, 30);
+            lblSessionStats.TabIndex = 1;
+            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
+            //
             // lbNamePlayerOne
             // 
             lbNamePlayerOne.AutoSize = true;
@@ -1409,6 +1510,13 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
+            splitHistorialLeft.Panel1.ResumeLayout(false);
+            splitHistorialLeft.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).EndInit();
+            splitHistorialLeft.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgvSessions).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvSessionHands).EndInit();
+            tpHistorial.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -1525,5 +1633,12 @@
         private Label lbPositionAction;
         private Panel pnlUserStack;
         private Label lbUserStack;
+        private TabPage tpHistorial;
+        private SplitContainer splitHistorialLeft;
+        private Label lblSesionesTitle;
+        private DataGridView dgvSessions;
+        private Label lblManosTitle;
+        private DataGridView dgvSessionHands;
+        private Label lblSessionStats;
     }
 }

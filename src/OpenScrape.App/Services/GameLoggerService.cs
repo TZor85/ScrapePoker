@@ -1,5 +1,6 @@
 using Marten;
 using Microsoft.Extensions.Logging;
+using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -259,6 +260,40 @@ public class GameLoggerService
             .OrderBy(h => h.Timestamp)
             .ToListAsync();
         return results.ToList();
+    }
+
+    /// <summary>
+    /// Obtiene las sesiones recientes con estadísticas agregadas calculadas desde HandRecord.
+    /// </summary>
+    public async Task<List<SessionStatsDto>> GetRecentSessionsWithStatsAsync(int count = 50)
+    {
+        await using var session = _store.QuerySession();
+        var sessions = await session.Query<GameSession>()
+            .OrderByDescending(s => s.EndTime)
+            .Take(count)
+            .ToListAsync();
+
+        var result = new List<SessionStatsDto>();
+        foreach (var gs in sessions)
+        {
+            var hands = await session.Query<HandRecord>()
+                .Where(h => h.GameSessionId == gs.Id)
+                .ToListAsync();
+
+            int totalHands = hands.Count;
+            decimal totalProfit = hands
+                .Where(h => h.Result != HandResult.Unknown)
+                .Sum(h => h.HeroStackEnd - h.HeroStackStart);
+            double bbPer100 = totalHands > 0 && gs.BigBlind > 0
+                ? (double)(totalProfit / gs.BigBlind) / totalHands * 100
+                : 0;
+
+            result.Add(new SessionStatsDto(
+                gs.Id, gs.SessionId, gs.TableName,
+                gs.StartTime, gs.EndTime, gs.BigBlind,
+                totalHands, totalProfit, bbPer100));
+        }
+        return result;
     }
 
     public bool HasActiveSession => _currentSession != null;
