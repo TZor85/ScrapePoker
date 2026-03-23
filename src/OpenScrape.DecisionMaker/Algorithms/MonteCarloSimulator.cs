@@ -18,8 +18,9 @@ namespace OpenScrape.DecisionMaker.Algorithms
         private static readonly CardDataOuts[] DeckTemplate = CreateDeckTemplate();
         private const int DeckSize = PokerConstants.DeckSize;
 
-        // HandEvaluator es stateless (solo constantes) → instancia única compartida
-        private static readonly HandEvaluator SharedEvaluator = new();
+        // BitHandEvaluator es stateless (solo constantes) → instancia única compartida
+        // Usa bit-manipulation en vez de C(n,5) brute-force: 10-20x más rápido
+        private static readonly IHandEvaluator SharedEvaluator = new BitHandEvaluator();
 
         // Cada thread reutiliza su propio array de deck, evitando allocations
         private static readonly ThreadLocal<CardDataOuts[]> ThreadDeck =

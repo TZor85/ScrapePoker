@@ -6,6 +6,7 @@ using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -36,6 +37,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public KickerStrength HeroKickerStrength { get; set; } // Fuerza del kicker con top pair
         public BoardTextureCategory? BoardTexture { get; set; } // Textura del board (Dry/SemiDry/SemiWet/Wet/Paired)
         public double BoardWetnessScore { get; set; }           // Puntuación de humedad del board (0-100)
+        public PairClassification PairType { get; set; }        // Sub-tipo de par (solo relevante cuando HeroHandRank == OnePair)
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -43,16 +45,22 @@ namespace OpenScrape.App.Aplication.UseCases
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
-        private readonly HandEvaluator _handEvaluator;
+        private readonly IHandEvaluator _handEvaluator;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly StrategyProfile _profile;
         private readonly ILogger<UnifiedPokerCalculator> _logger;
+
+        // Cache de equity postflop: evita re-ejecutar Monte Carlo cuando las cartas no cambian.
+        // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion"
+        // Valor: equity en porcentaje (0-100)
+        private readonly ConcurrentDictionary<string, double> _equityCache = new();
+        private const int EquityCacheMaxSize = 256;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
-            HandEvaluator handEvaluator,
+            IHandEvaluator handEvaluator,
             BoardTextureAnalyzer boardTextureAnalyzer,
             IOptions<StrategyProfile> profileOptions,
             ILogger<UnifiedPokerCalculator> logger)
@@ -112,6 +120,9 @@ namespace OpenScrape.App.Aplication.UseCases
                                 : bestKicker >= 10 ? KickerStrength.Medium
                                 : KickerStrength.Weak;
                         }
+
+                        // Clasificar sub-tipo de par para decisiones turn/river diferenciadas
+                        result.PairType = ClassifyPair(handEval, playerHand, communityCards);
                     }
                 }
 
@@ -182,8 +193,12 @@ namespace OpenScrape.App.Aplication.UseCases
             {
                 return _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
             }
-            else // Postflop
+            else // Postflop — usar cache para evitar re-ejecutar Monte Carlo
             {
+                string cacheKey = BuildEquityCacheKey(playerHand, communityCards, numOpponents, handSituation);
+                if (_equityCache.TryGetValue(cacheKey, out double cached))
+                    return cached;
+
                 // Obtener rango del villano según la situación de la mano
                 VillainRange? villainRange = null;
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var situation))
@@ -193,8 +208,24 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(
                     playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
-                return monteCarloResult.Equity * 100;
+                double equity = monteCarloResult.Equity * 100;
+
+                // Guardar en cache, con límite de tamaño para evitar crecimiento descontrolado
+                if (_equityCache.Count >= EquityCacheMaxSize)
+                    _equityCache.Clear();
+                _equityCache[cacheKey] = equity;
+
+                return equity;
             }
+        }
+
+        private static string BuildEquityCacheKey(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
+            int numOpponents, string? handSituation)
+        {
+            // Ordenar cartas para que el orden no afecte la clave
+            var hand = string.Join(",", playerHand.Select(c => c.Id).OrderBy(x => x));
+            var comm = string.Join(",", communityCards.Select(c => c.Id).OrderBy(x => x));
+            return $"{hand}|{comm}|{numOpponents}|{handSituation ?? ""}";
         }
 
         private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)
@@ -321,6 +352,62 @@ namespace OpenScrape.App.Aplication.UseCases
                 5 => "River",
                 _ => "Unknown"
             };
+        }
+
+        /// <summary>
+        /// Clasifica el sub-tipo de par cuando hero tiene OnePair.
+        /// Distingue Overpair, TopPair, MiddlePair, BottomPair, PocketPairUnder y BoardPaired.
+        /// </summary>
+        public static PairClassification ClassifyPair(
+            HandEvaluation handEval,
+            List<CardDataOuts> playerHand,
+            List<CardDataOuts> communityCards)
+        {
+            if (communityCards.Count == 0)
+                return PairClassification.None;
+
+            // Rank que forma el par en la evaluación
+            var pairGroup = handEval.Cards
+                .GroupBy(c => c.Rank)
+                .FirstOrDefault(g => g.Count() == 2);
+            if (pairGroup == null)
+                return PairClassification.None;
+
+            int pairRankValue = (int)pairGroup.Key;
+
+            // Ranks del board (sin las hole cards)
+            var boardRanks = communityCards.Select(c => (int)c.Rank).ToList();
+            int maxBoard = boardRanks.Max();
+            int minBoard = boardRanks.Min();
+
+            // Ranks de las hole cards de hero
+            var holeRanks = playerHand.Select(c => (int)c.Rank).ToList();
+            bool holeCard1ContributesPair = holeRanks.Count > 0 && holeRanks[0] == pairRankValue;
+            bool holeCard2ContributesPair = holeRanks.Count > 1 && holeRanks[1] == pairRankValue;
+            bool heroContributesPair = holeCard1ContributesPair || holeCard2ContributesPair;
+
+            // El par está solo en el board — hero no aporta ninguna hole card al par
+            if (!heroContributesPair)
+                return PairClassification.BoardPaired;
+
+            // Pocket pair: ambas hole cards tienen el mismo rank y ese rank forma el par
+            bool isPocketPair = holeCard1ContributesPair && holeCard2ContributesPair;
+            if (isPocketPair)
+            {
+                // Overpair: pocket pair superior a todas las cartas del board
+                return pairRankValue > maxBoard
+                    ? PairClassification.Overpair
+                    : PairClassification.PocketPairUnder;
+            }
+
+            // Par formado por una hole card que empareja una carta del board
+            if (pairRankValue == maxBoard)
+                return PairClassification.TopPair;
+
+            if (pairRankValue == minBoard)
+                return PairClassification.BottomPair;
+
+            return PairClassification.MiddlePair;
         }
     }
 }

@@ -295,18 +295,24 @@ namespace OpenScrape.App.Forms
             lbEquity.Text = $"Equity: {equity}%";
         }
 
-        public void UpdateShouldCall(bool? shouldCall)
+        public void UpdateStreetPhase(string phase)
         {
-            if (shouldCall == null)
+            if (string.IsNullOrEmpty(phase))
             {
                 lbShouldCall.Text = string.Empty;
                 return;
             }
 
-            lbShouldCall.Text = shouldCall.Value ? "Pagar" : "No Pagar";
-            lbShouldCall.ForeColor = shouldCall.Value
-                ? Color.FromArgb(130, 255, 130)
-                : Color.FromArgb(255, 130, 130);
+            lbShouldCall.Text = phase;
+            lbShouldCall.ForeColor = phase.ToUpperInvariant() switch
+            {
+                "PRE-FLOP" or "PREFLOP" => Color.FromArgb(180, 180, 200),
+                "FLOP"                  => Color.FromArgb(80, 160, 255),
+                "TURN"                  => Color.FromArgb(255, 180, 50),
+                "RIVER"                 => Color.FromArgb(255, 80, 80),
+                _                       => Color.FromArgb(180, 180, 200)
+            };
+            lbShouldCall.Font = new Font("Segoe UI", _config.FontSize, FontStyle.Bold);
         }
 
         public void UpdateSituacion(string situacion)
@@ -434,7 +440,7 @@ namespace OpenScrape.App.Forms
         {
             UpdatePotOddsPercentage(result.PotOddsPercentage.ToString("F1"));
             UpdateEquityPercentage(result.EquityPercentage.ToString("F1"));
-            UpdateShouldCall(result.ShouldCall);
+            UpdateStreetPhase(result.Street);
             UpdateAction(result.RecommendedAction);
 
             // Indicador de street (borde)

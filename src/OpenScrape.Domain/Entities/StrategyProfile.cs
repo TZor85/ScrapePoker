@@ -36,7 +36,7 @@ public class StrategyProfile
 
     // Bluff Frequencies
     public double FlopBluffFrequency { get; set; } = 0.15;
-    public double TurnBluffFrequency { get; set; } = 0.15;
+    public double TurnBluffFrequency { get; set; } = 0.12;
     public double RiverBluffFrequency { get; set; } = 0.10;
 
     // Danger Card Penalties (usado en PostflopDecisionService)
@@ -107,6 +107,19 @@ public class StrategyProfile
     // Tainted Outs (usado en OutsCalculator)
     // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
     public double TaintedOutsDiscount { get; set; } = 0.5;
+
+    // Floating IP (call con posición para robar en turn)
+    public double FloatingIPMinEquity { get; set; } = 20.0;
+    public double FloatingIPMaxEquity { get; set; } = 35.0;
+
+    // Slow Play (check con nuts en board seco para inducir bluff)
+    public double SlowPlayMinEquity { get; set; } = 80.0;
+
+    // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
+    public double BoardPairedCbetReduction { get; set; } = 8.0;
+
+    // River opportunity (hero completó draw → bet for value)
+    public double RiverCompletedDrawBonus { get; set; } = 10.0;
 
     // Decision Adjustments (usado en UnifiedPokerCalculator)
     public double DrawEquityBonus { get; set; } = 2.0;

@@ -17,7 +17,7 @@ public class PostflopDecisionServiceTests
     public void Setup()
     {
         var profile = CreateDefaultProfile();
-        _service = new PostflopDecisionService(Options.Create(profile));
+        _service = CreateService(profile);
     }
 
     [Test]
@@ -627,6 +627,12 @@ public class PostflopDecisionServiceTests
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
 
+    private static PostflopDecisionService CreateService(StrategyProfile profile)
+    {
+        var betSizing = new BetSizingService(Options.Create(profile));
+        return new PostflopDecisionService(Options.Create(profile), betSizing);
+    }
+
     private static StrategyProfile CreateDefaultProfile()
     {
         return new StrategyProfile
@@ -755,7 +761,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_OOP_ManoFuerte_DeberiaCheckRaise()
     {
         var profile = CreateProfileConCheckRaise();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -770,7 +776,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_IP_NoDeberiaCheckRaise()
     {
         var profile = CreateProfileConCheckRaise();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -784,7 +790,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_ManoDebil_NoDeberiaCheckRaise()
     {
         var profile = CreateProfileConCheckRaise();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -798,7 +804,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_HeroAgresor_NoDeberiaCheckRaise()
     {
         var profile = CreateProfileConCheckRaise();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -812,7 +818,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_Multiway_NoDeberiaCheckRaise()
     {
         var profile = CreateProfileConCheckRaise();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -881,7 +887,7 @@ public class PostflopDecisionServiceTests
     public void SemiBluff_ComboDraw_Flop_SizingAgresivo()
     {
         var profile = CreateProfileConSemiBluffAgresivo();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // 14 outs en flop, sin facing bet → semi-bluff agresivo (3/4 pot)
         var result = service.DetermineAction(
@@ -898,7 +904,7 @@ public class PostflopDecisionServiceTests
     public void SemiBluff_NoComboDraw_Flop_SizingNormal()
     {
         var profile = CreateProfileConSemiBluffAgresivo();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // 9 outs en flop → sizing normal
         var result = service.DetermineAction(
@@ -914,7 +920,7 @@ public class PostflopDecisionServiceTests
     public void SemiBluff_ComboDraw_Turn_SizingNormal()
     {
         var profile = CreateProfileConSemiBluffAgresivo();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // 14 outs en turn → no es combo draw agresivo (solo en flop)
         var result = service.DetermineAction(
@@ -931,7 +937,7 @@ public class PostflopDecisionServiceTests
     public void Overbet_BoardSeco_Agresor_DeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
@@ -946,7 +952,7 @@ public class PostflopDecisionServiceTests
     public void Overbet_BoardCoordinado_NoDeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
@@ -960,7 +966,7 @@ public class PostflopDecisionServiceTests
     public void Overbet_River_NutsDeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // River con TwoPair+ en board seco → overbet por máximo valor
         var result = service.DetermineAction(
@@ -976,7 +982,7 @@ public class PostflopDecisionServiceTests
     public void Overbet_River_OnePair_NoDeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // River con OnePair → no overbet (mano vulnerable)
         var result = service.DetermineAction(
@@ -991,7 +997,7 @@ public class PostflopDecisionServiceTests
     public void Overbet_NoCaller_NoDeberiaOverbet()
     {
         var profile = CreateProfileConOverbet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
@@ -1143,7 +1149,7 @@ public class PostflopDecisionServiceTests
     public void ProbeBet_AgresorCheckeoFlop_OOP_DeberiaProbe()
     {
         var profile = CreateProfileConProbeBet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // Equity 42 > FoldBelow(40) → llega a HandleNoBet → probe bet (equity > ProbeBetMinEquity 25)
         var result = service.DetermineAction(
@@ -1158,7 +1164,7 @@ public class PostflopDecisionServiceTests
     public void ProbeBet_AgresorAposto_SinProbe()
     {
         var profile = CreateProfileConProbeBet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -1172,7 +1178,7 @@ public class PostflopDecisionServiceTests
     public void ProbeBet_IP_SinProbe()
     {
         var profile = CreateProfileConProbeBet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
@@ -1186,7 +1192,7 @@ public class PostflopDecisionServiceTests
     public void ProbeBet_EquityMuyBaja_SinProbe()
     {
         var profile = CreateProfileConProbeBet();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         // Equity 15 < ProbeBetMinEquity(25) → no probe
         var result = service.DetermineAction(
@@ -1303,7 +1309,7 @@ public class PostflopDecisionServiceTests
     {
         // En flop no se activa push/fold
         var profile = CreateProfileConSemiBluffAgresivo();
-        var service = new PostflopDecisionService(Options.Create(profile));
+        var service = CreateService(profile);
 
         var result = service.DetermineAction(
             equity: 60, BoardPosition.Flop, HandSituation.OpenRaise,

@@ -212,6 +212,27 @@ namespace OpenScrape.App
 
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
+
+            FormClosing += FrmMain_FormClosing;
+        }
+
+        /// <summary>
+        /// Al cerrar la aplicación, persiste la última mano y sesión activas para no perder datos.
+        /// </summary>
+        private async void FrmMain_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (_gameLoggerService.HasActiveHand)
+                    _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+
+                if (_gameLoggerService.HasActiveSession)
+                    await _gameLoggerService.SaveSessionAsync();
+            }
+            catch (Exception ex)
+            {
+                LogError($"Error al guardar datos al cerrar: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -505,7 +526,7 @@ namespace OpenScrape.App
                 lbAction.Text = string.Empty;
                 _frmOverlay.UpdateEquityPercentage(string.Empty);
                 _frmOverlay.UpdatePotOddsPercentage(string.Empty);
-                _frmOverlay.UpdateShouldCall(null);
+                _frmOverlay.UpdateStreetPhase(string.Empty);
                 _frmOverlay.UpdateTableName(_tableName);
                 lbPositionAction.Text = string.Empty;
                 _executeCapture = true;
@@ -544,17 +565,10 @@ namespace OpenScrape.App
                     var prevPosition = _playerGameState?.Position ?? TablePosition.None;
                     var prevHeroStack = _playerGameState?.HeroStack ?? 0;
 
-                    _frmOverlay?.ClearAll();
-                    _playerGameState = new PlayerGameState();
-                    _responseAction = new ResponseAction();
-                    _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-                    _dealerValuePosition = -1;
-                    _dealerPosition = string.Empty;
-                    _newHand = false;
-
-                    // Guardar estado postflop solo si ya estábamos en postflop Y el número de mano
-                    // NO cambió (es una re-captura dentro de la misma mano, no una mano nueva)
+                    // Guardar estado postflop ANTES de resetear PlayerGameState, si aplica.
+                    // Solo se guarda si es la misma mano (mismo hand number).
                     GameState? savedPostflopState = null;
+                    List<BoardData>? savedBoardCards = null;
                     bool sameHand = !string.IsNullOrEmpty(handNumberBeforeUpdate) && handNumberBeforeUpdate == _tableHand;
                     if (!cbTest.Checked && sameHand &&
                         (_gameLoopStateMachine.IsFlop ||
@@ -562,8 +576,20 @@ namespace OpenScrape.App
                          _gameLoopStateMachine.IsRiver))
                     {
                         savedPostflopState = _gameLoopStateMachine.CurrentState;
-                        LogInformation($"Guardando estado postflop antes de reset: {savedPostflopState}");
+                        // Preservar las cartas del board para no perderlas al resetear PlayerGameState
+                        savedBoardCards = _playerGameState?.BoardCards?
+                            .Where(b => b.Position != BoardPosition.Hand)
+                            .ToList();
+                        LogInformation($"Guardando estado postflop antes de reset: {savedPostflopState}, BoardCards: {savedBoardCards?.Count ?? 0}");
                     }
+
+                    _frmOverlay?.ClearAll();
+                    _playerGameState = new PlayerGameState();
+                    _responseAction = new ResponseAction();
+                    _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
+                    _dealerValuePosition = -1;
+                    _dealerPosition = string.Empty;
+                    _newHand = false;
 
                     // State machine: transicionar a nueva mano
                     _gameLoopStateMachine.Reset();
@@ -578,8 +604,12 @@ namespace OpenScrape.App
                     // no son transiciones válidas en la máquina de estados.
                     if (savedPostflopState.HasValue)
                     {
-                        LogInformation($"Restaurando estado postflop: {savedPostflopState}");
+                        LogInformation($"Restaurando estado postflop: {savedPostflopState}, BoardCards: {savedBoardCards?.Count ?? 0}");
                         _gameLoopStateMachine.ForceState(savedPostflopState.Value);
+                        // Restaurar las cartas del board para que ProcessTurnAsync/ProcessRiverAsync
+                        // puedan construir sobre las cartas previas
+                        if (savedBoardCards != null && savedBoardCards.Count > 0)
+                            _playerGameState.BoardCards = savedBoardCards;
                     }
                     else
                     {
@@ -821,6 +851,7 @@ namespace OpenScrape.App
             _responseAction = responseFlop.ResponseAction;
             _playerGameState = responseFlop.PlayerState;
 
+            _frmOverlay.UpdateStreetPhase("Pre-Flop");
             SetPreflopAggressors();
         }
 
@@ -926,6 +957,7 @@ namespace OpenScrape.App
                 .Max();
 
             // Umbral de confianza: >80% indica carta real, <80% indica fondo de mesa
+            LogDebug($"IsBoardCardVisible({cardRegionName}): bestMatch={bestMatch:F1}%, visible={bestMatch > 80.0}");
             return bestMatch > 80.0;
         }
 
@@ -977,7 +1009,8 @@ namespace OpenScrape.App
                 heroIsAggressor: riverIsAggressor,
                 heroHandRank: _riverResult.HeroHandRank,
                 hasComboDraw: _riverResult.HasComboDraw,
-                villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0);
+                villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
+                pairClassification: _riverResult.PairType);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -997,7 +1030,7 @@ namespace OpenScrape.App
             LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
             LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
             LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_riverResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_riverResult.HeroHandRank}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Mano hero: {_riverResult.HeroHandRank}{(_riverResult.PairType != PairClassification.None ? $" ({_riverResult.PairType})" : "")}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
             LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_riverResult.TotalOuts}  |  Draws: {draws}");
             LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}{(decision.IsBarrel ? "  [BARREL]" : "")}");
 
@@ -1295,7 +1328,8 @@ namespace OpenScrape.App
                 numOpponents: numOpponents,
                 heroIsAggressor: isPreflopAggressor,
                 heroHandRank: _flopResult.HeroHandRank,
-                hasComboDraw: _flopResult.HasComboDraw);
+                hasComboDraw: _flopResult.HasComboDraw,
+                pairClassification: _flopResult.PairType);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -1368,7 +1402,8 @@ namespace OpenScrape.App
                 heroHandRank: _turnResult.HeroHandRank,
                 hasComboDraw: _turnResult.HasComboDraw,
                 villainAggressorCheckedPreviousStreet: _postflopContext.VillainAggressorCheckedFlop,
-                villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0);
+                villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0,
+                pairClassification: _turnResult.PairType);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1387,7 +1422,7 @@ namespace OpenScrape.App
             LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
             LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
             LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_turnResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_turnResult.HeroHandRank}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
+            LogError($"  Mano hero: {_turnResult.HeroHandRank}{(_turnResult.PairType != PairClassification.None ? $" ({_turnResult.PairType})" : "")}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
             LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_turnResult.TotalOuts}  |  Draws: {draws}");
             LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
 
@@ -1639,12 +1674,12 @@ namespace OpenScrape.App
 
             // Asegurar que hay sesión activa e iniciar nueva mano
             if (!_gameLoggerService.HasActiveSession)
-                _gameLoggerService.StartSession(_session, _tableName);
+                await _gameLoggerService.StartSessionAsync(_session, _tableName);
 
             if (long.TryParse(_tableHand, out var handNum))
             {
                 var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
-                _gameLoggerService.StartNewHand(
+                await _gameLoggerService.StartNewHandAsync(
                     handNum,
                     prevHoleCard1,
                     prevHoleCard2,
@@ -2259,7 +2294,38 @@ namespace OpenScrape.App
 
                     if (handNumberChanged)
                     {
-                        _newHand = DetectNewHand(true, currentHand);
+                        // Protección contra falsos positivos de OCR en postflop:
+                        // Si estamos en postflop y el número de mano cambió drásticamente
+                        // (longitud diferente o cambio >100x), probablemente es un error de OCR
+                        // al re-leer el número cuando aparecen cartas nuevas en el board.
+                        // En ese caso requerimos más indicadores secundarios (3+).
+                        bool inPostflop = _gameLoopStateMachine.IsFlop ||
+                                          _gameLoopStateMachine.IsTurn ||
+                                          _gameLoopStateMachine.IsRiver;
+
+                        bool suspiciousOcrChange = false;
+                        if (inPostflop && handNumberParseable && oldTableHand > 0 && newTableHand > 0)
+                        {
+                            double ratio = (double)newTableHand / oldTableHand;
+                            bool lengthDiffers = newTableHand.ToString().Length != oldTableHand.ToString().Length;
+                            suspiciousOcrChange = lengthDiffers || ratio > 100 || ratio < 0.01;
+                        }
+                        else if (inPostflop && !handNumberParseable)
+                        {
+                            // En postflop con OCR no parseable, también es sospechoso
+                            suspiciousOcrChange = true;
+                        }
+
+                        if (suspiciousOcrChange)
+                        {
+                            LogInformation($"[HAND#] Cambio sospechoso de OCR en postflop: prev='{_tableHand}', current='{currentHand}' — requiriendo más indicadores");
+                            _newHand = DetectNewHand(false, currentHand);
+                        }
+                        else
+                        {
+                            _newHand = DetectNewHand(true, currentHand);
+                        }
+
                         if (_newHand)
                         {
                             if (handNumberParseable && newTableHand > 0)

@@ -17,8 +17,8 @@ public class OcrService
     private const int MaxOcrCacheSize = 500;
 
     private TesseractEngine _engine;
-    private readonly ConcurrentDictionary<string, SKBitmap> _bitmapCache = new();
-    private readonly ConcurrentDictionary<ulong, string> _ocrCache = new();
+    private readonly LruCache<string, SKBitmap> _bitmapCache = new(MaxBitmapCacheSize);
+    private readonly LruCache<ulong, string> _ocrCache = new(MaxOcrCacheSize);
     private static readonly object _lock = new object();
 
     private void InitializeEngine()
@@ -176,7 +176,7 @@ public class OcrService
                 {
                     // Compute dHash for cache
                     ulong hash = ComputeDHash(croppedBitmap);
-                    if (_ocrCache.TryGetValue(hash, out var cachedText))
+                    if (_ocrCache.TryGet(hash, out var cachedText))
                     {
                         // Cache hit: create result with cached text
                         using var ms = new MemoryStream();
@@ -249,12 +249,8 @@ public class OcrService
                         {
                             var text = ProcessText(page.GetText().Trim());
 
-                            // Cache the result (evict si supera el límite)
-                            if (_ocrCache.Count >= MaxOcrCacheSize)
-                            {
-                                _ocrCache.Clear();
-                            }
-                            _ocrCache[hash] = text;
+                            // Cache the result — LruCache descarta la entrada menos usada al superar la capacidad
+                            _ocrCache.Set(hash, text);
 
                             // Crear el bitmap para el resultado
                             using (var ms = new MemoryStream(imageData))
@@ -284,7 +280,7 @@ public class OcrService
     {
         var key = $"{sourceImage.GetHashCode()}_{x}_{y}_{width}_{height}";
 
-        if (_bitmapCache.TryGetValue(key, out var cachedBitmap))
+        if (_bitmapCache.TryGet(key, out var cachedBitmap))
         {
             return cachedBitmap.Copy();
         }
@@ -300,41 +296,40 @@ public class OcrService
         var sourceRect = new SKRectI(x, y, x + width, y + height);
         canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
 
-        if (_bitmapCache.Count >= MaxBitmapCacheSize)
-        {
-            ClearBitmapCache();
-        }
-        _bitmapCache.TryAdd(key, croppedBitmap.Copy());
+        // LruCache descarta el bitmap menos reciente cuando supera la capacidad
+        _bitmapCache.Set(key, croppedBitmap.Copy());
         return croppedBitmap;
     }
 
     private SKBitmap ProcessBitmap(SKBitmap croppedBitmap, int width, int height, double porcentaje)
     {
-        var processedBitmap = new SKBitmap(width, height);
-        var thresholdValue = porcentaje * 255;
+        var processedBitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque);
+        var thresholdValue = (int)(porcentaje * 255);
 
-        // Procesar píxeles en bloques para mejor rendimiento
-        const int blockSize = 64;
-        var pixels = new SKColor[blockSize * blockSize];
+        // Acceso directo a memoria de píxeles — evita GetPixel/SetPixel que tienen overhead
+        // por llamada. ReadOnlySpan<byte> para lectura, Span<byte> para escritura.
+        var srcSpan = croppedBitmap.GetPixelSpan();  // BGRA fuente (read-only)
+        var dstSpan = processedBitmap.GetPixelSpan(); // BGRA destino (writable)
 
-        for (int blockY = 0; blockY < height; blockY += blockSize)
+        // Cada píxel = 4 bytes: B, G, R, A (formato BGRA8888)
+        int totalBytes = width * height * 4;
+
+        for (int i = 0; i < totalBytes; i += 4)
         {
-            for (int blockX = 0; blockX < width; blockX += blockSize)
-            {
-                var currentBlockWidth = Math.Min(blockSize, width - blockX);
-                var currentBlockHeight = Math.Min(blockSize, height - blockY);
+            // Leer B, G, R del pixel fuente
+            int b = srcSpan[i];
+            int g = srcSpan[i + 1];
+            int r = srcSpan[i + 2];
 
-                for (int y = 0; y < currentBlockHeight; y++)
-                {
-                    for (int x = 0; x < currentBlockWidth; x++)
-                    {
-                        var pixel = croppedBitmap.GetPixel(blockX + x, blockY + y);
-                        var brightness = (pixel.Red + pixel.Green + pixel.Blue) / 3.0;
-                        var color = brightness > thresholdValue ? SKColors.White : SKColors.Black;
-                        processedBitmap.SetPixel(blockX + x, blockY + y, color);
-                    }
-                }
-            }
+            // Calcular brillo promedio y binarizar
+            int brightness = (r + g + b) / 3;
+            byte value = brightness > thresholdValue ? (byte)255 : (byte)0;
+
+            // Escribir pixel blanco o negro en destino
+            dstSpan[i]     = value; // B
+            dstSpan[i + 1] = value; // G
+            dstSpan[i + 2] = value; // R
+            dstSpan[i + 3] = 255;   // A (opaco)
         }
 
         return processedBitmap;
@@ -400,45 +395,7 @@ public class OcrService
         _bitmapCache.Clear();
     }
 
-    private SKBitmap ApplyMedianFilter(SKBitmap bitmap, int radius)
-    {
-        if (radius <= 0)
-            return bitmap.Copy();
 
-        SKBitmap result = new SKBitmap(bitmap.Width, bitmap.Height);
-
-        for (int y = 0; y < bitmap.Height; y++)
-        {
-            for (int x = 0; x < bitmap.Width; x++)
-            {
-                List<byte> values = new List<byte>();
-
-                // Recopilar valores en la ventana de radio
-                for (int dy = -radius; dy <= radius; dy++)
-                {
-                    for (int dx = -radius; dx <= radius; dx++)
-                    {
-                        int nx = x + dx;
-                        int ny = y + dy;
-
-                        // Verificar límites
-                        if (nx >= 0 && nx < bitmap.Width && ny >= 0 && ny < bitmap.Height)
-                        {
-                            values.Add(bitmap.GetPixel(nx, ny).Red);
-                        }
-                    }
-                }
-
-                // Ordenar valores y tomar el del medio (mediana)
-                values.Sort();
-                byte medianValue = values[values.Count / 2];
-
-                result.SetPixel(x, y, new SKColor(medianValue, medianValue, medianValue, 255));
-            }
-        }
-
-        return result;
-    }
 }
 
 public class OcrResult

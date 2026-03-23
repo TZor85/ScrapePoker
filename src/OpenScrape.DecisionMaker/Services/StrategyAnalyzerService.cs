@@ -103,26 +103,39 @@ public class EquityVsOutcome
 public class StrategyAnalyzerService
 {
     /// <summary>
-    /// Analiza todas las sesiones y genera métricas completas.
+    /// Analiza sesiones junto con sus manos (cargadas por separado desde Marten).
     /// </summary>
-    public StrategyAnalysisResult AnalyzeSessions(List<GameSession> sessions)
+    public StrategyAnalysisResult AnalyzeSessions(List<GameSession> sessions, List<HandRecord> allHands)
     {
-        var allHands = sessions.SelectMany(s => s.Hands).ToList();
         var bigBlind = sessions.FirstOrDefault()?.BigBlind ?? 0.50m;
         var result = Analyze(allHands, bigBlind);
 
-        // Generar resumen de sesiones directamente desde GameSession
+        // Calcular métricas por sesión usando las manos proporcionadas
+        var handsBySession = allHands
+            .GroupBy(h => h.GameSessionId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         result.Sessions = sessions
             .OrderByDescending(s => s.StartTime)
-            .Select(s => new SessionSummary
+            .Select(s =>
             {
-                SessionId = s.SessionId,
-                TableName = s.TableName,
-                StartTime = s.StartTime,
-                EndTime = s.EndTime,
-                Hands = s.Hands.Count,
-                Profit = s.TotalProfit,
-                BBPer100 = s.BBPer100
+                var sessionHands = handsBySession.GetValueOrDefault(s.Id, []);
+                decimal profit = sessionHands
+                    .Where(h => h.Result != HandResult.Unknown)
+                    .Sum(h => h.HeroStackEnd - h.HeroStackStart);
+                double bbPer100 = s.BigBlind > 0m && sessionHands.Count > 0
+                    ? (double)(profit / s.BigBlind) / sessionHands.Count * 100
+                    : 0;
+                return new SessionSummary
+                {
+                    SessionId = s.SessionId,
+                    TableName = s.TableName,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    Hands = sessionHands.Count,
+                    Profit = profit,
+                    BBPer100 = bbPer100
+                };
             })
             .ToList();
 
