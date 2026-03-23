@@ -45,7 +45,7 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 2. **OpenScrape.Features** — Scoped use cases organized by feature: `Table/`, `Cards/`, `ActionScenario/`, `RegionsTableMap/`, `GameRound/`. `Services.cs` registers all use cases. Uses `Ardalis.Result` for return types.
 3. **OpenScrape.Infrastructure** — Marten (PostgreSQL document DB) setup. `Services.cs` configures the document store.
 4. **OpenScrape.DecisionMaker** — Poker algorithms and decision services. See "Decision Engine" below.
-5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder with `DOTNET_ENVIRONMENT` (defaults to `"Development"`). Key services: `OcrService` (Tesseract OCR with bounded caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine`, `GameLoggerService`. Forms: `FrmMain` (main window), `FrmOverlay` (table overlay), `FrmDetectionDebug`.
+5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder with `DOTNET_ENVIRONMENT` (defaults to `"Development"`). Key services: `OcrService` (Tesseract OCR with bounded caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine`, `GameLoggerService`. Forms: `FrmMain` (main window, 5 tabs: Juego/Config/Tablas/Logs/Historial), `FrmOverlay` (table overlay with 9 rows + action panel + street indicator), `FrmHandDetail` (hand history popup with colored RichTextBox), `FrmDetectionDebug`.
 
 **Data flow:** Screen capture → Image preprocessing (OpenCvSharp/SkiaSharp) → OCR (Tesseract) → Domain model → Decision engine (equity calculation, hand evaluation) → Action recommendation.
 
@@ -126,9 +126,12 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Persistence & Logging
 
-- `GameRound` entity stores hand data; `StreetDecision` value object logs per-street decisions (equity%, action, reason, bet sizing)
-- `GameLoggerService` persists to Marten (PostgreSQL) and writes to `tbResume` UI control (Logs tab)
-- Log format: structured blocks per street with `═══ [FLOP/TURN/RIVER] ═══` separator, showing: cards (hero + board), pot/bet/stack/SPR, situation/position/opponents, equity pipeline, hand rank, board texture, draws, and final decision with tags ([CHECK-RAISE], [BLUFF], [BARREL])
+- **`GameSession`** — Marten document, one per table session. Contains SessionId, TableName, StartTime, EndTime, BigBlind. Keeps last 20 `HandRecord` in memory; older hands already persisted individually. Computed properties: TotalHands, TotalProfit, BBPer100.
+- **`HandRecord`** — Marten document, one per hand. FK `GameSessionId` → `GameSession.Id`. Stores hero cards, position, stack start/end, board cards (flop/turn/river), `List<StreetDecision>`, result (`HandResult`: Won/Lost/Push/Unknown), situation, opponents count.
+- **`StreetDecision`** — Record (value object) with: Street, EquityPercent, PotOddsPercent, ExpectedValue, RecommendedAction, ActionTaken, PotSizeAtDecision, BetSize, Situation, IsInPosition.
+- **`GameLoggerService`** — Manages session/hand lifecycle: `StartSessionAsync` → `StartNewHandAsync` → `LogStreetDecision` → `EndHand` → `SaveSessionAsync`. Persists to Marten (PostgreSQL). Query methods: `GetRecentSessionsWithStatsAsync`, `GetHandsForSessionAsync`. Note: `EndHand` must receive the hero stack **before** `PlayerGameState` is reset (use `prevHeroStack`).
+- **Historial tab** — `dgvSessions` (sessions with stats) + `dgvSessionHands` (hands per session). Double-click on a hand opens `FrmHandDetail` popup with colored Hand History.
+- **Logs tab** — `tbResume` TextBox with structured blocks per street (`═══ [FLOP/TURN/RIVER] ═══`), showing equity pipeline, hand rank, board texture, draws, and final decision with tags ([CHECK-RAISE], [BLUFF], [BARREL]).
 - `LogError()` writes to both tbResume and Console; `LogDebug()` writes only to Console (dealer, positions, OCR readings)
 
 ## Key Enums
@@ -145,7 +148,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (288 tests, no mocking framework)
+- **NUnit** — Testing framework (322+ tests, no mocking framework)
 
 ## Code Style
 
@@ -155,3 +158,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - Private fields: `_camelCase`. Booleans: `is`/`has`/`can`/`should` prefix
 - Using groups: System → third-party → OpenScrape.*
 - Conventional commits in Spanish
+
+## Specifications (openspec/)
+
+Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab).

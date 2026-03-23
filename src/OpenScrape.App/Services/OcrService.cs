@@ -398,8 +398,14 @@ public class OcrService
 
 }
 
-public class OcrResult
+public class OcrResult : IDisposable
 {
     public string? Text { get; set; }
     public Bitmap? Image { get; set; }
+
+    public void Dispose()
+    {
+        Image?.Dispose();
+        Image = null;
+    }
 }

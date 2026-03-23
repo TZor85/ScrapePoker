@@ -132,7 +132,7 @@ namespace OpenScrape.App
         private readonly ImageCropperService _imageCropperService = new();
         private List<CardDTO>? _cardsImages;
         private readonly IDocumentStore _dataBase;
-        private IDocumentSession _sessionDB;
+        // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
         private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase = new SetFlopForceBoardUseCase();
         private static readonly IGetHashImageUseCase _getHashImageUseCase = new GetHashImageUseCase();
         private static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
@@ -202,7 +202,6 @@ namespace OpenScrape.App
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
-            _sessionDB = _dataBase.LightweightSession();
             _lastChecked = new RadioButton();
 
             _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
@@ -221,19 +220,32 @@ namespace OpenScrape.App
         /// <summary>
         /// Al cerrar la aplicación, persiste la última mano y sesión activas para no perder datos.
         /// </summary>
+        private bool _isClosing;
+
         private async void FrmMain_FormClosing(object? sender, FormClosingEventArgs e)
         {
-            try
-            {
-                if (_gameLoggerService.HasActiveHand)
-                    _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+            if (_isClosing)
+                return; // Ya estamos cerrando programáticamente
 
-                if (_gameLoggerService.HasActiveSession)
-                    await _gameLoggerService.SaveSessionAsync();
-            }
-            catch (Exception ex)
+            if (_gameLoggerService.HasActiveHand || _gameLoggerService.HasActiveSession)
             {
-                LogError($"Error al guardar datos al cerrar: {ex.Message}");
+                e.Cancel = true; // Cancelar el cierre para esperar al save
+                _isClosing = true;
+
+                try
+                {
+                    if (_gameLoggerService.HasActiveHand)
+                        _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+
+                    if (_gameLoggerService.HasActiveSession)
+                        await _gameLoggerService.SaveSessionAsync();
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Error al guardar datos al cerrar: {ex.Message}");
+                }
+
+                Close(); // Ahora sí cerrar (entrará de nuevo pero _isClosing = true)
             }
         }
 
@@ -248,10 +260,11 @@ namespace OpenScrape.App
                 _frmOverlay = new FrmOverlay(_overlayConfig);
                 cbSpeed.SelectedIndex = 0;
 
-                await LoadRegionTableMapAsync();
-                await LoadTablesAsync(_sessionDB);
+                await using var sessionDB = _dataBase.LightweightSession();
+                await LoadRegionTableMapAsync(sessionDB);
+                await LoadTablesAsync(sessionDB);
 
-                var allCards = await _sessionDB.Query<Card>().ToListAsync();
+                var allCards = await sessionDB.Query<Card>().ToListAsync();
                 _cards.AddRange(allCards);
 
                 _formImage.Location = new Point(Width, Location.Y);
@@ -268,10 +281,16 @@ namespace OpenScrape.App
         /// </summary>
         private async Task LoadRegionTableMapAsync()
         {
+            await using var session = _dataBase.LightweightSession();
+            await LoadRegionTableMapAsync(session);
+        }
+
+        private async Task LoadRegionTableMapAsync(IDocumentSession session)
+        {
             try
             {
                 var regions = new List<Domain.ValueObjects.Region>();
-                var regionsTableMap = await _sessionDB.Query<RegionTableMap>().ToListAsync();
+                var regionsTableMap = await session.Query<RegionTableMap>().ToListAsync();
 
                 var categories = regionsTableMap
                     .Where(x => x.Regions != null)
@@ -414,8 +433,8 @@ namespace OpenScrape.App
         private void UpdateRegionDisplay()
         {
             using (var lapiz = new Pen(Color.Red))
+            using (_papel = _formImage.pbImage.CreateGraphics())
             {
-                _papel = _formImage.pbImage.CreateGraphics();
                 _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY,
                     _selectedRegion.Width, _selectedRegion.Height);
             }
@@ -2912,29 +2931,19 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return 0;
 
-            var firstOcr = new OcrResult();
-            var secondOcr = new OcrResult();
-
-            var result = string.Empty;
-
-            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
-                posX,
-                posY,
-                width,
-                height,
+                posX, posY, width, height,
                 umbral ?? 0,
                 isOnlyNumber ?? false);
 
-
-            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
-                posX,
-                posY,
-                width,
-                height,
+                posX, posY, width, height,
                 inactiveUmbral ?? 0,
                 isOnlyNumber ?? false);
+
+            var result = string.Empty;
 
             if (isOnlyNumber.HasValue == true)
             {
@@ -2952,7 +2961,6 @@ namespace OpenScrape.App
                 else
                     result = ocr1.ToString();
             }
-
 
             if (decimal.TryParse(result, out var bet))
                 return bet;
@@ -3017,10 +3025,8 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return 0;
 
-            var firstOcr = new OcrResult();
-            var secondOcr = new OcrResult();
-
-            var result = string.Empty;
+            OcrResult firstOcr;
+            OcrResult secondOcr;
 
             // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
@@ -3039,9 +3045,11 @@ namespace OpenScrape.App
             }
 
             // Lectura 3: directa sin preprocesamiento (como fallback)
-            var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image, posX, posY, width, height,
                 umbral ?? 0, isOnlyNumber ?? false);
+
+            var result = string.Empty;
 
             if (isOnlyNumber.HasValue == true)
             {
@@ -3076,6 +3084,8 @@ namespace OpenScrape.App
                 LogDebug($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
             }
 
+            firstOcr.Dispose();
+            secondOcr.Dispose();
 
             if (decimal.TryParse(result, out var stack))
                 return stack;
@@ -3092,8 +3102,8 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return string.Empty;
 
-            var firstOcr = new OcrResult();
-            var secondOcr = new OcrResult();
+            OcrResult firstOcr;
+            OcrResult secondOcr;
 
             // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
@@ -3112,7 +3122,7 @@ namespace OpenScrape.App
             }
 
             // Lectura 3: directa sin preprocesamiento (fallback)
-            var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image, posX, posY, width, height,
                 umbral ?? 0, isOnlyNumber ?? false);
 
@@ -3135,6 +3145,9 @@ namespace OpenScrape.App
                 best = clean3; // Sin consenso → preferir lectura directa
 
             LogDebug($"[HAND#] OCR lecturas: '{firstOcr.Text}'→{clean1}, '{secondOcr.Text}'→{clean2}, '{thirdOcr.Text}'→{clean3}, best={best}");
+
+            firstOcr.Dispose();
+            secondOcr.Dispose();
 
             return best;
         }
@@ -3161,28 +3174,22 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return string.Empty;
 
-            var ocr = new OcrResult();
-
-            ocr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var ocr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
-                posX,
-                posY,
-                width,
-                height,
+                posX, posY, width, height,
                 umbral ?? 0,
                 isOnlyNumber ?? false);
 
             // Si no se obtiene texto, intentar con umbral inactivo
             if (string.IsNullOrEmpty(ocr.Text))
             {
-                ocr = _ocrService.ExtractTextFromRegionAndDebug(
+                using var ocrRetry = _ocrService.ExtractTextFromRegionAndDebug(
                     _formImage.pbImage.Image,
-                    posX,
-                    posY,
-                    width,
-                    height,
+                    posX, posY, width, height,
                     inactiveUmbral ?? 0,
                     isOnlyNumber ?? false);
+
+                return ocrRetry.Text ?? string.Empty;
             }
 
             return ocr.Text ?? string.Empty;
@@ -4242,28 +4249,21 @@ namespace OpenScrape.App
             if (_selectedRegion == null || _formImage.pbImage.Image == null)
                 return;
 
-            var firstOcr = new OcrResult();
-            var secondOcr = new OcrResult();
-
-            var result = string.Empty;
-
-            firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            var firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
-                _selectedRegion.PosX,
-                _selectedRegion.PosY,
-                _selectedRegion.Width,
-                _selectedRegion.Height,
+                _selectedRegion.PosX, _selectedRegion.PosY,
+                _selectedRegion.Width, _selectedRegion.Height,
                 _selectedRegion.Umbral ?? 0,
                 _selectedRegion.IsOnlyNumber ?? false);
 
-            secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+            using var secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
                 _formImage.pbImage.Image,
-                _selectedRegion.PosX,
-                _selectedRegion.PosY,
-                _selectedRegion.Width,
-                _selectedRegion.Height,
+                _selectedRegion.PosX, _selectedRegion.PosY,
+                _selectedRegion.Width, _selectedRegion.Height,
                 _selectedRegion.InactiveUmbral ?? 0,
                 _selectedRegion.IsOnlyNumber ?? false);
+
+            var result = string.Empty;
 
             if (_selectedRegion.IsOnlyNumber == true)
             {
@@ -4282,12 +4282,13 @@ namespace OpenScrape.App
                     result = ocr1.ToString();
             }
 
-
             tbTestTexto.Text = !string.IsNullOrEmpty(result) ? result : "Sin resultado";
 
-            // Liberar imagen anterior
+            // Liberar imagen anterior y transferir la de firstOcr al PictureBox
             pictureBox1.Image?.Dispose();
             pictureBox1.Image = firstOcr.Image;
+            firstOcr.Image = null; // Evitar que Dispose libere la imagen transferida
+            firstOcr.Dispose();
         }
 
         /// <summary>

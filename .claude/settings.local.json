@@ -28,7 +28,12 @@
       "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f''''{item[Id]}: {[r[Name] for r in item.get\\(Regions,[]\\)] }''''\\) for item in data]\")",
       "Bash(python3:*)",
       "Bash(node:*)",
-      "Bash(grep -E \"\\\\.\\(json|xml|cs\\)$\")"
+      "Bash(grep -E \"\\\\.\\(json|xml|cs\\)$\")",
+      "Bash(grep -r ^s*[Test] /c/Code/Poker/ScrapePoker --include=*.cs)",
+      "Bash(git -C /c/Code/Poker/ScrapePoker log --oneline --all --decorate)",
+      "Bash(grep:*)",
+      "Bash(ls C:/Code/Poker/ScrapePoker/src/OpenScrape.App/Services/*.cs)",
+      "Bash(wc:*)"
     ]
   }
 }
