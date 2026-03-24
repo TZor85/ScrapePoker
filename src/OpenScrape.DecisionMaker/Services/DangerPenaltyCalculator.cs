@@ -24,14 +24,19 @@ public class DangerPenaltyCalculator
 
         double penalty = 0;
 
-        // Completaciones mayores: porcentual sobre equity
-        if (boardChange.FlushCompleted)
-            penalty += rawEquity * (profile.DangerFlushCompletePct / 100.0);
-        else if (boardChange.FlushDrawAppeared)
-            penalty += profile.DangerFlushDrawPenalty;
+        // Completaciones mayores: porcentual sobre equity.
+        // Villano tiene UNA de las dos (flush o straight), no ambas → usar Math.Max.
+        double flushCompletePenalty = boardChange.FlushCompleted
+            ? rawEquity * (profile.DangerFlushCompletePct / 100.0)
+            : 0;
+        double straightCompletePenalty = boardChange.StraightCompleted
+            ? rawEquity * (profile.DangerStraightCompletePct / 100.0)
+            : 0;
+        penalty += Math.Max(flushCompletePenalty, straightCompletePenalty);
 
-        if (boardChange.StraightCompleted)
-            penalty += rawEquity * (profile.DangerStraightCompletePct / 100.0);
+        // Flush draw appeared (sin flush completado): flat penalty
+        if (!boardChange.FlushCompleted && boardChange.FlushDrawAppeared)
+            penalty += profile.DangerFlushDrawPenalty;
 
         // Cambios menores: flat
         if (boardChange.BoardPaired) penalty += profile.DangerBoardPairedPenalty;

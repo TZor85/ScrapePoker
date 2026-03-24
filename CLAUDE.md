@@ -70,24 +70,24 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
 
 **PostflopDecisionService — Five decision paths:**
-1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2. Bluff catching on river (OnePair+ with equity >= FoldBelow×0.85, non-large bet → call).
+1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2. Bluff catching on river (OnePair+ with equity >= FoldBelow×0.75, non-large bet → call).
 2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards (flop/turn: aggressor; river: TwoPair+ NUTS). Bet sizing adjusted by SPR (short +1-2 levels, deep -1 level). Double barrel on turn/river (aggressor with marginal equity + previous street bet → barrel for range consistency).
 3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`. Active on all streets (flop/turn/river).
-4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Cross-street state via `_villainAggressorCheckedFlop`.
+4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Active on turn and river. Cross-street state via `_villainAggressorCheckedFlop` / `_villainBetTurn`.
 5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls, bluff catching river.
 
 **Additional decision modifiers:**
 - `heroIsAggressor` / `heroHandRank` / `heroKickerStrength` — affect raise/call/sizing decisions
-- `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus)
+- `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus), only if hero hasn't completed the draw (HandRank < Straight)
 - `villainBarreling` — villain bet 2+ consecutive streets → FoldBelow+5, ThinValue+3 (narrower range)
 - SPR push/fold — SPR < 2: FoldBelow−8, equity > ValueAbove → All-In. SPR > 4: FoldBelow+3 (deep caution). Only turn/river.
-- Reverse implied odds — turn/river facing bet with OnePair/TwoPair on draw-heavy board: −4 to −6 equity penalty (river ×0.6 reduced)
+- Reverse implied odds — turn/river facing bet with OnePair/TwoPair on draw-heavy board: −7 flush draw / −4 coordinated penalty (river ×0.6 reduced)
 - Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
 - Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
 - Cross-street state — `_villainBetFlop/Turn`, `_heroBetFlop/Turn`, `_villainAggressorCheckedFlop` tracked across streets
 
 **Danger card penalty system:**
-- Percentage penalties (proportional): FlushComplete = equity×25% (requires 4+ same suit on board), StraightComplete = equity×18%
+- Percentage penalties (proportional, Math.Max not sum): FlushComplete = equity×35%, StraightComplete = equity×18%. When both complete simultaneously, uses the larger penalty (not sum).
 - Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5 (3 same suit on board)
 - FacingBetMultiplier ×1.4 (villain represents completed draw)
 - Hero blocker effect: penalty ×0.5 if hero holds danger suit
@@ -148,7 +148,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (385+ tests, no mocking framework)
+- **NUnit** — Testing framework (392+ tests, no mocking framework)
 
 ## Code Style
 
@@ -161,4 +161,4 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Specifications (openspec/)
 
-Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab).
+Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab), `bugfix-decision-engine` (5 bugfixes: bluff condition, danger penalty Math.Max, combo draw bonus guard, river probe bet, calibration).

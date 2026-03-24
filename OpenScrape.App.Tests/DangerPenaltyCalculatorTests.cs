@@ -164,4 +164,37 @@ public class DangerPenaltyCalculatorTests
 
         Assert.That(result, Is.GreaterThanOrEqualTo(0));
     }
+
+    [Test]
+    public void Calculate_FlushYStraightCompletados_DeberiaUsarMaxNoSuma()
+    {
+        var change = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false,
+            StraightCompleted: true, BoardPaired: false,
+            OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = DangerPenaltyCalculator.Calculate(80, change, false, false, _profile);
+
+        double flushPenalty = 80 * (_profile.DangerFlushCompletePct / 100.0);
+        double straightPenalty = 80 * (_profile.DangerStraightCompletePct / 100.0);
+        double expected = Math.Max(flushPenalty, straightPenalty);
+        Assert.That(result, Is.EqualTo(expected).Within(0.01),
+            "Debe usar Math.Max de flush y straight, no la suma");
+    }
+
+    [Test]
+    public void Calculate_FlushYStraightCompletados_NuncaSuperaSumaIndividual()
+    {
+        var change = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false,
+            StraightCompleted: true, BoardPaired: false,
+            OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = DangerPenaltyCalculator.Calculate(70, change, false, false, _profile);
+
+        double flushPenalty = 70 * (_profile.DangerFlushCompletePct / 100.0);
+        double straightPenalty = 70 * (_profile.DangerStraightCompletePct / 100.0);
+        Assert.That(result, Is.LessThanOrEqualTo(flushPenalty + straightPenalty),
+            "No debe sumar ambas penalizaciones porcentuales");
+    }
 }

@@ -1018,6 +1018,7 @@ namespace OpenScrape.App
                 heroIsAggressor: riverIsAggressor,
                 heroHandRank: _riverResult.HeroHandRank,
                 hasComboDraw: _riverResult.HasComboDraw,
+                villainAggressorCheckedPreviousStreet: !_postflopContext.VillainBetTurn && !riverIsAggressor,
                 villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
                 pairClassification: _riverResult.PairType);
 

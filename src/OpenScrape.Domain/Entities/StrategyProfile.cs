@@ -41,7 +41,7 @@ public class StrategyProfile
 
     // Danger Card Penalties (usado en PostflopDecisionService)
     // Porcentual: reduce equity un X% cuando se completa draw (ej: 25 = -25% de equity)
-    public double DangerFlushCompletePct { get; set; } = 25.0;
+    public double DangerFlushCompletePct { get; set; } = 35.0;
     public double DangerStraightCompletePct { get; set; } = 18.0;
     // Flat: penalización fija en puntos de equity
     public double DangerBoardPairedPenalty { get; set; } = 5.0;
@@ -92,13 +92,13 @@ public class StrategyProfile
     public double SPRDeepFoldIncrease { get; set; } = 3.0;
 
     // Reverse Implied Odds (penalización en turn al facing bet con mano vulnerable en board con draws)
-    public double ReverseImpliedFlushDrawPenalty { get; set; } = 4.0;
-    public double ReverseImpliedCoordinatedPenalty { get; set; } = 2.0;
+    public double ReverseImpliedFlushDrawPenalty { get; set; } = 7.0;
+    public double ReverseImpliedCoordinatedPenalty { get; set; } = 4.0;
     public double ReverseImpliedOnePairMultiplier { get; set; } = 1.5;
 
     // Bluff Catching (usado en PostflopDecisionService)
     // Multiplicador sobre FoldBelow: equity >= FoldBelow * multiplier → call para atrapar bluffs
-    public double BluffCatchFoldBelowMultiplier { get; set; } = 0.85;
+    public double BluffCatchFoldBelowMultiplier { get; set; } = 0.75;
 
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
@@ -109,11 +109,11 @@ public class StrategyProfile
     public double TaintedOutsDiscount { get; set; } = 0.5;
 
     // Floating IP (call con posición para robar en turn)
-    public double FloatingIPMinEquity { get; set; } = 20.0;
+    public double FloatingIPMinEquity { get; set; } = 25.0;
     public double FloatingIPMaxEquity { get; set; } = 35.0;
 
     // Slow Play (check con nuts en board seco para inducir bluff)
-    public double SlowPlayMinEquity { get; set; } = 80.0;
+    public double SlowPlayMinEquity { get; set; } = 72.0;
 
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;

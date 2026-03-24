@@ -114,8 +114,9 @@ public class PostflopDecisionService
             : 0;
         double effectiveEquity = equity - dangerPenalty;
 
-        // Combo draw bonus: flush + straight draw = semi-bluff premium
-        if (hasComboDraw && street != BoardPosition.River)
+        // Combo draw bonus: flush + straight draw = semi-bluff premium.
+        // No aplicar si hero ya completó el draw (bonus es para draws pendientes).
+        if (hasComboDraw && street != BoardPosition.River && heroHandRank < HandRank.Straight)
             effectiveEquity += _profile.ComboDrawEquityBonus;
 
         // Tope de equity para APOSTAR en boards con draw completado que hero no tiene.
@@ -676,7 +677,7 @@ public class PostflopDecisionService
 
         // Bluff puro (solo sin facing bet, no multiway — no bluffear contra una apuesta ni multiway)
         if (!isFacingBet && !isMultiway && thresholds.CanBluff &&
-            ShouldBluff(thresholds, isInPosition, boardTexture, villainBetSize, street))
+            ShouldBluff(thresholds, isInPosition, boardTexture, street))
         {
             return new PostflopDecisionResult(
                 thresholds.BluffBetSize + " (Bluff)",
@@ -733,7 +734,7 @@ public class PostflopDecisionService
         return new PostflopDecisionResult(fallback, "Equity baja vs bet");
     }
 
-    private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BetSizeCategory betSize, BoardPosition street)
+    private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BoardPosition street)
     {
         var bluffFreq = GetBluffFrequency(street) * thresholds.BluffFrequencyMultiplier;
 
@@ -741,7 +742,8 @@ public class PostflopDecisionService
         {
             BluffConditionType.Always => Random.Shared.NextDouble() < bluffFreq,
             BluffConditionType.OOPOnly => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
-            BluffConditionType.IPCoordinatedSmallOnly => isInPosition && boardTexture == "Coordinated" && betSize == BetSizeCategory.Small && Random.Shared.NextDouble() < bluffFreq,
+            // Antes requería betSize == Small (imposible sin facing bet). Ahora: IP + Coordinated board.
+            BluffConditionType.IPCoordinatedSmallOnly => isInPosition && boardTexture == "Coordinated" && Random.Shared.NextDouble() < bluffFreq,
             _ => false
         };
     }
