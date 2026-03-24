@@ -39,6 +39,12 @@ public class StrategyProfile
     public double TurnBluffFrequency { get; set; } = 0.12;
     public double RiverBluffFrequency { get; set; } = 0.10;
 
+    // Bluff frequency modulada por SPR (usado en HandleLowEquity)
+    public double BluffSPRShortThreshold { get; set; } = 2.0;
+    public double BluffSPRShortMultiplier { get; set; } = 0.5;
+    public double BluffSPRDeepThreshold { get; set; } = 4.0;
+    public double BluffSPRDeepMultiplier { get; set; } = 1.2;
+
     // Danger Card Penalties (usado en PostflopDecisionService)
     // Porcentual: reduce equity un X% cuando se completa draw (ej: 25 = -25% de equity)
     public double DangerFlushCompletePct { get; set; } = 35.0;
@@ -123,6 +129,9 @@ public class StrategyProfile
     // Tainted Outs (usado en OutsCalculator)
     // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
     public double TaintedOutsDiscount { get; set; } = 0.5;
+    // Descuento variable: hero con flush draw (mejora más) → 0.7; sin flush draw → 0.3
+    public double TaintedOutsDiscountHeroStrong { get; set; } = 0.7;
+    public double TaintedOutsDiscountHeroWeak { get; set; } = 0.3;
 
     // Floating IP (call con posición para robar en turn)
     public double FloatingIPMinEquity { get; set; } = 25.0;

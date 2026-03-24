@@ -581,9 +581,9 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasFlushDraw, Is.True);
         Assert.That(result.EffectiveOuts, Is.GreaterThan(0));
-        // EffectiveOuts = CleanOuts + TaintedOuts * 0.5
+        // EffectiveOuts = CleanOuts + TaintedOuts * 0.7 (hero tiene flush draw → strong discount)
         Assert.That(result.EffectiveOuts,
-            Is.EqualTo(result.CleanOuts + result.TaintedOuts * 0.5).Within(0.01));
+            Is.EqualTo(result.CleanOuts + result.TaintedOuts * 0.7).Within(0.01));
     }
 
     [Test]

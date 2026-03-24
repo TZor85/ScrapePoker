@@ -3,6 +3,7 @@
 Análisis realizado: 2026-03-24
 Sprint 5 completado: 2026-03-24
 Sprint 6 completado: 2026-03-24
+Sprint 7 completado: 2026-03-24
 Basado en análisis exhaustivo del código tras completar Sprints 1-4.
 
 Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximizando EV en spots reales de cash game.
@@ -89,30 +90,30 @@ Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximiza
 
 ---
 
-## Sprint 7: Bajo Impacto — Fine-tuning
+## Sprint 7: Bajo Impacto — Fine-tuning ✅
 
-### S7.1 — Implied odds interpolación curva (no lineal)
+### S7.1 — Implied odds interpolación curva (no lineal) ✅
 
 - **Problema:** Interpolación entre SPR 2.0 y 4.0 es lineal, pero implied odds crece más rápido entre SPR 3.0-4.0.
 - **Ubicación:** `ImpliedOddsCalculator.cs:30-36`
 - **Fix:** Reemplazar interpolación lineal por `Math.Sqrt((spr - shallow) / (deep - shallow))` × rango.
 - **Impacto:** Bajo — refina marginalmente calls de draw en SPR 2.5-3.5.
 
-### S7.2 — Tainted outs descuento variable
+### S7.2 — Tainted outs descuento variable ✅
 
 - **Problema:** Descuento siempre 0.5× sin importar qué completa cada jugador. Un out que da trips al villano cuando hero hace flush no es igual que viceversa.
 - **Ubicación:** `OutsCalculator.cs` — `TaintedOutsDiscount = 0.5`
 - **Fix:** Descuento por tipo: hero mejora más que villano → 0.7×; villano mejora más → 0.3×. Requiere analizar qué draw completa cada out para hero vs villano.
 - **Impacto:** Bajo — afecta draws poco frecuentes.
 
-### S7.3 — Bluff frequency modulada por SPR
+### S7.3 — Bluff frequency modulada por SPR ✅
 
 - **Problema:** Con SPR corto (<2), bluffs pierden menos si pagan pero también ganan menos. La frecuencia debería reducirse.
 - **Ubicación:** `PostflopDecisionService.cs:678-686`
 - **Fix:** Multiplicar bluff frequency por factor SPR: `spr < 2 → freq × 0.5`, `spr > 4 → freq × 1.2`.
 - **Impacto:** Bajo — afecta ~5% de manos con SPR extremo.
 
-### S7.4 — FoldBelow=0 en RaiseOverLimper (bug de config)
+### S7.4 — FoldBelow=0 en RaiseOverLimper (bug de config) ✅
 
 - **Problema:** `Turn_RaiseOverLimper` y `River_RaiseOverLimper` tienen `FoldBelow: 0`. El bot nunca foldea contra limpers post-flop, incluso con 5% equity. Es excesivamente agresivo.
 - **Ubicación:** `appsettings.json:337,596`
@@ -127,7 +128,7 @@ Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximiza
 |--------|-------|---------------------|----------|
 | Sprint 5 ✅ | S5.1-S5.5 | +8-12% ROI | Alto |
 | Sprint 6 ✅ | S6.1-S6.5 | +4-6% ROI | Medio |
-| Sprint 7 | S7.1-S7.4 | +1-2% ROI | Bajo |
+| Sprint 7 ✅ | S7.1-S7.4 | +1-2% ROI | Bajo |
 | **Total** | **14 items** | **+13-20% ROI** | |
 
 ---

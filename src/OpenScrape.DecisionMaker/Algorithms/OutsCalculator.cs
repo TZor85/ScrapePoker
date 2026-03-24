@@ -132,7 +132,11 @@ namespace OpenScrape.DecisionMaker.Algorithms
             foreach (var c in straightOutCards) allOutCards.Add(c);
             result.TaintedOuts = CalculateTaintedOuts(allOutCards, communityCards);
             result.CleanOuts = result.TotalOuts - result.TaintedOuts;
-            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * _profile.TaintedOutsDiscount);
+            // Descuento variable: hero con flush draw (mejora fuerte) → 0.7; sin flush draw → 0.3
+            double taintedDiscount = flushOuts > 0
+                ? _profile.TaintedOutsDiscountHeroStrong
+                : _profile.TaintedOutsDiscountHeroWeak;
+            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * taintedDiscount);
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)

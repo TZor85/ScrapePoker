@@ -39,8 +39,10 @@ public class ImpliedOddsCalculator
         {
             double range = profile.ImpliedOddsSPRDeepThreshold - profile.ImpliedOddsSPRShallowThreshold;
             double position = (spr - profile.ImpliedOddsSPRShallowThreshold) / range;
+            // Interpolación cuadrática: implied odds crecen más rápido acercándose a deep
+            double curvedPosition = Math.Sqrt(position);
             sprFactor = profile.ImpliedOddsSPRShallowFactor +
-                (position * (profile.ImpliedOddsSPRDeepFactor - profile.ImpliedOddsSPRShallowFactor));
+                (curvedPosition * (profile.ImpliedOddsSPRDeepFactor - profile.ImpliedOddsSPRShallowFactor));
         }
 
         double streetFactor = street == BoardPosition.Turn

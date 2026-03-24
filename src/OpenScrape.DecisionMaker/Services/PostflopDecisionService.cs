@@ -258,7 +258,8 @@ public class PostflopDecisionService
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
-                heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity);
+                heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity,
+                heroStack, potSize);
 
         // --- FACING BET ---
         if (isFacingBet)
@@ -708,7 +709,9 @@ public class PostflopDecisionService
         BoardChangeResult? boardChange = null,
         bool heroBlocksDangerSuit = false,
         PairClassification pairClassification = PairClassification.None,
-        double foldEquity = 0)
+        double foldEquity = 0,
+        decimal heroStack = 0,
+        decimal potSize = 0)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
         if (totalOuts >= PokerConstants.MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
@@ -746,9 +749,21 @@ public class PostflopDecisionService
         {
             double betFraction = BetStringToFraction(thresholds.BluffBetSize);
             double breakevenFoldEquity = betFraction / (1.0 + betFraction);
+
+            // Modular por SPR: short stacks → bluff menos rentable, deep → más rentable
+            double sprBluffMultiplier = 1.0;
+            if (heroStack > 0 && potSize > 0)
+            {
+                double spr = (double)(heroStack / potSize);
+                if (spr < _profile.BluffSPRShortThreshold)
+                    sprBluffMultiplier = _profile.BluffSPRShortMultiplier;
+                else if (spr > _profile.BluffSPRDeepThreshold)
+                    sprBluffMultiplier = _profile.BluffSPRDeepMultiplier;
+            }
+            double adjustedBreakevenFE = breakevenFoldEquity / sprBluffMultiplier;
             double actualFoldEquity = foldEquity / 100.0;
 
-            if (actualFoldEquity >= breakevenFoldEquity)
+            if (actualFoldEquity >= adjustedBreakevenFE)
             {
                 return new PostflopDecisionResult(
                     thresholds.BluffBetSize + " (Bluff)",
