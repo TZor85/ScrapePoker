@@ -45,7 +45,20 @@ public class PreflopAnalyzer
         if (isPreflopAggressor)
         {
             if (is3BetPot)
-                return !(isLowBoard && boardTexture.IsConnected);
+            {
+                // 3Bet range tiene ventaja en boards con A/K (overpairs + TPTK)
+                if (hasAceOrKing)
+                    return true;
+                // Boards bajos → caller conecta con pocket pairs, suited connectors
+                if (isLowBoard)
+                    return false;
+                // Board mixto: sin cartas altas (Q+) + carta baja (≤6) → caller conecta más
+                bool isMixedLowBoard = highCards <= 0 && flopRanks.Min() <= 6;
+                if (isMixedLowBoard)
+                    return false;
+                // 2+ cartas altas (Q, K sin A) → rango 3Bet conecta
+                return highCards >= 2;
+            }
             return hasAceOrKing || highCards >= 2;
         }
         else

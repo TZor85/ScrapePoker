@@ -2191,4 +2191,42 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    // ─── Bugfix Live Session ─────────────────────────────────────
+
+    #region Bug 5 — Simplified + board texture
+
+    [Test]
+    public void Simplified_Monotone_DeberiaSizingMenor()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        // RaiseOverLimper (IsSimplified) en Monotone → sizing "Bet 1/4"
+        var result = service.DetermineAction(
+            equity: 80, BoardPosition.Turn, HandSituation.RaiseOverLimper,
+            boardTexture: "Monotone", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet);
+
+        Assert.That(result.Action, Does.Contain("1/4"),
+            "Simplified + Monotone → sizing reducido Bet 1/4");
+    }
+
+    [Test]
+    public void Simplified_Dry_SizingDefault()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        // RaiseOverLimper en Dry → sizing default
+        var result = service.DetermineAction(
+            equity: 80, BoardPosition.Turn, HandSituation.RaiseOverLimper,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet);
+
+        Assert.That(result.Action, Does.Not.Contain("1/4"),
+            "Simplified + Dry → sizing default (no 1/4)");
+    }
+
+    #endregion
 }

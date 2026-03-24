@@ -107,6 +107,49 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Obtiene el nombre del villano activo con mayor bet (para tracking).
+        /// </summary>
+        private string GetActiveVillainId()
+        {
+            var villain = _playerGameState.Players
+                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name))
+                .OrderByDescending(p => p.Bet)
+                .FirstOrDefault();
+            return villain?.Name ?? "Unknown";
+        }
+
+        /// <summary>
+        /// Obtiene el tipo del villano activo para decisiones (Unknown si < 20 manos).
+        /// </summary>
+        private OpponentType GetVillainType()
+        {
+            var villainId = GetActiveVillainId();
+            if (villainId == "Unknown") return OpponentType.Unknown;
+            var profile = _opponentTracker.GetProfile(villainId);
+            return profile.IsReliable ? profile.Type : OpponentType.Unknown;
+        }
+
+        /// <summary>
+        /// Registra acciones de los villanos para tracking de oponente.
+        /// </summary>
+        private void TrackVillainPostflopAction(decimal maxBet, bool isPreflopAggressor)
+        {
+            var villainId = GetActiveVillainId();
+            if (villainId == "Unknown") return;
+
+            if (maxBet > 0)
+            {
+                _opponentTracker.RecordPostflopAction(villainId, PostflopAction.Bet);
+                if (isPreflopAggressor)
+                    _opponentTracker.RecordCBetOpportunity(villainId, didCBet: true);
+            }
+            else if (isPreflopAggressor)
+            {
+                _opponentTracker.RecordCBetOpportunity(villainId, didCBet: false);
+            }
+        }
+
+        /// <summary>
         /// Obtiene el stack del villano principal (oponente activo con mayor stack).
         /// </summary>
         private decimal GetVillainStack()
@@ -159,6 +202,7 @@ namespace OpenScrape.App
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
+        private readonly OpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
         private readonly PostflopGameContext _postflopContext = new();
         #endregion
@@ -177,6 +221,7 @@ namespace OpenScrape.App
                         StrategyProfileService strategyProfileService,
                         PostflopDecisionService postflopDecisionService,
                         BoardTextureAnalyzer boardTextureAnalyzer,
+                        OpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions)
         {
             InitializeComponent();
@@ -196,6 +241,7 @@ namespace OpenScrape.App
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
             _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
+            _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
 
             // Resto de inicialización existente...
@@ -910,7 +956,8 @@ namespace OpenScrape.App
                     _gameLoopStateMachine.TryTransition(GameState.TurnDetected);
                 else
                 {
-                    // Misma calle, reprocessar flop con info actualizada (villain apostó/raise)
+                    // Misma calle, reprocessar flop con info actualizada (pot y bets pueden haber cambiado)
+                    SetPotValue();
                     await ProcessFlopAsync(potOddsResult);
                 }
             }
@@ -921,7 +968,8 @@ namespace OpenScrape.App
                     _gameLoopStateMachine.TryTransition(GameState.RiverDetected);
                 else
                 {
-                    // Misma calle, reprocessar turn con info actualizada
+                    // Misma calle, reprocessar turn con info actualizada (pot y bets pueden haber cambiado)
+                    SetPotValue();
                     await ProcessTurnAsync();
                 }
             }
@@ -1013,7 +1061,7 @@ namespace OpenScrape.App
             bool isFacingBet = betSize != BetSizeCategory.NoBet;
             var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker);
 
-            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
             bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.River, effectiveSituation, texture, inPosition,
@@ -1034,9 +1082,14 @@ namespace OpenScrape.App
                 villainAggressorCheckedPreviousStreet: !_postflopContext.VillainBetTurn && !riverIsAggressor,
                 villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
                 pairClassification: _riverResult.PairType,
-                foldEquity: _riverResult.FoldEquity,
+                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
                 villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
-                villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet);
+                villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
+                villainType: GetVillainType());
+
+            // Tracking postflop del villano en river
+            if (maxBet > 0)
+                _opponentTracker.RecordPostflopAction(GetActiveVillainId(), PostflopAction.Bet);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1363,7 +1416,11 @@ namespace OpenScrape.App
                 heroHandRank: _flopResult.HeroHandRank,
                 hasComboDraw: _flopResult.HasComboDraw,
                 pairClassification: _flopResult.PairType,
-                foldEquity: _flopResult.FoldEquity);
+                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
+                villainType: GetVillainType());
+
+            // Tracking postflop del villano en flop
+            TrackVillainPostflopAction(maxBet, isPreflopAggressor);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -1424,7 +1481,7 @@ namespace OpenScrape.App
 
             _postflopContext.LastBoardChange = boardChange;
 
-            var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
+            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
             bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
@@ -1445,8 +1502,12 @@ namespace OpenScrape.App
                 villainAggressorCheckedPreviousStreet: _postflopContext.VillainAggressorCheckedFlop,
                 villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0,
                 pairClassification: _turnResult.PairType,
-                foldEquity: _turnResult.FoldEquity,
-                villainBetSizeFlop: _postflopContext.VillainBetSizeFlop);
+                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
+                villainBetSizeFlop: _postflopContext.VillainBetSizeFlop,
+                villainType: GetVillainType());
+
+            // Tracking postflop del villano en turn
+            TrackVillainPostflopAction(maxBet, turnIsAggressor);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1714,6 +1775,19 @@ namespace OpenScrape.App
             {
                 _gameLoggerService.EndHand(prevHeroStack);
                 await _gameLoggerService.SaveSessionAsync();
+            }
+
+            // Registrar mano jugada para todos los villanos activos (opponent tracking)
+            foreach (var player in _playerGameState.Players.Where(p => p.Active && !string.IsNullOrEmpty(p.Name)))
+            {
+                _opponentTracker.RecordHandPlayed(player.Name!);
+                // Si villain puso dinero preflop → VPIP
+                if (player.Bet > 0)
+                    _opponentTracker.RecordVPIP(player.Name!);
+                // Si villain hizo raise (bet significativa) → PFR
+                if (player.Bet > 0 && _playerGameState.PotSize > 0 &&
+                    player.Bet > _playerGameState.PotSize * 0.3m)
+                    _opponentTracker.RecordPFR(player.Name!);
             }
 
             // _postflopContext.Reset() se hace condicionalmente en btnCapture_Click

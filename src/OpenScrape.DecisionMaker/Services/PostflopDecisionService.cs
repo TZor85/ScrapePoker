@@ -143,7 +143,7 @@ public class PostflopDecisionService
 
         // Modo simplificado (RaiseOverLimper)
         if (thresholds.IsSimplified)
-            return DetermineSimplifiedAction(effectiveEquity, thresholds, isInPosition, isFacingBet);
+            return DetermineSimplifiedAction(effectiveEquity, thresholds, isInPosition, isFacingBet, boardTexture);
 
         // Ajustar thresholds si estamos facing a bet
         double adjustedFoldBelow = thresholds.FoldBelow;
@@ -857,17 +857,26 @@ public class PostflopDecisionService
         _ => 0.0
     };
 
-    private static PostflopDecisionResult DetermineSimplifiedAction(double equity, StreetThresholds thresholds, bool isInPosition, bool isFacingBet)
+    private static PostflopDecisionResult DetermineSimplifiedAction(double equity, StreetThresholds thresholds,
+        bool isInPosition, bool isFacingBet, string boardTexture = "Dry")
     {
+        // Adaptar sizing por board texture en modo simplificado (Monotone/Wet → sizing menor)
+        string AdjustForTexture(string defaultBet) => !isFacingBet ? boardTexture switch
+        {
+            "Monotone" => "Bet 1/4 (Value)",
+            "Wet" => "Bet 1/3 (Value)",
+            _ => defaultBet
+        } : defaultBet;
+
         if (isInPosition)
         {
             if (equity > thresholds.StrongValueAbove)
                 return new PostflopDecisionResult(
-                    isFacingBet ? "Raise 3x (Value)" : thresholds.SimplifiedIPStrongBet,
+                    isFacingBet ? "Raise 3x (Value)" : AdjustForTexture(thresholds.SimplifiedIPStrongBet),
                     "Strong value IP");
             if (equity > thresholds.ThinValueAbove)
                 return new PostflopDecisionResult(
-                    isFacingBet ? "Call" : thresholds.SimplifiedIPThinBet,
+                    isFacingBet ? "Call" : AdjustForTexture(thresholds.SimplifiedIPThinBet),
                     isFacingBet ? "Call — thin value IP" : "Thin value IP");
             return new PostflopDecisionResult(
                 isFacingBet ? "Fold" : "Check",
@@ -876,15 +885,15 @@ public class PostflopDecisionService
 
         if (equity > thresholds.StrongValueAbove)
             return new PostflopDecisionResult(
-                isFacingBet ? "Raise 3x (Value)" : thresholds.SimplifiedOOPStrongBet,
+                isFacingBet ? "Raise 3x (Value)" : AdjustForTexture(thresholds.SimplifiedOOPStrongBet),
                 "Strong value OOP");
         if (equity > thresholds.ValueAbove)
             return new PostflopDecisionResult(
-                isFacingBet ? "Call" : thresholds.SimplifiedOOPValueBet,
+                isFacingBet ? "Call" : AdjustForTexture(thresholds.SimplifiedOOPValueBet),
                 isFacingBet ? "Call — value OOP" : "Value OOP");
         if (equity > thresholds.ThinValueAbove)
             return new PostflopDecisionResult(
-                isFacingBet ? "Call" : thresholds.SimplifiedOOPThinBet,
+                isFacingBet ? "Call" : AdjustForTexture(thresholds.SimplifiedOOPThinBet),
                 isFacingBet ? "Call — thin value OOP" : "Thin value OOP");
         return new PostflopDecisionResult(
             isFacingBet ? "Fold" : "Check",

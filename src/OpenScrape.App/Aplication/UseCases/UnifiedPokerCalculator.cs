@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -54,7 +55,7 @@ namespace OpenScrape.App.Aplication.UseCases
         // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion"
         // Valor: equity en porcentaje (0-100)
         private readonly ConcurrentDictionary<string, double> _equityCache = new();
-        private const int EquityCacheMaxSize = 256;
+        private const int EquityCacheMaxSize = 512;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
@@ -191,16 +192,24 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             if (communityCards.Count == 0) // Preflop
             {
-                // En situaciones 3Bet+, usar Monte Carlo contra VillainRange filtrado
+                // En situaciones 3Bet+, usar Monte Carlo contra VillainRange filtrado (con cache)
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var preflopSituation))
                 {
                     var preflopRange = VillainRange.GetForSituation(preflopSituation);
                     if (preflopRange != null)
                     {
+                        string preflopCacheKey = $"preflop|{BuildHandKey(playerHand)}|{handSituation}|{numOpponents}";
+                        if (_equityCache.TryGetValue(preflopCacheKey, out double cachedPreflop))
+                            return cachedPreflop;
+
+                        int adaptiveIters = GetAdaptiveIterations(playerHand, numOpponents);
                         var mcResult = _monteCarloSimulator.CalculateEquity(
                             playerHand, new List<CardDataOuts>(), numOpponents,
-                            monteCarloIterations, preflopRange);
-                        return mcResult.Equity * 100;
+                            adaptiveIters, preflopRange);
+                        double preflopEquity = mcResult.Equity * 100;
+
+                        CacheEquity(preflopCacheKey, preflopEquity);
+                        return preflopEquity;
                     }
                 }
 
@@ -223,11 +232,7 @@ namespace OpenScrape.App.Aplication.UseCases
                     playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
                 double equity = monteCarloResult.Equity * 100;
 
-                // Guardar en cache, con límite de tamaño para evitar crecimiento descontrolado
-                if (_equityCache.Count >= EquityCacheMaxSize)
-                    _equityCache.Clear();
-                _equityCache[cacheKey] = equity;
-
+                CacheEquity(cacheKey, equity);
                 return equity;
             }
         }
@@ -239,6 +244,30 @@ namespace OpenScrape.App.Aplication.UseCases
             var hand = string.Join(",", playerHand.Select(c => c.Id).OrderBy(x => x));
             var comm = string.Join(",", communityCards.Select(c => c.Id).OrderBy(x => x));
             return $"{hand}|{comm}|{numOpponents}|{handSituation ?? ""}";
+        }
+
+        /// <summary>
+        /// Iteraciones adaptativas: decisiones claras (equity >75% o <25%) usan menos iteraciones.
+        /// </summary>
+        private int GetAdaptiveIterations(List<CardDataOuts> playerHand, int numOpponents)
+        {
+            // Usar lookup table preflop como estimación rápida
+            double roughEquity = _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
+            if (roughEquity > 75 || roughEquity < 25)
+                return 500;
+            if (roughEquity > 65 || roughEquity < 35)
+                return 750;
+            return PokerConstants.DefaultMonteCarloIterations;
+        }
+
+        private static string BuildHandKey(List<CardDataOuts> playerHand) =>
+            string.Join(",", playerHand.Select(c => c.Id).OrderBy(x => x));
+
+        private void CacheEquity(string key, double equity)
+        {
+            if (_equityCache.Count >= EquityCacheMaxSize)
+                _equityCache.Clear();
+            _equityCache[key] = equity;
         }
 
         private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)
