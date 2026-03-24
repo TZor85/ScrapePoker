@@ -327,4 +327,22 @@ public class BoardTextureAnalyzerTests
         Assert.That(result.FlushCompleted, Is.False);
         Assert.That(result.StraightCompleted, Is.False);
     }
+
+    // --- Tests Sprint 5: Wet vs Coordinated ---
+
+    [Test]
+    public void SimplifiedTexture_Wet_NoMonotone_RetornaWet()
+    {
+        // Wet (60+ wetness), NOT monotone → "Wet"
+        var wet = new BoardTextureResult(BoardTextureCategory.Wet, 70, false, true, false, false, true, true, false, true, true);
+        Assert.That(wet.SimplifiedTexture, Is.EqualTo("Wet"));
+    }
+
+    [Test]
+    public void SimplifiedTexture_SemiWet_RetornaCoordinated()
+    {
+        // SemiWet (35-60 wetness) → "Coordinated"
+        var semiWet = new BoardTextureResult(BoardTextureCategory.SemiWet, 45, false, true, false, false, true, false, false, true, true);
+        Assert.That(semiWet.SimplifiedTexture, Is.EqualTo("Coordinated"));
+    }
 }

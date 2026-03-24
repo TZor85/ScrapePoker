@@ -50,6 +50,9 @@ public class StrategyProfile
     // Multiplicadores
     public double DangerFacingBetMultiplier { get; set; } = 1.4;
     public double DangerHeroBlocksReduction { get; set; } = 0.5;
+    // Escalado de danger penalty por street: flop más riesgo (2 calles por venir), river menos (definitivo)
+    public double DangerPenaltyFlopMultiplier { get; set; } = 1.3;
+    public double DangerPenaltyRiverMultiplier { get; set; } = 0.8;
     // Tope de equity para APOSTAR cuando flush/straight completado y hero no lo tiene
     // (apostar solo consigue que nos paguen manos que nos ganan)
     public double DangerCompletedDrawNoBetCap { get; set; } = 45.0;

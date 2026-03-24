@@ -25,7 +25,8 @@ public record BoardTextureResult(
         : Category switch
         {
             BoardTextureCategory.Paired => "Paired",
-            BoardTextureCategory.Wet or BoardTextureCategory.SemiWet => "Coordinated",
+            BoardTextureCategory.Wet => "Wet",
+            BoardTextureCategory.SemiWet => "Coordinated",
             _ => "Dry"
         };
 }

@@ -47,9 +47,11 @@ public static class PokerConstants
     public const double FacingBetTurnMultiplier = 1.15;
     public const double FacingBetRiverMultiplier = 1.30;
 
-    // === PostflopDecisionService: ajustes multiway ===
-    public const double MultiwayFoldBelowPerOpponent = 4.0;
-    public const double MultiwayThinValuePerOpponent = 3.0;
+    // === PostflopDecisionService: ajustes multiway (IP puede aislar, OOP vulnerable) ===
+    public const double MultiwayFoldBelowIP = 2.0;
+    public const double MultiwayFoldBelowOOP = 6.0;
+    public const double MultiwayThinValueIP = 2.0;
+    public const double MultiwayThinValueOOP = 4.0;
 
     // === PostflopDecisionService: ajustes agresor vs caller ===
     public const double AggressorVsDonkFoldReduction = 5.0;

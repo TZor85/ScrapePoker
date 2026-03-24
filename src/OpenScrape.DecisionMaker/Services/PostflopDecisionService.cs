@@ -57,8 +57,8 @@ public class PostflopDecisionService
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Delega a DangerPenaltyCalculator.
     /// </summary>
-    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet)
-        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile);
+    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn)
+        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street);
 
     /// <summary>
     /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
@@ -111,9 +111,9 @@ public class PostflopDecisionService
         double impliedOddsFactor = CalculateImpliedOddsFactor(
             street, isInPosition, hasFlushDraw, heroStack, potSize);
 
-        // Aplicar penalización por carta peligrosa
+        // Aplicar penalización por carta peligrosa (escalada por street)
         double dangerPenalty = boardChange != null
-            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet)
+            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street)
             : 0;
         double effectiveEquity = equity - dangerPenalty;
 
@@ -171,12 +171,18 @@ public class PostflopDecisionService
                 adjustedFoldBelow += PokerConstants.VillainAggressionPenalty;
         }
 
-        // Multi-way penalty
+        // Multi-way penalty: IP puede aislar, OOP muy vulnerable
         if (isMultiway)
         {
             int extraOpponents = numOpponents - 1;
-            adjustedFoldBelow += extraOpponents * PokerConstants.MultiwayFoldBelowPerOpponent;
-            adjustedThinValueAbove += extraOpponents * PokerConstants.MultiwayThinValuePerOpponent;
+            double multiwayFoldPenalty = isInPosition
+                ? PokerConstants.MultiwayFoldBelowIP
+                : PokerConstants.MultiwayFoldBelowOOP;
+            double multiwayValuePenalty = isInPosition
+                ? PokerConstants.MultiwayThinValueIP
+                : PokerConstants.MultiwayThinValueOOP;
+            adjustedFoldBelow += extraOpponents * multiwayFoldPenalty;
+            adjustedThinValueAbove += extraOpponents * multiwayValuePenalty;
         }
 
         // Agresor vs caller
@@ -457,6 +463,7 @@ public class PostflopDecisionService
             "Coordinated" => thresholds.CoordinatedBoardBetSize,
             "Paired" => thresholds.PairedBoardBetSize,
             "Monotone" => thresholds.MonotoneBoardBetSize,
+            "Wet" => thresholds.WetBoardBetSize,
             _ => thresholds.DryBoardBetSize
         };
 
@@ -707,10 +714,11 @@ public class PostflopDecisionService
                     $"Call — draw con {totalOuts} outs (implied odds, SPR factor={impliedOddsFactor:F2})");
         }
 
-        // Bluff puro (solo sin facing bet, no multiway — no bluffear contra una apuesta ni multiway)
+        // Bluff puro (sin facing bet, no bluffear multiway OOP)
         // Verificar fold equity mínima: bluff debe ser +EV (fold equity >= breakeven threshold)
-        if (!isFacingBet && !isMultiway && thresholds.CanBluff &&
-            ShouldBluff(thresholds, isInPosition, boardTexture, street))
+        bool canBluffHere = !isFacingBet && thresholds.CanBluff &&
+            !(isMultiway && !isInPosition);
+        if (canBluffHere && ShouldBluff(thresholds, isInPosition, boardTexture, street))
         {
             double betFraction = BetStringToFraction(thresholds.BluffBetSize);
             double breakevenFoldEquity = betFraction / (1.0 + betFraction);

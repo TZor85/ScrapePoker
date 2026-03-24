@@ -1969,4 +1969,101 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    // ─── Sprint 5: Tests nuevos ─────────────────────────────────────
+
+    #region S5.3 — Multiway IP vs OOP
+
+    [Test]
+    public void Multiway_OOP_PenaltyMayorQueIP()
+    {
+        // 3 oponentes (extraOpponents=2). OOP penalty = 2×6=12, IP penalty = 2×2=4.
+        // FoldBelow base=45. OOP: 45+12=57. IP: 45+4=49.
+        // Equity 53: IP → 53>49 (no low equity). OOP → 53<57 (low equity).
+        var resultIP = _service.DetermineAction(
+            equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        var resultOOP = _service.DetermineAction(
+            equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        // IP debería poder value bet, OOP debería check (low equity)
+        Assert.That(resultIP.Action, Does.Not.Contain("Check").IgnoreCase.Or.Contain("Value"),
+            "IP multiway penalty (+4) → equity 53 > adjustedFB 49");
+        Assert.That(resultOOP.Action, Is.EqualTo("Check"),
+            "OOP multiway penalty (+12) → equity 53 < adjustedFB 57 → check");
+    }
+
+    [Test]
+    public void Multiway_OOP_NoBluff()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+        var service = CreateService(profile);
+
+        // Multiway OOP → no bluff
+        var result = service.DetermineAction(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 2,
+            heroHandRank: HandRank.HighCard,
+            foldEquity: 40);
+
+        Assert.That(result.IsBluff, Is.False,
+            "OOP multiway → no bluff (demasiados oponentes sin posición)");
+        Assert.That(result.Action, Is.EqualTo("Check"));
+    }
+
+    #endregion
+
+    #region S5.4 — Wet board sizing
+
+    [Test]
+    public void HandleNoBet_WetBoard_DeberiaBet13()
+    {
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet);
+
+        Assert.That(result.Action, Does.Contain("1/3").Or.Contain("Value"),
+            "Board Wet debería usar sizing reducido (Bet 1/3 base)");
+    }
+
+    #endregion
+
+    #region S5.5 — Flop DonkBet config
+
+    [Test]
+    public void FlopDonkBet_NoUsaFallback()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_DonkBet"] = new()
+        {
+            FoldBelow = 32,
+            ThinValueAbove = 38,
+            ValueAbove = 52,
+            StrongValueAbove = 72,
+            LowEquityAction = "Call",
+            CanBluff = true,
+            BluffCondition = BluffConditionType.Always,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 75
+        };
+        var service = CreateService(profile);
+
+        var thresholds = service.GetThresholds(BoardPosition.Flop, HandSituation.DonkBet);
+        Assert.That(thresholds.FoldBelow, Is.EqualTo(32),
+            "Flop_DonkBet debería usar config específica, no fallback genérico");
+        Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"),
+            "DonkBet suele ser débil → call con equity baja");
+    }
+
+    #endregion
 }
