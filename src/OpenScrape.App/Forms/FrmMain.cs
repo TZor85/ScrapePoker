@@ -107,7 +107,7 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Obtiene el nombre del villano activo con mayor bet (para tracking).
+        /// Obtiene el identificador del villano activo: alias real > cache seat > seat name.
         /// </summary>
         private string GetActiveVillainId()
         {
@@ -115,7 +115,91 @@ namespace OpenScrape.App
                 .Where(p => p.Active && !string.IsNullOrEmpty(p.Name))
                 .OrderByDescending(p => p.Bet)
                 .FirstOrDefault();
-            return villain?.Name ?? "Unknown";
+            if (villain == null) return "Unknown";
+
+            // Preferir alias real (nombre OCR) sobre seat name (P0, P1)
+            if (!string.IsNullOrEmpty(villain.Alias))
+                return villain.Alias;
+
+            // Fallback: buscar alias cacheado por seat
+            return _opponentTracker.ResolveName(villain.Name!) ?? villain.Name!;
+        }
+
+        /// <summary>
+        /// Lee nombre de jugador con 2 lecturas + consenso + limpieza.
+        /// </summary>
+        private string ReadPlayerNameOCR(int x, int y, int w, int h, double umbral, double inactiveUmbral)
+        {
+            if (_formImage.pbImage.Image == null) return string.Empty;
+
+            // Lectura 1: umbral estándar (0.80)
+            string read1;
+            using (var ocrResult1 = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image, x, y, w, h, umbral, false))
+            {
+                read1 = CleanOcrPlayerName(ocrResult1.Text);
+            }
+
+            // Lectura 2: umbral bajo (inactive) para capturar más colores
+            string read2;
+            using (var ocrResult2 = _ocrService.ExtractTextFromRegionAndDebug(
+                _formImage.pbImage.Image, x, y, w, h, inactiveUmbral, false))
+            {
+                read2 = CleanOcrPlayerName(ocrResult2.Text);
+            }
+
+            // Consenso: ambas iguales → seguro
+            if (!string.IsNullOrEmpty(read1) && read1 == read2)
+                return read1;
+
+            // Si solo una tiene resultado → usarla
+            if (string.IsNullOrEmpty(read1)) return read2;
+            if (string.IsNullOrEmpty(read2)) return read1;
+
+            // Ambas diferentes → la más larga (más probable correcta)
+            return read1.Length >= read2.Length ? read1 : read2;
+        }
+
+        /// <summary>
+        /// Limpia resultado OCR de nombre: trim, eliminar no alfanuméricos, min 2 chars.
+        /// </summary>
+        private static string CleanOcrPlayerName(string? rawName)
+        {
+            if (string.IsNullOrWhiteSpace(rawName))
+                return string.Empty;
+
+            var cleaned = System.Text.RegularExpressions.Regex.Replace(rawName.Trim(), @"[^a-zA-Z0-9_\- ]", "");
+            cleaned = cleaned.Trim(' ', '_', '-');
+
+            return cleaned.Length >= 2 ? cleaned : string.Empty;
+        }
+
+        /// <summary>
+        /// Re-lee nombres de jugadores activos con alias vacío.
+        /// </summary>
+        private void RetryEmptyAliases()
+        {
+            var nameRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
+            if (nameRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+
+            foreach (var player in _playerGameState.Players.Where(p => p.Active && string.IsNullOrEmpty(p.Alias)))
+            {
+                var regionName = $"p{player.ValuePosition}Name";
+                var region = nameRegions.Regions.FirstOrDefault(r => r.Name == regionName);
+                if (region == null) continue;
+
+                var scaled = GetScaledRegion(region);
+                double nameUmbral = Math.Min(region.Umbral ?? 0.80, 0.80);
+                var cleanName = ReadPlayerNameOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
+                    nameUmbral, region.InactiveUmbral ?? 0.30);
+
+                if (!string.IsNullOrEmpty(cleanName))
+                {
+                    player.Alias = cleanName;
+                    if (!string.IsNullOrEmpty(player.Name))
+                        _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
+                }
+            }
         }
 
         /// <summary>
@@ -729,6 +813,7 @@ namespace OpenScrape.App
 
                 SetBetPlayer();
                 SetHeroStack();
+                RetryEmptyAliases();
 
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
@@ -2327,8 +2412,13 @@ namespace OpenScrape.App
                 if (player != null)
                 {
                     var scaled = GetScaledRegion(region);
-                    player.Alias = SetTextOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                        region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                    double nameUmbral = Math.Min(region.Umbral ?? 0.80, 0.80);
+                    var cleanName = ReadPlayerNameOCR(scaled.X, scaled.Y, scaled.Width, scaled.Height,
+                        nameUmbral, region.InactiveUmbral ?? 0.30);
+                    player.Alias = cleanName;
+
+                    if (!string.IsNullOrEmpty(cleanName) && !string.IsNullOrEmpty(player.Name))
+                        _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
                 }
             }
         }

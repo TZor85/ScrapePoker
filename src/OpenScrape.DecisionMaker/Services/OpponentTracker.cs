@@ -132,10 +132,45 @@ public class OpponentTracker
     /// </summary>
     public IReadOnlyDictionary<string, OpponentProfile> AllProfiles => _profiles;
 
+    // === Seat-alias cache: mapeo seat ("P3") → alias real ("PlayerA") ===
+    private readonly Dictionary<string, string> _seatAliasCache = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
-    /// Limpia todos los perfiles (inicio de nueva sesión).
+    /// Registra asociación seat → alias. Si existe perfil por seat name, lo migra al alias.
     /// </summary>
-    public void Reset() => _profiles.Clear();
+    public void RegisterSeatAlias(string seatName, string alias)
+    {
+        if (string.IsNullOrWhiteSpace(seatName) || string.IsNullOrWhiteSpace(alias))
+            return;
+
+        _seatAliasCache[seatName] = alias;
+
+        // Migrar perfil de seat a alias si existe (solo si no hay perfil con el alias)
+        if (_profiles.TryGetValue(seatName, out var seatProfile) &&
+            !_profiles.ContainsKey(alias))
+        {
+            seatProfile.PlayerId = alias;
+            _profiles[alias] = seatProfile;
+            _profiles.Remove(seatName);
+        }
+    }
+
+    /// <summary>
+    /// Resuelve un seat name a su alias conocido (o null si no hay).
+    /// </summary>
+    public string? ResolveName(string seatName)
+    {
+        return _seatAliasCache.TryGetValue(seatName, out var alias) ? alias : null;
+    }
+
+    /// <summary>
+    /// Limpia todos los perfiles y cache (inicio de nueva sesión).
+    /// </summary>
+    public void Reset()
+    {
+        _profiles.Clear();
+        _seatAliasCache.Clear();
+    }
 }
 
 public enum PostflopAction

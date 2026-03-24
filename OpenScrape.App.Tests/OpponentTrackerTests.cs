@@ -209,4 +209,61 @@ public class OpponentTrackerTests
         var profile = _tracker.GetProfile("");
         Assert.That(profile.HandsPlayed, Is.EqualTo(0));
     }
+
+    // ─── Seat-Alias Cache ─────────────────────────────────────
+
+    [Test]
+    public void RegisterSeatAlias_ResolveName_RetornaAlias()
+    {
+        _tracker.RegisterSeatAlias("P3", "PlayerA");
+
+        Assert.That(_tracker.ResolveName("P3"), Is.EqualTo("PlayerA"));
+    }
+
+    [Test]
+    public void RegisterSeatAlias_MigraPerfilExistente()
+    {
+        // Acumular stats bajo seat name
+        for (int i = 0; i < 10; i++)
+            _tracker.RecordHandPlayed("P3");
+
+        // Registrar alias → migra perfil
+        _tracker.RegisterSeatAlias("P3", "PlayerA");
+
+        var profile = _tracker.GetProfile("PlayerA");
+        Assert.That(profile.HandsPlayed, Is.EqualTo(10),
+            "Perfil migrado de P3 a PlayerA con 10 manos");
+        Assert.That(_tracker.AllProfiles.ContainsKey("P3"), Is.False,
+            "Perfil P3 ya no existe");
+    }
+
+    [Test]
+    public void ResolveName_SeatDesconocido_RetornaNull()
+    {
+        Assert.That(_tracker.ResolveName("P5"), Is.Null);
+    }
+
+    [Test]
+    public void Reset_LimpiaSeatAliasCache()
+    {
+        _tracker.RegisterSeatAlias("P3", "PlayerA");
+        _tracker.Reset();
+
+        Assert.That(_tracker.ResolveName("P3"), Is.Null,
+            "Reset limpia el cache de aliases");
+    }
+
+    [Test]
+    public void RegisterSeatAlias_NuevoJugadorMismoSeat()
+    {
+        _tracker.RegisterSeatAlias("P3", "PlayerA");
+        _tracker.RecordHandPlayed("PlayerA");
+
+        // Nuevo jugador en P3
+        _tracker.RegisterSeatAlias("P3", "PlayerB");
+
+        Assert.That(_tracker.ResolveName("P3"), Is.EqualTo("PlayerB"));
+        Assert.That(_tracker.GetProfile("PlayerA").HandsPlayed, Is.EqualTo(1),
+            "PlayerA mantiene su perfil");
+    }
 }
