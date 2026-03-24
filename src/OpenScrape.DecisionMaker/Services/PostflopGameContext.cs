@@ -26,6 +26,12 @@ public class PostflopGameContext
     public bool VillainAggressorCheckedFlop { get; set; }
 
     /// <summary>
+    /// El villano apostó en flop pero checkeó en turn → patrón bet-check-bet si apuesta en river.
+    /// Indica debilidad (draw fallido que reintenta) vs barrel real (rango fuerte).
+    /// </summary>
+    public bool VillainCheckedMiddleStreet { get; set; }
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
@@ -53,6 +59,7 @@ public class PostflopGameContext
         HeroBetTurn = false;
         PreviousStreetWasBet = false;
         VillainAggressorCheckedFlop = false;
+        VillainCheckedMiddleStreet = false;
         VillainBetSizeFlop = BetSizeCategory.NoBet;
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;
@@ -75,6 +82,8 @@ public class PostflopGameContext
     /// </summary>
     public void UpdateTurnState(bool heroBet, bool villainBet)
     {
+        // Detectar patrón bet-check: villain apostó en flop pero no en turn
+        VillainCheckedMiddleStreet = VillainBetFlop && !villainBet;
         HeroBetTurn = heroBet;
         VillainBetTurn = villainBet;
         PreviousStreetWasBet = heroBet;

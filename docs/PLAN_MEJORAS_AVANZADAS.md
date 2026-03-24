@@ -2,6 +2,7 @@
 
 Análisis realizado: 2026-03-24
 Sprint 5 completado: 2026-03-24
+Sprint 6 completado: 2026-03-24
 Basado en análisis exhaustivo del código tras completar Sprints 1-4.
 
 Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximizando EV en spots reales de cash game.
@@ -49,37 +50,37 @@ Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximiza
 
 ---
 
-## Sprint 6: Medio Impacto — Optimizaciones concretas
+## Sprint 6: Medio Impacto — Optimizaciones concretas ✅
 
-### S6.1 — Bet-Check-Bet ≠ Barrel
+### S6.1 — Bet-Check-Bet ≠ Barrel ✅
 
 - **Problema:** `villainBarreling` se activa si villano apostó 2+ calles, pero no distingue bet-bet (barrel real, rango fuerte) de bet-check-bet (draw fallido que reintenta). La penalty (+5 FoldBelow) se aplica incorrectamente al patrón bet-check-bet que indica rango diferente (más débil, a menudo missed draw bluffeando river).
 - **Ubicación:** `PostflopDecisionService.cs:193-198`, `FrmMain.cs:1423,1022`
 - **Fix:** Agregar `VillainCheckedMiddleStreet` flag en `PostflopGameContext`. Detectar patrón bet-check-bet y aplicar penalización distinta (menor, ~+2 en vez de +5) o incluso bonus de call (villain probablemente bluffeando).
 - **Impacto:** Medio — ~8% de manos en river tienen patrón bet-check-bet.
 
-### S6.2 — Reverse implied odds con contexto de blockers
+### S6.2 — Reverse implied odds con contexto de blockers ✅
 
 - **Problema:** Penalización reverse implied odds (7.0 flush / 4.0 coordinated) se aplica sin verificar si hero bloquea el draw del villano. Si hero tiene A♠ y el board tiene flush draw en spades, hero reduce combinaciones de flush del villano → penalización debería ser menor.
 - **Ubicación:** `ImpliedOddsCalculator.cs:62-75`
 - **Fix:** Recibir `heroBlocksDangerSuit` como parámetro. Si hero bloquea palo del draw → penalización ×0.5. Requiere propagar `heroBlocksDangerSuit` desde `DetermineAction` a `CalculateReverseImpliedOdds`.
 - **Impacto:** Medio — evita folds incorrectos cuando hero bloquea el draw.
 
-### S6.3 — Hero blocker effect granular (no plano 0.5×)
+### S6.3 — Hero blocker effect granular (no plano 0.5×) ✅
 
 - **Problema:** Si hero tiene una carta del palo peligroso, la reducción es siempre 50%. Pero el impacto real depende de si es nut blocker (As del palo), cuántas cartas del palo hay en board, y si el board tiene 3 o 4 del palo.
 - **Ubicación:** `DangerPenaltyCalculator.cs:45-46`
 - **Fix:** Nut blocker (A del palo completado): ×0.35. Non-nut blocker: ×0.55. Board con 4+ del palo (flush visible): ×0.7 (villano casi seguro tiene flush, blocker menos relevante). Nuevo parámetro `DangerNutBlockerReduction` en `StrategyProfile`.
 - **Impacto:** Medio — refina ~5% de decisiones en boards con flush completado.
 
-### S6.4 — Probe bet extendido a IP + sizing variable
+### S6.4 — Probe bet extendido a IP + sizing variable ✅
 
 - **Problema:** Solo permite probe bet OOP (`!isInPosition`). Pero IP leading cuando oponente checkeó es rentable en turn/river. Además, sizing es fijo (1/3) sin adaptar al tipo de oponente.
 - **Ubicación:** `PostflopDecisionService.cs:443-451`
 - **Fix:** Permitir IP probe bets (eliminar `!isInPosition`). Sizing variable: vs TP/nit → 1/4 (inducir call mínimo), vs LAG → 1/2 (definir mano). Nuevo parámetro `ProbeBetIPSize` en `StreetThresholds`.
 - **Impacto:** Medio — recupera value en spots actualmente perdidos con check.
 
-### S6.5 — Slowplay extendida a turn + adaptar a OpponentType
+### S6.5 — Slowplay extendida a turn + adaptar a OpponentType ✅
 
 - **Problema:** Solo en flop, solo Dry, solo ThreeOfAKind+, solo no-agresor. En turn con nuts en board seco contra villano agresivo, slowplay induciría bet en river que se paga.
 - **Ubicación:** `PostflopDecisionService.cs:408-418`
@@ -125,7 +126,7 @@ Objetivo: corregir leaks estratégicos que el modelo actual no captura, maximiza
 | Sprint | Items | Impacto EV estimado | Esfuerzo |
 |--------|-------|---------------------|----------|
 | Sprint 5 ✅ | S5.1-S5.5 | +8-12% ROI | Alto |
-| Sprint 6 | S6.1-S6.5 | +4-6% ROI | Medio |
+| Sprint 6 ✅ | S6.1-S6.5 | +4-6% ROI | Medio |
 | Sprint 7 | S7.1-S7.4 | +1-2% ROI | Bajo |
 | **Total** | **14 items** | **+13-20% ROI** | |
 

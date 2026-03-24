@@ -119,7 +119,8 @@ public class DangerPenaltyCalculatorTests
         var sinBlock = DangerPenaltyCalculator.Calculate(80, change, false, false, _profile);
         var conBlock = DangerPenaltyCalculator.Calculate(80, change, true, false, _profile);
 
-        Assert.That(conBlock, Is.EqualTo(sinBlock * _profile.DangerHeroBlocksReduction).Within(0.01));
+        // Non-nut blocker por defecto (heroHasNutBlocker=false), DangerLevel=3 (no board4flush)
+        Assert.That(conBlock, Is.EqualTo(sinBlock * _profile.DangerNonNutBlockerReduction).Within(0.01));
     }
 
     [Test]
@@ -148,7 +149,8 @@ public class DangerPenaltyCalculatorTests
         var result = DangerPenaltyCalculator.Calculate(60, change, true, true, _profile);
 
         double basePenalty = _profile.DangerBoardPairedPenalty + _profile.DangerOvercardPenalty;
-        double expected = basePenalty * _profile.DangerFacingBetMultiplier * _profile.DangerHeroBlocksReduction;
+        // Non-nut blocker (default), no flush completed → DangerNonNutBlockerReduction
+        double expected = basePenalty * _profile.DangerFacingBetMultiplier * _profile.DangerNonNutBlockerReduction;
         Assert.That(result, Is.EqualTo(expected).Within(0.01));
     }
 

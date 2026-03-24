@@ -57,8 +57,8 @@ public class PostflopDecisionService
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Delega a DangerPenaltyCalculator.
     /// </summary>
-    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn)
-        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street);
+    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false)
+        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker);
 
     /// <summary>
     /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
@@ -101,7 +101,9 @@ public class PostflopDecisionService
         PairClassification pairClassification = PairClassification.None,
         double foldEquity = 0,
         BetSizeCategory villainBetSizeFlop = BetSizeCategory.NoBet,
-        BetSizeCategory villainBetSizeTurn = BetSizeCategory.NoBet)
+        BetSizeCategory villainBetSizeTurn = BetSizeCategory.NoBet,
+        bool villainCheckedMiddleStreet = false,
+        bool heroHasNutBlocker = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -111,9 +113,9 @@ public class PostflopDecisionService
         double impliedOddsFactor = CalculateImpliedOddsFactor(
             street, isInPosition, hasFlushDraw, heroStack, potSize);
 
-        // Aplicar penalización por carta peligrosa (escalada por street)
+        // Aplicar penalización por carta peligrosa (escalada por street, blocker granular)
         double dangerPenalty = boardChange != null
-            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street)
+            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street, heroHasNutBlocker)
             : 0;
         double effectiveEquity = equity - dangerPenalty;
 
@@ -135,7 +137,8 @@ public class PostflopDecisionService
 
         // Reverse implied odds: penalizar calls en turn con mano vulnerable en board con draws
         double reverseImpliedPenalty = CalculateReverseImpliedOdds(
-            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification);
+            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification,
+            heroBlocksDangerSuit);
         effectiveEquity -= reverseImpliedPenalty;
 
         // Modo simplificado (RaiseOverLimper)
@@ -196,11 +199,20 @@ public class PostflopDecisionService
             adjustedFoldBelow += PokerConstants.CallerVsCbetFoldIncrease;
         }
 
-        // Villain barreling: apuesta 2 calles seguidas → rango más estrecho
+        // Villain barreling: distinguir barrel real (bet-bet) de bet-check-bet (reactivation)
         if (villainBarreling && isFacingBet)
         {
-            adjustedFoldBelow += _profile.VillainBarrelFoldIncrease;
-            adjustedThinValueAbove += _profile.VillainBarrelThinValueIncrease;
+            if (villainCheckedMiddleStreet)
+            {
+                // Bet-check-bet: draw fallido reintentando, rango más débil → penalty menor
+                adjustedFoldBelow += _profile.VillainBetCheckBetPenalty;
+            }
+            else
+            {
+                // Barrel real: bet-bet consecutivo, rango fuerte
+                adjustedFoldBelow += _profile.VillainBarrelFoldIncrease;
+                adjustedThinValueAbove += _profile.VillainBarrelThinValueIncrease;
+            }
         }
 
         // Sizing tell: villain escaló bet size entre streets → rango más fuerte
@@ -269,7 +281,7 @@ public class PostflopDecisionService
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
             street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
-            boardChange, hasFlushDraw, numOpponents, pairClassification);
+            boardChange, hasFlushDraw, numOpponents, pairClassification, villainType);
     }
 
     /// <summary>
@@ -409,20 +421,9 @@ public class PostflopDecisionService
         BoardChangeResult? boardChange = null,
         bool hasFlushDraw = false,
         int numOpponents = 1,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        OpponentType villainType = OpponentType.Unknown)
     {
-        // Slow play: check con nuts en flop seco para inducir bluff del villano
-        // Solo en flop, board Dry, no multiway, mano muy fuerte (ThreeOfAKind+)
-        // No aplica si hero es agresor (debe c-bet para proteger rango)
-        if (street == BoardPosition.Flop && boardTexture == "Dry" && !isMultiway &&
-            !heroIsAggressor &&
-            heroHandRank >= HandRank.ThreeOfAKind &&
-            equity >= _profile.SlowPlayMinEquity)
-        {
-            return new PostflopDecisionResult("Check",
-                $"Slow play — {heroHandRank} en board seco, inducir bluff");
-        }
-
         // River opportunity: hero completó su draw → bet for value
         // El board cambió a favor de hero (flush/straight completado Y hero lo tiene)
         if (street == BoardPosition.River && boardChange != null &&
@@ -435,6 +436,7 @@ public class PostflopDecisionService
         }
 
         // Check-raise: OOP con mano premium, esperando bet del villano para raise
+        // Prioridad sobre slowplay: check-raise trap es más +EV que slowplay pasivo
         if (thresholds.CanCheckRaise && !isInPosition && !isMultiway &&
             equity > thresholds.CheckRaiseThreshold &&
             heroHandRank >= HandRank.TwoPair &&
@@ -446,14 +448,34 @@ public class PostflopDecisionService
                 IsCheckRaise: true);
         }
 
+        // Slow play: check con nuts en board seco para inducir bluff del villano
+        // Flop: ThreeOfAKind+ en Dry, no agresor, no multiway (cualquier villainType, cualquier posición)
+        // Turn: ThreeOfAKind+ en Dry, no agresor, no multiway, OOP, villano LAG o Unknown
+        bool isSlowPlayStreet = street == BoardPosition.Flop ||
+            (street == BoardPosition.Turn && !isInPosition &&
+             (villainType == OpponentType.LAG || villainType == OpponentType.Unknown));
+
+        if (isSlowPlayStreet && boardTexture == "Dry" && !isMultiway &&
+            !heroIsAggressor &&
+            heroHandRank >= HandRank.ThreeOfAKind &&
+            equity >= _profile.SlowPlayMinEquity)
+        {
+            return new PostflopDecisionResult("Check",
+                $"Slow play — {heroHandRank} en board seco{(street == BoardPosition.Turn ? " (turn)" : "")}, inducir bluff");
+        }
+
         // Probe bet: villano agresor checkeó en street anterior → debilidad
+        // Permitido tanto IP (sizing mayor) como OOP (sizing original)
         if (thresholds.CanProbeBet && villainAggressorCheckedPreviousStreet &&
-            !isInPosition && !isMultiway &&
+            !isMultiway &&
             equity >= thresholds.ProbeBetMinEquity)
         {
+            var probeSize = isInPosition
+                ? thresholds.ProbeBetIPSize
+                : thresholds.ProbeBetSize;
             return new PostflopDecisionResult(
-                thresholds.ProbeBetSize + " (Probe)",
-                "Probe bet — agresor checkeó en street anterior");
+                probeSize + " (Probe)",
+                $"Probe bet {(isInPosition ? "IP" : "OOP")} — agresor checkeó en street anterior");
         }
 
         // Determinar bet size base por textura de board y aplicar sizing dinámico
@@ -661,9 +683,11 @@ public class PostflopDecisionService
     public double CalculateReverseImpliedOdds(
         BoardChangeResult? boardChange, HandRank heroHandRank, bool hasFlushDraw,
         BoardPosition street, bool isFacingBet,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        bool heroBlocksDangerSuit = false)
         => ImpliedOddsCalculator.CalculateReverseImpliedOdds(
-            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, _profile, pairClassification);
+            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, _profile, pairClassification,
+            heroBlocksDangerSuit);
 
     /// <summary>
     /// Equity baja: semi-bluff con draws, bluff puro, pot odds marginales (con implied odds), o fold.

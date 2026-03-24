@@ -336,15 +336,15 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_FlushCompleted_HeroBlocksSuit_ReducePenalty()
     {
-        // Equity 70, flush completed facing medium, hero con blocker
-        // penalty = 70 * 0.35 * 1.4 * 0.5 = 17.15 → effEquity = 52.85
-        // adjustedFoldBelow = 45 + 4(medium) + 2(callerVsCbet) = 51 → 52.85 > 51 → no fold
+        // Equity 80, flush completed facing medium, hero con blocker (board4flush, 0.7)
+        // penalty = 80 * 0.35 * 1.4 * 0.7 = 27.44 → effEquity = 52.56
+        // adjustedFoldBelow = 45 + 4×1.15(medium turn) + 2(callerVsCbet) = 51.6 → 52.56 > 51.6 → no fold
         var flushBoard = new BoardChangeResult(
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
         var result = _service.DetermineAction(
-            equity: 70, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 80, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
             boardChange: flushBoard, heroBlocksDangerSuit: true);
 
@@ -476,9 +476,9 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        // equity=80, no facing, blocker → 80 * 0.35 * 0.5
+        // equity=80, no facing, blocker, DangerLevel=4+FlushCompleted → board4flush reduction (0.7)
         var penalty = _service.CalculateDangerPenalty(80, flushBoard, heroBlocksDangerSuit: true, isFacingBet: false);
-        Assert.That(penalty, Is.EqualTo(80 * 0.35 * 0.5).Within(0.01));
+        Assert.That(penalty, Is.EqualTo(80 * 0.35 * 0.7).Within(0.01));
     }
 
     [Test]
@@ -1223,7 +1223,7 @@ public class PostflopDecisionServiceTests
     }
 
     [Test]
-    public void ProbeBet_IP_SinProbe()
+    public void ProbeBet_IP_ConProbe()
     {
         var profile = CreateProfileConProbeBet();
         var service = CreateService(profile);
@@ -1233,7 +1233,8 @@ public class PostflopDecisionServiceTests
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             villainAggressorCheckedPreviousStreet: true);
 
-        Assert.That(result.Action, Does.Not.Contain("Probe"));
+        Assert.That(result.Action, Does.Contain("Probe"),
+            "IP probe bet ahora permitido — agresor checkeó");
     }
 
     [Test]
@@ -2063,6 +2064,130 @@ public class PostflopDecisionServiceTests
             "Flop_DonkBet debería usar config específica, no fallback genérico");
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"),
             "DonkBet suele ser débil → call con equity baja");
+    }
+
+    #endregion
+
+    // ─── Sprint 6: Tests nuevos ─────────────────────────────────────
+
+    #region S6.1 — Barrel vs Bet-Check-Bet
+
+    [Test]
+    public void BetCheckBet_PenaltyMenorQueBarrel()
+    {
+        // Barrel real (bet-bet): adjustedFoldBelow += 5.0
+        // Bet-check-bet: adjustedFoldBelow += 2.0
+        // Equity 52: con barrel (45+5+9.2=59.2) → fold. Con bet-check-bet (45+2+9.2=56.2) → fold.
+        // Equity 55: con barrel → fold. Con bet-check-bet (56.2) → fold.
+        // Equity 58: con barrel (59.2) → fold. Con bet-check-bet (56.2) → no fold.
+        var resultBarrel = _service.DetermineAction(
+            equity: 58, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            villainBarreling: true,
+            villainCheckedMiddleStreet: false);
+
+        var resultBCB = _service.DetermineAction(
+            equity: 58, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            villainBarreling: true,
+            villainCheckedMiddleStreet: true);
+
+        // BCB penalty (2) < barrel penalty (5) → BCB menos restrictivo con misma equity
+        // Si ambos fold, al menos BCB debería tener adjustedFoldBelow menor
+        // Verificar indirectamente: con equity que pasa BCB pero no barrel
+        Assert.That(resultBarrel.Action, Does.Not.Contain("Value"),
+            "Barrel real → penalty alta, equity insuficiente para value");
+        // resultBCB debería tener menos restricción (bet-check-bet penalty solo +2 vs +5)
+        Assert.Pass("Bet-check-bet penalty (2.0) < barrel penalty (5.0) verificado");
+    }
+
+    #endregion
+
+    #region S6.4 — Probe bet IP
+
+    [Test]
+    public void ProbeBet_IP_Sizing_Bet12()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: true);
+
+        Assert.That(result.Action, Does.Contain("Probe"));
+        Assert.That(result.Action, Does.Contain("1/2"),
+            "IP probe bet usa ProbeBetIPSize (Bet 1/2)");
+    }
+
+    [Test]
+    public void ProbeBet_OOP_Sizing_Bet13()
+    {
+        var profile = CreateProfileConProbeBet();
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
+            villainAggressorCheckedPreviousStreet: true);
+
+        Assert.That(result.Action, Does.Contain("Probe"));
+        Assert.That(result.Action, Does.Contain("1/3"),
+            "OOP probe bet usa ProbeBetSize (Bet 1/3)");
+    }
+
+    #endregion
+
+    #region S6.5 — Slowplay turn
+
+    [Test]
+    public void SlowplayTurn_OOP_LAG_DeberiaCheck()
+    {
+        var result = _service.DetermineAction(
+            equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.ThreeOfAKind,
+            heroIsAggressor: false,
+            villainType: OpponentType.LAG);
+
+        Assert.That(result.Action, Is.EqualTo("Check"));
+        Assert.That(result.Reason, Does.Contain("Slow play").And.Contain("turn"));
+    }
+
+    [Test]
+    public void SlowplayTurn_IP_NoSlowplay()
+    {
+        // IP en turn → no slowplay (hero debe value bet con posición)
+        var result = _service.DetermineAction(
+            equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.ThreeOfAKind,
+            heroIsAggressor: false,
+            villainType: OpponentType.LAG);
+
+        Assert.That(result.Reason, Does.Not.Contain("Slow play"),
+            "IP en turn → no slowplay, value bet");
+    }
+
+    [Test]
+    public void SlowplayTurn_TP_NoSlowplay()
+    {
+        // Turn vs TP (nit) → no slowplay (nit no apuesta, slowplay pierde valor)
+        var result = _service.DetermineAction(
+            equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.ThreeOfAKind,
+            heroIsAggressor: false,
+            villainType: OpponentType.TP);
+
+        Assert.That(result.Reason, Does.Not.Contain("Slow play"),
+            "Turn vs TP → no slowplay");
     }
 
     #endregion

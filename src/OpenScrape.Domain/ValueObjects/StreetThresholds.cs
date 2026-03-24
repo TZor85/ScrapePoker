@@ -62,6 +62,7 @@ public record StreetThresholds
     // Probe bet: bet pequeño cuando agresor preflop checkeó en street anterior
     public bool CanProbeBet { get; init; }
     public string ProbeBetSize { get; init; } = "Bet 1/3";
+    public string ProbeBetIPSize { get; init; } = "Bet 1/2";
     public double ProbeBetMinEquity { get; init; } = 25.0;
 
     // Modo simplificado (RaiseOverLimper: IP/OOP con bets fijos, sin board texture)

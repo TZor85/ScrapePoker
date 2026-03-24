@@ -1006,9 +1006,12 @@ namespace OpenScrape.App
             bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
                 (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
                  _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
+            bool heroHasNutBlocker = heroBlocks &&
+                ((_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard1Rank == 14) ||
+                 (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
 
             bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River);
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker);
 
             var numOpponents = _playerGameState.Players.Count(p => p.Active) - 1;
             bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
@@ -1032,7 +1035,8 @@ namespace OpenScrape.App
                 villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
                 pairClassification: _riverResult.PairType,
                 foldEquity: _riverResult.FoldEquity,
-                villainBetSizeTurn: _postflopContext.VillainBetSizeTurn);
+                villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
+                villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1411,9 +1415,12 @@ namespace OpenScrape.App
             bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
                 (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
                  _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
+            bool heroHasNutBlocker = heroBlocks &&
+                ((_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard1Rank == 14) ||
+                 (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
 
             bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.Turn);
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.Turn, heroHasNutBlocker);
 
             _postflopContext.LastBoardChange = boardChange;
 

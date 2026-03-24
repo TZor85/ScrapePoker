@@ -69,7 +69,8 @@ public class ImpliedOddsCalculator
         BoardChangeResult? boardChange, HandRank heroHandRank, bool hasFlushDraw,
         BoardPosition street, bool isFacingBet,
         StrategyProfile profile,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        bool heroBlocksDangerSuit = false)
     {
         if ((street != BoardPosition.Turn && street != BoardPosition.River) || !isFacingBet || boardChange == null)
             return 0;
@@ -100,6 +101,10 @@ public class ImpliedOddsCalculator
             };
             penalty *= multiplier;
         }
+
+        // Hero bloquea el draw del villano → reduce penalización
+        if (heroBlocksDangerSuit && penalty > 0)
+            penalty *= profile.ReverseImpliedBlockerReduction;
 
         // River: penalización reducida (no hay más cartas por venir)
         if (street == BoardPosition.River)

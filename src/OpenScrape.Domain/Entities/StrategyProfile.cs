@@ -50,6 +50,11 @@ public class StrategyProfile
     // Multiplicadores
     public double DangerFacingBetMultiplier { get; set; } = 1.4;
     public double DangerHeroBlocksReduction { get; set; } = 0.5;
+    // Blocker granular: nut blocker (As del palo) elimina más combos que non-nut
+    public double DangerNutBlockerReduction { get; set; } = 0.35;
+    public double DangerNonNutBlockerReduction { get; set; } = 0.55;
+    // Board con 4+ cartas del palo: flush casi segura, blocker menos relevante
+    public double DangerBlockerBoard4FlushReduction { get; set; } = 0.7;
     // Escalado de danger penalty por street: flop más riesgo (2 calles por venir), river menos (definitivo)
     public double DangerPenaltyFlopMultiplier { get; set; } = 1.3;
     public double DangerPenaltyRiverMultiplier { get; set; } = 0.8;
@@ -87,6 +92,8 @@ public class StrategyProfile
     public double VillainBarrelThinValueIncrease { get; set; } = 3.0;
     // Sizing tell: penalización cuando villano escala tamaño de apuesta entre streets
     public double VillainSizingEscalationPenalty { get; set; } = 4.0;
+    // Bet-check-bet: penalty menor que barrel (draw fallido reintentando)
+    public double VillainBetCheckBetPenalty { get; set; } = 2.0;
 
     // SPR Push/Fold (usado en PostflopDecisionService)
     // Con SPR corto, decisiones más binarias (commit o fold)
@@ -100,6 +107,8 @@ public class StrategyProfile
     public double ReverseImpliedFlushDrawPenalty { get; set; } = 7.0;
     public double ReverseImpliedCoordinatedPenalty { get; set; } = 4.0;
     public double ReverseImpliedOnePairMultiplier { get; set; } = 1.5;
+    // Reducción de reverse implied odds cuando hero bloquea el palo del draw
+    public double ReverseImpliedBlockerReduction { get; set; } = 0.5;
 
     // Bluff Catching (usado en PostflopDecisionService)
     // Multiplicador sobre FoldBelow: equity >= FoldBelow * multiplier → call para atrapar bluffs

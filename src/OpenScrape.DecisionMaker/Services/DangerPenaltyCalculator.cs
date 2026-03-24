@@ -18,7 +18,8 @@ public class DangerPenaltyCalculator
     public static double Calculate(
         double rawEquity, BoardChangeResult boardChange,
         bool heroBlocksDangerSuit, bool isFacingBet,
-        StrategyProfile profile, BoardPosition street = BoardPosition.Turn)
+        StrategyProfile profile, BoardPosition street = BoardPosition.Turn,
+        bool heroHasNutBlocker = false)
     {
         if (boardChange.DangerLevel == 0)
             return 0;
@@ -55,9 +56,19 @@ public class DangerPenaltyCalculator
         if (isFacingBet)
             penalty *= profile.DangerFacingBetMultiplier;
 
-        // Blocker effect
+        // Blocker effect granular: nut blocker > non-nut > board 4+ flush
         if (heroBlocksDangerSuit)
-            penalty *= profile.DangerHeroBlocksReduction;
+        {
+            bool isBoard4Flush = boardChange.FlushCompleted && boardChange.DangerLevel >= 4;
+            double blockerReduction;
+            if (isBoard4Flush)
+                blockerReduction = profile.DangerBlockerBoard4FlushReduction;
+            else if (heroHasNutBlocker)
+                blockerReduction = profile.DangerNutBlockerReduction;
+            else
+                blockerReduction = profile.DangerNonNutBlockerReduction;
+            penalty *= blockerReduction;
+        }
 
         return penalty;
     }
