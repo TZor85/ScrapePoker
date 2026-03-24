@@ -90,13 +90,13 @@ public class ImpliedOddsCalculator
             // Multiplicador diferenciado por sub-tipo de par
             double multiplier = pairClassification switch
             {
-                PairClassification.Overpair        => 1.0,
-                PairClassification.TopPair         => 1.2,
-                PairClassification.MiddlePair      => 1.5,
+                PairClassification.Overpair => 1.0,
+                PairClassification.TopPair => 1.2,
+                PairClassification.MiddlePair => 1.5,
                 PairClassification.PocketPairUnder => 1.5,
-                PairClassification.BottomPair      => 1.8,
-                PairClassification.BoardPaired     => 2.0,
-                _                                  => profile.ReverseImpliedOnePairMultiplier
+                PairClassification.BottomPair => 1.8,
+                PairClassification.BoardPaired => 2.0,
+                _ => profile.ReverseImpliedOnePairMultiplier
             };
             penalty *= multiplier;
         }

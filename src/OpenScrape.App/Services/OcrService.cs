@@ -326,7 +326,7 @@ public class OcrService
             byte value = brightness > thresholdValue ? (byte)255 : (byte)0;
 
             // Escribir pixel blanco o negro en destino
-            dstSpan[i]     = value; // B
+            dstSpan[i] = value; // B
             dstSpan[i + 1] = value; // G
             dstSpan[i + 2] = value; // R
             dstSpan[i + 3] = 255;   // A (opaco)

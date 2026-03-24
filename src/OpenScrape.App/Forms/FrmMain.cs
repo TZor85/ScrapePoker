@@ -106,6 +106,16 @@ namespace OpenScrape.App
             return BetSizeCategory.Large;
         }
 
+        /// <summary>
+        /// Obtiene el stack del villano principal (oponente activo con mayor stack).
+        /// </summary>
+        private decimal GetVillainStack()
+        {
+            var activeVillains = _playerGameState.Players
+                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name));
+            return activeVillains.Any() ? activeVillains.Max(p => p.Stack) : 0;
+        }
+
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
         {
             bool villainWasPreflopAggressor = _playerGameState.Players
@@ -701,17 +711,17 @@ namespace OpenScrape.App
             {
                 // Obtener la región uAction
                 var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
-                
+
                 if (regionAction == null)
                 {
-                    MessageBox.Show("No se encontró la región 'uAction'. Por favor, carga la configuración de regiones primero.", 
+                    MessageBox.Show("No se encontró la región 'uAction'. Por favor, carga la configuración de regiones primero.",
                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 if (_handle == IntPtr.Zero)
                 {
-                    MessageBox.Show("No hay una ventana de poker seleccionada. Por favor, selecciona la ventana primero.", 
+                    MessageBox.Show("No hay una ventana de poker seleccionada. Por favor, selecciona la ventana primero.",
                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
@@ -719,12 +729,12 @@ namespace OpenScrape.App
                 // Crear y mostrar la ventana de debug
                 var debugForm = new FrmDetectionDebug(_handle, regionAction);
                 debugForm.Show();
-                
+
                 _detectionLoggerService.LogDetectionError("Ventana de debug de detección abierta");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al abrir la ventana de debug: {ex.Message}", 
+                MessageBox.Show($"Error al abrir la ventana de debug: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 _detectionLoggerService.LogDetectionError($"Error al abrir ventana de debug: {ex.Message}", ex);
             }
@@ -842,7 +852,7 @@ namespace OpenScrape.App
             {
                 LogError($"PreflopHeroPosition no tiene datos para posición {_playerGameState.Position}, reconstruyendo...");
                 _preflopHeroPosition = GetPreflopHeroPosition();
-                
+
                 if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
                 {
                     LogError($"Sigue sin tener datos para posición {_playerGameState.Position}, saltando preflop");
@@ -1020,7 +1030,9 @@ namespace OpenScrape.App
                 hasComboDraw: _riverResult.HasComboDraw,
                 villainAggressorCheckedPreviousStreet: !_postflopContext.VillainBetTurn && !riverIsAggressor,
                 villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
-                pairClassification: _riverResult.PairType);
+                pairClassification: _riverResult.PairType,
+                foldEquity: _riverResult.FoldEquity,
+                villainBetSizeTurn: _postflopContext.VillainBetSizeTurn);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1261,7 +1273,7 @@ namespace OpenScrape.App
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
-                villainStack: 0,
+                villainStack: GetVillainStack(),
                 handSituation: _playerGameState.HandSituation.ToString());
 
             _flopResult = result;
@@ -1314,7 +1326,8 @@ namespace OpenScrape.App
 
             bool villainAggro = maxBet > 0;
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            var boardChange = DecisionMaker.Algorithms.BoardChangeResult.Safe;
+            var boardChange = _boardTextureAnalyzer.AnalyzeInitialBoard(flopRanks, flopSuits);
+            _postflopContext.InitialBoardDanger = boardChange;
 
             // Detectar donk bet en flop (villano apuesta sin ser agresor preflop)
             var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
@@ -1345,7 +1358,8 @@ namespace OpenScrape.App
                 heroIsAggressor: isPreflopAggressor,
                 heroHandRank: _flopResult.HeroHandRank,
                 hasComboDraw: _flopResult.HasComboDraw,
-                pairClassification: _flopResult.PairType);
+                pairClassification: _flopResult.PairType,
+                foldEquity: _flopResult.FoldEquity);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -1364,6 +1378,7 @@ namespace OpenScrape.App
             _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
             _postflopContext.HeroBetFlop = _postflopContext.PreviousStreetWasBet;
             _postflopContext.VillainBetFlop = maxBet > 0;
+            _postflopContext.VillainBetSizeFlop = betSize;
 
             // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
             _postflopContext.VillainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSizeCategory.NoBet;
@@ -1389,7 +1404,10 @@ namespace OpenScrape.App
             var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
 
             // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
-            var boardChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
+            // Combinar con peligro base del flop (flush draw, paired, connected)
+            var turnChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
+            var boardChange = PostflopGameContext.CombineBoardChanges(
+                _postflopContext.InitialBoardDanger, turnChange);
             bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
                 (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
                  _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
@@ -1419,7 +1437,9 @@ namespace OpenScrape.App
                 hasComboDraw: _turnResult.HasComboDraw,
                 villainAggressorCheckedPreviousStreet: _postflopContext.VillainAggressorCheckedFlop,
                 villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0,
-                pairClassification: _turnResult.PairType);
+                pairClassification: _turnResult.PairType,
+                foldEquity: _turnResult.FoldEquity,
+                villainBetSizeFlop: _postflopContext.VillainBetSizeFlop);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -1446,6 +1466,7 @@ namespace OpenScrape.App
             _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
             _postflopContext.HeroBetTurn = _postflopContext.PreviousStreetWasBet;
             _postflopContext.VillainBetTurn = maxBet > 0;
+            _postflopContext.VillainBetSizeTurn = betSize;
 
             // Persistir decisión y board en game logger
             double turnSpr = _playerGameState.PotSize > 0
@@ -1574,7 +1595,7 @@ namespace OpenScrape.App
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
-                villainStack: 0,
+                villainStack: GetVillainStack(),
                 handSituation: _playerGameState.HandSituation.ToString());
 
             _turnResult = result;
@@ -1652,7 +1673,7 @@ namespace OpenScrape.App
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
-                villainStack: 0,
+                villainStack: GetVillainStack(),
                 handSituation: _playerGameState.HandSituation.ToString());
 
             _riverResult = result;
@@ -1929,7 +1950,7 @@ namespace OpenScrape.App
                 _playerGameState.Players.Max(m => m.Bet),
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
-                villainStack: 0,
+                villainStack: GetVillainStack(),
                 handSituation: _playerGameState.HandSituation.ToString());
 
             return result;
@@ -2543,13 +2564,13 @@ namespace OpenScrape.App
         private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
         {
             var position = PositionCalculator.DetermineP0Position(dealerPosition, _playerGameState.Players);
-            
+
             var activeSeats = _playerGameState.Players
                 .Where(p => !p.Empty && !p.SitOut)
                 .Select(p => p.ValuePosition)
                 .OrderBy(s => s)
                 .ToList();
-            
+
             LogDebug($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
             return position;
         }
@@ -2732,7 +2753,7 @@ namespace OpenScrape.App
                         continue;
 
                     // Elegibles solamente jugadores activos (excluir héroe P0)
-                    bool shouldAssignPosition = !player.Empty && !player.SitOut && 
+                    bool shouldAssignPosition = !player.Empty && !player.SitOut &&
                                                player.Position == TablePosition.None &&
                                                player.ValuePosition != 0; // Excluir héroe
                     if (!shouldAssignPosition)
@@ -3496,10 +3517,10 @@ namespace OpenScrape.App
                         }
 
                         using var bitmap = new Bitmap(img);
-                        
+
                         // Detección mejorada con múltiples píxeles y tolerancia
                         var detectionResult = PerformEnhancedDetection(bitmap, regionAction, flop);
-                        
+
                         // Log cambios de color significativos
                         if (!detectionResult.ActionColor.Equals(lastLoggedColor))
                         {
@@ -3535,7 +3556,7 @@ namespace OpenScrape.App
                                 if (detectionResult.ShouldCapture)
                                 {
                                     detectionStats = detectionStats with { Detections = detectionStats.Detections + 1 };
-                                    
+
                                     _detectionLoggerService.LogTurnDetected(
                                         new Point(regionAction.PosX, regionAction.PosY),
                                         detectionResult.ActionColor,
@@ -3579,7 +3600,7 @@ namespace OpenScrape.App
                         }
 
                         btnWindow_Click(sender, e);
-                        
+
                         // Delay adaptativo basado en la actividad
                         var delay = detectionResult.ShouldCapture ? 200 : 100; // Más lento después de detección
                         Task.Delay(delay).Wait();
@@ -3588,7 +3609,7 @@ namespace OpenScrape.App
                     {
                         detectionStats = detectionStats with { Errors = detectionStats.Errors + 1 };
                         _detectionLoggerService.LogDetectionError($"Error en bucle de detección: {loopEx.Message}", loopEx);
-                        
+
                         // Delay más largo en caso de error para evitar spam
                         Task.Delay(500).Wait();
                     }
@@ -3619,15 +3640,15 @@ namespace OpenScrape.App
 
                 // Muestrear píxeles adicionales alrededor del punto principal para mayor robustez
                 var sampleColors = new List<Color> { primaryActionColor };
-                
+
                 // Muestrear en un patrón de cruz pequeño (±2 píxeles)
                 var offsets = new[] { (-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1) };
-                
+
                 foreach (var (dx, dy) in offsets)
                 {
                     var x = scaledAction.X + dx;
                     var y = scaledAction.Y + dy;
-                    
+
                     if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
                     {
                         sampleColors.Add(bitmap.GetPixel(x, y));
@@ -3638,14 +3659,14 @@ namespace OpenScrape.App
                 var avgB = sampleColors.Average(c => c.B);
                 var avgR = sampleColors.Average(c => c.R);
                 var avgG = sampleColors.Average(c => c.G);
-                
+
                 // Detección con rango de tolerancia en lugar de valor exacto
                 const int TARGET_B = 24;
                 const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
-                
+
                 bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
                 bool shouldCapture = isActionColorInRange && !_executeCapture;
-                
+
                 // Detección de flop mejorada
                 const int FLOP_TARGET_B = 255;
                 const int FLOP_TOLERANCE = 10;
@@ -3667,13 +3688,13 @@ namespace OpenScrape.App
             catch (Exception ex)
             {
                 _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
-                
+
                 // Fallback a detección simple
                 var scaledAction = GetScaledRegion(regionAction);
                 var scaledFlop = GetScaledRegion(flop);
                 Color actionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
                 Color flopColor = bitmap.GetPixel(scaledFlop.X, scaledFlop.Y);
-                
+
                 return new DetectionResult
                 {
                     ActionColor = actionColor,

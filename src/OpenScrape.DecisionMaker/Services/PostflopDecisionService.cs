@@ -98,7 +98,10 @@ public class PostflopDecisionService
         bool villainAggressorCheckedPreviousStreet = false,
         bool villainBarreling = false,
         OpponentType villainType = OpponentType.Unknown,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        double foldEquity = 0,
+        BetSizeCategory villainBetSizeFlop = BetSizeCategory.NoBet,
+        BetSizeCategory villainBetSizeTurn = BetSizeCategory.NoBet)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -151,6 +154,16 @@ public class PostflopDecisionService
                 BetSizeCategory.Small => PokerConstants.FacingBetPenaltySmall,
                 _ => 0
             };
+
+            // Escalar por street: bets grandes en flop son normales, en river = rango fuerte
+            double streetMultiplier = street switch
+            {
+                BoardPosition.Turn => PokerConstants.FacingBetTurnMultiplier,
+                BoardPosition.River => PokerConstants.FacingBetRiverMultiplier,
+                _ => 1.0
+            };
+            facingBetPenalty *= streetMultiplier;
+
             adjustedFoldBelow += facingBetPenalty;
             adjustedThinValueAbove += facingBetPenalty / 2;
 
@@ -184,6 +197,19 @@ public class PostflopDecisionService
             adjustedThinValueAbove += _profile.VillainBarrelThinValueIncrease;
         }
 
+        // Sizing tell: villain escaló bet size entre streets → rango más fuerte
+        if (isFacingBet && street >= BoardPosition.Turn)
+        {
+            bool villainEscalatedSizing =
+                (street == BoardPosition.Turn && villainBetSizeFlop != BetSizeCategory.NoBet &&
+                 villainBetSize > villainBetSizeFlop) ||
+                (street == BoardPosition.River && villainBetSizeTurn != BetSizeCategory.NoBet &&
+                 villainBetSize > villainBetSizeTurn);
+
+            if (villainEscalatedSizing)
+                adjustedFoldBelow += _profile.VillainSizingEscalationPenalty;
+        }
+
         // Ajuste por tipo de oponente (requiere perfil fiable con 20+ manos)
         if (villainType != OpponentType.Unknown)
         {
@@ -214,7 +240,7 @@ public class PostflopDecisionService
         if (effectiveEquity < adjustedFoldBelow)
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
-                heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification);
+                heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity);
 
         // --- FACING BET ---
         if (isFacingBet)
@@ -225,7 +251,8 @@ public class PostflopDecisionService
 
             return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
                 street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
-                heroIsAggressor, heroHandRank, totalOuts, pairClassification);
+                heroIsAggressor, heroHandRank, totalOuts, pairClassification,
+                hasFlushDraw, hasComboDraw);
         }
 
         // --- NO FACING BET ---
@@ -256,7 +283,9 @@ public class PostflopDecisionService
         bool heroIsAggressor = false,
         HandRank heroHandRank = HandRank.HighCard,
         int totalOuts = 0,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        bool hasFlushDraw = false,
+        bool hasComboDraw = false)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
@@ -339,10 +368,11 @@ public class PostflopDecisionService
             return new PostflopDecisionResult("Call", "Call — showdown value vs bet pequeña");
 
         // Floating IP: call en flop con posición y equity marginal para robar en turn
-        // Requiere: IP + flop + bet small/medium + sin mano hecha + equity en rango flotante
+        // Requiere: IP + flop + bet small/medium + sin mano hecha + draw real + equity en rango flotante
+        bool hasRealDraw = hasFlushDraw || hasComboDraw || totalOuts >= _profile.FloatingIPMinOuts;
         if (isInPosition && street == BoardPosition.Flop &&
             villainBetSize != BetSizeCategory.Large &&
-            heroHandRank <= HandRank.OnePair && totalOuts >= 4 &&
+            heroHandRank <= HandRank.OnePair && totalOuts >= 4 && hasRealDraw &&
             equity >= _profile.FloatingIPMinEquity && equity <= _profile.FloatingIPMaxEquity)
         {
             return new PostflopDecisionResult("Call",
@@ -426,6 +456,7 @@ public class PostflopDecisionService
             "Dry" => thresholds.DryBoardBetSize,
             "Coordinated" => thresholds.CoordinatedBoardBetSize,
             "Paired" => thresholds.PairedBoardBetSize,
+            "Monotone" => thresholds.MonotoneBoardBetSize,
             _ => thresholds.DryBoardBetSize
         };
 
@@ -539,13 +570,13 @@ public class PostflopDecisionService
         {
             return pairClassification switch
             {
-                PairClassification.Overpair       => 0.8,
-                PairClassification.TopPair        => 1.5,
-                PairClassification.MiddlePair     => 2.0,
+                PairClassification.Overpair => 0.8,
+                PairClassification.TopPair => 1.5,
+                PairClassification.MiddlePair => 2.0,
                 PairClassification.PocketPairUnder => 2.5,
-                PairClassification.BottomPair     => 3.0,
-                PairClassification.BoardPaired    => 3.5,
-                _                                 => 2.0  // None / fallback
+                PairClassification.BottomPair => 3.0,
+                PairClassification.BoardPaired => 3.5,
+                _ => 2.0  // None / fallback
             };
         }
 
@@ -645,7 +676,8 @@ public class PostflopDecisionService
         HandRank heroHandRank = HandRank.HighCard,
         BoardChangeResult? boardChange = null,
         bool heroBlocksDangerSuit = false,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        double foldEquity = 0)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
         if (totalOuts >= PokerConstants.MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
@@ -676,13 +708,21 @@ public class PostflopDecisionService
         }
 
         // Bluff puro (solo sin facing bet, no multiway — no bluffear contra una apuesta ni multiway)
+        // Verificar fold equity mínima: bluff debe ser +EV (fold equity >= breakeven threshold)
         if (!isFacingBet && !isMultiway && thresholds.CanBluff &&
             ShouldBluff(thresholds, isInPosition, boardTexture, street))
         {
-            return new PostflopDecisionResult(
-                thresholds.BluffBetSize + " (Bluff)",
-                "Bluff según condiciones",
-                IsBluff: true);
+            double betFraction = BetStringToFraction(thresholds.BluffBetSize);
+            double breakevenFoldEquity = betFraction / (1.0 + betFraction);
+            double actualFoldEquity = foldEquity / 100.0;
+
+            if (actualFoldEquity >= breakevenFoldEquity)
+            {
+                return new PostflopDecisionResult(
+                    thresholds.BluffBetSize + " (Bluff)",
+                    $"Bluff +EV (fold equity={foldEquity:F0}% >= {breakevenFoldEquity * 100:F0}%)",
+                    IsBluff: true);
+            }
         }
 
         // Pot odds marginales con implied odds
@@ -696,16 +736,28 @@ public class PostflopDecisionService
         if (!isFacingBet)
             return new PostflopDecisionResult("Check", "Check — equity baja");
 
-        // Bluff catching en river: hero con pareja decente puede call para atrapar bluffs
-        // Solo con bet small/medium (large bet = villano probablemente tiene valor)
+        // Bluff catching en turn+river: hero con pareja decente puede call para atrapar bluffs
+        // Turn: solo Small bet, MiddlePair+ (más riesgo con 1 calle por venir)
+        // River: Small/Medium bet, cualquier OnePair+ (incluye BottomPair con umbral ajustado)
         // BoardPaired: hero no tiene par real — no bluff catch
-        // BottomPair: solo call si tiene blocker
-        // MiddlePair+: bluff catch normal
-        if (street == BoardPosition.River && heroHandRank >= HandRank.OnePair &&
-            villainBetSize != BetSizeCategory.Large &&
+        bool isTurnBluffCatch = street == BoardPosition.Turn &&
+            villainBetSize == BetSizeCategory.Small;
+        bool isRiverBluffCatch = street == BoardPosition.River &&
+            villainBetSize != BetSizeCategory.Large;
+
+        if ((isTurnBluffCatch || isRiverBluffCatch) &&
+            heroHandRank >= HandRank.OnePair &&
             pairClassification != PairClassification.BoardPaired)
         {
-            double bluffCatchThreshold = thresholds.FoldBelow * _profile.BluffCatchFoldBelowMultiplier;
+            // Turn: BottomPair demasiado débil con 1 calle por venir → skip
+            if (isTurnBluffCatch && pairClassification == PairClassification.BottomPair)
+                goto skipBluffCatch;
+
+            // Umbral más estricto en turn (0.90) que en river (0.75)
+            double baseMultiplier = isTurnBluffCatch
+                ? _profile.BluffCatchTurnEquityMultiplier
+                : _profile.BluffCatchFoldBelowMultiplier;
+            double bluffCatchThreshold = thresholds.FoldBelow * baseMultiplier;
 
             // Blocker bonus: hero bloquea draws completados del villano → villano más probable bluffeando
             bool hasBlocker = heroBlocksDangerSuit ||
@@ -713,8 +765,8 @@ public class PostflopDecisionService
             if (hasBlocker)
                 bluffCatchThreshold *= 0.85;
 
-            // BottomPair sin blocker: umbral más exigente (fold más a menudo)
-            if (pairClassification == PairClassification.BottomPair && !hasBlocker)
+            // BottomPair sin blocker en river: umbral más exigente (fold más a menudo)
+            if (isRiverBluffCatch && pairClassification == PairClassification.BottomPair && !hasBlocker)
                 bluffCatchThreshold *= 1.15;
 
             if (equity >= bluffCatchThreshold)
@@ -722,12 +774,14 @@ public class PostflopDecisionService
                 string parLabel = pairClassification != PairClassification.None
                     ? pairClassification.ToString()
                     : heroHandRank.ToString();
+                string streetLabel = isTurnBluffCatch ? "turn" : "river";
                 var reason = hasBlocker
-                    ? $"Call — bluff catch river con blocker ({parLabel})"
-                    : $"Call — bluff catch river ({parLabel})";
+                    ? $"Call — bluff catch {streetLabel} con blocker ({parLabel})"
+                    : $"Call — bluff catch {streetLabel} ({parLabel})";
                 return new PostflopDecisionResult("Call", reason);
             }
         }
+    skipBluffCatch:
 
         // Facing bet → fold o call según config
         var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";

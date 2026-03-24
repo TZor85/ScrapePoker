@@ -42,6 +42,11 @@ public static class PokerConstants
     public const double FacingBetPenaltySmall = 1.0;
     public const double VillainAggressionPenalty = 3.0;
 
+    // === PostflopDecisionService: escalado de facing bet penalty por street ===
+    // Bets grandes en flop son normales (c-bets); en river representan rango fuerte
+    public const double FacingBetTurnMultiplier = 1.15;
+    public const double FacingBetRiverMultiplier = 1.30;
+
     // === PostflopDecisionService: ajustes multiway ===
     public const double MultiwayFoldBelowPerOpponent = 4.0;
     public const double MultiwayThinValuePerOpponent = 3.0;

@@ -27,7 +27,7 @@ public class BoardTextureAnalyzerTests
         Assert.That(result.IsMonotone, Is.True);
         Assert.That(result.HasFlushPossibility, Is.True);
         Assert.That(result.Category, Is.EqualTo(BoardTextureCategory.Wet));
-        Assert.That(result.SimplifiedTexture, Is.EqualTo("Coordinated"));
+        Assert.That(result.SimplifiedTexture, Is.EqualTo("Monotone"));
     }
 
     [Test]
@@ -166,9 +166,9 @@ public class BoardTextureAnalyzerTests
         var semiWet = new BoardTextureResult(BoardTextureCategory.SemiWet, 40, false, true, false, false, true, false, false, true, true);
         Assert.That(semiWet.SimplifiedTexture, Is.EqualTo("Coordinated"));
 
-        // Wet → "Coordinated"
+        // Wet + Monotone → "Monotone"
         var wet = new BoardTextureResult(BoardTextureCategory.Wet, 70, true, false, false, false, true, true, false, true, true);
-        Assert.That(wet.SimplifiedTexture, Is.EqualTo("Coordinated"));
+        Assert.That(wet.SimplifiedTexture, Is.EqualTo("Monotone"));
 
         // Paired → "Paired"
         var paired = new BoardTextureResult(BoardTextureCategory.Paired, 15, false, false, true, true, false, false, false, false, false);
@@ -272,5 +272,59 @@ public class BoardTextureAnalyzerTests
     {
         var result = _analyzer.AnalyzeBoardChange(new List<int> { 12, 3 }, new List<int> { 1, 1 }, 7, 4);
         Assert.That(result.DangerLevel, Is.EqualTo(0));
+    }
+
+    // --- Tests de AnalyzeInitialBoard (Sprint 4) ---
+
+    [Test]
+    public void AnalyzeInitialBoard_TwoTone_FlushDrawPresente()
+    {
+        // Ah Qh 3d — dos hearts
+        var result = _analyzer.AnalyzeInitialBoard(new List<int> { 14, 12, 3 }, new List<int> { 1, 1, 2 });
+
+        Assert.That(result.FlushDrawAppeared, Is.True, "2-tone flop → flush draw presente");
+        Assert.That(result.FlushCompleted, Is.False, "Flop nunca completa flush");
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public void AnalyzeInitialBoard_Monotone_DangerAlto()
+    {
+        // Ah 5h 9h — tres hearts (monotone)
+        var result = _analyzer.AnalyzeInitialBoard(new List<int> { 14, 5, 9 }, new List<int> { 1, 1, 1 });
+
+        Assert.That(result.FlushDrawAppeared, Is.True);
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(3), "Monotone flop → danger alto");
+    }
+
+    [Test]
+    public void AnalyzeInitialBoard_Rainbow_SinFlushDraw()
+    {
+        // 2c 7d Ks — rainbow desconectado
+        var result = _analyzer.AnalyzeInitialBoard(new List<int> { 2, 7, 13 }, new List<int> { 1, 2, 3 });
+
+        Assert.That(result.FlushDrawAppeared, Is.False, "Rainbow → sin flush draw");
+        Assert.That(result.BoardPaired, Is.False);
+    }
+
+    [Test]
+    public void AnalyzeInitialBoard_Paired_BoardPaired()
+    {
+        // 8c 8d Ks — paired
+        var result = _analyzer.AnalyzeInitialBoard(new List<int> { 8, 8, 13 }, new List<int> { 1, 2, 3 });
+
+        Assert.That(result.BoardPaired, Is.True, "Board paired desde flop");
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(1));
+    }
+
+    [Test]
+    public void AnalyzeInitialBoard_Connected_StraightDraw()
+    {
+        // Jh Td 9c — connected rainbow
+        var result = _analyzer.AnalyzeInitialBoard(new List<int> { 11, 10, 9 }, new List<int> { 1, 2, 3 });
+
+        Assert.That(result.DangerLevel, Is.GreaterThanOrEqualTo(1), "Connected board → straight draw danger");
+        Assert.That(result.FlushCompleted, Is.False);
+        Assert.That(result.StraightCompleted, Is.False);
     }
 }

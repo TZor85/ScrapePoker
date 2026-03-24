@@ -82,6 +82,8 @@ public class StrategyProfile
     // Penalización cuando villano apuesta en 2 calles consecutivas (rango más estrecho)
     public double VillainBarrelFoldIncrease { get; set; } = 5.0;
     public double VillainBarrelThinValueIncrease { get; set; } = 3.0;
+    // Sizing tell: penalización cuando villano escala tamaño de apuesta entre streets
+    public double VillainSizingEscalationPenalty { get; set; } = 4.0;
 
     // SPR Push/Fold (usado en PostflopDecisionService)
     // Con SPR corto, decisiones más binarias (commit o fold)
@@ -99,6 +101,8 @@ public class StrategyProfile
     // Bluff Catching (usado en PostflopDecisionService)
     // Multiplicador sobre FoldBelow: equity >= FoldBelow * multiplier → call para atrapar bluffs
     public double BluffCatchFoldBelowMultiplier { get; set; } = 0.75;
+    // Turn: umbral más estricto que river (más riesgo con 1 calle por venir)
+    public double BluffCatchTurnEquityMultiplier { get; set; } = 0.90;
 
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
@@ -111,6 +115,8 @@ public class StrategyProfile
     // Floating IP (call con posición para robar en turn)
     public double FloatingIPMinEquity { get; set; } = 25.0;
     public double FloatingIPMaxEquity { get; set; } = 35.0;
+    // Outs mínimos para considerar draw real sin flush/combo draw (evitar floats con overcards)
+    public int FloatingIPMinOuts { get; set; } = 6;
 
     // Slow Play (check con nuts en board seco para inducir bluff)
     public double SlowPlayMinEquity { get; set; } = 72.0;
@@ -173,9 +179,11 @@ public class StrategyProfile
         if (RiverBluffFrequency < 0 || RiverBluffFrequency > 1)
             errors.Add($"RiverBluffFrequency ({RiverBluffFrequency}) debe estar entre 0 y 1");
 
-        // BluffCatch multiplier en rango (0, 1]
+        // BluffCatch multipliers en rango (0, 1]
         if (BluffCatchFoldBelowMultiplier <= 0 || BluffCatchFoldBelowMultiplier > 1)
             errors.Add($"BluffCatchFoldBelowMultiplier ({BluffCatchFoldBelowMultiplier}) debe estar entre 0 (excl.) y 1");
+        if (BluffCatchTurnEquityMultiplier <= 0 || BluffCatchTurnEquityMultiplier > 1)
+            errors.Add($"BluffCatchTurnEquityMultiplier ({BluffCatchTurnEquityMultiplier}) debe estar entre 0 (excl.) y 1");
 
         // Bet sizing multipliers deben ser > 0
         if (BetSizingSPRDeepMultiplier <= 0)

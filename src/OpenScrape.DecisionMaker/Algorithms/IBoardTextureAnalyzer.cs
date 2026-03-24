@@ -11,4 +11,6 @@ public interface IBoardTextureAnalyzer
     BoardTextureResult Analyze(List<CardDataOuts> communityCards);
     BoardChangeResult AnalyzeBoardChange(List<int> previousRanks, List<int> previousSuits, int newCardRank, int newCardSuit);
     BoardChangeResult AnalyzeBoardChange(List<CardDataOuts> previousBoard, CardDataOuts newCard);
+    BoardChangeResult AnalyzeInitialBoard(List<int> ranks, List<int> suits);
+    BoardChangeResult AnalyzeInitialBoard(List<CardDataOuts> communityCards);
 }

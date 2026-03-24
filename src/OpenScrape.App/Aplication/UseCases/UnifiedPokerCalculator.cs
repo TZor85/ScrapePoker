@@ -191,6 +191,19 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             if (communityCards.Count == 0) // Preflop
             {
+                // En situaciones 3Bet+, usar Monte Carlo contra VillainRange filtrado
+                if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var preflopSituation))
+                {
+                    var preflopRange = VillainRange.GetForSituation(preflopSituation);
+                    if (preflopRange != null)
+                    {
+                        var mcResult = _monteCarloSimulator.CalculateEquity(
+                            playerHand, new List<CardDataOuts>(), numOpponents,
+                            monteCarloIterations, preflopRange);
+                        return mcResult.Equity * 100;
+                    }
+                }
+
                 return _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
             }
             else // Postflop — usar cache para evitar re-ejecutar Monte Carlo

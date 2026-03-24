@@ -221,31 +221,56 @@ public class DecisionIntegrationTests
             {
                 ["Turn_OpenRaise"] = new()
                 {
-                    FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-                    DryBoardBetSize = "Bet 1/2", CoordinatedBoardBetSize = "Bet 1/2", PairedBoardBetSize = "Bet 3/4",
-                    StrongValueBetSize = "Bet 3/4", ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
-                    CanBluff = true, BluffCondition = BluffConditionType.IPCoordinatedSmallOnly, LowEquityAction = "Fold"
+                    FoldBelow = 45,
+                    ThinValueAbove = 45,
+                    ValueAbove = 55,
+                    StrongValueAbove = 80,
+                    DryBoardBetSize = "Bet 1/2",
+                    CoordinatedBoardBetSize = "Bet 1/2",
+                    PairedBoardBetSize = "Bet 3/4",
+                    StrongValueBetSize = "Bet 3/4",
+                    ValueBetSize = "Bet 1/2",
+                    ThinValueBetSize = "Bet 1/3",
+                    CanBluff = true,
+                    BluffCondition = BluffConditionType.IPCoordinatedSmallOnly,
+                    LowEquityAction = "Fold"
                 },
                 ["Turn_Call"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 55, StrongValueAbove = 75,
+                    FoldBelow = 40,
+                    ThinValueAbove = 40,
+                    ValueAbove = 55,
+                    StrongValueAbove = 75,
                     LowEquityAction = "Fold"
                 },
                 ["Turn_ThreeBet"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
+                    FoldBelow = 40,
+                    ThinValueAbove = 45,
+                    ValueAbove = 55,
+                    StrongValueAbove = 75,
                     LowEquityAction = "Fold"
                 },
                 ["Turn_OpenRaiseVs3BetAndCall"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 55, StrongValueAbove = 75,
+                    FoldBelow = 40,
+                    ThinValueAbove = 40,
+                    ValueAbove = 55,
+                    StrongValueAbove = 75,
                     LowEquityAction = "Call"
                 },
                 ["River_OpenRaise"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 60, StrongValueAbove = 75,
-                    DryBoardBetSize = "Bet 2/3", CoordinatedBoardBetSize = "Bet Pot", PairedBoardBetSize = "Bet Pot",
-                    StrongValueBetSize = "Bet Pot", ValueBetSize = "Bet 3/4", ThinValueBetSize = "Bet 1/2",
+                    FoldBelow = 40,
+                    ThinValueAbove = 40,
+                    ValueAbove = 60,
+                    StrongValueAbove = 75,
+                    DryBoardBetSize = "Bet 2/3",
+                    CoordinatedBoardBetSize = "Bet Pot",
+                    PairedBoardBetSize = "Bet Pot",
+                    StrongValueBetSize = "Bet Pot",
+                    ValueBetSize = "Bet 3/4",
+                    ThinValueBetSize = "Bet 1/2",
                     LowEquityAction = "Fold"
                 }
             }

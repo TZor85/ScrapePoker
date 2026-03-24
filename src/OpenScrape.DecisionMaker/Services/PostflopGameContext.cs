@@ -16,10 +16,20 @@ public class PostflopGameContext
     public bool HeroBetTurn { get; set; }
     public bool PreviousStreetWasBet { get; set; }
 
+    // === Tamaño de apuesta del villano por street (sizing tells) ===
+    public BetSizeCategory VillainBetSizeFlop { get; set; } = BetSizeCategory.NoBet;
+    public BetSizeCategory VillainBetSizeTurn { get; set; } = BetSizeCategory.NoBet;
+
     /// <summary>
     /// El agresor preflop checkeó en el flop → señal de debilidad para probe bet.
     /// </summary>
     public bool VillainAggressorCheckedFlop { get; set; }
+
+    /// <summary>
+    /// Estado base de peligro del flop (flush draw presence, paired, connected).
+    /// Se combina con boardChange del turn via CombineBoardChanges().
+    /// </summary>
+    public BoardChangeResult InitialBoardDanger { get; set; } = BoardChangeResult.Safe;
 
     /// <summary>
     /// Resultado del análisis de cambio de board (peligro de turn/river card).
@@ -43,6 +53,9 @@ public class PostflopGameContext
         HeroBetTurn = false;
         PreviousStreetWasBet = false;
         VillainAggressorCheckedFlop = false;
+        VillainBetSizeFlop = BetSizeCategory.NoBet;
+        VillainBetSizeTurn = BetSizeCategory.NoBet;
+        InitialBoardDanger = BoardChangeResult.Safe;
         LastBoardChange = BoardChangeResult.Safe;
     }
 

@@ -647,19 +647,34 @@ public class PostflopDecisionServiceTests
             {
                 ["Turn_OpenRaise"] = new()
                 {
-                    FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-                    DryBoardBetSize = "Bet 1/2", CoordinatedBoardBetSize = "Bet 1/2", PairedBoardBetSize = "Bet 3/4",
-                    StrongValueBetSize = "Bet 3/4", ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
-                    CanBluff = true, BluffCondition = BluffConditionType.IPCoordinatedSmallOnly, LowEquityAction = "Fold"
+                    FoldBelow = 45,
+                    ThinValueAbove = 45,
+                    ValueAbove = 55,
+                    StrongValueAbove = 80,
+                    DryBoardBetSize = "Bet 1/2",
+                    CoordinatedBoardBetSize = "Bet 1/2",
+                    PairedBoardBetSize = "Bet 3/4",
+                    StrongValueBetSize = "Bet 3/4",
+                    ValueBetSize = "Bet 1/2",
+                    ThinValueBetSize = "Bet 1/3",
+                    CanBluff = true,
+                    BluffCondition = BluffConditionType.IPCoordinatedSmallOnly,
+                    LowEquityAction = "Fold"
                 },
                 ["Turn_OpenRaiseVs3BetAndCall"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 55, StrongValueAbove = 75,
+                    FoldBelow = 40,
+                    ThinValueAbove = 40,
+                    ValueAbove = 55,
+                    StrongValueAbove = 75,
                     LowEquityAction = "Call"
                 },
                 ["Turn_RaiseOverLimper"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
+                    FoldBelow = 40,
+                    ThinValueAbove = 45,
+                    ValueAbove = 55,
+                    StrongValueAbove = 75,
                     IsSimplified = true,
                     SimplifiedIPStrongBet = "Bet 1/2 (Value)",
                     SimplifiedIPThinBet = "Bet 1/3 (Thin Value)",
@@ -669,9 +684,16 @@ public class PostflopDecisionServiceTests
                 },
                 ["River_OpenRaise"] = new()
                 {
-                    FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 60, StrongValueAbove = 75,
-                    DryBoardBetSize = "Bet 2/3", CoordinatedBoardBetSize = "Bet Pot", PairedBoardBetSize = "Bet Pot",
-                    StrongValueBetSize = "Bet Pot", ValueBetSize = "Bet 3/4", ThinValueBetSize = "Bet 1/2",
+                    FoldBelow = 40,
+                    ThinValueAbove = 40,
+                    ValueAbove = 60,
+                    StrongValueAbove = 75,
+                    DryBoardBetSize = "Bet 2/3",
+                    CoordinatedBoardBetSize = "Bet Pot",
+                    PairedBoardBetSize = "Bet Pot",
+                    StrongValueBetSize = "Bet Pot",
+                    ValueBetSize = "Bet 3/4",
+                    ThinValueBetSize = "Bet 1/2",
                     LowEquityAction = "Fold"
                 }
             }
@@ -1071,8 +1093,13 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Turn_OpenRaiseVs3BetAndCall"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
-            CanCheckRaise = true, CheckRaiseThreshold = 75, CheckRaiseBetSize = "Raise 3x",
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 75,
+            CheckRaiseBetSize = "Raise 3x",
             LowEquityAction = "Call"
         };
         return profile;
@@ -1083,9 +1110,16 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
-            BluffBetSize = "Bet 1/3", ComboDrawBetSize = "Bet 3/4", ComboDrawOutsThreshold = 12,
-            CanBluff = true, BluffCondition = BluffConditionType.Always, LowEquityAction = "Fold"
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            BluffBetSize = "Bet 1/3",
+            ComboDrawBetSize = "Bet 3/4",
+            ComboDrawOutsThreshold = 12,
+            CanBluff = true,
+            BluffCondition = BluffConditionType.Always,
+            LowEquityAction = "Fold"
         };
         return profile;
     }
@@ -1095,16 +1129,28 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
-            CanOverbet = true, OverbetBetSize = "Bet 1.25x Pot", OverbetMinEquity = 80,
-            StrongValueBetSize = "Bet 3/4", ValueBetSize = "Bet 1/2",
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            CanOverbet = true,
+            OverbetBetSize = "Bet 1.25x Pot",
+            OverbetMinEquity = 80,
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
             LowEquityAction = "Fold"
         };
         profile.Thresholds["River_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 40, ValueAbove = 60, StrongValueAbove = 75,
-            CanOverbet = true, OverbetBetSize = "Bet 1.25x Pot", OverbetMinEquity = 80,
-            StrongValueBetSize = "Bet Pot", ValueBetSize = "Bet 3/4",
+            FoldBelow = 40,
+            ThinValueAbove = 40,
+            ValueAbove = 60,
+            StrongValueAbove = 75,
+            CanOverbet = true,
+            OverbetBetSize = "Bet 1.25x Pot",
+            OverbetMinEquity = 80,
+            StrongValueBetSize = "Bet Pot",
+            ValueBetSize = "Bet 3/4",
             LowEquityAction = "Fold"
         };
         return profile;
@@ -1210,8 +1256,13 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Turn_OpenRaiseVs3BetAndCall"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 75,
-            CanProbeBet = true, ProbeBetSize = "Bet 1/3", ProbeBetMinEquity = 25,
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            CanProbeBet = true,
+            ProbeBetSize = "Bet 1/3",
+            ProbeBetMinEquity = 25,
             LowEquityAction = "Call"
         };
         return profile;
@@ -1568,7 +1619,8 @@ public class PostflopDecisionServiceTests
                 equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroHandRank: HandRank.HighCard);
+                heroHandRank: HandRank.HighCard,
+                foldEquity: 40); // fold equity suficiente para que el bluff sea +EV
 
             if (result.IsBluff)
             {
@@ -1578,7 +1630,7 @@ public class PostflopDecisionServiceTests
         }
 
         Assert.That(bluffOccurred, Is.True,
-            "IPCoordinatedSmallOnly debería permitir bluff en Coordinated board IP sin facing bet");
+            "IPCoordinatedSmallOnly debería permitir bluff en Coordinated board IP sin facing bet (con fold equity suficiente)");
     }
 
     [Test]
@@ -1621,6 +1673,299 @@ public class PostflopDecisionServiceTests
 
         Assert.That(result.IsFloating, Is.False,
             "22% equity no debería activar floating con FloatingIPMinEquity=25%");
+    }
+
+    #endregion
+
+    // ─── Sprint 3: Tests nuevos ─────────────────────────────────────
+
+    #region S2.3 — Facing bet penalty escalado por street
+
+    [Test]
+    public void FacingBetPenalty_EscaladoPorStreet_ComparativoTurnVsRiver()
+    {
+        // Mismo equity y large bet. FoldBelow turn=45, river=40.
+        // Turn penalty = 8.0 × 1.15 = 9.2 → adjustedFB = 54.2
+        // River penalty = 8.0 × 1.30 = 10.4 → adjustedFB = 50.4
+        // Equity 51: turn → 51 < 54.2 (low equity). River → 51 > 50.4 (no low equity).
+
+        var turnResult = _service.DetermineAction(
+            equity: 51, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large);
+
+        var riverResult = _service.DetermineAction(
+            equity: 51, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large);
+
+        // Turn adjustedFoldBelow=54.2, equity 51 < 54.2 → HandleLowEquity path
+        // River adjustedFoldBelow=50.4, equity 51 > 50.4 → no HandleLowEquity
+        // Verificar que las acciones son diferentes (penalty escala distinto)
+        Assert.That(turnResult.Action, Does.Not.Contain("Value"),
+            "Turn: equity 51 < adjustedFoldBelow 54.2 (penalty 8×1.15=9.2) → no value");
+    }
+
+    [Test]
+    public void FacingBetPenalty_River_LargeBet_PenaltyEscalada()
+    {
+        // River FoldBelow=40, Large penalty=8×1.30=10.4, adjustedFB=50.4
+        // Equity 49 < 50.4 → low equity path
+        var result = _service.DetermineAction(
+            equity: 49, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large);
+
+        Assert.That(result.Action, Does.Not.Contain("Value"),
+            "River large bet penalty (8 × 1.3 = 10.4) → equity 49 no debería ser value");
+    }
+
+    #endregion
+
+    #region S3.1 — Bluff catch en turn
+
+    [Test]
+    public void BluffCatchTurn_MiddlePair_SmallBet_DeberiaCall()
+    {
+        // Turn, facing Small bet, MiddlePair, equity >= FoldBelow × 0.90
+        // FoldBelow=45, threshold=45*0.90=40.5, equity=42 >= 40.5 → call
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.MiddlePair);
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("bluff catch turn"));
+    }
+
+    [Test]
+    public void BluffCatchTurn_BottomPair_NoDeberiaCall()
+    {
+        // Turn, BottomPair → skip bluff catch (demasiado débil con 1 calle por venir)
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.BottomPair);
+
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch turn"),
+            "BottomPair en turn no debería hacer bluff catch");
+    }
+
+    [Test]
+    public void BluffCatchTurn_MediumBet_NoDeberiaCall()
+    {
+        // Turn, Medium bet → no bluff catch (solo Small en turn)
+        var result = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Medium,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.MiddlePair);
+
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch turn"),
+            "Medium bet en turn no debería activar bluff catch");
+    }
+
+    #endregion
+
+    #region S3.2 — Floating IP requiere draw real
+
+    [Test]
+    public void FloatingIP_OvercardsSinDraw_NoDeberiaFloat()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new()
+        {
+            FoldBelow = 20,
+            ThinValueAbove = 40,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        // 4 outs (overcards), sin flush draw ni combo draw, 4 < FloatingIPMinOuts(6) → no float
+        var result = service.DetermineAction(
+            equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.HighCard,
+            totalOuts: 4,
+            hasFlushDraw: false, hasComboDraw: false);
+
+        Assert.That(result.IsFloating, Is.False,
+            "4 outs sin draw real no debería activar floating");
+    }
+
+    [Test]
+    public void FloatingIP_ConFlushDraw_DeberiaFloat()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new()
+        {
+            FoldBelow = 20,
+            ThinValueAbove = 40,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        // 9 outs (flush draw) + hasFlushDraw = true → float
+        var result = service.DetermineAction(
+            equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.HighCard,
+            totalOuts: 9,
+            hasFlushDraw: true);
+
+        Assert.That(result.IsFloating, Is.True,
+            "Con flush draw debería activar floating");
+    }
+
+    [Test]
+    public void FloatingIP_OESD_8Outs_DeberiaFloat()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new()
+        {
+            FoldBelow = 20,
+            ThinValueAbove = 40,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        // 8 outs (OESD), sin flush/combo pero 8 >= FloatingIPMinOuts(6) → float
+        var result = service.DetermineAction(
+            equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.HighCard,
+            totalOuts: 8,
+            hasFlushDraw: false, hasComboDraw: false);
+
+        Assert.That(result.IsFloating, Is.True,
+            "8 outs >= FloatingIPMinOuts(6) → draw real → debería flotar");
+    }
+
+    #endregion
+
+    #region S3.3 — Fold equity check en bluffs
+
+    [Test]
+    public void Bluff_ConFoldEquitySuficiente_DeberiaBluffear()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+        var service = CreateService(profile);
+
+        // BluffBetSize default en Turn_OpenRaise no está explícito → default "Bet 1/3"
+        // betFraction 0.33, breakeven ~25%, foldEquity 40% >= 25% → bluff
+        var result = service.DetermineAction(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.HighCard,
+            foldEquity: 40);
+
+        Assert.That(result.IsBluff, Is.True,
+            "Fold equity 40% >= breakeven 25% (Bet 1/3) → debería bluffear");
+    }
+
+    [Test]
+    public void Bluff_SinFoldEquitySuficiente_NoDeberiaBluffear()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+        var service = CreateService(profile);
+
+        // foldEquity 15% < breakeven 25% → no bluff
+        var result = service.DetermineAction(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.HighCard,
+            foldEquity: 15);
+
+        Assert.That(result.IsBluff, Is.False,
+            "Fold equity 15% < breakeven 25% → no debería bluffear");
+        Assert.That(result.Action, Is.EqualTo("Check"));
+    }
+
+    #endregion
+
+    #region S3.4 — Monotone board sizing
+
+    [Test]
+    public void HandleNoBet_MonotoneBoard_DeberiaBet14()
+    {
+        // Board Monotone con equity suficiente para thin value → sizing "Bet 1/4"
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Monotone", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet);
+
+        Assert.That(result.Action, Does.Contain("1/4").Or.Contain("Value"),
+            "Board Monotone debería usar sizing reducido (Bet 1/4 base)");
+    }
+
+    #endregion
+
+    // ─── Sprint 4: Tests nuevos ─────────────────────────────────────
+
+    #region S4.1 — Sizing tell detection
+
+    [Test]
+    public void SizingTell_VillainEscala_SmallALarge_Turn_PenaltyAplicada()
+    {
+        // Turn: villain escaló de Small (flop) a Large (turn)
+        // adjustedFoldBelow base=45 + facingBet Large=8×1.15=9.2 + sizingEscalation=4 = 58.2
+        // equity 57 < 58.2 → low equity path (no value)
+        var result = _service.DetermineAction(
+            equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            villainBetSizeFlop: BetSizeCategory.Small);
+
+        Assert.That(result.Action, Does.Not.Contain("Value"),
+            "Villain escaló Small→Large → penalty +4 debería subir FoldBelow");
+    }
+
+    [Test]
+    public void SizingTell_VillainMantieneLarge_SinPenalty()
+    {
+        // Turn: villain mantuvo Large→Large (no escaló)
+        // adjustedFoldBelow base=45 + facingBet Large=9.2 = 54.2 (sin sizing penalty)
+        // equity 57 > 54.2 → no es low equity
+        var result = _service.DetermineAction(
+            equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            villainBetSizeFlop: BetSizeCategory.Large);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"),
+            "Villain mantuvo Large→Large → sin sizing penalty extra");
+    }
+
+    [Test]
+    public void SizingTell_NoBetEnFlop_SinReferencia_SinPenalty()
+    {
+        // Turn: villain no apostó en flop → sin referencia → sin penalty
+        var result = _service.DetermineAction(
+            equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            villainBetSizeFlop: BetSizeCategory.NoBet);
+
+        Assert.That(result.Action, Does.Not.Contain("Fold"),
+            "Sin bet en flop → sin referencia → no aplica sizing penalty");
     }
 
     #endregion

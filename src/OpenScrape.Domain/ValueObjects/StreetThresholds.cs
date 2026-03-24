@@ -22,6 +22,7 @@ public record StreetThresholds
     public string DryBoardBetSize { get; init; } = "Bet 1/2";
     public string CoordinatedBoardBetSize { get; init; } = "Bet 1/2";
     public string PairedBoardBetSize { get; init; } = "Bet 3/4";
+    public string MonotoneBoardBetSize { get; init; } = "Bet 1/4";
 
     // Comportamiento de bluff
     public bool CanBluff { get; init; }
