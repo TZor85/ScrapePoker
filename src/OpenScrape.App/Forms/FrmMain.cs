@@ -1877,6 +1877,31 @@ namespace OpenScrape.App
             var sitout = _playerGameState.Players.Count(s => s.SitOut);
             var playing = _playerGameState.Players.Count(p => p.Active) + 1;
 
+            // Calcular equity preflop si hay hole cards
+            double preflopEquity = 0;
+            if (_playerGameState.HoleCard1Rank > 0 && _playerGameState.HoleCard2Rank > 0)
+            {
+                try
+                {
+                    var heroCards = new List<CardDataOuts>
+                    {
+                        new((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
+                        new((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
+                    };
+                    var numOpp = Math.Max(1, _playerGameState.Players.Count(p => p.Active));
+                    var preflopResult = _pokerCalculator.Calculate(
+                        heroCards, new List<CardDataOuts>(),
+                        _playerGameState.PotSize,
+                        _playerGameState.Players.Max(m => m.Bet),
+                        numOpponents: numOpp,
+                        heroStack: _playerGameState.HeroStack,
+                        villainStack: GetVillainStack(),
+                        handSituation: _playerGameState.HandSituation.ToString());
+                    preflopEquity = preflopResult.EquityPercentage;
+                }
+                catch { /* OCR puede dar valores inválidos */ }
+            }
+
             var sb = new StringBuilder();
             sb.AppendLine($"Hand #{_tableHand}: Hold'em No Limit");
             sb.AppendLine($"#{_playerGameState.Players.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer");
@@ -1885,7 +1910,7 @@ namespace OpenScrape.App
             sb.AppendLine($"Pot: {_playerGameState.PotSize}");
             sb.AppendLine($"*** STATISTICS ***");
             sb.AppendLine($"PotOdds: {(decimal)potOddsResult.PotOddsPercentage}%");
-            sb.AppendLine($"Equity: {(decimal)potOddsResult.EquityPercentage}%");
+            sb.AppendLine($"Equity: {preflopEquity:F1}%");
             sb.AppendLine($"Should Call: {potOddsResult.ShouldCall}");
             sb.AppendLine("*** HOLE CARDS ***");
             sb.AppendLine($"Dealt to Hero [{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]");
@@ -1913,6 +1938,14 @@ namespace OpenScrape.App
                         sb.AppendLine($"{name}: {action}");
                 }
             }
+
+            // Siempre mostrar la acción recomendada de Hero al final
+            var heroAction = _responseAction?.Action ?? "No action";
+            var heroSituation = _playerGameState.HandSituation;
+            sb.AppendLine($"*** HERO ACTION ***");
+            sb.AppendLine($"Position: {_playerGameState.Position}  |  Situation: {heroSituation}");
+            sb.AppendLine($"Equity preflop: {preflopEquity:F1}%");
+            sb.AppendLine($"▶ DECISIÓN: {heroAction}");
 
             tbResume.AppendText(sb.ToString() + Environment.NewLine);
         }
