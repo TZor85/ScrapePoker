@@ -107,6 +107,103 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Verifica si un valor de canal B coincide con algún expected value dentro de tolerancia.
+        /// </summary>
+        private static bool IsColorMatch(int actualB, IEnumerable<int> expectedValues, int tolerance = 5)
+        {
+            return expectedValues.Any(expected => Math.Abs(actualB - expected) <= tolerance);
+        }
+
+        /// <summary>
+        /// Detecta villanos que foldearon mid-hand (color de playing desaparece).
+        /// </summary>
+        private void DetectFoldedPlayers()
+        {
+            if (!_gameLoopStateMachine.IsFlop && !_gameLoopStateMachine.IsTurn && !_gameLoopStateMachine.IsRiver)
+                return;
+
+            var playingRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Playing");
+            if (playingRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
+
+            foreach (var player in _playerGameState.Players.Where(p => p.Active && !p.HasFolded && p.Name != "P0"))
+            {
+                var regionName = $"p{player.ValuePosition}playing";
+                var region = playingRegions.Regions.FirstOrDefault(r => r.Name == regionName);
+                if (region == null) continue;
+
+                var scaled = GetScaledRegion(region);
+                var color = bitmap.GetPixel(scaled.X, scaled.Y);
+
+                if (!IsColorMatch(color.B, _colorPlaying))
+                {
+                    player.HasFolded = true;
+                    player.Active = false;
+                    LogDebug($"[FOLD] {player.Name} ({player.Alias ?? "?"}) foldeó mid-hand");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Re-evalúa Empty para jugadores no-hero en cada iteración del game loop.
+        /// Detecta jugadores que se van mid-session.
+        /// </summary>
+        private void RefreshPlayerStates()
+        {
+            var emptyRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Empty");
+            if (emptyRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+
+            using var bitmap = new Bitmap(_formImage.pbImage.Image);
+
+            foreach (var region in emptyRegions.Regions)
+            {
+                var playerNumber = GetPlayerNumber(region.Name, "empty");
+                if (playerNumber == null || playerNumber == 0) continue;
+
+                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
+                if (player == null) continue;
+
+                var scaled = GetScaledRegion(region);
+                var color = bitmap.GetPixel(scaled.X, scaled.Y);
+
+                bool wasEmpty = player.Empty;
+                bool isNowEmpty = IsColorMatch(color.B, _colorEmpty);
+
+                if (!wasEmpty && isNowEmpty)
+                {
+                    player.Empty = true;
+                    player.Active = false;
+                    player.SitOut = false;
+                    LogDebug($"[LEFT] {player.Name} ({player.Alias ?? "?"}) dejó la mesa mid-session");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Validación cruzada: inferir Empty cuando múltiples señales coinciden.
+        /// </summary>
+        private void ValidatePlayerStates()
+        {
+            foreach (var player in _playerGameState.Players.Where(p => p.Name != "P0"))
+            {
+                // Sin datos → probablemente empty
+                if (!player.Active && !player.Empty && !player.SitOut &&
+                    string.IsNullOrEmpty(player.Alias) &&
+                    player.Stack == 0 && player.Bet == 0)
+                {
+                    player.Empty = true;
+                }
+
+                // Active pero sin stack/bet → warning
+                if (player.Active && player.Stack == 0 && player.Bet == 0 && !player.HasFolded)
+                {
+                    LogDebug($"[WARNING] {player.Name} activo pero stack=0, bet=0 — posible detección incorrecta");
+                }
+            }
+        }
+
+        /// <summary>
         /// Obtiene el identificador del villano activo: alias real > cache seat > seat name.
         /// </summary>
         private string GetActiveVillainId()
@@ -802,6 +899,7 @@ namespace OpenScrape.App
                 else
                 {
                     SetActivePlayer();
+                    RefreshPlayerStates();
 
                     if (_playerGameState.Position == TablePosition.None)
                     {
@@ -814,6 +912,7 @@ namespace OpenScrape.App
                 SetBetPlayer();
                 SetHeroStack();
                 RetryEmptyAliases();
+                ValidatePlayerStates();
 
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
@@ -1033,6 +1132,9 @@ namespace OpenScrape.App
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
             LogInformation($"ProcessPostFlopAsync: Estado actual = {_gameLoopStateMachine.CurrentState}");
+
+            // Detectar villanos que foldearon mid-hand (actualiza Active/numOpponents)
+            DetectFoldedPlayers();
 
             // Detectar transición a nueva calle verificando si hay carta visible en el board
             if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
@@ -2338,18 +2440,17 @@ namespace OpenScrape.App
 
                 var scaled = GetScaledRegion(region);
                 var color = bitmap.GetPixel(scaled.X, scaled.Y);
-                var colorMatch = _colorEmpty.Contains(color.B);
+                var colorMatch = IsColorMatch(color.B, _colorEmpty);
 
                 _playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
 
-                // Verificamos si el jugador está vacío
+                // Verificamos si el jugador está vacío (Empty ≠ SitOut, son estados independientes)
                 if (region.Name.Contains("empty") && colorMatch)
                 {
                     var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
                     if (player != null)
                     {
                         player.Empty = true;
-                        player.SitOut = true;
                     }
                 }
             }
@@ -2376,7 +2477,7 @@ namespace OpenScrape.App
 
                 // Verificamos si el jugador está vacío
                 var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-                if (region.Name.Contains("playing") && _colorPlaying.Contains(color.B))
+                if (region.Name.Contains("playing") && IsColorMatch(color.B, _colorPlaying))
                 {
                     if (player != null)
                     {
@@ -2847,7 +2948,7 @@ namespace OpenScrape.App
                 if (isSittingOut)
                 {
                     player.SitOut = true;
-                    player.Empty = true;
+                    // NO marcar Empty — jugador sitout sigue sentado, puede volver
                 }
             }
         }
