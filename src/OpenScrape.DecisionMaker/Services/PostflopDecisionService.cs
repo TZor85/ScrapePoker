@@ -57,8 +57,8 @@ public class PostflopDecisionService
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Delega a DangerPenaltyCalculator.
     /// </summary>
-    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false)
-        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker);
+    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false, HandRank heroHandRank = HandRank.HighCard)
+        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker, heroHandRank);
 
     /// <summary>
     /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
@@ -117,9 +117,9 @@ public class PostflopDecisionService
         double impliedOddsFactor = CalculateImpliedOddsFactor(
             street, isInPosition, hasFlushDraw, heroStack, potSize, numOpponents);
 
-        // Aplicar penalización por carta peligrosa (escalada por street, blocker granular)
+        // Aplicar penalización por carta peligrosa (escalada por street, blocker granular, mano hero)
         double dangerPenalty = boardChange != null
-            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street, heroHasNutBlocker)
+            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street, heroHasNutBlocker, heroHandRank)
             : 0;
         double effectiveEquity = equity - dangerPenalty;
 

@@ -56,8 +56,8 @@ public class PreflopAnalyzer
                 bool isMixedLowBoard = highCards <= 0 && flopRanks.Min() <= 6;
                 if (isMixedLowBoard)
                     return false;
-                // 2+ cartas altas (Q, K sin A) → rango 3Bet conecta
-                return highCards >= 2;
+                // 1+ cartas altas (Q, K) → rango 3Bet conecta (QQ, AQ, KQ en rango)
+                return highCards >= 1;
             }
             return hasAceOrKing || highCards >= 2;
         }

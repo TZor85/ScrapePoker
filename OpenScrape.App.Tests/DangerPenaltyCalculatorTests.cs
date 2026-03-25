@@ -56,8 +56,9 @@ public class DangerPenaltyCalculatorTests
     }
 
     [Test]
-    public void Calculate_FlushDrawAppeared_SinFlushComplete_DeberiaPenalizarFlat()
+    public void Calculate_FlushDrawAppeared_SinFlushComplete_DeberiaPenalizarProporcional()
     {
+        // Flush draw (3 same suit) → penalty proporcional: equity × 15% × streetMultiplier
         var change = new BoardChangeResult(
             FlushCompleted: false, FlushDrawAppeared: true,
             StraightCompleted: false, BoardPaired: false,
@@ -65,7 +66,9 @@ public class DangerPenaltyCalculatorTests
 
         var result = DangerPenaltyCalculator.Calculate(60, change, false, false, _profile);
 
-        Assert.That(result, Is.EqualTo(_profile.DangerFlushDrawPenalty).Within(0.01));
+        // 60 × 0.15 × 1.0 (turn default street multiplier) = 9.0
+        Assert.That(result, Is.EqualTo(9.0).Within(0.1),
+            "Flush draw penalty ahora es proporcional a equity (15%)");
     }
 
     [Test]

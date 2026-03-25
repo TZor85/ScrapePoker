@@ -346,9 +346,19 @@ namespace OpenScrape.App
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
         {
+            // Verificar si villain fue agresor preflop
             bool villainWasPreflopAggressor = _playerGameState.Players
                 .Any(p => p.Active && p.WasPreflopAggressor);
-            return PreflopAnalyzer.DetectDonkBet(maxBet, villainWasPreflopAggressor, currentSituation);
+
+            // En turn/river: si hero apostó/raiseó en calle anterior, villain que apuesta ahora
+            // es donk bet contra el agresor de la calle (no solo preflop)
+            bool heroWasPreviousStreetAggressor =
+                (_gameLoopStateMachine.IsTurn && _postflopContext.HeroBetFlop) ||
+                (_gameLoopStateMachine.IsRiver && _postflopContext.HeroBetTurn);
+
+            // Si hero fue agresor en calle anterior, villain no es "agresor" en esta calle
+            bool effectiveVillainAggressor = villainWasPreflopAggressor && !heroWasPreviousStreetAggressor;
+            return PreflopAnalyzer.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
         }
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
@@ -1258,7 +1268,7 @@ namespace OpenScrape.App
                  (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
 
             bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker);
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker, _riverResult.HeroHandRank);
 
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
             bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
@@ -1681,7 +1691,7 @@ namespace OpenScrape.App
                  (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
 
             bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.Turn, heroHasNutBlocker);
+            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.Turn, heroHasNutBlocker, _turnResult.HeroHandRank);
 
             _postflopContext.LastBoardChange = boardChange;
 

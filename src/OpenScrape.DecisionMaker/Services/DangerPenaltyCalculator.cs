@@ -19,7 +19,8 @@ public class DangerPenaltyCalculator
         double rawEquity, BoardChangeResult boardChange,
         bool heroBlocksDangerSuit, bool isFacingBet,
         StrategyProfile profile, BoardPosition street = BoardPosition.Turn,
-        bool heroHasNutBlocker = false)
+        bool heroHasNutBlocker = false,
+        HandRank heroHandRank = HandRank.HighCard)
     {
         if (boardChange.DangerLevel == 0)
             return 0;
@@ -44,9 +45,20 @@ public class DangerPenaltyCalculator
             : 0;
         penalty += Math.Max(flushCompletePenalty, straightCompletePenalty);
 
-        // Flush draw appeared (sin flush completado): flat penalty
+        // Flush draw en board (3 del mismo palo): villain solo necesita 1 carta para flush.
+        // Penalty proporcional (como flush completado pero menor) en vez de flat.
+        // ~38% de combos villain tienen al menos 1 carta del palo → penalty significativa.
         if (!boardChange.FlushCompleted && boardChange.FlushDrawAppeared)
-            penalty += profile.DangerFlushDrawPenalty;
+        {
+            // Penalty proporcional: 15% de la equity (vs 35% de flush completado)
+            double flushDrawPenalty = rawEquity * 0.15 * streetDangerMultiplier;
+            // Reducir si hero tiene mano fuerte
+            if (heroHandRank >= HandRank.TwoPair)
+                flushDrawPenalty *= 0.5;
+            else if (heroHandRank == HandRank.OnePair)
+                flushDrawPenalty *= 0.75;
+            penalty += flushDrawPenalty;
+        }
 
         // Cambios menores: flat
         if (boardChange.BoardPaired) penalty += profile.DangerBoardPairedPenalty;
