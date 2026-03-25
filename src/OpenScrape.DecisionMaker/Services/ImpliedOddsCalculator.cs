@@ -21,7 +21,8 @@ public class ImpliedOddsCalculator
         bool hasFlushDraw,
         decimal heroStack,
         decimal potSize,
-        StrategyProfile profile)
+        StrategyProfile profile,
+        int numOpponents = 1)
     {
         if (street == BoardPosition.River)
             return 1.0;
@@ -55,6 +56,16 @@ public class ImpliedOddsCalculator
 
         if (hasFlushDraw)
             sprFactor *= profile.ImpliedOddsFlushDrawBonus;
+
+        // Multiway: OOP implied odds peores (villain detrás puede raise)
+        // IP con draw: implied odds mejores (más gente que pagar)
+        if (numOpponents >= 2)
+        {
+            if (!isInPosition)
+                sprFactor *= 1.0 + 0.05 * (numOpponents - 1);
+            else if (hasFlushDraw)
+                sprFactor *= 1.0 - 0.03 * (numOpponents - 1);
+        }
 
         return Math.Max(0.50, Math.Min(1.0, sprFactor));
     }

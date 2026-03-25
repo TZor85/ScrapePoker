@@ -71,6 +71,10 @@ public static class PokerConstants
     // === PostflopDecisionService: pot commitment ===
     public const double PotCommitmentSPRThreshold = 0.5;
 
+    // === PostflopDecisionService: bluff catch runout ===
+    public const double BluffCatchBrickRunoutMultiplier = 0.85;
+    public const double BluffCatchScareRunoutMultiplier = 1.15;
+
     // === BoardTextureAnalyzer: pesos de wetness ===
     public const double WetnessMonotoneScore = 35.0;
     public const double WetnessTwoToneScore = 15.0;

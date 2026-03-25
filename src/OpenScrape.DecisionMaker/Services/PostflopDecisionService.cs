@@ -68,9 +68,10 @@ public class PostflopDecisionService
         bool isInPosition,
         bool hasFlushDraw,
         decimal heroStack = 0,
-        decimal potSize = 0)
+        decimal potSize = 0,
+        int numOpponents = 1)
         => ImpliedOddsCalculator.CalculateImpliedOddsFactor(
-            street, isInPosition, hasFlushDraw, heroStack, potSize, _profile);
+            street, isInPosition, hasFlushDraw, heroStack, potSize, _profile, numOpponents);
 
     /// <summary>
     /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
@@ -111,9 +112,9 @@ public class PostflopDecisionService
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
         bool isMultiway = numOpponents >= 2;
 
-        // Calcular implied odds factor
+        // Calcular implied odds factor (ajustado por multiway)
         double impliedOddsFactor = CalculateImpliedOddsFactor(
-            street, isInPosition, hasFlushDraw, heroStack, potSize);
+            street, isInPosition, hasFlushDraw, heroStack, potSize, numOpponents);
 
         // Aplicar penalización por carta peligrosa (escalada por street, blocker granular)
         double dangerPenalty = boardChange != null
@@ -492,18 +493,34 @@ public class PostflopDecisionService
             (hasComboDraw || (hasFlushDraw && totalOuts >= 9)) &&
             equity >= _profile.CheckRaiseDrawMinEquity;
 
-        if (thresholds.CanCheckRaise && !isInPosition && !isMultiway &&
+        // IP trap: check-raise con mano premium en board seguro (no Wet/Monotone)
+        bool ipTrap = isInPosition && hasStrongMade && !isMultiway &&
+            boardTexture != "Wet" && boardTexture != "Monotone";
+
+        if (thresholds.CanCheckRaise && !isMultiway &&
             equity > thresholds.CheckRaiseThreshold &&
-            (hasStrongMade || hasStrongDraw) &&
             !heroIsAggressor)
         {
-            string reason = hasStrongDraw && !hasStrongMade
-                ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
-                : $"Check-raise trap — {heroHandRank} OOP";
-            return new PostflopDecisionResult(
-                "Check (Check-Raise)",
-                reason,
-                IsCheckRaise: true);
+            // OOP: check-raise con mano fuerte o draw fuerte (prioridad)
+            if (!isInPosition && (hasStrongMade || hasStrongDraw))
+            {
+                string reason = hasStrongDraw && !hasStrongMade
+                    ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
+                    : $"Check-raise trap — {heroHandRank} OOP";
+                return new PostflopDecisionResult(
+                    "Check (Check-Raise)",
+                    reason,
+                    IsCheckRaise: true);
+            }
+
+            // IP: check-raise trap con TwoPair+ en board seguro
+            if (ipTrap)
+            {
+                return new PostflopDecisionResult(
+                    "Check (Check-Raise)",
+                    $"Check-raise IP trap — {heroHandRank}",
+                    IsCheckRaise: true);
+            }
         }
 
         // Slow play: check con nuts en board seco para inducir bluff del villano
@@ -930,6 +947,17 @@ public class PostflopDecisionService
                 _ => 1.0
             };
             bluffCatchThreshold *= opponentBluffMultiplier;
+
+            // Runout factor river: brick = villain falló draw → bluff catch más amplio
+            if (isRiverBluffCatch && boardChange != null)
+            {
+                bool isBrickRiver = !boardChange.FlushCompleted && !boardChange.StraightCompleted &&
+                    !boardChange.BoardPaired && !boardChange.OvercardAppeared;
+                if (isBrickRiver)
+                    bluffCatchThreshold *= PokerConstants.BluffCatchBrickRunoutMultiplier;
+                else if (boardChange.FlushCompleted || boardChange.StraightCompleted)
+                    bluffCatchThreshold *= PokerConstants.BluffCatchScareRunoutMultiplier;
+            }
 
             // Blocker bonus: hero bloquea draws completados del villano → villano más probable bluffeando
             bool hasBlocker = heroBlocksDangerSuit ||

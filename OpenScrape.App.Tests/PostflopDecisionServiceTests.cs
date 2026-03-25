@@ -799,8 +799,9 @@ public class PostflopDecisionServiceTests
     }
 
     [Test]
-    public void CheckRaise_IP_NoDeberiaCheckRaise()
+    public void CheckRaise_IP_TwoPairPlus_DeberiaCheckRaiseTrap()
     {
+        // S10.4: IP con ThreeOfAKind en Dry board → check-raise IP trap
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
@@ -809,7 +810,9 @@ public class PostflopDecisionServiceTests
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind);
 
-        Assert.That(result.IsCheckRaise, Is.False);
+        Assert.That(result.IsCheckRaise, Is.True,
+            "IP ThreeOfAKind Dry → check-raise IP trap");
+        Assert.That(result.Reason, Does.Contain("IP trap"));
     }
 
     [Test]
@@ -3057,6 +3060,238 @@ public class PostflopDecisionServiceTests
         Assert.That(result.IsCheckRaise, Is.True,
             "TwoPair+ sigue haciendo check-raise normalmente");
         Assert.That(result.Reason, Does.Contain("trap"));
+    }
+
+    #endregion
+
+    // ─── Sprint 10 — ROI Avanzado ────────────────────────────────
+
+    #region S10.2 — Bluff catch runout
+
+    [Test]
+    public void BluffCatch_BrickRiver_CallMasAmplio()
+    {
+        // River brick → threshold = FoldBelow(45) × 0.75 × brick(0.85) = 28.7
+        // Equity 30 >= 28.7 → call
+        var brickChange = new BoardChangeResult(false, false, false, false, false, -1, 0);
+
+        var result = _service.DetermineAction(
+            equity: 30, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.MiddlePair,
+            boardChange: brickChange,
+            villainType: OpponentType.Unknown);
+
+        Assert.That(result.Action, Is.EqualTo("Call"),
+            "Brick river → bluff catch más amplio");
+    }
+
+    [Test]
+    public void BluffCatch_FlushCompletedRiver_FoldMas()
+    {
+        // River completa flush → villain puede tenerlo → bluff catch más estrecho
+        var flushChange = new BoardChangeResult(true, false, false, false, false, 1, 4);
+
+        var result = _service.DetermineAction(
+            equity: 25, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.MiddlePair,
+            boardChange: flushChange,
+            villainType: OpponentType.Unknown);
+
+        // Con scare card multiplier ×1.15, threshold sube → menos probable call
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch"),
+            "Flush completado → bluff catch más restrictivo");
+    }
+
+    #endregion
+
+    #region S10.3 — Implied odds multiway
+
+    [Test]
+    public void ImpliedOdds_MultiwayOOP_Peores()
+    {
+        // 3-way OOP → implied odds factor sube (peor)
+        double huFactor = ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, false, true, 200, 100,
+            CreateDefaultProfile(), numOpponents: 1);
+
+        double multiwayFactor = ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, false, true, 200, 100,
+            CreateDefaultProfile(), numOpponents: 3);
+
+        Assert.That(multiwayFactor, Is.GreaterThan(huFactor),
+            "Multiway OOP → implied odds factor mayor (peor)");
+    }
+
+    [Test]
+    public void ImpliedOdds_MultiwayIPConDraw_Mejores()
+    {
+        // 3-way IP con flush draw → implied odds factor baja (mejor)
+        double huFactor = ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, true, true, 200, 100,
+            CreateDefaultProfile(), numOpponents: 1);
+
+        double multiwayFactor = ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            BoardPosition.Turn, true, true, 200, 100,
+            CreateDefaultProfile(), numOpponents: 3);
+
+        Assert.That(multiwayFactor, Is.LessThan(huFactor),
+            "Multiway IP con flush draw → implied odds mejores");
+    }
+
+    [Test]
+    public void ImpliedOdds_River_SiempreUno()
+    {
+        double factor = ImpliedOddsCalculator.CalculateImpliedOddsFactor(
+            BoardPosition.River, false, true, 200, 100,
+            CreateDefaultProfile(), numOpponents: 3);
+
+        Assert.That(factor, Is.EqualTo(1.0),
+            "River → sin implied odds independientemente de multiway");
+    }
+
+    #endregion
+
+    #region S10.4 — Check-raise IP
+
+    [Test]
+    public void CheckRaise_IP_TwoPair_Dry_DeberiaCheckRaise()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair,
+            heroIsAggressor: false);
+
+        Assert.That(result.IsCheckRaise, Is.True,
+            "IP TwoPair Dry → check-raise IP trap");
+        Assert.That(result.Reason, Does.Contain("IP trap"));
+    }
+
+    [Test]
+    public void CheckRaise_IP_OnePair_NoCheckRaise()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 55, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            heroIsAggressor: false);
+
+        Assert.That(result.IsCheckRaise, Is.False,
+            "IP OnePair → no check-raise (requiere TwoPair+)");
+    }
+
+    [Test]
+    public void CheckRaise_IP_Wet_NoCheckRaise()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            WetBoardBetSize = "Bet 1/3",
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair,
+            heroIsAggressor: false);
+
+        Assert.That(result.IsCheckRaise, Is.False,
+            "IP TwoPair Wet → no check-raise (board peligroso)");
+    }
+
+    [Test]
+    public void CheckRaise_IP_Multiway_NoCheckRaise()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair,
+            heroIsAggressor: false,
+            numOpponents: 3);
+
+        Assert.That(result.IsCheckRaise, Is.False,
+            "IP multiway → no check-raise");
     }
 
     #endregion

@@ -136,7 +136,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 }
 
                 // 4. Calcular fold equity basado en posición y situación
-                result.FoldEquity = CalculateFoldEquity(result.PotOddsPercentage, isInPosition, handSituation, communityCards.Count);
+                result.FoldEquity = CalculateFoldEquity(result.PotOddsPercentage, isInPosition, handSituation, communityCards.Count, numOpponents);
 
                 // 5. Calcular Expected Value mejorado
                 result.ExpectedValue = CalculateExpectedValue(result.EquityPercentage / 100.0,
@@ -192,27 +192,29 @@ namespace OpenScrape.App.Aplication.UseCases
         {
             if (communityCards.Count == 0) // Preflop
             {
-                // En situaciones 3Bet+, usar Monte Carlo contra VillainRange filtrado (con cache)
+                // Obtener rango del villano: específico por situación, o fallback a OpenRaise genérico
+                VillainRange? preflopRange = null;
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var preflopSituation))
+                    preflopRange = VillainRange.GetForSituation(preflopSituation);
+                preflopRange ??= VillainRange.GetForSituation(HandSituation.OpenRaise);
+
+                if (preflopRange != null)
                 {
-                    var preflopRange = VillainRange.GetForSituation(preflopSituation);
-                    if (preflopRange != null)
-                    {
-                        string preflopCacheKey = $"preflop|{BuildHandKey(playerHand)}|{handSituation}|{numOpponents}";
-                        if (_equityCache.TryGetValue(preflopCacheKey, out double cachedPreflop))
-                            return cachedPreflop;
+                    string preflopCacheKey = $"preflop|{BuildHandKey(playerHand)}|{handSituation ?? "default"}|{numOpponents}";
+                    if (_equityCache.TryGetValue(preflopCacheKey, out double cachedPreflop))
+                        return cachedPreflop;
 
-                        int adaptiveIters = GetAdaptiveIterations(playerHand, numOpponents);
-                        var mcResult = _monteCarloSimulator.CalculateEquity(
-                            playerHand, new List<CardDataOuts>(), numOpponents,
-                            adaptiveIters, preflopRange);
-                        double preflopEquity = mcResult.Equity * 100;
+                    int adaptiveIters = GetAdaptiveIterations(playerHand, numOpponents);
+                    var mcResult = _monteCarloSimulator.CalculateEquity(
+                        playerHand, new List<CardDataOuts>(), numOpponents,
+                        adaptiveIters, preflopRange);
+                    double preflopEquity = mcResult.Equity * 100;
 
-                        CacheEquity(preflopCacheKey, preflopEquity);
-                        return preflopEquity;
-                    }
+                    CacheEquity(preflopCacheKey, preflopEquity);
+                    return preflopEquity;
                 }
 
+                // Solo si VillainRange completamente null → lookup table
                 return _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
             }
             else // Postflop — usar cache para evitar re-ejecutar Monte Carlo
@@ -270,7 +272,7 @@ namespace OpenScrape.App.Aplication.UseCases
             _equityCache[key] = equity;
         }
 
-        private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount)
+        private double CalculateFoldEquity(double potOddsPercentage, bool isInPosition, string handSituation, int communityCardsCount, int numOpponents = 1)
         {
             double baseFoldEquity = _profile.FoldEquityBase;
 
@@ -280,6 +282,10 @@ namespace OpenScrape.App.Aplication.UseCases
             if (isInPosition) baseFoldEquity += _profile.FoldEquityIPBonus;
 
             if (handSituation?.Contains("ThreeBet") == true) baseFoldEquity += _profile.FoldEquityThreeBetPenalty;
+
+            // Multiway: fold equity se reduce drásticamente (más oponentes que defender)
+            if (numOpponents >= 2)
+                baseFoldEquity *= 1.0 / (1.0 + 0.3 * (numOpponents - 1));
 
             return Math.Max(_profile.FoldEquityMin, Math.Min(_profile.FoldEquityMax, baseFoldEquity));
         }
