@@ -121,7 +121,9 @@ namespace OpenScrape.App
         /// </summary>
         private void DetectFoldedPlayers()
         {
-            if (!_gameLoopStateMachine.IsFlop && !_gameLoopStateMachine.IsTurn && !_gameLoopStateMachine.IsRiver)
+            // Detectar folds en cualquier estado de hand activa (preflop incluido)
+            if (_gameLoopStateMachine.CurrentState == GameState.WaitingForHand ||
+                _gameLoopStateMachine.CurrentState == GameState.HandComplete)
                 return;
 
             var playingRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Playing");
@@ -1147,6 +1149,10 @@ namespace OpenScrape.App
                 {
                     // Misma calle, reprocessar flop con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
+                    // Actualizar bet size del villano antes de reprocessar (puede haber raise)
+                    var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
+                    _postflopContext.VillainBetSizeFlop = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
+                    _postflopContext.VillainBetFlop = reprocessMaxBet > 0;
                     await ProcessFlopAsync(potOddsResult);
                 }
             }
@@ -1159,6 +1165,10 @@ namespace OpenScrape.App
                 {
                     // Misma calle, reprocessar turn con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
+                    // Actualizar bet size del villano antes de reprocessar (puede haber raise)
+                    var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
+                    _postflopContext.VillainBetSizeTurn = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
+                    _postflopContext.VillainBetTurn = reprocessMaxBet > 0;
                     await ProcessTurnAsync();
                 }
             }
@@ -1275,7 +1285,8 @@ namespace OpenScrape.App
                 villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
                 villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
                 villainType: GetVillainType(),
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                heroKickerStrength: _riverResult.HeroKickerStrength);
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1608,7 +1619,8 @@ namespace OpenScrape.App
                 pairClassification: _flopResult.PairType,
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
                 villainType: GetVillainType(),
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                heroKickerStrength: _flopResult.HeroKickerStrength);
 
             // Tracking postflop del villano en flop
             TrackVillainPostflopAction(maxBet, isPreflopAggressor);
@@ -1698,7 +1710,8 @@ namespace OpenScrape.App
                 villainBetSizeFlop: _postflopContext.VillainBetSizeFlop,
                 villainType: GetVillainType(),
                 heroFloatedFlop: _postflopContext.HeroFloatedFlop,
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                heroKickerStrength: _turnResult.HeroKickerStrength);
 
             // Tracking postflop del villano en turn
             TrackVillainPostflopAction(maxBet, turnIsAggressor);
@@ -2082,7 +2095,7 @@ namespace OpenScrape.App
                         new((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
                         new((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
                     };
-                    var numOpp = Math.Max(1, _playerGameState.Players.Count(p => p.Active));
+                    var numOpp = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
                     var preflopResult = _pokerCalculator.Calculate(
                         heroCards, new List<CardDataOuts>(),
                         _playerGameState.PotSize,
@@ -2092,6 +2105,19 @@ namespace OpenScrape.App
                         villainStack: GetVillainStack(),
                         handSituation: _playerGameState.HandSituation.ToString());
                     preflopEquity = preflopResult.EquityPercentage;
+
+                    // Ajuste posicional: posiciones tardías tienen ventaja de información
+                    double positionAdjust = _playerGameState.Position switch
+                    {
+                        TablePosition.Button => 3.0,
+                        TablePosition.CutOff => 1.0,
+                        TablePosition.Middle => 0.0,
+                        TablePosition.Early => -2.0,
+                        TablePosition.SmallBlind => -3.0,
+                        TablePosition.BigBlind => -1.0,
+                        _ => 0.0
+                    };
+                    preflopEquity = Math.Max(0, Math.Min(100, preflopEquity + positionAdjust));
                 }
                 catch { /* OCR puede dar valores inválidos */ }
             }

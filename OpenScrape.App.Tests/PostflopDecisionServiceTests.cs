@@ -3295,4 +3295,93 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    // ─── Bugfix Pipeline Leaks ───────────────────────────────────
+
+    #region BF7 — Kicker strength en thin value
+
+    [Test]
+    public void ThinValue_TPTK_DeberiaBet()
+    {
+        // OnePair con Strong kicker → bet thin value con sizing mayor
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroKickerStrength: KickerStrength.Strong);
+
+        Assert.That(result.Action, Does.Contain("Thin Value"),
+            "TPTK → bet thin value");
+        Assert.That(result.Reason, Does.Contain("kicker fuerte"),
+            "Razón debe mencionar kicker fuerte");
+    }
+
+    [Test]
+    public void ThinValue_TPWK_OOP_DeberiaCheck()
+    {
+        // OnePair con Weak kicker OOP → check (showdown value, no inflar pot)
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroKickerStrength: KickerStrength.Weak);
+
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "TPWK OOP → check, kicker débil");
+        Assert.That(result.Reason, Does.Contain("kicker débil"));
+    }
+
+    [Test]
+    public void ThinValue_TPWK_IP_DeberiaBet()
+    {
+        // OnePair con Weak kicker pero IP → aún puede bet thin value
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroKickerStrength: KickerStrength.Weak);
+
+        Assert.That(result.Action, Does.Contain("Thin Value"),
+            "TPWK IP → bet thin value (IP compensa kicker débil)");
+    }
+
+    [Test]
+    public void ThinValue_TwoPair_KickerNoAfecta()
+    {
+        // TwoPair+ → kicker irrelevante, siempre bet value
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair,
+            heroKickerStrength: KickerStrength.Weak);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "TwoPair+ → kicker no afecta, siempre value bet");
+    }
+
+    [Test]
+    public void ThinValue_TPTK_SizingMayor()
+    {
+        // Strong kicker → sizing un nivel más alto que base ThinValueBetSize
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroKickerStrength: KickerStrength.Strong);
+
+        // ThinValueBetSize default "Bet 1/3" + IncreaseBetSize → "Bet 1/2"
+        Assert.That(result.Action, Does.Contain("1/2"),
+            "TPTK → sizing aumentado vs kicker normal");
+    }
+
+    #endregion
 }

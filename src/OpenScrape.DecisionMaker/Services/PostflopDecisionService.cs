@@ -106,7 +106,8 @@ public class PostflopDecisionService
         bool villainCheckedMiddleStreet = false,
         bool heroHasNutBlocker = false,
         bool heroFloatedFlop = false,
-        double villainFoldToBetPct = -1)
+        double villainFoldToBetPct = -1,
+        KickerStrength heroKickerStrength = KickerStrength.None)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -304,7 +305,7 @@ public class PostflopDecisionService
             street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
             boardChange, hasFlushDraw, numOpponents, pairClassification, villainType,
-            heroFloatedFlop, hasComboDraw, totalOuts);
+            heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength);
     }
 
     /// <summary>
@@ -472,7 +473,8 @@ public class PostflopDecisionService
         OpponentType villainType = OpponentType.Unknown,
         bool heroFloatedFlop = false,
         bool hasComboDraw = false,
-        int totalOuts = 0)
+        int totalOuts = 0,
+        KickerStrength heroKickerStrength = KickerStrength.None)
     {
         // River opportunity: hero completó su draw → bet for value
         // El board cambió a favor de hero (flush/straight completado Y hero lo tiene)
@@ -648,12 +650,27 @@ public class PostflopDecisionService
                 return new PostflopDecisionResult("Check",
                     "Check — thin value peligroso, draw completado en river");
 
+            // Kicker influence: con OnePair, kicker fuerte apuesta más, débil check
+            // TPTK (Strong) → bet normal. TPWK (Weak) OOP → check (showdown value)
+            bool weakKickerOOP = heroHandRank == HandRank.OnePair &&
+                heroKickerStrength == KickerStrength.Weak && !isInPosition;
+
+            if (weakKickerOOP)
+                return new PostflopDecisionResult("Check",
+                    "Check — thin value OOP, kicker débil (showdown)");
+
             if (!thresholds.ThinValueIPOnly || isInPosition)
             {
-                var betSize = AdjustBetSizeForSPR(thresholds.ThinValueBetSize, heroStack, potSize, street);
+                // Kicker fuerte → sizing un nivel más alto
+                var betSize = thresholds.ThinValueBetSize;
+                if (heroHandRank == HandRank.OnePair && heroKickerStrength == KickerStrength.Strong)
+                    betSize = IncreaseBetSize(betSize);
+                betSize = AdjustBetSizeForSPR(betSize, heroStack, potSize, street);
                 return new PostflopDecisionResult(
                     betSize + " (Thin Value)",
-                    "Bet — thin value");
+                    heroKickerStrength == KickerStrength.Strong
+                        ? "Bet — thin value (kicker fuerte)"
+                        : "Bet — thin value");
             }
 
             return new PostflopDecisionResult("Check", "Check — thin value OOP (showdown)");
