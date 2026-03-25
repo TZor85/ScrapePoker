@@ -32,6 +32,11 @@ public class PostflopGameContext
     public bool VillainCheckedMiddleStreet { get; set; }
 
     /// <summary>
+    /// Hero floateó en flop (call con aire + posición) → en turn debe apostar si villano chequea.
+    /// </summary>
+    public bool HeroFloatedFlop { get; set; }
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
@@ -60,6 +65,7 @@ public class PostflopGameContext
         PreviousStreetWasBet = false;
         VillainAggressorCheckedFlop = false;
         VillainCheckedMiddleStreet = false;
+        HeroFloatedFlop = false;
         VillainBetSizeFlop = BetSizeCategory.NoBet;
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;

@@ -128,6 +128,18 @@ public class OpponentTracker
     }
 
     /// <summary>
+    /// Retorna % de veces que el villano foldeó ante una apuesta/raise postflop.
+    /// Retorna -1 si no hay suficientes situaciones (menos de 10 acciones facing bet).
+    /// </summary>
+    public double GetFoldToBetPct(string playerId)
+    {
+        var profile = GetProfile(playerId);
+        int totalFacingAction = profile.TimesPostflopFolded + profile.TimesPostflopCalled + profile.TimesPostflopRaised;
+        if (totalFacingAction < 10) return -1;
+        return (double)profile.TimesPostflopFolded / totalFacingAction * 100.0;
+    }
+
+    /// <summary>
     /// Obtiene todos los perfiles registrados en la sesión.
     /// </summary>
     public IReadOnlyDictionary<string, OpponentProfile> AllProfiles => _profiles;

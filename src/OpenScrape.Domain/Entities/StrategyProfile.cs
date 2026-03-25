@@ -142,6 +142,9 @@ public class StrategyProfile
     // Slow Play (check con nuts en board seco para inducir bluff)
     public double SlowPlayMinEquity { get; set; } = 72.0;
 
+    // Check-raise con draws fuertes: equity mínima para check-raise semi-bluff en flop OOP
+    public double CheckRaiseDrawMinEquity { get; set; } = 40.0;
+
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
 

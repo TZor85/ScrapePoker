@@ -58,6 +58,19 @@ public static class PokerConstants
     public const double AggressorVsDonkThinValueReduction = 3.0;
     public const double CallerVsCbetFoldIncrease = 2.0;
 
+    // === PostflopDecisionService: bluff catch multiplicadores por tipo de oponente ===
+    // < 1.0 = call más amplio (villain bluffea más), > 1.0 = call más estrecho
+    public const double BluffCatchLAGMultiplier = 0.80;
+    public const double BluffCatchLPMultiplier = 0.85;
+    public const double BluffCatchTAGMultiplier = 1.00;
+    public const double BluffCatchTPMultiplier = 1.20;
+
+    // === PostflopDecisionService: underbet ===
+    public const double FacingBetPenaltyUnderbet = 0.0;
+
+    // === PostflopDecisionService: pot commitment ===
+    public const double PotCommitmentSPRThreshold = 0.5;
+
     // === BoardTextureAnalyzer: pesos de wetness ===
     public const double WetnessMonotoneScore = 35.0;
     public const double WetnessTwoToneScore = 15.0;

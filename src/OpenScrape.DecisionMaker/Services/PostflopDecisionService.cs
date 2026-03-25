@@ -7,7 +7,7 @@ using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Services;
 
-public enum BetSizeCategory { NoBet, Small, Medium, Large }
+public enum BetSizeCategory { NoBet, Underbet, Small, Medium, Large }
 
 public record PostflopDecisionResult(
     string Action,
@@ -103,7 +103,9 @@ public class PostflopDecisionService
         BetSizeCategory villainBetSizeFlop = BetSizeCategory.NoBet,
         BetSizeCategory villainBetSizeTurn = BetSizeCategory.NoBet,
         bool villainCheckedMiddleStreet = false,
-        bool heroHasNutBlocker = false)
+        bool heroHasNutBlocker = false,
+        bool heroFloatedFlop = false,
+        double villainFoldToBetPct = -1)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -155,6 +157,7 @@ public class PostflopDecisionService
                 BetSizeCategory.Large => PokerConstants.FacingBetPenaltyLarge,
                 BetSizeCategory.Medium => PokerConstants.FacingBetPenaltyMedium,
                 BetSizeCategory.Small => PokerConstants.FacingBetPenaltySmall,
+                BetSizeCategory.Underbet => PokerConstants.FacingBetPenaltyUnderbet,
                 _ => 0
             };
 
@@ -228,19 +231,26 @@ public class PostflopDecisionService
                 adjustedFoldBelow += _profile.VillainSizingEscalationPenalty;
         }
 
-        // Ajuste por tipo de oponente (requiere perfil fiable con 20+ manos)
-        if (villainType != OpponentType.Unknown)
+        // Ajuste por oponente: stats reales si disponibles, fallback a tipo estático
+        if (villainFoldToBetPct >= 0)
         {
+            // Stats reales del OpponentTracker (10+ acciones facing bet)
+            double foldAdj = villainFoldToBetPct > 60 ? -5.0
+                           : villainFoldToBetPct > 45 ? -2.0
+                           : villainFoldToBetPct < 30 ? 4.0
+                           : villainFoldToBetPct < 40 ? 2.0
+                           : 0.0;
+            adjustedFoldBelow += foldAdj;
+        }
+        else if (villainType != OpponentType.Unknown)
+        {
+            // Fallback: multipliers estáticos por tipo de oponente
             var (opponentFoldAdj, opponentValueAdj) = villainType switch
             {
-                // Fish (LP): apuesta amplia, foldea mucho → bajar FoldBelow, bluffear más
                 OpponentType.LP => (-4.0, -2.0),
-                // Nit (TP): rango estrecho, apuesta = mano fuerte → subir FoldBelow
                 OpponentType.TP when isFacingBet => (3.0, 2.0),
                 OpponentType.TP => (0.0, 0.0),
-                // TAG: juego sólido, resiste → ajuste neutro
                 OpponentType.TAG => (0.0, 0.0),
-                // LAG: agresivo, bluffea mucho → bajar FoldBelow para call más (atrapar bluffs)
                 OpponentType.LAG when isFacingBet => (-5.0, -3.0),
                 OpponentType.LAG => (2.0, 0.0),
                 _ => (0.0, 0.0)
@@ -259,30 +269,41 @@ public class PostflopDecisionService
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
                 heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity,
-                heroStack, potSize);
+                heroStack, potSize, villainType);
 
         // --- FACING BET ---
         if (isFacingBet)
         {
-            // Push/fold mode: SPR corto con equity suficiente → all-in
-            if (isPushFold && effectiveEquity > thresholds.ValueAbove && heroHandRank >= HandRank.OnePair)
-                return new PostflopDecisionResult("All-In (Value)", $"Push — SPR corto, committed ({heroHandRank})");
+            // Push/fold mode: SPR corto → all-in si EV > 0
+            if (isPushFold)
+            {
+                double allinEV = CalculateAllinEV(effectiveEquity, heroStack, potSize);
+                if (allinEV > 0)
+                    return new PostflopDecisionResult("All-In (Value)",
+                        $"Push +EV — SPR corto (EV={allinEV:F1}, equity={effectiveEquity:F1}%)");
+            }
 
             return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
                 street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
                 heroIsAggressor, heroHandRank, totalOuts, pairClassification,
-                hasFlushDraw, hasComboDraw);
+                hasFlushDraw, hasComboDraw, heroStack, potSize);
         }
 
         // --- NO FACING BET ---
-        // Push/fold mode: SPR corto con equity suficiente → all-in
-        if (isPushFold && effectiveEquity > thresholds.ValueAbove && heroHandRank >= HandRank.OnePair)
-            return new PostflopDecisionResult("All-In (Value)", $"Push — SPR corto, polarizado ({heroHandRank})");
+        // Push/fold mode: SPR corto → all-in si EV > 0
+        if (isPushFold)
+        {
+            double allinEV = CalculateAllinEV(effectiveEquity, heroStack, potSize);
+            if (allinEV > 0)
+                return new PostflopDecisionResult("All-In (Value)",
+                    $"Push +EV — SPR corto (EV={allinEV:F1}, equity={effectiveEquity:F1}%)");
+        }
 
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
             street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
-            boardChange, hasFlushDraw, numOpponents, pairClassification, villainType);
+            boardChange, hasFlushDraw, numOpponents, pairClassification, villainType,
+            heroFloatedFlop, hasComboDraw, totalOuts);
     }
 
     /// <summary>
@@ -304,10 +325,19 @@ public class PostflopDecisionService
         int totalOuts = 0,
         PairClassification pairClassification = PairClassification.None,
         bool hasFlushDraw = false,
-        bool hasComboDraw = false)
+        bool hasComboDraw = false,
+        decimal heroStack = 0,
+        decimal potSize = 0)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
+
+        // Raise vs underbet: villano muestra debilidad → explotar con raise
+        if (villainBetSize == BetSizeCategory.Underbet && equity > thresholds.ThinValueAbove)
+        {
+            return new PostflopDecisionResult("Raise 3x (Value)",
+                $"Raise vs underbet — villano muestra debilidad ({heroHandRank})");
+        }
 
         // Equity muy alta → raise solo con mano fuerte
         // Con OnePair: solo puede raise si es TopPair o Overpair; pares débiles solo call
@@ -399,6 +429,21 @@ public class PostflopDecisionService
                 IsFloating: true);
         }
 
+        // Pot commitment: si hero ya está committed (SPR < 0.5) y EV(call) > 0 → call
+        if (heroStack > 0 && potSize > 0)
+        {
+            double spr = (double)(heroStack / potSize);
+            if (spr < PokerConstants.PotCommitmentSPRThreshold)
+            {
+                double callAmount = (double)heroStack;
+                double totalPot = (double)potSize + callAmount;
+                double evCall = (equity / 100.0) * totalPot - (1.0 - equity / 100.0) * callAmount;
+                if (evCall > 0)
+                    return new PostflopDecisionResult("Call",
+                        $"Call — pot committed (SPR={spr:F2}, EV call={evCall:F1})");
+            }
+        }
+
         var lowFallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";
         return new PostflopDecisionResult(lowFallback, "Equity insuficiente vs bet");
     }
@@ -423,7 +468,10 @@ public class PostflopDecisionService
         bool hasFlushDraw = false,
         int numOpponents = 1,
         PairClassification pairClassification = PairClassification.None,
-        OpponentType villainType = OpponentType.Unknown)
+        OpponentType villainType = OpponentType.Unknown,
+        bool heroFloatedFlop = false,
+        bool hasComboDraw = false,
+        int totalOuts = 0)
     {
         // River opportunity: hero completó su draw → bet for value
         // El board cambió a favor de hero (flush/straight completado Y hero lo tiene)
@@ -438,14 +486,23 @@ public class PostflopDecisionService
 
         // Check-raise: OOP con mano premium, esperando bet del villano para raise
         // Prioridad sobre slowplay: check-raise trap es más +EV que slowplay pasivo
+        // Check-raise: OOP con mano premium O draw fuerte en flop
+        bool hasStrongMade = heroHandRank >= HandRank.TwoPair;
+        bool hasStrongDraw = street == BoardPosition.Flop &&
+            (hasComboDraw || (hasFlushDraw && totalOuts >= 9)) &&
+            equity >= _profile.CheckRaiseDrawMinEquity;
+
         if (thresholds.CanCheckRaise && !isInPosition && !isMultiway &&
             equity > thresholds.CheckRaiseThreshold &&
-            heroHandRank >= HandRank.TwoPair &&
+            (hasStrongMade || hasStrongDraw) &&
             !heroIsAggressor)
         {
+            string reason = hasStrongDraw && !hasStrongMade
+                ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
+                : $"Check-raise trap — {heroHandRank} OOP";
             return new PostflopDecisionResult(
                 "Check (Check-Raise)",
-                $"Check-raise trap — {heroHandRank} OOP",
+                reason,
                 IsCheckRaise: true);
         }
 
@@ -463,6 +520,15 @@ public class PostflopDecisionService
         {
             return new PostflopDecisionResult("Check",
                 $"Slow play — {heroHandRank} en board seco{(street == BoardPosition.Turn ? " (turn)" : "")}, inducir bluff");
+        }
+
+        // Float exit: hero floateó flop → debe apostar turn si villano chequea
+        if (heroFloatedFlop && street == BoardPosition.Turn && !isMultiway)
+        {
+            var floatBet = AdjustBetSizeForSPR("Bet 1/2", heroStack, potSize, street);
+            return new PostflopDecisionResult(
+                floatBet + " (Float Exit)",
+                "Bet — exit strategy del float IP");
         }
 
         // Probe bet: villano agresor checkeó en street anterior → debilidad
@@ -551,8 +617,20 @@ public class PostflopDecisionService
         }
 
         // Thin value → bet solo IP (OOP check para proteger rango)
+        // River: NO thin value si board tiene draws completados y hero no los tiene
         if (equity > thresholds.ThinValueAbove)
         {
+            bool heroHasCompletedDraw = boardChange != null &&
+                ((boardChange.FlushCompleted && (heroHandRank >= HandRank.Flush || hasFlushDraw)) ||
+                 (boardChange.StraightCompleted && heroHandRank >= HandRank.Straight));
+            bool riverDrawCompleted = street == BoardPosition.River && boardChange != null &&
+                (boardChange.FlushCompleted || boardChange.StraightCompleted) &&
+                !heroHasCompletedDraw;
+
+            if (riverDrawCompleted)
+                return new PostflopDecisionResult("Check",
+                    "Check — thin value peligroso, draw completado en river");
+
             if (!thresholds.ThinValueIPOnly || isInPosition)
             {
                 var betSize = AdjustBetSizeForSPR(thresholds.ThinValueBetSize, heroStack, potSize, street);
@@ -565,19 +643,27 @@ public class PostflopDecisionService
         }
 
         // Double barrel: hero apostó en street anterior y tiene equity marginal
-        // Seguir apostando por consistencia de rango
+        // Seguir apostando por consistencia de rango, salvo bad runout
         if (thresholds.CanDoubleBarrel && previousStreetBet && heroIsAggressor &&
             !isMultiway && street != BoardPosition.Flop &&
             equity >= thresholds.FoldBelow && equity < thresholds.ValueAbove)
         {
-            var barrelBet = boardTexture == "Dry"
-                ? thresholds.ThinValueBetSize
-                : thresholds.BluffBetSize;
-            barrelBet = AdjustBetSizeForSPR(barrelBet, heroStack, potSize, street);
-            return new PostflopDecisionResult(
-                barrelBet + " (Barrel)",
-                "Double barrel — consistencia de rango",
-                IsBarrel: true);
+            // Bad runout: overcard, draw completado, board paireó → check (no barrelear)
+            bool badRunout = boardChange != null &&
+                (boardChange.OvercardAppeared || boardChange.FlushCompleted ||
+                 boardChange.StraightCompleted || boardChange.BoardPaired);
+
+            if (!badRunout)
+            {
+                var barrelBet = boardTexture == "Dry"
+                    ? thresholds.ThinValueBetSize
+                    : thresholds.BluffBetSize;
+                barrelBet = AdjustBetSizeForSPR(barrelBet, heroStack, potSize, street);
+                return new PostflopDecisionResult(
+                    barrelBet + " (Barrel)",
+                    "Double barrel — brick, consistencia de rango",
+                    IsBarrel: true);
+            }
         }
 
         // Showdown value en river
@@ -679,6 +765,20 @@ public class PostflopDecisionService
     }
 
     /// <summary>
+    /// Calcula EV de ir all-in vs fold. Usado cuando SPR &lt; 2.0.
+    /// EV(allin) = equity × (pot + 2×heroStack) - (1-equity) × heroStack
+    /// Si EV > 0, all-in es +EV independientemente de HandRank.
+    /// </summary>
+    private static double CalculateAllinEV(double equity, decimal heroStack, decimal potSize)
+    {
+        if (heroStack <= 0 || potSize <= 0) return 0;
+        double pot = (double)potSize;
+        double stack = (double)heroStack;
+        double totalPotIfCalled = pot + 2 * stack;
+        return (equity / 100.0) * totalPotIfCalled - (1.0 - equity / 100.0) * stack;
+    }
+
+    /// <summary>
     /// Calcula penalización por reverse implied odds. Delega a ImpliedOddsCalculator.
     /// </summary>
     public double CalculateReverseImpliedOdds(
@@ -711,24 +811,38 @@ public class PostflopDecisionService
         PairClassification pairClassification = PairClassification.None,
         double foldEquity = 0,
         decimal heroStack = 0,
-        decimal potSize = 0)
+        decimal potSize = 0,
+        OpponentType villainType = OpponentType.Unknown)
     {
-        // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway con muchos oponentes)
+        // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway)
+        // Verificar fold equity: semi-bluff debe ser +EV considerando equity del draw como backup
         if (totalOuts >= PokerConstants.MinOutsForDraw && street != BoardPosition.River && !isFacingBet && !isMultiway)
         {
-            // Combo draw (12+ outs) en flop: sizing agresivo (3/4 pot)
             bool isComboDrawOnFlop = totalOuts >= thresholds.ComboDrawOutsThreshold
                 && street == BoardPosition.Flop;
             var semiBluffSize = isComboDrawOnFlop
                 ? thresholds.ComboDrawBetSize
                 : thresholds.BluffBetSize;
 
-            return new PostflopDecisionResult(
-                semiBluffSize + " (Semi-Bluff)",
-                isComboDrawOnFlop
-                    ? $"Semi-bluff agresivo: combo draw con {totalOuts} outs"
-                    : $"Semi-bluff con {totalOuts} outs",
-                IsBluff: true);
+            // Fold equity check: draw equity reduce el breakeven FE necesario
+            double betFraction = BetStringToFraction(semiBluffSize);
+            double breakevenFE = betFraction / (1.0 + betFraction);
+            double drawEquity = totalOuts * (street == BoardPosition.Turn
+                ? PokerConstants.TurnOutsMultiplier
+                : PokerConstants.RiverOutsMultiplier) / 100.0;
+            double adjustedBreakevenFE = Math.Max(0, breakevenFE - drawEquity);
+            double actualFE = foldEquity / 100.0;
+
+            if (actualFE >= adjustedBreakevenFE)
+            {
+                return new PostflopDecisionResult(
+                    semiBluffSize + " (Semi-Bluff)",
+                    isComboDrawOnFlop
+                        ? $"Semi-bluff agresivo: combo draw {totalOuts} outs (FE={foldEquity:F0}%)"
+                        : $"Semi-bluff +EV: {totalOuts} outs (FE={foldEquity:F0}% >= {adjustedBreakevenFE * 100:F0}%)",
+                    IsBluff: true);
+            }
+            // Fold equity insuficiente → no semi-bluff, seguir al siguiente path
         }
 
         // Con draws y facing bet → call si implied odds lo justifican
@@ -806,6 +920,17 @@ public class PostflopDecisionService
                 : _profile.BluffCatchFoldBelowMultiplier;
             double bluffCatchThreshold = thresholds.FoldBelow * baseMultiplier;
 
+            // Ajustar por tipo de oponente: LAG bluffea más → call más amplio, TP → fold más
+            double opponentBluffMultiplier = villainType switch
+            {
+                OpponentType.LAG => PokerConstants.BluffCatchLAGMultiplier,
+                OpponentType.LP => PokerConstants.BluffCatchLPMultiplier,
+                OpponentType.TAG => PokerConstants.BluffCatchTAGMultiplier,
+                OpponentType.TP => PokerConstants.BluffCatchTPMultiplier,
+                _ => 1.0
+            };
+            bluffCatchThreshold *= opponentBluffMultiplier;
+
             // Blocker bonus: hero bloquea draws completados del villano → villano más probable bluffeando
             bool hasBlocker = heroBlocksDangerSuit ||
                 (boardChange != null && boardChange.StraightCompleted && heroHandRank >= HandRank.Straight);
@@ -829,6 +954,21 @@ public class PostflopDecisionService
             }
         }
     skipBluffCatch:
+
+        // Pot commitment: si hero ya está committed (SPR < 0.5) y EV(call) > 0 → call
+        if (isFacingBet && heroStack > 0 && potSize > 0)
+        {
+            double spr = (double)(heroStack / potSize);
+            if (spr < PokerConstants.PotCommitmentSPRThreshold)
+            {
+                double callAmount = (double)heroStack;
+                double totalPot = (double)potSize + callAmount;
+                double evCall = (equity / 100.0) * totalPot - (1.0 - equity / 100.0) * callAmount;
+                if (evCall > 0)
+                    return new PostflopDecisionResult("Call",
+                        $"Call — pot committed (SPR={spr:F2}, EV call={evCall:F1})");
+            }
+        }
 
         // Facing bet → fold o call según config
         var fallback = thresholds.LowEquityAction == "Call" ? "Call" : "Fold";

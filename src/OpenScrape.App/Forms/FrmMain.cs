@@ -99,6 +99,8 @@ namespace OpenScrape.App
         {
             if (maxBet == 0)
                 return BetSizeCategory.NoBet;
+            if (maxBet <= potSize * 0.15m)
+                return BetSizeCategory.Underbet;
             if (maxBet <= potSize * 0.3m)
                 return BetSizeCategory.Small;
             if (maxBet <= potSize * 0.7m)
@@ -1272,7 +1274,8 @@ namespace OpenScrape.App
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
                 villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
                 villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
-                villainType: GetVillainType());
+                villainType: GetVillainType(),
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1604,7 +1607,8 @@ namespace OpenScrape.App
                 hasComboDraw: _flopResult.HasComboDraw,
                 pairClassification: _flopResult.PairType,
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
-                villainType: GetVillainType());
+                villainType: GetVillainType(),
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
 
             // Tracking postflop del villano en flop
             TrackVillainPostflopAction(maxBet, isPreflopAggressor);
@@ -1627,6 +1631,7 @@ namespace OpenScrape.App
             _postflopContext.HeroBetFlop = _postflopContext.PreviousStreetWasBet;
             _postflopContext.VillainBetFlop = maxBet > 0;
             _postflopContext.VillainBetSizeFlop = betSize;
+            _postflopContext.HeroFloatedFlop = decision.IsFloating;
 
             // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
             _postflopContext.VillainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSizeCategory.NoBet;
@@ -1691,7 +1696,9 @@ namespace OpenScrape.App
                 pairClassification: _turnResult.PairType,
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
                 villainBetSizeFlop: _postflopContext.VillainBetSizeFlop,
-                villainType: GetVillainType());
+                villainType: GetVillainType(),
+                heroFloatedFlop: _postflopContext.HeroFloatedFlop,
+                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()));
 
             // Tracking postflop del villano en turn
             TrackVillainPostflopAction(maxBet, turnIsAggressor);
