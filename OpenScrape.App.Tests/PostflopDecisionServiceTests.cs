@@ -1916,10 +1916,12 @@ public class PostflopDecisionServiceTests
     public void HandleNoBet_MonotoneBoard_DeberiaBet14()
     {
         // Board Monotone con equity suficiente para thin value → sizing "Bet 1/4"
+        // S12.2: con heroIsAggressor para evitar pot control check
         var result = _service.DetermineAction(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Monotone", isInPosition: true,
-            villainBetSize: BetSizeCategory.NoBet);
+            villainBetSize: BetSizeCategory.NoBet,
+            heroIsAggressor: true);
 
         Assert.That(result.Action, Does.Contain("1/4").Or.Contain("Value"),
             "Board Monotone debería usar sizing reducido (Bet 1/4 base)");
@@ -2036,10 +2038,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void HandleNoBet_WetBoard_DeberiaBet13()
     {
+        // S12.2: con heroIsAggressor para evitar pot control check
         var result = _service.DetermineAction(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
-            villainBetSize: BetSizeCategory.NoBet);
+            villainBetSize: BetSizeCategory.NoBet,
+            heroIsAggressor: true);
 
         Assert.That(result.Action, Does.Contain("1/3").Or.Contain("Value"),
             "Board Wet debería usar sizing reducido (Bet 1/3 base)");
@@ -3522,6 +3526,155 @@ public class PostflopDecisionServiceTests
         // None → sin ajuste, mismo rango
         Assert.That(rangeNone!.Hands["AKo"], Is.EqualTo(rangeDefault!.Hands["AKo"]),
             "Position None → rango sin modificar");
+    }
+
+    #endregion
+
+    // ─── Sprint 12 — Decisiones Avanzadas ────────────────────────
+
+    #region S12.1 — Card removal blocker
+
+    [Test]
+    public void BluffCatch_ConBlockerTopCard_CallMasAmplio()
+    {
+        // River bluff catch con heroBlocksTopCard → threshold ×0.90
+        var result = _service.DetermineAction(
+            equity: 29, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.Small,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroBlocksTopCard: true);
+
+        Assert.That(result.Action, Is.EqualTo("Call"),
+            "Hero bloquea top card → bluff catch más amplio");
+    }
+
+    #endregion
+
+    #region S12.2 — Pot control
+
+    [Test]
+    public void PotControl_TurnMarginalCoordinated_DeberiaCheck()
+    {
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            heroIsAggressor: false);
+
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "Turn equity marginal Coordinated no agresor → pot control check");
+        Assert.That(result.Reason, Does.Contain("pot control"));
+    }
+
+    [Test]
+    public void PotControl_TurnMarginalDry_DeberiaBet()
+    {
+        var result = _service.DetermineAction(
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            heroIsAggressor: false);
+
+        Assert.That(result.Action, Does.Not.Contain("pot control"),
+            "Turn Dry → no pot control, bet normal");
+    }
+
+    [Test]
+    public void PotControl_TurnHighEquity_DeberiaBet()
+    {
+        var result = _service.DetermineAction(
+            equity: 62, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            heroIsAggressor: false);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "Turn equity alta Coordinated → bet value, no pot control");
+    }
+
+    #endregion
+
+    #region S12.3 — Vulnerability sizing
+
+    [Test]
+    public void TurnVulnerable_OnePairWet_SizingMenor()
+    {
+        var result = _service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair);
+
+        Assert.That(result.Reason, Does.Contain("sizing protectivo"),
+            "Turn OnePair Wet → sizing protectivo");
+    }
+
+    [Test]
+    public void TurnVulnerable_TwoPairWet_SizingNormal()
+    {
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair);
+
+        Assert.That(result.Reason, Does.Not.Contain("sizing protectivo"),
+            "Turn TwoPair Wet → sizing normal");
+    }
+
+    #endregion
+
+    #region S12.4 — River delayed value
+
+    [Test]
+    public void RiverDelayedValue_CheckCheck_TopPair_DeberiaBet()
+    {
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroCheckedAllStreets: true);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "River tras check-check con TopPair → delayed value bet");
+        Assert.That(result.Reason, Does.Contain("delayed value"));
+    }
+
+    [Test]
+    public void RiverDelayedValue_PreviousBet_LogicaNormal()
+    {
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            heroCheckedAllStreets: false);
+
+        Assert.That(result.Reason, Does.Not.Contain("delayed value"),
+            "Hero apostó previamente → lógica normal");
+    }
+
+    [Test]
+    public void RiverDelayedValue_HighCard_NoDeberiaBet()
+    {
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.HighCard,
+            heroCheckedAllStreets: true);
+
+        Assert.That(result.Reason, Does.Not.Contain("delayed value"),
+            "HighCard → no delayed value");
     }
 
     #endregion

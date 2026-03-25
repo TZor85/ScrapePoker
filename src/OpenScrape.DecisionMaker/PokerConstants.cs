@@ -71,6 +71,10 @@ public static class PokerConstants
     // === PostflopDecisionService: pot commitment ===
     public const double PotCommitmentSPRThreshold = 0.5;
 
+    // === PostflopDecisionService: pot control ===
+    public const double PotControlMinEquity = 40.0;
+    public const double PotControlMaxEquity = 55.0;
+
     // === PostflopDecisionService: bluff catch runout ===
     public const double BluffCatchBrickRunoutMultiplier = 0.85;
     public const double BluffCatchScareRunoutMultiplier = 1.15;

@@ -1299,7 +1299,9 @@ namespace OpenScrape.App
                 villainType: GetVillainType(),
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
                 heroKickerStrength: _riverResult.HeroKickerStrength,
-                turnCalledWithFlushDanger: _postflopContext.TurnCalledWithFlushDanger);
+                turnCalledWithFlushDanger: _postflopContext.TurnCalledWithFlushDanger,
+                heroBlocksTopCard: HeroBlocksTopBoardCard(),
+                heroCheckedAllStreets: _postflopContext.HeroCheckedAllStreets);
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1633,7 +1635,8 @@ namespace OpenScrape.App
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
                 villainType: GetVillainType(),
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _flopResult.HeroKickerStrength);
+                heroKickerStrength: _flopResult.HeroKickerStrength,
+                heroBlocksTopCard: HeroBlocksTopBoardCard());
 
             // Tracking postflop del villano en flop
             TrackVillainPostflopAction(maxBet, isPreflopAggressor);
@@ -1726,7 +1729,8 @@ namespace OpenScrape.App
                 villainType: GetVillainType(),
                 heroFloatedFlop: _postflopContext.HeroFloatedFlop,
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _turnResult.HeroKickerStrength);
+                heroKickerStrength: _turnResult.HeroKickerStrength,
+                heroBlocksTopCard: HeroBlocksTopBoardCard());
 
             // Tracking postflop del villano en turn
             TrackVillainPostflopAction(maxBet, turnIsAggressor);
@@ -3010,6 +3014,22 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina si el jugador P0 está en posición
         /// </summary>
+        /// <summary>
+        /// Verifica si alguna hole card de hero matchea la carta más alta del board.
+        /// Card removal effect: hero bloquea combos premium del villain (QQ, AK, etc.)
+        /// </summary>
+        private bool HeroBlocksTopBoardCard()
+        {
+            var boardCards = _playerGameState.BoardCards;
+            if (boardCards == null || boardCards.Count == 0) return false;
+
+            int topBoardRank = boardCards.Max(c => c.Force);
+            if (topBoardRank < 10) return false; // Solo relevante con cartas altas (T+)
+
+            return _playerGameState.HoleCard1Rank == topBoardRank ||
+                   _playerGameState.HoleCard2Rank == topBoardRank;
+        }
+
         private void SetIsInPosition()
         {
             var activePlayers = _playerGameState.Players.Where(w => w.Active &&

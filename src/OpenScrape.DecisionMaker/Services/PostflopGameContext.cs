@@ -43,6 +43,12 @@ public class PostflopGameContext
     public bool TurnCalledWithFlushDanger { get; set; }
 
     /// <summary>
+    /// Hero no apostó en ninguna calle previa (flop check, turn check).
+    /// En river, puede apostar delayed value con mano decente.
+    /// </summary>
+    public bool HeroCheckedAllStreets => !HeroBetFlop && !HeroBetTurn;
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>

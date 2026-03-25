@@ -108,7 +108,9 @@ public class PostflopDecisionService
         bool heroFloatedFlop = false,
         double villainFoldToBetPct = -1,
         KickerStrength heroKickerStrength = KickerStrength.None,
-        bool turnCalledWithFlushDanger = false)
+        bool turnCalledWithFlushDanger = false,
+        bool heroBlocksTopCard = false,
+        bool heroCheckedAllStreets = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -272,7 +274,7 @@ public class PostflopDecisionService
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
                 heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity,
-                heroStack, potSize, villainType);
+                heroStack, potSize, villainType, heroBlocksTopCard);
 
         // --- FACING BET ---
         if (isFacingBet)
@@ -308,7 +310,8 @@ public class PostflopDecisionService
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
             boardChange, hasFlushDraw, numOpponents, pairClassification, villainType,
             heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength,
-            heroBlocksDangerSuit, turnCalledWithFlushDanger);
+            heroBlocksDangerSuit, turnCalledWithFlushDanger, heroBlocksTopCard,
+            heroCheckedAllStreets);
     }
 
     /// <summary>
@@ -496,7 +499,9 @@ public class PostflopDecisionService
         int totalOuts = 0,
         KickerStrength heroKickerStrength = KickerStrength.None,
         bool heroBlocksDangerSuit = false,
-        bool turnCalledWithFlushDanger = false)
+        bool turnCalledWithFlushDanger = false,
+        bool heroBlocksTopCard = false,
+        bool heroCheckedAllStreets = false)
     {
         // Turn-river plan: hero calleó turn con flush danger → si river completa flush → check
         if (street == BoardPosition.River && turnCalledWithFlushDanger && boardChange != null &&
@@ -515,6 +520,16 @@ public class PostflopDecisionService
             var valueBet = AdjustBetSizeForSPR(thresholds.StrongValueBetSize, heroStack, potSize, street);
             return new PostflopDecisionResult(valueBet + " (Value)",
                 $"River opportunity — hero completó draw ({heroHandRank})");
+        }
+
+        // River delayed value: hero checkeó todas las calles previas → apostar con mano decente
+        if (street == BoardPosition.River && heroCheckedAllStreets &&
+            heroHandRank >= HandRank.OnePair && pairClassification >= PairClassification.TopPair &&
+            equity >= thresholds.ThinValueAbove)
+        {
+            var delayedBet = AdjustBetSizeForSPR("Bet 1/3", heroStack, potSize, street);
+            return new PostflopDecisionResult(delayedBet + " (Value)",
+                $"Bet — delayed value tras check-check ({pairClassification})");
         }
 
         // Check-raise: OOP con mano premium, esperando bet del villano para raise
@@ -671,6 +686,15 @@ public class PostflopDecisionService
         if (equity > adjValue)
         {
             var betSize = thresholds.ValueBetSize;
+            // Card removal: hero bloquea top card → villain tiene menos combos → sizing mayor
+            if (heroBlocksTopCard && heroHandRank >= HandRank.OnePair)
+                betSize = IncreaseBetSize(betSize);
+            // Turn: vulnerability sizing (OnePair vulnerable en boards peligrosos → sizing menor)
+            bool turnVulnerableSizing = street == BoardPosition.Turn &&
+                heroHandRank == HandRank.OnePair &&
+                (boardTexture == "Coordinated" || boardTexture == "Wet" || boardTexture == "Monotone");
+            if (turnVulnerableSizing)
+                betSize = ReduceBetSize(betSize);
             // River merged sizing: OnePair → sizing menor, TwoPair+ → normal
             if (riverMergedSizing)
                 betSize = ReduceBetSize(betSize);
@@ -678,10 +702,20 @@ public class PostflopDecisionService
             if (riverDangerBoard && heroHandRank <= HandRank.OnePair)
                 betSize = ReduceBetSize(betSize);
             betSize = AdjustBetSizeForSPR(betSize, heroStack, potSize, street);
-            return new PostflopDecisionResult(
-                betSize + " (Value)",
-                riverMergedSizing ? "Bet — value (merged sizing)" : "Bet — value");
+            string reason = turnVulnerableSizing ? "Bet — value (sizing protectivo)"
+                : riverMergedSizing ? "Bet — value (merged sizing)"
+                : heroBlocksTopCard ? "Bet — value (blocker, sizing mayor)"
+                : "Bet — value";
+            return new PostflopDecisionResult(betSize + " (Value)", reason);
         }
+
+        // Pot control: turn con equity marginal en board volátil, no agresor → check-back
+        bool isPotControlSpot = street == BoardPosition.Turn && !heroIsAggressor &&
+            equity >= PokerConstants.PotControlMinEquity && equity <= PokerConstants.PotControlMaxEquity &&
+            (boardTexture == "Coordinated" || boardTexture == "Wet" || boardTexture == "Monotone");
+        if (isPotControlSpot)
+            return new PostflopDecisionResult("Check",
+                "Check — pot control, equity marginal en board volátil");
 
         // Thin value → bet solo IP (OOP check para proteger rango)
         // River: NO thin value si board tiene draws completados y hero no los tiene
@@ -894,7 +928,8 @@ public class PostflopDecisionService
         double foldEquity = 0,
         decimal heroStack = 0,
         decimal potSize = 0,
-        OpponentType villainType = OpponentType.Unknown)
+        OpponentType villainType = OpponentType.Unknown,
+        bool heroBlocksTopCard = false)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway)
         // Verificar fold equity: semi-bluff debe ser +EV considerando equity del draw como backup
@@ -1029,6 +1064,10 @@ public class PostflopDecisionService
                 (boardChange != null && boardChange.StraightCompleted && heroHandRank >= HandRank.Straight);
             if (hasBlocker)
                 bluffCatchThreshold *= 0.85;
+
+            // Card removal: hero bloquea top card del board → villain tiene menos combos value
+            if (heroBlocksTopCard)
+                bluffCatchThreshold *= 0.90;
 
             // BottomPair sin blocker en river: umbral más exigente (fold más a menudo)
             if (isRiverBluffCatch && pairClassification == PairClassification.BottomPair && !hasBlocker)
