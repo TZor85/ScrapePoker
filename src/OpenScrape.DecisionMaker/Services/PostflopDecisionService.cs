@@ -107,7 +107,8 @@ public class PostflopDecisionService
         bool heroHasNutBlocker = false,
         bool heroFloatedFlop = false,
         double villainFoldToBetPct = -1,
-        KickerStrength heroKickerStrength = KickerStrength.None)
+        KickerStrength heroKickerStrength = KickerStrength.None,
+        bool turnCalledWithFlushDanger = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -288,7 +289,8 @@ public class PostflopDecisionService
             return HandleFacingBet(effectiveEquity, thresholds, isInPosition, villainBetSize,
                 street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
                 heroIsAggressor, heroHandRank, totalOuts, pairClassification,
-                hasFlushDraw, hasComboDraw, heroStack, potSize);
+                hasFlushDraw, hasComboDraw, heroStack, potSize,
+                boardChange, heroBlocksDangerSuit);
         }
 
         // --- NO FACING BET ---
@@ -305,7 +307,8 @@ public class PostflopDecisionService
             street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
             boardChange, hasFlushDraw, numOpponents, pairClassification, villainType,
-            heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength);
+            heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength,
+            heroBlocksDangerSuit, turnCalledWithFlushDanger);
     }
 
     /// <summary>
@@ -329,10 +332,20 @@ public class PostflopDecisionService
         bool hasFlushDraw = false,
         bool hasComboDraw = false,
         decimal heroStack = 0,
-        decimal potSize = 0)
+        decimal potSize = 0,
+        BoardChangeResult? boardChange = null,
+        bool heroBlocksDangerSuit = false)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
+
+        // Board peligroso: 3+ cartas mismo palo o flush completado, hero sin blocker.
+        // Flop: solo monotone (3 same suit, DangerLevel >= 3) es peligroso, no 2 same suit.
+        // Turn/River: FlushDrawAppeared (3er palo cayó) o FlushCompleted (4º palo).
+        bool dangerousFlushBoard = boardChange != null && !heroBlocksDangerSuit &&
+            (boardChange.FlushCompleted ||
+             (street == BoardPosition.Flop && boardChange.FlushDrawAppeared && boardChange.DangerLevel >= 3) ||
+             (street != BoardPosition.Flop && boardChange.FlushDrawAppeared));
 
         // Raise vs underbet: villano muestra debilidad → explotar con raise
         if (villainBetSize == BetSizeCategory.Underbet && equity > thresholds.ThinValueAbove)
@@ -355,38 +368,45 @@ public class PostflopDecisionService
                     $"Raise for value vs bet — {heroHandRank}", IsBarrel: isBarrel);
             }
 
-            // OnePair: solo Overpair o TopPair con kicker fuerte pueden raise
+            // OnePair: solo Overpair o TopPair pueden raise, SALVO board con flush posible
             if (heroHandRank == HandRank.OnePair &&
-                pairClassification >= PairClassification.TopPair)
+                pairClassification >= PairClassification.TopPair &&
+                !dangerousFlushBoard)
             {
                 var raiseSize = villainBetSize == BetSizeCategory.Large ? "Raise Pot" : "Raise 3x";
                 return new PostflopDecisionResult(raiseSize + " (Value)",
                     $"Raise for value vs bet — {pairClassification}");
             }
 
-            // Pares débiles con equity alta → call (no hinchar pote con mano vulnerable)
+            // Pares débiles, o OnePair en board con flush posible → call (pot control)
             string parDesc = pairClassification != PairClassification.None
                 ? pairClassification.ToString()
                 : heroHandRank.ToString();
-            return new PostflopDecisionResult("Call",
-                $"Call — equity alta pero mano vulnerable ({parDesc})");
+            string callReason = dangerousFlushBoard
+                ? $"Call — pot control, flush posible en board ({parDesc})"
+                : $"Call — equity alta pero mano vulnerable ({parDesc})";
+            return new PostflopDecisionResult("Call", callReason);
         }
 
         // Hero agresor vs donk bet → raise con mano fuerte, call con pareja débil
+        // En board con flush posible: OnePair solo call (pot control)
         if (heroIsAggressor && equity > thresholds.ValueAbove)
         {
             if (heroHandRank >= HandRank.TwoPair)
                 return new PostflopDecisionResult("Raise 3x (Value)",
                     $"Raise — hero agresor vs donk bet ({heroHandRank})");
 
-            // OnePair: Overpair/TopPair pueden raise, el resto call
+            // OnePair: Overpair/TopPair pueden raise, SALVO board con flush posible
             if (heroHandRank == HandRank.OnePair &&
-                pairClassification >= PairClassification.TopPair)
+                pairClassification >= PairClassification.TopPair &&
+                !dangerousFlushBoard)
                 return new PostflopDecisionResult("Raise 3x (Value)",
                     $"Raise — hero agresor vs donk bet ({pairClassification})");
 
-            return new PostflopDecisionResult("Call",
-                "Call — hero agresor vs donk bet, mano vulnerable");
+            string donkCallReason = dangerousFlushBoard
+                ? $"Call — hero agresor vs donk bet, flush posible ({pairClassification})"
+                : "Call — hero agresor vs donk bet, mano vulnerable";
+            return new PostflopDecisionResult("Call", donkCallReason);
         }
 
         // Equity buena → call (no raise, el villano ya mostró fuerza)
@@ -474,8 +494,18 @@ public class PostflopDecisionService
         bool heroFloatedFlop = false,
         bool hasComboDraw = false,
         int totalOuts = 0,
-        KickerStrength heroKickerStrength = KickerStrength.None)
+        KickerStrength heroKickerStrength = KickerStrength.None,
+        bool heroBlocksDangerSuit = false,
+        bool turnCalledWithFlushDanger = false)
     {
+        // Turn-river plan: hero calleó turn con flush danger → si river completa flush → check
+        if (street == BoardPosition.River && turnCalledWithFlushDanger && boardChange != null &&
+            boardChange.FlushCompleted && heroHandRank < HandRank.Flush)
+        {
+            return new PostflopDecisionResult("Check",
+                "Check — flush completó en river, hero calleó turn con peligro");
+        }
+
         // River opportunity: hero completó su draw → bet for value
         // El board cambió a favor de hero (flush/straight completado Y hero lo tiene)
         if (street == BoardPosition.River && boardChange != null &&
@@ -612,6 +642,14 @@ public class PostflopDecisionService
             }
         }
 
+        // River sizing contextual:
+        // - Board con flush draw sin blocker → sizing menor (no over-commit)
+        // - OnePair → sizing merged (menor), TwoPair+ → sizing polarizado (mayor)
+        bool riverDangerBoard = street == BoardPosition.River && boardChange != null &&
+            (boardChange.FlushDrawAppeared || boardChange.FlushCompleted) &&
+            !heroBlocksDangerSuit;
+        bool riverMergedSizing = street == BoardPosition.River && heroHandRank == HandRank.OnePair;
+
         // Strong value → bet grande (con sizing boost para manos nuts o TPTK)
         if (equity > adjStrongValue)
         {
@@ -619,20 +657,30 @@ public class PostflopDecisionService
             var betSize = heroHandRank >= HandRank.ThreeOfAKind
                 ? IncreaseBetSize(thresholds.StrongValueBetSize)
                 : thresholds.StrongValueBetSize;
+            // River: reducir sizing si board peligroso con OnePair
+            if (riverDangerBoard && riverMergedSizing)
+                betSize = ReduceBetSize(betSize);
             betSize = AdjustBetSizeForSPR(betSize, heroStack, potSize, street);
             return new PostflopDecisionResult(
                 betSize + " (Value)",
-                $"Bet — strong value ({heroHandRank})",
+                $"Bet — strong value ({heroHandRank}){(riverDangerBoard ? " (sizing reducido, board peligroso)" : "")}",
                 IsBarrel: isBarrel);
         }
 
         // Value → bet (ajustar sizing por SPR)
         if (equity > adjValue)
         {
-            var betSize = AdjustBetSizeForSPR(thresholds.ValueBetSize, heroStack, potSize, street);
+            var betSize = thresholds.ValueBetSize;
+            // River merged sizing: OnePair → sizing menor, TwoPair+ → normal
+            if (riverMergedSizing)
+                betSize = ReduceBetSize(betSize);
+            // River danger board: reducir sizing adicional
+            if (riverDangerBoard && heroHandRank <= HandRank.OnePair)
+                betSize = ReduceBetSize(betSize);
+            betSize = AdjustBetSizeForSPR(betSize, heroStack, potSize, street);
             return new PostflopDecisionResult(
                 betSize + " (Value)",
-                "Bet — value");
+                riverMergedSizing ? "Bet — value (merged sizing)" : "Bet — value");
         }
 
         // Thin value → bet solo IP (OOP check para proteger rango)

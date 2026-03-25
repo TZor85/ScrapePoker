@@ -220,6 +220,29 @@ public class MonteCarloSimulatorTests
 
         Assert.That(resultVsLimper.Equity, Is.GreaterThan(resultVs3Bettor.Equity));
     }
+
+    /// <summary>
+    /// Reproduce bug: AQo preflop vs _callerVs3Bet debería dar ~50-55%, no 19.7%.
+    /// </summary>
+    [Test]
+    public void CalculateEquity_AQoPreflop_VsCallerVs3Bet_DeberiaSerRazonable()
+    {
+        var heroCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.Queen, Suit.Clubs)
+        };
+        var communityCards = new List<CardDataOuts>();
+        var villainRange = VillainRange.GetForSituation(HandSituation.ThreeBet);
+
+        var result = _simulator.CalculateEquity(heroCards, communityCards, 1, 5000, villainRange);
+
+        // AQo vs callerVs3Bet (10%) debería ser ~50-55% equity
+        Assert.That(result.Equity, Is.InRange(0.40, 0.65),
+            $"AQo vs callerVs3Bet: equity={result.Equity:P1}, esperado 45-60%. " +
+            $"Win={result.WinProbability:P1}, Tie={result.TieProbability:P1}, Loss={result.LoseProbability:P1}, " +
+            $"Sims={result.Simulations}");
+    }
 }
 
 [TestFixture]

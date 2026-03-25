@@ -47,11 +47,11 @@ public class DangerPenaltyCalculator
 
         // Flush draw en board (3 del mismo palo): villain solo necesita 1 carta para flush.
         // Penalty proporcional (como flush completado pero menor) en vez de flat.
-        // ~38% de combos villain tienen al menos 1 carta del palo → penalty significativa.
+        // ~40% de combos villain tienen al menos 1 carta del palo, pero no todos apuestan flush.
         if (!boardChange.FlushCompleted && boardChange.FlushDrawAppeared)
         {
-            // Penalty proporcional: 15% de la equity (vs 35% de flush completado)
-            double flushDrawPenalty = rawEquity * 0.15 * streetDangerMultiplier;
+            // Penalty proporcional: 8% de la equity (vs 35% de flush completado)
+            double flushDrawPenalty = rawEquity * 0.08 * streetDangerMultiplier;
             // Reducir si hero tiene mano fuerte
             if (heroHandRank >= HandRank.TwoPair)
                 flushDrawPenalty *= 0.5;

@@ -3384,4 +3384,145 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    // ─── Sprint 11 — River Sizing y Contexto ─────────────────────
+
+    #region S11.1+S11.3 — River sizing contextual
+
+    [Test]
+    public void River_OnePair_SizingMerged()
+    {
+        // River con OnePair equity > ValueAbove (55) → value bet con merged sizing
+        var result = _service.DetermineAction(
+            equity: 62, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "River OnePair → value bet con sizing merged");
+        Assert.That(result.Reason, Does.Contain("merged"),
+            "Razón debe indicar merged sizing");
+    }
+
+    [Test]
+    public void River_ThreeOfAKind_SizingNormal()
+    {
+        // River con ThreeOfAKind → sizing normal/polarizado
+        var result = _service.DetermineAction(
+            equity: 85, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.ThreeOfAKind);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "River ThreeOfAKind → value bet normal");
+        Assert.That(result.Reason, Does.Not.Contain("merged"),
+            "ThreeOfAKind no usa merged sizing");
+    }
+
+    #endregion
+
+    #region S11.4 — Turn call danger → river check
+
+    [Test]
+    public void TurnCallFlushDanger_RiverFlushCompleted_DeberiaCheck()
+    {
+        var flushCompleted = new BoardChangeResult(true, false, false, false, false, 1, 4);
+
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            boardChange: flushCompleted,
+            turnCalledWithFlushDanger: true);
+
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "Flush completó en river tras call turn con peligro → check");
+        Assert.That(result.Reason, Does.Contain("flush completó"));
+    }
+
+    [Test]
+    public void TurnCallFlushDanger_RiverBrick_DeberiaBet()
+    {
+        var brick = new BoardChangeResult(false, true, false, false, false, -1, 1);
+
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            boardChange: brick,
+            turnCalledWithFlushDanger: true);
+
+        Assert.That(result.Action, Does.Contain("Value"),
+            "Brick river → bet value normal aunque turn tenía peligro");
+    }
+
+    [Test]
+    public void NoTurnDanger_RiverFlushCompleted_UsaLogicaNormal()
+    {
+        var flushCompleted = new BoardChangeResult(true, false, false, false, false, 1, 4);
+
+        var result = _service.DetermineAction(
+            equity: 65, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.OnePair,
+            boardChange: flushCompleted,
+            turnCalledWithFlushDanger: false);
+
+        // Sin flag de turn danger → usa lógica normal (thin value check por draw completado)
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "Flush completado + OnePair → check por thin value danger (lógica existente)");
+    }
+
+    #endregion
+
+    #region S11.2 — VillainRange por posición
+
+    [Test]
+    public void VillainRange_EPPosition_RangoMasEstrecho()
+    {
+        var rangeDefault = VillainRange.GetForSituation(HandSituation.OpenRaise);
+        var rangeEP = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.Early);
+
+        Assert.That(rangeEP, Is.Not.Null);
+        Assert.That(rangeDefault, Is.Not.Null);
+
+        // EP range tiene frecuencias menores (×0.7)
+        double defaultAKo = rangeDefault!.Hands.GetValueOrDefault("AKo", 0);
+        double epAKo = rangeEP!.Hands.GetValueOrDefault("AKo", 0);
+        Assert.That(epAKo, Is.LessThan(defaultAKo),
+            "EP villain → frecuencia AKo menor que default");
+    }
+
+    [Test]
+    public void VillainRange_BTNPosition_RangoMasAmplio()
+    {
+        var rangeDefault = VillainRange.GetForSituation(HandSituation.OpenRaise);
+        var rangeBTN = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.Button);
+
+        Assert.That(rangeBTN, Is.Not.Null);
+        // BTN range tiene frecuencias mayores (×1.3, cap 1.0)
+        double defaultT9s = rangeDefault!.Hands.GetValueOrDefault("T9s", 0);
+        double btnT9s = rangeBTN!.Hands.GetValueOrDefault("T9s", 0);
+        Assert.That(btnT9s, Is.GreaterThan(defaultT9s),
+            "BTN villain → frecuencia T9s mayor que default");
+    }
+
+    [Test]
+    public void VillainRange_NonePosition_SinAjuste()
+    {
+        var rangeDefault = VillainRange.GetForSituation(HandSituation.OpenRaise);
+        var rangeNone = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.None);
+
+        // None → sin ajuste, mismo rango
+        Assert.That(rangeNone!.Hands["AKo"], Is.EqualTo(rangeDefault!.Hands["AKo"]),
+            "Position None → rango sin modificar");
+    }
+
+    #endregion
 }

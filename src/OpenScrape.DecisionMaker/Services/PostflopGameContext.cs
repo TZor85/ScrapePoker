@@ -37,6 +37,12 @@ public class PostflopGameContext
     public bool HeroFloatedFlop { get; set; }
 
     /// <summary>
+    /// Hero calleó turn con flush draw peligroso en board (3+ same suit).
+    /// Si river completa el flush → check automático.
+    /// </summary>
+    public bool TurnCalledWithFlushDanger { get; set; }
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
@@ -66,6 +72,7 @@ public class PostflopGameContext
         VillainAggressorCheckedFlop = false;
         VillainCheckedMiddleStreet = false;
         HeroFloatedFlop = false;
+        TurnCalledWithFlushDanger = false;
         VillainBetSizeFlop = BetSizeCategory.NoBet;
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;

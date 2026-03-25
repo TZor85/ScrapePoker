@@ -72,6 +72,44 @@ public class VillainRange
         };
     }
 
+    /// <summary>
+    /// Obtiene el rango ajustado por posición del villain.
+    /// EP → rango más estrecho (frecuencias ×0.7). BTN → rango más amplio (×1.3).
+    /// </summary>
+    public static VillainRange? GetForSituation(HandSituation situation, TablePosition villainPosition)
+    {
+        var baseRange = GetForSituation(situation);
+        if (baseRange == null || villainPosition == TablePosition.None)
+            return baseRange;
+
+        double positionMultiplier = villainPosition switch
+        {
+            TablePosition.Early => 0.7,
+            TablePosition.Middle => 0.85,
+            TablePosition.CutOff => 1.0,
+            TablePosition.Button => 1.3,
+            TablePosition.SmallBlind => 0.9,
+            TablePosition.BigBlind => 1.1,
+            _ => 1.0
+        };
+
+        if (Math.Abs(positionMultiplier - 1.0) < 0.01)
+            return baseRange;
+
+        var adjustedHands = new Dictionary<string, double>();
+        foreach (var (hand, freq) in baseRange.Hands)
+        {
+            adjustedHands[hand] = Math.Min(1.0, freq * positionMultiplier);
+        }
+
+        return new VillainRange
+        {
+            Name = $"{baseRange.Name} ({villainPosition})",
+            RangePercentage = baseRange.RangePercentage * positionMultiplier,
+            Hands = adjustedHands
+        };
+    }
+
     private static VillainRange CreateRange(string name, double pct, Dictionary<string, double> hands)
     {
         return new VillainRange

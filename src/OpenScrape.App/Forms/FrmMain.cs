@@ -1271,7 +1271,9 @@ namespace OpenScrape.App
             var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker, _riverResult.HeroHandRank);
 
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
+            // Hero es agresor si: fue agresor preflop, O apostó/raiseó en turn (o flop si no hubo turn bet)
+            bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
+                || _postflopContext.HeroBetTurn || _postflopContext.HeroBetFlop;
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.River, effectiveSituation, texture, inPosition,
                 betSize,
@@ -1296,7 +1298,8 @@ namespace OpenScrape.App
                 villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
                 villainType: GetVillainType(),
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _riverResult.HeroKickerStrength);
+                heroKickerStrength: _riverResult.HeroKickerStrength,
+                turnCalledWithFlushDanger: _postflopContext.TurnCalledWithFlushDanger);
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1696,7 +1699,9 @@ namespace OpenScrape.App
             _postflopContext.LastBoardChange = boardChange;
 
             var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation);
+            // Hero es agresor si: fue agresor preflop con la situación actual, O apostó/raiseó en flop
+            bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
+                || _postflopContext.HeroBetFlop;
             var decision = _postflopDecisionService.DetermineAction(
                 equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
                 betSize,
@@ -1752,6 +1757,9 @@ namespace OpenScrape.App
             _postflopContext.HeroBetTurn = _postflopContext.PreviousStreetWasBet;
             _postflopContext.VillainBetTurn = maxBet > 0;
             _postflopContext.VillainBetSizeTurn = betSize;
+            // Trackear si hero calleó turn con flush danger (para river plan)
+            _postflopContext.TurnCalledWithFlushDanger = decision.Action == "Call" &&
+                boardChange.FlushDrawAppeared && !heroBlocks;
 
             // Persistir decisión y board en game logger
             double turnSpr = _playerGameState.PotSize > 0
@@ -2105,7 +2113,10 @@ namespace OpenScrape.App
                         new((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
                         new((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
                     };
-                    var numOpp = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
+                    // En preflop, numOpp = jugadores con bet voluntaria (> big blind),
+                    // excluyendo blinds obligatorias que no representan manos en la mano.
+                    int voluntaryBettors = _playerGameState.Players.Count(p => p.Active && p.Bet > 1m);
+                    var numOpp = Math.Max(1, voluntaryBettors);
                     var preflopResult = _pokerCalculator.Calculate(
                         heroCards, new List<CardDataOuts>(),
                         _playerGameState.PotSize,

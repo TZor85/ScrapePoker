@@ -66,9 +66,9 @@ public class DangerPenaltyCalculatorTests
 
         var result = DangerPenaltyCalculator.Calculate(60, change, false, false, _profile);
 
-        // 60 × 0.15 × 1.0 (turn default street multiplier) = 9.0
-        Assert.That(result, Is.EqualTo(9.0).Within(0.1),
-            "Flush draw penalty ahora es proporcional a equity (15%)");
+        // 60 × 0.08 × 1.0 (turn default street multiplier) = 4.8
+        Assert.That(result, Is.EqualTo(4.8).Within(0.1),
+            "Flush draw penalty proporcional a equity (8%)");
     }
 
     [Test]
