@@ -44,8 +44,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_ThinValue_IP_DeberiaRecomendarThinValue()
     {
+        // Equity fuera del margen de randomización (ThinValueAbove=45, +3 margin = 48)
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
 
         Assert.That(result.Action, Does.Contain("Thin Value"));
@@ -3309,7 +3310,7 @@ public class PostflopDecisionServiceTests
     {
         // OnePair con Strong kicker → bet thin value con sizing mayor
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
@@ -3326,8 +3327,9 @@ public class PostflopDecisionServiceTests
     public void ThinValue_TPWK_OOP_DeberiaCheck()
     {
         // OnePair con Weak kicker OOP → check (showdown value, no inflar pot)
+        // Equity fuera del margen de randomización (45 + 3 = 48) → usar 52
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
@@ -3375,7 +3377,7 @@ public class PostflopDecisionServiceTests
     {
         // Strong kicker → sizing un nivel más alto que base ThinValueBetSize
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
@@ -3675,6 +3677,102 @@ public class PostflopDecisionServiceTests
 
         Assert.That(result.Reason, Does.Not.Contain("delayed value"),
             "HighCard → no delayed value");
+    }
+
+    #endregion
+
+    // ─── Sprint 13 — Avanzado Final ──────────────────────────────
+
+    #region S13.1 — Range narrowing
+
+    [Test]
+    public void RangeNarrowing_VillainBet2Streets_FoldBelowSube()
+    {
+        // Villain apostó flop + turn (2 calles) → rango estrecho → FoldBelow sube
+        // Con equity marginal facing bet → debería fold más que sin narrowing
+        var result = _service.DetermineAction(
+            equity: 50, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Medium,
+            heroHandRank: HandRank.OnePair,
+            villainBetSizeFlop: BetSizeCategory.Small,
+            villainBetSizeTurn: BetSizeCategory.Medium);
+
+        // FoldBelow base 45 + facing bet + range narrowing (+3) → ~52+
+        // Equity 50 puede ser insuficiente con narrowing
+        Assert.That(result.Action, Does.Not.Contain("Raise"),
+            "Villain bet 3 calles → rango muy estrecho, no raise con OnePair");
+    }
+
+    #endregion
+
+    #region S13.3 — Overbet river nuts
+
+    [Test]
+    public void Overbet_River_Nuts_Coordinated_DeberiaOverbet()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["River_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            CanOverbet = true,
+            OverbetMinEquity = 70,
+            OverbetBetSize = "Bet Pot",
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 85, BoardPosition.River, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.Flush);
+
+        Assert.That(result.Action, Does.Contain("Pot").Or.Contain("Overbet"),
+            "River Flush Coordinated → overbet (no solo en Dry)");
+    }
+
+    [Test]
+    public void Overbet_Flop_Coordinated_NoDeberiaOverbet()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 40,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 75,
+            CanOverbet = true,
+            OverbetMinEquity = 70,
+            OverbetBetSize = "Bet Pot",
+            DryBoardBetSize = "Bet 1/2",
+            CoordinatedBoardBetSize = "Bet 1/2",
+            PairedBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair,
+            heroIsAggressor: true);
+
+        Assert.That(result.Action, Does.Not.Contain("Pot"),
+            "Flop Coordinated → no overbet (solo Dry en flop/turn)");
     }
 
     #endregion

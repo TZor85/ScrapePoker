@@ -69,32 +69,46 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - `OutsCalculator` — Draw detection, outs counting, tainted outs, combo draw detection
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
 
-**PostflopDecisionService — Five decision paths:**
-1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2. Bluff catching on river (OnePair+ with equity >= FoldBelow×0.75, non-large bet → call).
-2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards (flop/turn: aggressor; river: TwoPair+ NUTS). Bet sizing adjusted by SPR (short +1-2 levels, deep -1 level). Double barrel on turn/river (aggressor with marginal equity + previous street bet → barrel for range consistency).
-3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`. Active on all streets (flop/turn/river).
-4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Active on turn and river. Cross-street state via `_villainAggressorCheckedFlop` / `_villainBetTurn`.
-5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls, bluff catching river.
+**PostflopDecisionService — Eight+ decision paths:**
+1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call, OnePair no raise en board con flush posible sin blocker). Underbet (< 15% pot, penalty 0) → raise con equity buena. Bet-size penalties (Underbet 0, Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand (cross-street: HeroBetFlop/Turn = agresor). Caller vs cbet: FoldBelow+2. Pot commitment: SPR < 0.5 + EV(call) > 0 → Call.
+2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired/Monotone/Wet). Hand strength relative adjusts thresholds. Overbet on dry boards (flop/turn: aggressor); river: TwoPair+ NUTS en **cualquier textura**. River merged sizing: OnePair → ReduceBetSize, TwoPair+ → normal/polarizado. River danger board (3+ same suit sin blocker) → sizing reducido. Turn vulnerability sizing: OnePair en Wet/Coordinated → ReduceBetSize. Card removal: heroBlocksTopCard → value sizing mayor. Bet sizing adjusted by SPR. Double barrel condicionado al runout (bad runout → check).
+3. **Check-Raise** → OOP: TwoPair+ O draws fuertes (combo draw/flush draw 9+ outs, CheckRaiseDrawMinEquity=40). IP: TwoPair+ trap en board no Wet/Monotone. !heroIsAggressor + !multiway. Active on all streets.
+4. **Float Exit** → heroFloatedFlop + turn + villain check + !multiway → Bet 1/2 (float exit).
+5. **Probe Bet** → Villain aggressor checked previous street + !multiway + equity >= ProbeBetMinEquity. IP: Bet 1/2, OOP: Bet 1/3.
+6. **Pot Control** → Turn equity 40-55% + Coordinated/Wet/Monotone + !heroIsAggressor → check-back.
+7. **Delayed Value** → River + HeroCheckedAllStreets + OnePair TopPair+ → Bet 1/3 (delayed value).
+8. **Low Equity** → Semi-bluff con fold equity check (breakevenFE ajustado por draw equity). Bluff puro con fold equity ≥ breakeven. Pot odds marginales. Bluff catching con ajuste por: villainType (LAG ×0.80, TP ×1.20), runout (brick ×0.85, scare ×1.15), card removal (heroBlocksTopCard ×0.90), blocker bonus (×0.85).
+9. **Randomización** → Equity dentro de ±3% de ThinValueAbove → 30% check (anti-exploit).
 
 **Additional decision modifiers:**
-- `heroIsAggressor` / `heroHandRank` / `heroKickerStrength` — affect raise/call/sizing decisions
-- `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus), only if hero hasn't completed the draw (HandRank < Straight)
-- `villainBarreling` — villain bet 2+ consecutive streets → FoldBelow+5, ThinValue+3 (narrower range)
-- SPR push/fold — SPR < 2: FoldBelow−8, equity > ValueAbove → All-In. SPR > 4: FoldBelow+3 (deep caution). Only turn/river.
-- Reverse implied odds — turn/river facing bet with OnePair/TwoPair on draw-heavy board: −7 flush draw / −4 coordinated penalty (river ×0.6 reduced)
-- Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
-- Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
-- Cross-street state — `_villainBetFlop/Turn`, `_heroBetFlop/Turn`, `_villainAggressorCheckedFlop` tracked across streets
+- `heroIsAggressor` — cross-street: incluye HeroBetFlop/HeroBetTurn (no solo preflop)
+- `heroKickerStrength` — TPTK (Strong) → sizing mayor, TPWK (Weak) OOP → check
+- `heroBlocksTopCard` — hero tiene carta que matchea top board card → bluff catch ×0.90, value sizing mayor
+- `hasComboDraw` — flush+straight draw gets +6 equity bonus, only if HandRank < Straight
+- `villainBarreling` + `villainCheckedMiddleStreet` — bet-bet vs bet-check-bet differentiation
+- Range narrowing — villain apostó en 2+ calles → FoldBelow +3/calle (rango más estrecho)
+- SPR push/fold — SPR < 2: EV(allin) explícito. SPR > 4: FoldBelow+3. Only turn/river.
+- Reverse implied odds — turn/river facing bet, OnePair/TwoPair, draw-heavy board, blocker reduction
+- Board texture per situation — 3bet pot: range advantage con 1+ carta alta (Q, K, A)
+- Tainted outs — flush draw ×0.7, sin flush ×0.3
+- Cross-street state — `PostflopGameContext`: VillainBet/HeroBet per street, VillainBetSize, FloatedFlop, TurnCalledWithFlushDanger, HeroCheckedAllStreets
+- VillainRange — ajustado por posición villain (EP ×0.7, BTN ×1.3) y HandSituation
+- Fold equity — stats reales OpponentTracker (GetFoldToBetPct) o fallback multipliers estáticos
+- Implied odds — ajustadas por numOpponents (OOP multiway peor, IP con draw mejor)
+- DonkBet detection — cross-street: HeroBetFlop/Turn activa donk bet en turn/river
 
 **Danger card penalty system:**
-- Percentage penalties (proportional, Math.Max not sum): FlushComplete = equity×35%, StraightComplete = equity×18%. When both complete simultaneously, uses the larger penalty (not sum).
-- Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5 (3 same suit on board)
-- FacingBetMultiplier ×1.4 (villain represents completed draw)
-- Hero blocker effect: penalty ×0.5 if hero holds danger suit
-- NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board, skipped if hero has the completed draw)
-- Danger propagation: turn `_lastBoardChange` carries to river via `CombineBoardChanges()`
-- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap if applicable, then `- reverseImpliedPenalty`
-- Never folds without facing bet → Check instead
+- Percentage penalties (proportional, Math.Max not sum): FlushComplete = equity×35%, StraightComplete = equity×18%.
+- FlushDraw (3 same suit): equity × 8% × streetMultiplier (proporcional, no flat). Reducido con mano fuerte (OnePair ×0.75, TwoPair+ ×0.5).
+- Flat penalties: BoardPaired −5, Overcard −3.
+- Street multipliers: Flop ×1.3, Turn ×1.0, River ×0.8.
+- FacingBetMultiplier ×1.4.
+- Hero blocker effect granular: nut ×0.35, non-nut ×0.55, board4flush ×0.7.
+- NoBet cap: `DangerCompletedDrawNoBetCap=45` (skipped if hero has completed draw).
+- `dangerousFlushBoard`: flop solo monotone (DangerLevel >= 3), turn/river FlushDrawAppeared. Afecta raise decisions (OnePair no raise).
+- Turn-river plan: `TurnCalledWithFlushDanger` → river check si flush completa.
+- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap, then `- reverseImpliedPenalty`.
+- Never folds without facing bet → Check instead.
 
 ## Game State Machine
 

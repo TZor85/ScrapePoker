@@ -207,6 +207,17 @@ public class PostflopDecisionService
             adjustedFoldBelow += PokerConstants.CallerVsCbetFoldIncrease;
         }
 
+        // Range narrowing: villain apostó en múltiples calles → rango más estrecho
+        // Cada calle donde villain apostó estrecha su rango → FoldBelow sube
+        if (isFacingBet && street >= BoardPosition.Turn)
+        {
+            int villainBetStreets = (villainBetSizeFlop != BetSizeCategory.NoBet ? 1 : 0)
+                + (villainBetSizeTurn != BetSizeCategory.NoBet ? 1 : 0)
+                + (isFacingBet && street == BoardPosition.River ? 1 : 0);
+            if (villainBetStreets >= 2)
+                adjustedFoldBelow += PokerConstants.RangeNarrowingPerStreet * (villainBetStreets - 1);
+        }
+
         // Villain barreling: distinguir barrel real (bet-bet) de bet-check-bet (reactivation)
         if (villainBarreling && isFacingBet)
         {
@@ -639,20 +650,23 @@ public class PostflopDecisionService
         double adjStrongValue = thresholds.StrongValueAbove + vulnerabilityAdjust + boardPairedAdjust;
         double adjValue = thresholds.ValueAbove + vulnerabilityAdjust + boardPairedAdjust;
 
-        // Overbet en boards secos con mano premium
-        // Flop/Turn: agresor con ventaja de rango. River: NUTS (TwoPair+) para máximo valor.
-        if (thresholds.CanOverbet && equity > thresholds.OverbetMinEquity && boardTexture == "Dry")
+        // Overbet con mano premium
+        // Flop/Turn: solo boards secos con ventaja de rango.
+        // River: NUTS (TwoPair+) en CUALQUIER textura para máximo valor.
+        if (thresholds.CanOverbet && equity > thresholds.OverbetMinEquity)
         {
-            bool canOverbetHere = street == BoardPosition.River
-                ? heroHandRank >= HandRank.TwoPair
-                : heroIsAggressor;
+            bool canOverbetHere;
+            if (street == BoardPosition.River)
+                canOverbetHere = heroHandRank >= HandRank.TwoPair;
+            else
+                canOverbetHere = boardTexture == "Dry" && heroIsAggressor;
 
             if (canOverbetHere)
             {
                 return new PostflopDecisionResult(
                     thresholds.OverbetBetSize + " (Value)",
                     street == BoardPosition.River
-                        ? $"Overbet river — NUTS en board seco ({heroHandRank})"
+                        ? $"Overbet river — nuts ({heroHandRank})"
                         : "Overbet — board seco con ventaja de rango");
             }
         }
@@ -716,6 +730,15 @@ public class PostflopDecisionService
         if (isPotControlSpot)
             return new PostflopDecisionResult("Check",
                 "Check — pot control, equity marginal en board volátil");
+
+        // Randomización: equity justo encima del threshold → a veces check (anti-exploit)
+        if (equity > thresholds.ThinValueAbove &&
+            equity <= thresholds.ThinValueAbove + PokerConstants.RandomizationMargin &&
+            Random.Shared.NextDouble() > PokerConstants.RandomizationBetFrequency)
+        {
+            return new PostflopDecisionResult("Check",
+                "Check — randomización (equity en boundary, proteger rango de check)");
+        }
 
         // Thin value → bet solo IP (OOP check para proteger rango)
         // River: NO thin value si board tiene draws completados y hero no los tiene

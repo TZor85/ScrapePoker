@@ -71,6 +71,13 @@ public static class PokerConstants
     // === PostflopDecisionService: pot commitment ===
     public const double PotCommitmentSPRThreshold = 0.5;
 
+    // === PostflopDecisionService: range narrowing por línea agresiva ===
+    public const double RangeNarrowingPerStreet = 3.0;
+
+    // === PostflopDecisionService: randomización en threshold boundary ===
+    public const double RandomizationMargin = 3.0;
+    public const double RandomizationBetFrequency = 0.70;
+
     // === PostflopDecisionService: pot control ===
     public const double PotControlMinEquity = 40.0;
     public const double PotControlMaxEquity = 55.0;
