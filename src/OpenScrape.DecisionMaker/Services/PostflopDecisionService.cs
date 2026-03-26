@@ -150,6 +150,9 @@ public class PostflopDecisionService
             heroBlocksDangerSuit);
         effectiveEquity -= reverseImpliedPenalty;
 
+        // Floor: equity efectiva no puede ser negativa (evita corrupción de thresholds)
+        effectiveEquity = Math.Max(0, effectiveEquity);
+
         // All-in: desactivar fold equity (villain no puede foldear)
         if (isAnyoneAllIn)
             foldEquity = 0;

@@ -357,8 +357,14 @@ namespace OpenScrape.App
         private decimal GetVillainStack()
         {
             var activeVillains = _playerGameState.Players
-                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name));
-            return activeVillains.Any() ? activeVillains.Max(p => p.Stack) : 0;
+                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name) && p.Name != "P0");
+            var villainStack = activeVillains.Any() ? activeVillains.Max(p => p.Stack) : 0;
+
+            // Fallback: si OCR falló (villain stack = 0 pero hay pot), estimar como hero stack
+            if (villainStack <= 0 && _playerGameState.HeroStack > 0)
+                return _playerGameState.HeroStack; // Estimación conservadora
+
+            return villainStack;
         }
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
@@ -889,19 +895,17 @@ namespace OpenScrape.App
                     // Si el número de mano cambió es una mano nueva y debe fluir por preflop.
                     // Usar ForceState porque HandDetected → FlopDetected/TurnDetected/RiverDetected
                     // no son transiciones válidas en la máquina de estados.
+                    // Siempre resetear contexto postflop para evitar state bleed entre manos
+                    _postflopContext.Reset();
+
                     if (savedPostflopState.HasValue)
                     {
                         LogInformation($"Restaurando estado postflop: {savedPostflopState}, BoardCards: {savedBoardCards?.Count ?? 0}");
                         _gameLoopStateMachine.ForceState(savedPostflopState.Value);
-                        // Restaurar las cartas del board para que ProcessTurnAsync/ProcessRiverAsync
-                        // puedan construir sobre las cartas previas
-                        if (savedBoardCards != null && savedBoardCards.Count > 0)
+                        // Restaurar board cards solo si son válidas (tienen nombres no vacíos)
+                        if (savedBoardCards != null && savedBoardCards.Count > 0 &&
+                            savedBoardCards.All(b => !string.IsNullOrEmpty(b.Name)))
                             _playerGameState.BoardCards = savedBoardCards;
-                    }
-                    else
-                    {
-                        // Solo resetear contexto postflop si NO se está restaurando un estado postflop
-                        _postflopContext.Reset();
                     }
                 }
                 else if (_newHand && isTestPostflop)
@@ -2387,7 +2391,8 @@ namespace OpenScrape.App
                     !betValue.ToString().Contains(".") &&
                     betValue.ToString().Contains("88"))
                 {
-                    betValue = decimal.Parse(betValue.ToString().Replace("88", ""));
+                    if (decimal.TryParse(betValue.ToString().Replace("88", ""), out var cleanBet))
+                        betValue = cleanBet;
                 }
 
                 if (playerNumber == 0)
@@ -3473,8 +3478,8 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return 0;
 
-            OcrResult firstOcr;
-            OcrResult secondOcr;
+            OcrResult? firstOcr = null;
+            OcrResult? secondOcr = null;
 
             // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
@@ -3532,8 +3537,8 @@ namespace OpenScrape.App
                 LogDebug($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
             }
 
-            firstOcr.Dispose();
-            secondOcr.Dispose();
+            firstOcr?.Dispose();
+            secondOcr?.Dispose();
 
             if (decimal.TryParse(result, out var stack))
                 return stack;
@@ -3550,8 +3555,8 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null)
                 return string.Empty;
 
-            OcrResult firstOcr;
-            OcrResult secondOcr;
+            OcrResult? firstOcr = null;
+            OcrResult? secondOcr = null;
 
             // Lectura 1: con umbral principal y preprocesamiento
             using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
@@ -3594,8 +3599,8 @@ namespace OpenScrape.App
 
             LogDebug($"[HAND#] OCR lecturas: '{firstOcr.Text}'→{clean1}, '{secondOcr.Text}'→{clean2}, '{thirdOcr.Text}'→{clean3}, best={best}");
 
-            firstOcr.Dispose();
-            secondOcr.Dispose();
+            firstOcr?.Dispose();
+            secondOcr?.Dispose();
 
             return best;
         }
@@ -4766,8 +4771,8 @@ namespace OpenScrape.App
                 if (string.IsNullOrEmpty(secondOcr.Text))
                     secondOcr.Text = "0";
 
-                var ocr1 = decimal.Parse(firstOcr.Text);
-                var ocr2 = decimal.Parse(secondOcr.Text);
+                var ocr1 = decimal.TryParse(firstOcr.Text, out var v1) ? v1 : 0m;
+                var ocr2 = decimal.TryParse(secondOcr.Text, out var v2) ? v2 : 0m;
 
                 if (ocr2 >= ocr1)
                     result = ocr2.ToString();
@@ -5272,7 +5277,12 @@ namespace OpenScrape.App
             else if (parts[1].Contains('/'))
             {
                 var frac = parts[1].Split('/');
-                baseSize = double.Parse(frac[0]) / double.Parse(frac[1]);
+                if (frac.Length >= 2 &&
+                    double.TryParse(frac[0], out var num) &&
+                    double.TryParse(frac[1], out var den) && den > 0)
+                    baseSize = num / den;
+                else
+                    baseSize = 0.50; // Fallback seguro
             }
             else
                 return action; // not a standard bet

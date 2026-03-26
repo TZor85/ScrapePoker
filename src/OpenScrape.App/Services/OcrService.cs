@@ -178,16 +178,17 @@ public class OcrService
                     ulong hash = ComputeDHash(croppedBitmap);
                     if (_ocrCache.TryGet(hash, out var cachedText))
                     {
-                        // Cache hit: create result with cached text
+                        // Cache hit: crear bitmap independiente del stream (clonar para evitar use-after-dispose)
                         using var ms = new MemoryStream();
                         using var skImage = SKImage.FromBitmap(croppedBitmap);
                         using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
                         encoded.SaveTo(ms);
                         ms.Position = 0;
+                        using var tempBitmap = new Bitmap(ms);
                         result = new OcrResult
                         {
                             Text = cachedText,
-                            Image = new Bitmap(ms)
+                            Image = new Bitmap(tempBitmap) // Clon independiente del stream
                         };
                         return result;
                     }
@@ -253,13 +254,14 @@ public class OcrService
                             // Cache the result — LruCache descarta la entrada menos usada al superar la capacidad
                             _ocrCache.Set(hash, text);
 
-                            // Crear el bitmap para el resultado
+                            // Crear bitmap independiente del stream (clonar para evitar use-after-dispose)
                             using (var ms = new MemoryStream(imageData))
+                            using (var tempBitmap = new Bitmap(ms))
                             {
                                 result = new OcrResult
                                 {
                                     Text = text,
-                                    Image = new Bitmap(ms),
+                                    Image = new Bitmap(tempBitmap),
                                     Confidence = confidence
                                 };
                             }
