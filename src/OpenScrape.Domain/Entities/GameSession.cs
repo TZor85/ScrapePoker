@@ -66,6 +66,19 @@ public class HandRecord
     public decimal HeroStackStart { get; set; }
     public decimal HeroStackEnd { get; set; }
 
+    /// <summary>
+    /// Ciega obligatoria pagada por hero en esta mano (SB o BB amount).
+    /// Se resta del profit neto para distinguir pérdida real de ciega obligatoria.
+    /// </summary>
+    public decimal BlindPosted { get; set; }
+
+    /// <summary>
+    /// Profit neto excluyendo la ciega obligatoria.
+    /// Si hero paga BB (1.00) y foldea → NetProfit = 0 (no -1.00).
+    /// Si hero paga BB (1.00) y gana 5.00 → NetProfit = +5.00 (no +4.00).
+    /// </summary>
+    public decimal NetProfit => (HeroStackEnd - HeroStackStart) + BlindPosted;
+
     // Board
     public List<string> FlopCards { get; set; } = new();
     public string? TurnCard { get; set; }

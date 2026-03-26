@@ -1,147 +1,393 @@
-[16:15:28] Guardadas dimensiones de referencia: 1024x726
-[16:15:29] Nueva mano detectada: Hand 8885815382, Pot: 1,50, HoleCards: 5s Qs
-[16:15:29] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
-[16:15:29] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(255,216,0) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P1 | Imagen: 1024x726
-[16:15:29] Dealer result: P1, Position: CutOff, IsDealer: False, Players: 6
-Hand #8885815382: Hold'em No Limit
+[16:00:00] Guardadas dimensiones de referencia: 1024x726
+[16:00:00] Nueva mano detectada: Hand 188, Pot: 3, HoleCards: 6h 5d
+[16:00:00] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:00:01] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(255,216,0) p5dealer=RGB(41,41,41) | Detectado: P4 | Imagen: 1024x726
+[16:00:01] Dealer result: P4, Position: BigBlind, IsDealer: False, Players: 6
+Hand #188: Hold'em No Limit
+#P4 is the Dealer
+P1: posts small blind
+P0: posts big blind
+Pot: 3
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 32,9%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [6h 5d]
+P5: bets/calls 1
+P4: bets/calls 0
+P3: bets/calls 0
+P2: bets/calls 0
+P1: bets/calls 1
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: BigBlind  |  Situation: RaiseOverLimper
+Equity preflop: 32,9%
+▶ DECISIÓN: Fold
+
+[16:00:12] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:00:13] ProcessPostFlopAsync: Estado actual = FlopDetected
+[16:00:13] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
+[16:00:13] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
+[16:00:13] ═══ [FLOP] ═══════════════════════════════════════
+[16:00:13]   Hero: [6h 5d]  Board: [2s 2d 6d]
+[16:00:13]   Pot: 3  |  Bet villano: 0 (NoBet)  |  Stack hero: 99  |  SPR: 33,0
+[16:00:13]   Situación: RaiseOverLimper  |  Posición: OOP  |  Oponentes: 1
+[16:00:13]   Equity: 64,2%  |  C-bet adj: +4,0  |  Equity efectiva: 68,2%  |  Pot odds: 0,0%
+[16:00:13]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Range advantage: No
+[16:00:13]   Board: Paired  |  Outs: 2  |  Draws: Backdoor Flush Draw, Backdoor Straight Draw
+[16:00:13]   ▶ DECISIÓN: Bet 1/2 (Value)  —  Value OOP
+*** FLOP *** [2s 2d 6d][16:00:38] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:00:39] ProcessPostFlopAsync: Estado actual = FlopAction
+[16:00:39] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
+[16:00:39] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
+[16:00:39] ═══ [FLOP] ═══════════════════════════════════════
+[16:00:39]   Hero: [6h 5d]  Board: [2s 2d 6d]
+[16:00:39]   Pot: 5  |  Bet villano: 2 (Medium)  |  Stack hero: 99  |  SPR: 22,0
+[16:00:39]   Situación: DonkBet (DONK BET)  |  Posición: OOP  |  Oponentes: 1
+[16:00:39]   Equity: 64,2%  |  C-bet adj: +4,0  |  Equity efectiva: 68,2%  |  Pot odds: 25,0%
+[16:00:39]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Range advantage: No
+[16:00:39]   Board: Paired  |  Outs: 2  |  Draws: Backdoor Flush Draw, Backdoor Straight Draw
+[16:00:39]   ▶ DECISIÓN: Raise 3x (Value)  —  Raise — hero agresor vs donk bet (TwoPair)
+*** FLOP *** [2s 2d 6d][16:00:47] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:00:47] ProcessPostFlopAsync: Estado actual = FlopAction
+[16:00:47] ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: TurnAction
+[16:00:47] ProcessTurnAsync: Intento 1 - Cartas totales: 6
+[16:00:47] ═══ [TURN] ═══════════════════════════════════════
+[16:00:47]   Hero: [6h 5d]  Board: [2s 2d 6d] + [8d]
+[16:00:47]   Pot: 6  |  Bet villano: 0 (NoBet)  |  Stack hero: 98  |  SPR: 16,2
+[16:00:47]   Situación: RaiseOverLimper  |  Posición: IP  |  Oponentes: 1
+[16:00:47]   Equity: 64,2%  |  Danger penalty: 5,8  |  Equity efectiva: 58,4%  |  Pot odds: 0,0%
+[16:00:47]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Hero blocks: Sí
+[16:00:47]   Board: Paired  |  Peligro: Flush draw, Board paired, Overcard  |  Outs: 9  |  Draws: Flush Draw
+[16:00:47]   ▶ DECISIÓN: Bet 1/3 (Thin Value)  —  Thin value IP
+[16:00:54] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:00:54] ProcessPostFlopAsync: Estado actual = TurnAction
+[16:00:54] ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: RiverAction
+[16:00:54] ProcessRiverAsync: Intento 1 - Cartas totales: 7
+[16:00:54] ═══ [RIVER] ══════════════════════════════════════
+[16:00:54]   Hero: [6h 5d]  Board: [2s 2d 6d] + [8d] + [8c]
+[16:00:54]   Pot: 6  |  Bet villano: 0 (NoBet)  |  Stack hero: 98  |  SPR: 16,2
+[16:00:54]   Situación: RaiseOverLimper  |  Posición: OOP  |  Oponentes: 1
+[16:00:54]   Equity: 72,2%  |  Danger penalty: 5,7  |  Equity efectiva: 66,6%  |  Pot odds: 0,0%
+[16:00:54]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Hero blocks: Sí
+[16:00:54]   Board: Paired  |  Peligro: Flush draw, Board paired, Overcard, Arrastrado del turn  |  Outs: 9  |  Draws: Flush Draw
+[16:00:54]   ▶ DECISIÓN: Bet Pot (Value)  —  Strong value OOP
+[16:01:14] [HAND#] Cambio sospechoso de OCR en postflop: prev='188', current='088' — requiriendo más indicadores
+[16:01:15] Nueva mano detectada: Hand 88, Pot: 1,50, HoleCards: Td As
+[16:01:15] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:01:15] Dealer scan: p0dealer=RGB(255,216,0) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P0 | Imagen: 1024x726
+[16:01:15] Dealer result: P0, Position: Button, IsDealer: True, Players: 6
+Hand #88: Hold'em No Limit
+#P0 is the Dealer
+P1: posts small blind
+P2: posts big blind
+Pot: 1,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 49,4%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [Td As]
+P3: bets/calls 0
+P4: bets/calls 0
+P5: bets/calls 0
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: Button  |  Situation: OpenRaise
+Equity preflop: 49,4%
+▶ DECISIÓN: Open Raise x2.4
+
+[16:01:37] Nueva mano detectada: Hand 8888010050, Pot: 1,50, HoleCards: 4c 2h
+[16:01:37] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:01:38] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(255,216,0) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P1 | Imagen: 1024x726
+[16:01:38] Dealer result: P1, Position: CutOff, IsDealer: False, Players: 6
+Hand #8888010050: Hold'em No Limit
 #P1 is the Dealer
 P2: posts small blind
 P3: posts big blind
 Pot: 1,50
 *** STATISTICS ***
 PotOdds: 0%
-Equity: 0%
+Equity: 26,4%
 Should Call: False
 *** HOLE CARDS ***
-Dealt to Hero [5s Qs]
+Dealt to Hero [4c 2h]
 P4: bets/calls 0
 P5: bets/calls 0
 P0: bets/calls 0
+*** HERO ACTION ***
+Position: CutOff  |  Situation: OpenRaise
+Equity preflop: 26,4%
+▶ DECISIÓN: Fold
 
-[16:16:01] Nueva mano detectada: Hand 88, Pot: 1,50, HoleCards: Jh Ah
-[16:16:01] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
-[16:16:02] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(255,216,0) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P2 | Imagen: 1024x726
-[16:16:02] Dealer result: P2, Position: Middle, IsDealer: False, Players: 6
-Hand #88: Hold'em No Limit
+[16:02:19] Nueva mano detectada: Hand 8888010113, Pot: 1,50, HoleCards: Ts 5s
+[16:02:19] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:02:20] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(255,216,0) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P2 | Imagen: 1024x726
+[16:02:20] Dealer result: P2, Position: Middle, IsDealer: False, Players: 6
+Hand #8888010113: Hold'em No Limit
 #P2 is the Dealer
 P3: posts small blind
 P4: posts big blind
 Pot: 1,50
 *** STATISTICS ***
 PotOdds: 0%
-Equity: 0%
+Equity: 32,7%
 Should Call: False
 *** HOLE CARDS ***
-Dealt to Hero [Jh Ah]
+Dealt to Hero [Ts 5s]
 P5: bets/calls 0
 P0: bets/calls 0
+*** HERO ACTION ***
+Position: Middle  |  Situation: OpenRaise
+Equity preflop: 32,7%
+▶ DECISIÓN: Fold
 
-[16:16:09] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
-[16:16:10] ProcessPostFlopAsync: Estado actual = FlopDetected
-[16:16:10] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
-[16:16:10] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
-[16:16:10] ═══ [FLOP] ═══════════════════════════════════════
-[16:16:10]   Hero: [Jh Ah]  Board: [7c Tc Qs]
-[16:16:10]   Pot: 6  |  Bet villano: 0 (NoBet)  |  Stack hero: 100  |  SPR: 18,2
-[16:16:10]   Situación: OpenRaise  |  Posición: OOP  |  Oponentes: 1
-[16:16:10]   Equity: 36,9%  |  C-bet adj: +4,0  |  Equity efectiva: 40,9%  |  Pot odds: 0,0%
-[16:16:10]   Mano hero: HighCard  |  Agresor preflop: Sí  |  Range advantage: No
-[16:16:10]   Board: Dry  |  Outs: 7  |  Draws: Overcards (1), Gutshot Straight Draw
-[16:16:10]   ▶ DECISIÓN: Bet 1/3 (Thin Value)  —  Bet — thin value
-*** FLOP *** [7c Tc Qs][16:16:20] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
-[16:16:20] ProcessPostFlopAsync: Estado actual = FlopAction
-[16:16:20] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
-[16:16:20] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
-[16:16:20] ═══ [FLOP] ═══════════════════════════════════════
-[16:16:20]   Hero: [Jh Ah]  Board: [7c Tc Qs]
-[16:16:20]   Pot: 17  |  Bet villano: 10 (Medium)  |  Stack hero: 99  |  SPR: 5,8
-[16:16:20]   Situación: DonkBetVsOpenRaise (DONK BET)  |  Posición: OOP  |  Oponentes: 1
-[16:16:20]   Equity: 36,9%  |  C-bet adj: +4,0  |  Equity efectiva: 40,9%  |  Pot odds: 37,0%
-[16:16:20]   Mano hero: HighCard  |  Agresor preflop: Sí  |  Range advantage: No
-[16:16:20]   Board: Dry  |  Outs: 7  |  Draws: Overcards (1), Gutshot Straight Draw
-[16:16:20]   ▶ DECISIÓN: Call  —  Call — pot odds marginales (implied factor=0,59)
-*** FLOP *** [7c Tc Qs][16:16:48] [HAND#] Cambio sospechoso de OCR en postflop: prev='88', current='8885816935' — requiriendo más indicadores
-[16:16:49] Nueva mano detectada: Hand 8885816935, Pot: 7, HoleCards: Ac As
-[16:16:49] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
-[16:16:49] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(255,216,0) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P3 | Imagen: 1024x726
-[16:16:49] Dealer result: P3, Position: Early, IsDealer: False, Players: 6
-[16:16:50] [PREFLOP] Aggressors set: P4(SmallBlind):3
-Hand #8885816935: Hold'em No Limit
+[16:02:41] Nueva mano detectada: Hand 8888010147, Pot: 1,50, HoleCards: 8c Jc
+[16:02:41] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:02:41] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(255,216,0) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P3 | Imagen: 1024x726
+[16:02:41] Dealer result: P3, Position: Early, IsDealer: False, Players: 6
+Hand #8888010147: Hold'em No Limit
 #P3 is the Dealer
 P4: posts small blind
 P5: posts big blind
-Pot: 7
+Pot: 1,50
 *** STATISTICS ***
 PotOdds: 0%
-Equity: 0%
+Equity: 35,1%
 Should Call: False
 *** HOLE CARDS ***
-Dealt to Hero [Ac As]
+Dealt to Hero [8c Jc]
 P0: bets/calls 0
+*** HERO ACTION ***
+Position: Early  |  Situation: OpenRaise
+Equity preflop: 35,1%
+▶ DECISIÓN: Fold
 
-[16:17:01] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
-[16:17:01] ProcessPostFlopAsync: Estado actual = FlopDetected
-[16:17:01] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
-[16:17:02] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
-[16:17:02] ═══ [FLOP] ═══════════════════════════════════════
-[16:17:02]   Hero: [Ac As]  Board: [2h 3h 2s]
-[16:17:02]   Pot: 29  |  Bet villano: 0 (NoBet)  |  Stack hero: 87  |  SPR: 3,0
-[16:17:02]   Situación: ThreeBet  |  Posición: IP  |  Oponentes: 1
-[16:17:02]   Equity: 90,1%  |  C-bet adj: +4,0  |  Equity efectiva: 94,1%  |  Pot odds: 0,0%
-[16:17:02]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Range advantage: No
-[16:17:02]   Board: Paired  |  Outs: 3  |  Draws: Overcards (1), Backdoor Straight Draw
-[16:17:02]   ▶ DECISIÓN: Bet 2/3 (Value)  —  Bet — value
-*** FLOP *** [2h 3h 2s][16:17:08] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
-[16:17:08] ProcessPostFlopAsync: Estado actual = FlopAction
-[16:17:08] ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: TurnAction
-[16:17:09] ProcessTurnAsync: Intento 1 - Cartas totales: 6
-[16:17:09] ═══ [TURN] ═══════════════════════════════════════
-[16:17:09]   Hero: [Ac As]  Board: [2h 3h 2s] + [Ts]
-[16:17:09]   Pot: 67  |  Bet villano: 0 (NoBet)  |  Stack hero: 68  |  SPR: 1,0
-[16:17:09]   Situación: ThreeBet  |  Posición: IP  |  Oponentes: 1
-[16:17:09]   Equity: 90,2%  |  Danger penalty: 13,0  |  Equity efectiva: 77,2%  |  Pot odds: 0,0%
-[16:17:09]   Mano hero: TwoPair  |  Agresor preflop: Sí  |  Hero blocks: No
-[16:17:09]   Board: Paired  |  Peligro: Flush draw, Board paired, Overcard  |  Outs: 2  |  Draws: Overcards (1)
-[16:17:09]   ▶ DECISIÓN: All-In (Value)  —  Push — SPR corto, polarizado (TwoPair)
-[16:17:30] Nueva mano detectada: Hand 8885817534, Pot: 4, HoleCards: Th 2c
-[16:17:30] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
-[16:17:31] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(255,216,0) p5dealer=RGB(41,41,41) | Detectado: P4 | Imagen: 1024x726
-[16:17:31] Dealer result: P4, Position: BigBlind, IsDealer: False, Players: 6
-[16:17:31] [PREFLOP] Aggressors set: P4(CutOff):2,50
-Hand #8885817534: Hold'em No Limit
+[16:03:48] Nueva mano detectada: Hand 88, Pot: 4,50, HoleCards: 6s 3c
+[16:03:48] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:03:49] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(255,216,0) p5dealer=RGB(41,41,41) | Detectado: P4 | Imagen: 1024x726
+[16:03:49] Dealer result: P4, Position: BigBlind, IsDealer: False, Players: 6
+[16:03:50] [PREFLOP] Aggressors set: P2(Button):3
+Hand #88: Hold'em No Limit
 #P4 is the Dealer
-P2: posts small blind
+P1: posts small blind
 P0: posts big blind
-Pot: 4
+Pot: 4,50
 *** STATISTICS ***
 PotOdds: 0%
-Equity: 0%
+Equity: 24,8%
 Should Call: False
 *** HOLE CARDS ***
-Dealt to Hero [Th 2c]
-P5: bets/calls 0
-P4: bets/calls 2,50
-P3: bets/calls 0
-P2: bets/calls 1
-P0: bets/calls 0
-
-[16:17:45] Nueva mano detectada: Hand 8885817557, Pot: 3, HoleCards: Tc 6h
-[16:17:45] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
-[16:17:46] Dealer scan: p0dealer=RGB(255,216,0) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P0 | Imagen: 1024x726
-[16:17:46] Dealer result: P0, Position: Button, IsDealer: True, Players: 6
-[16:17:46] [PREFLOP] Aggressors set: P5(CutOff):1,50
-Hand #8885817557: Hold'em No Limit
-#P0 is the Dealer
-P2: posts small blind
-P3: posts big blind
-Pot: 3
-*** STATISTICS ***
-PotOdds: 0%
-Equity: 0%
-Should Call: False
-*** HOLE CARDS ***
-Dealt to Hero [Tc 6h]
+Dealt to Hero [6s 3c]
+P5: bets/calls 0,50
 P4: bets/calls 0
-P5: bets/calls 1,50
+P3: bets/calls 0
+P2: bets/calls 3
+P1: bets/calls 0
 P0: bets/calls 0
+*** HERO ACTION ***
+Position: BigBlind  |  Situation: ThreeBet
+Equity preflop: 24,8%
+▶ DECISIÓN: Fold
+
+[16:04:07] Nueva mano detectada: Hand 8888010607, Pot: 1,50, HoleCards: Ac 8h
+[16:04:07] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:04:08] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(255,216,0) | Detectado: P5 | Imagen: 1024x726
+[16:04:08] Dealer result: P5, Position: SmallBlind, IsDealer: False, Players: 6
+Hand #8888010607: Hold'em No Limit
+#P5 is the Dealer
+P0: posts small blind
+P1: posts big blind
+Pot: 1,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 39,2%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [Ac 8h]
+P2: bets/calls 0
+P3: bets/calls 0
+P4: bets/calls 0
+P5: bets/calls 0
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: SmallBlind  |  Situation: OpenRaise
+Equity preflop: 39,2%
+▶ DECISIÓN: Open Raise x2.6
+
+[16:04:14] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:04:15] [PREFLOP] Aggressors set: P1(BigBlind):4
+Hand #8888010607: Hold'em No Limit
+#P5 is the Dealer
+P0: posts small blind
+P1: posts big blind
+Pot: 6,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 30,0%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [Ac 8h]
+P2: bets/calls 0
+P3: bets/calls 0
+P4: bets/calls 0
+P5: bets/calls 0
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: SmallBlind  |  Situation: OpenRaiseVs3Bet
+Equity preflop: 30,0%
+▶ DECISIÓN: Fold
+
+[16:04:21] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:04:21] ProcessPostFlopAsync: Estado actual = FlopDetected
+[16:04:21] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
+[16:04:22] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
+[16:04:22] ═══ [FLOP] ═══════════════════════════════════════
+[16:04:22]   Hero: [Ac 8h]  Board: [Js 8s 2d]
+[16:04:22]   Pot: 8  |  Bet villano: 0 (NoBet)  |  Stack hero: 105  |  SPR: 13,1
+[16:04:22]   Situación: OpenRaiseVs3Bet  |  Posición: OOP  |  Oponentes: 1
+[16:04:22]   Equity: 52,3%  |  C-bet adj: -3,0  |  Equity efectiva: 49,3%  |  Pot odds: 0,0%
+[16:04:22]   Mano hero: OnePair  |  Agresor preflop: No  |  Range advantage: No
+[16:04:22]   Board: Dry  |  Outs: 3  |  Draws: Overcards (1)
+[16:04:22]   ▶ DECISIÓN: Check  —  Check — thin value OOP (showdown)
+*** FLOP *** [Js 8s 2d][16:04:27] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:04:27] ProcessPostFlopAsync: Estado actual = FlopAction
+[16:04:27] ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: TurnAction
+[16:04:27] ProcessTurnAsync: Intento 1 - Cartas totales: 6
+[16:04:27] ═══ [TURN] ═══════════════════════════════════════
+[16:04:27]   Hero: [Ac 8h]  Board: [Js 8s 2d] + [7h]
+[16:04:27]   Pot: 8  |  Bet villano: 0 (NoBet)  |  Stack hero: 105  |  SPR: 13,1
+[16:04:27]   Situación: OpenRaiseVs3Bet  |  Posición: OOP  |  Oponentes: 1
+[16:04:27]   Equity: 54,9%  |  Danger penalty: 3,3  |  Equity efectiva: 51,6%  |  Pot odds: 0,0%
+[16:04:27]   Mano hero: OnePair (MiddlePair)  |  Agresor preflop: No  |  Hero blocks: No
+[16:04:27]   Board: Coordinated  |  Peligro: Flush draw  |  Outs: 3  |  Draws: Overcards (1)
+[16:04:27]   ▶ DECISIÓN: Check  —  Check — pot control, equity marginal en board volátil
+[16:04:34] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:04:34] ProcessPostFlopAsync: Estado actual = TurnAction
+[16:04:34] ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: TurnAction
+[16:04:35] ProcessTurnAsync: Intento 1 - Cartas totales: 7
+[16:04:35] ═══ [TURN] ═══════════════════════════════════════
+[16:04:35]   Hero: [Ac 8h]  Board: [Js 8s 2d] + [7h]
+[16:04:35]   Pot: 12  |  Bet villano: 4 (Medium)  |  Stack hero: 105  |  SPR: 8,8
+[16:04:35]   Situación: OpenRaiseVs3Bet  |  Posición: OOP  |  Oponentes: 1
+[16:04:35]   Equity: 56,0%  |  Danger penalty: 3,1  |  Equity efectiva: 52,8%  |  Pot odds: 25,0%
+[16:04:35]   Mano hero: TwoPair  |  Agresor preflop: No  |  Hero blocks: No
+[16:04:35]   Board: Paired  |  Peligro: Flush draw  |  Outs: 3  |  Draws: Overcards (1)
+[16:04:35]   ▶ DECISIÓN: Call  —  Call — pot odds marginales (implied factor=0,62)
+[16:04:45] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:04:46] ProcessPostFlopAsync: Estado actual = TurnAction
+[16:04:46] ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: RiverAction
+[16:04:46] ProcessRiverAsync: Intento 1 - Cartas totales: 7
+[16:04:46] ═══ [RIVER] ══════════════════════════════════════
+[16:04:46]   Hero: [Ac 8h]  Board: [Js 8s 2d] + [7h] + 
+[16:04:46]   Pot: 24  |  Bet villano: 593 (Large)  |  Stack hero: 101  |  SPR: 4,2
+[16:04:46]   Situación: OpenRaiseVs3Bet  |  Posición: OOP  |  Oponentes: 1
+[16:04:46]   Equity: 56,0%  |  Danger penalty: 9,5  |  Equity efectiva: 46,4%  |  Pot odds: 96,1%
+[16:04:46]   Mano hero: TwoPair  |  Agresor preflop: No  |  Hero blocks: No
+[16:04:46]   Board: Coordinated  |  Peligro: Flush draw, Board paired, Arrastrado del turn  |  Outs: 3  |  Draws: Overcards (1)
+[16:04:46]   ▶ DECISIÓN: Fold  —  Equity baja vs bet
+[16:05:16] Nueva mano detectada: Hand 8888011104, Pot: 6,50, HoleCards: Kh Kd
+[16:05:16] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:05:17] Dealer scan: p0dealer=RGB(255,216,0) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P0 | Imagen: 1024x726
+[16:05:17] Dealer result: P0, Position: Button, IsDealer: True, Players: 6
+[16:05:17] [PREFLOP] Aggressors set: P5(CutOff):2,50, P3(Early):2,50
+Hand #8888011104: Hold'em No Limit
+#P0 is the Dealer
+P1: posts small blind
+P2: posts big blind
+Pot: 6,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 63,3%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [Kh Kd]
+P3: bets/calls 2,50
+P4: bets/calls 0
+P5: bets/calls 2,50
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: Button  |  Situation: Squeeze
+Equity preflop: 63,3%
+▶ DECISIÓN: Squeeze x9
+
+[16:05:42] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:05:42] [PREFLOP] Aggressors set: P5(CutOff):2,50, P1(SmallBlind):15,50
+Hand #8888011104: Hold'em No Limit
+#P0 is the Dealer
+P1: posts small blind
+P2: posts big blind
+Pot: 30,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 63,3%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [Kh Kd]
+P3: bets/calls 2,50
+P4: bets/calls 0
+P5: bets/calls 2,50
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: Button  |  Situation: Squeeze
+Equity preflop: 63,3%
+▶ DECISIÓN: Squeeze x9
+
+[16:06:09] Nueva mano detectada: Hand 8888012724, Pot: 1,50, HoleCards: 6d Jh
+[16:06:09] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:06:09] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(255,216,0) p3dealer=RGB(47,44,44) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P2 | Imagen: 1024x726
+[16:06:09] Dealer result: P2, Position: CutOff, IsDealer: False, Players: 6
+Hand #8888012724: Hold'em No Limit
+#P2 is the Dealer
+P3: posts small blind
+P4: posts big blind
+Pot: 1,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 31,2%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [6d Jh]
+P5: bets/calls 0
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: CutOff  |  Situation: OpenRaise
+Equity preflop: 31,2%
+▶ DECISIÓN: Fold
+
+[16:07:04] Nueva mano detectada: Hand 8888012808, Pot: 1,50, HoleCards: 5d Ad
+[16:07:04] ProcessNewHand: Players.Count=1, cbTest=False, isTestPostflop=False
+[16:07:04] Dealer scan: p0dealer=RGB(44,44,44) p1dealer=RGB(46,46,46) p2dealer=RGB(46,46,46) p3dealer=RGB(255,216,0) p4dealer=RGB(45,45,45) p5dealer=RGB(41,41,41) | Detectado: P3 | Imagen: 1024x726
+[16:07:04] Dealer result: P3, Position: Early, IsDealer: False, Players: 6
+Hand #8888012808: Hold'em No Limit
+#P3 is the Dealer
+P4: posts small blind
+P5: posts big blind
+Pot: 1,50
+*** STATISTICS ***
+PotOdds: 0%
+Equity: 41,3%
+Should Call: False
+*** HOLE CARDS ***
+Dealt to Hero [5d Ad]
+P0: bets/calls 0
+*** HERO ACTION ***
+Position: Early  |  Situation: OpenRaise
+Equity preflop: 41,3%
+▶ DECISIÓN: Open Raise x2
+
+[16:07:24] ProcessNewHand: Players.Count=6, cbTest=False, isTestPostflop=False
+[16:07:24] ProcessPostFlopAsync: Estado actual = FlopDetected
+[16:07:24] ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: FlopAction
+[16:07:24] ProcessFlopAsync: Intento 1 - Cartas detectadas: 3, Flop cards: 3
+[16:07:24] ═══ [FLOP] ═══════════════════════════════════════
+[16:07:24]   Hero: [5d Ad]  Board: [Ah 7s Tc]
+[16:07:24]   Pot: 5  |  Bet villano: 0 (NoBet)  |  Stack hero: 212  |  SPR: 47,0
+[16:07:24]   Situación: OpenRaise  |  Posición: IP  |  Oponentes: 1
+[16:07:24]   Equity: 62,7%  |  C-bet adj: +12,0  |  Equity efectiva: 74,7%  |  Pot odds: 0,0%
+[16:07:24]   Mano hero: OnePair  |  Agresor preflop: Sí  |  Range advantage: Sí
+[16:07:24]   Board: Dry  |  Outs: 0  |  Draws: Ninguno
+[16:07:24]   ▶ DECISIÓN: Bet 2/3 (Value)  —  Bet — value (blocker, sizing mayor)
+*** FLOP *** [Ah 7s Tc]
 

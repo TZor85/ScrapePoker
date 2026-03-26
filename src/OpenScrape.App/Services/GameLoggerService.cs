@@ -22,6 +22,9 @@ public class GameLoggerService
     private int _sessionTotalHands;
     private decimal _sessionTotalProfit;
 
+    /// <summary>Big blind de la sesión activa (para calcular ciegas pagadas).</summary>
+    public decimal CurrentBigBlind => _currentSession?.BigBlind ?? 0.50m;
+
     public GameLoggerService(IDocumentStore store, ILogger<GameLoggerService> logger)
     {
         _store = store;
@@ -70,7 +73,8 @@ public class GameLoggerService
         string heroCard2,
         TablePosition heroPosition,
         decimal heroStack,
-        int numOpponents)
+        int numOpponents,
+        decimal blindPosted = 0)
     {
         if (_currentSession == null)
         {
@@ -89,7 +93,8 @@ public class GameLoggerService
             HeroCard2 = heroCard2,
             HeroPosition = heroPosition,
             HeroStackStart = heroStack,
-            NumOpponents = numOpponents
+            NumOpponents = numOpponents,
+            BlindPosted = blindPosted
         };
 
         _logger.LogInformation(

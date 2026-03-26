@@ -117,6 +117,46 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Enriquece una acción preflop con multiplicador (ej: "3Bet x6") añadiendo el monto en BB.
+        /// Ejemplo: villain apuesta 2.5BB, acción "3Bet x6" → "3Bet x6 (15BB)"
+        /// </summary>
+        private string EnrichActionWithBBAmount(string action)
+        {
+            if (string.IsNullOrEmpty(action) || !action.Contains('x'))
+                return action;
+
+            // Extraer el multiplicador del string (ej: "Open Raise x2.4" → 2.4)
+            var xIndex = action.LastIndexOf('x');
+            if (xIndex < 0 || xIndex >= action.Length - 1)
+                return action;
+
+            var multiplierStr = action[(xIndex + 1)..].Trim();
+            if (!double.TryParse(multiplierStr, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var multiplier) || multiplier <= 0)
+                return action;
+
+            // Calcular la base: la mayor bet del villano, o el BB si es open raise
+            decimal bigBlind = _gameLoggerService.CurrentBigBlind;
+            if (bigBlind <= 0) bigBlind = 0.50m;
+
+            decimal maxVillainBet = _playerGameState.Players
+                .Where(p => p.Name != "P0" && p.Bet > 0)
+                .Select(p => p.Bet)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            // Si no hay bet del villano (open raise), la base es el BB
+            decimal baseBet = maxVillainBet > 0 ? maxVillainBet : bigBlind;
+            decimal totalBet = baseBet * (decimal)multiplier;
+            decimal totalBB = bigBlind > 0 ? Math.Round(totalBet / bigBlind, 1) : 0;
+
+            if (totalBB > 0)
+                return $"{action} ({totalBB}BB)";
+
+            return action;
+        }
+
+        /// <summary>
         /// Verifica si un valor de canal B coincide con algún expected value dentro de tolerancia.
         /// </summary>
         private static bool IsColorMatch(int actualB, IEnumerable<int> expectedValues, int tolerance = 5)
@@ -1978,9 +2018,11 @@ namespace OpenScrape.App
                 });
 
                 dataBoard = riverResponse.DataBoard;
-                LogInformation($"ProcessRiverAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}");
+                // Contar solo cartas con nombre válido (no vacío)
+                int validCards = dataBoard.Count(d => !string.IsNullOrEmpty(d.Name));
+                LogInformation($"ProcessRiverAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}, válidas: {validCards}");
 
-                if (dataBoard.Count >= 5)
+                if (validCards >= 5)
                     break;
 
                 if (attempt < GameLoopStateMachine.MaxOcrRetries)
@@ -1990,9 +2032,10 @@ namespace OpenScrape.App
                 }
             }
 
-            if (dataBoard.Count < 5)
+            int finalValidCards = dataBoard.Count(d => !string.IsNullOrEmpty(d.Name));
+            if (finalValidCards < 5)
             {
-                LogError("No se detectó la carta del river tras reintentos.");
+                LogError($"No se detectó la carta del river tras reintentos (válidas={finalValidCards}/{dataBoard.Count}).");
                 _responseAction.Action = "Error: No se pudo detectar carta del river";
                 return;
             }
@@ -2080,13 +2123,23 @@ namespace OpenScrape.App
             if (long.TryParse(_tableHand, out var handNum))
             {
                 var activePlayers = _playerGameState?.Players?.Count(p => !p.Empty) ?? 0;
+
+                // Calcular ciega obligatoria según posición del hero
+                decimal blindPosted = prevPosition switch
+                {
+                    TablePosition.BigBlind => _gameLoggerService.CurrentBigBlind,
+                    TablePosition.SmallBlind => _gameLoggerService.CurrentBigBlind / 2,
+                    _ => 0
+                };
+
                 await _gameLoggerService.StartNewHandAsync(
                     handNum,
                     prevHoleCard1,
                     prevHoleCard2,
                     prevPosition,
                     prevHeroStack,
-                    activePlayers);
+                    activePlayers,
+                    blindPosted);
             }
 
             _folderPath = Path.Combine(
@@ -2143,7 +2196,7 @@ namespace OpenScrape.App
             _frmOverlay.UpdateSituacion(lbPositionAction.Text);
 
             if (_frmOverlay != null)
-                _frmOverlay.UpdateAction(_responseAction?.Action ?? string.Empty);
+                _frmOverlay.UpdateAction(EnrichActionWithBBAmount(_responseAction?.Action ?? string.Empty));
 
         }
 
@@ -2240,7 +2293,10 @@ namespace OpenScrape.App
             sb.AppendLine($"*** HERO ACTION ***");
             sb.AppendLine($"Position: {_playerGameState.Position}  |  Situation: {heroSituation}");
             sb.AppendLine($"Equity preflop: {preflopEquity:F1}%");
-            sb.AppendLine($"▶ DECISIÓN: {heroAction}");
+
+            // Enriquecer acción con BB amount si tiene multiplicador (ej: "3Bet x6" → "3Bet x6 (15BB)")
+            var displayAction = EnrichActionWithBBAmount(heroAction);
+            sb.AppendLine($"▶ DECISIÓN: {displayAction}");
 
             tbResume.AppendText(sb.ToString() + Environment.NewLine);
         }
@@ -2385,15 +2441,8 @@ namespace OpenScrape.App
                 var betValue = SetBetValue(scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
 
-                // Validación y limpieza de valores
-                if (betValue.ToString().Length > 2 &&
-                    !betValue.ToString().Contains(",") &&
-                    !betValue.ToString().Contains(".") &&
-                    betValue.ToString().Contains("88"))
-                {
-                    if (decimal.TryParse(betValue.ToString().Replace("88", ""), out var cleanBet))
-                        betValue = cleanBet;
-                }
+                // Normalizar: detecta decimal separator perdido (593 → 5,93), artefacto "8"
+                betValue = NormalizeBetValue(betValue, _playerGameState.PotSize);
 
                 if (playerNumber == 0)
                 {
@@ -2518,6 +2567,58 @@ namespace OpenScrape.App
             }
 
             // Sin separador decimal y valor razonable → valor entero, devolver tal cual
+            return rawValue;
+        }
+
+        /// <summary>
+        /// Normaliza valores de apuestas leídos por OCR.
+        /// Detecta: decimal separator perdido (593 → 5,93), artefacto "8" espurio,
+        /// valores absurdos respecto al pot size.
+        /// Las bets de poker típicas van de 0.25 a ~200 BB (threshold: 300 sin decimales = sospechoso).
+        /// </summary>
+        private decimal NormalizeBetValue(decimal rawValue, decimal potSize = 0)
+        {
+            if (rawValue <= 0)
+                return 0;
+
+            var rawStr = rawValue.ToString();
+            bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
+
+            // Artefacto OCR: "8" espurio al inicio (ej: "850" → "50", "815,50" → "15,50")
+            if (hasDecimalSeparator)
+            {
+                var separator = rawStr.Contains(',') ? ',' : '.';
+                var parts = rawStr.Split(separator);
+
+                if (parts[0].Length > 2 && parts[0][0] == '8')
+                {
+                    var corrected = parts[0][1..] + separator + parts[1];
+                    if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
+                    {
+                        Console.WriteLine($"[BET] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                        return correctedValue;
+                    }
+                }
+            }
+
+            // Separador decimal perdido: bet de 5.93 se lee como 593
+            // Heurística: si no tiene decimales y el valor es >= 300 (improbable en una bet normal),
+            // o si el valor > 5× pot (bet absurda), insertar separador 2 posiciones desde el final
+            bool suspiciouslyLarge = !hasDecimalSeparator && rawStr.Length >= 3 &&
+                (rawValue >= 300 || (potSize > 0 && rawValue > potSize * 5));
+
+            if (suspiciouslyLarge)
+            {
+                var corrected = rawStr[..^2] + "," + rawStr[^2..];
+                if (decimal.TryParse(corrected, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var correctedValue))
+                {
+                    Console.WriteLine($"[BET] OCR separador decimal perdido corregido: {rawStr} → {corrected} (pot={potSize})");
+                    return correctedValue;
+                }
+            }
+
             return rawValue;
         }
 
@@ -3377,48 +3478,67 @@ namespace OpenScrape.App
         /// <returns>Valor decimal de la apuesta</returns>
         private decimal SetBetValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
         {
-            // Validación de parámetros
             if (_formImage.pbImage.Image == null)
                 return 0;
 
-            using var firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                posX, posY, width, height,
-                umbral ?? 0,
-                isOnlyNumber ?? false);
+            OcrResult? firstOcr = null;
+            OcrResult? secondOcr = null;
 
-            using var secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                posX, posY, width, height,
-                inactiveUmbral ?? 0,
-                isOnlyNumber ?? false);
-
-            var result = string.Empty;
-
-            if (isOnlyNumber.HasValue == true)
+            try
             {
-                if (string.IsNullOrEmpty(firstOcr.Text))
-                    firstOcr.Text = "0";
+                // Lectura 1: con preprocesamiento + umbral principal
+                using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+                {
+                    firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                        preprocessed, 0, 0, width, height,
+                        umbral ?? 0, isOnlyNumber ?? false);
+                }
 
-                if (string.IsNullOrEmpty(secondOcr.Text))
-                    secondOcr.Text = "0";
+                // Lectura 2: con preprocesamiento + umbral inactivo
+                using (var preprocessed = PreprocessImageForOCR(_formImage.pbImage.Image, posX, posY, width, height))
+                {
+                    secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                        preprocessed, 0, 0, width, height,
+                        inactiveUmbral ?? 0, isOnlyNumber ?? false);
+                }
 
-                var ocr1 = decimal.TryParse(firstOcr.Text, out var v1) ? v1 : 0m;
-                var ocr2 = decimal.TryParse(secondOcr.Text, out var v2) ? v2 : 0m;
+                // Lectura 3: directa sin preprocesamiento (fallback)
+                using var thirdOcr = _ocrService.ExtractTextFromRegionAndDebug(
+                    _formImage.pbImage.Image, posX, posY, width, height,
+                    umbral ?? 0, isOnlyNumber ?? false);
 
-                // Usar confianza para elegir: si ambos tienen valor, preferir el de mayor confianza
-                if (ocr1 > 0 && ocr2 > 0 && firstOcr.Confidence >= 0 && secondOcr.Confidence >= 0)
-                    result = (firstOcr.Confidence >= secondOcr.Confidence ? ocr1 : ocr2).ToString();
-                else if (ocr2 >= ocr1)
-                    result = ocr2.ToString();
+                // Limpiar textos: solo dígitos y separadores decimales
+                var clean1 = CleanOcrNumericText(firstOcr.Text);
+                var clean2 = CleanOcrNumericText(secondOcr.Text);
+                var clean3 = CleanOcrNumericText(thirdOcr.Text);
+
+                decimal.TryParse(clean1, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr1);
+                decimal.TryParse(clean2, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr2);
+                decimal.TryParse(clean3, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.CurrentCulture, out var ocr3);
+
+                // Consenso: si 2+ lecturas coinciden, usar ese valor
+                decimal best;
+                if (ocr1 == ocr2 && ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr1 == ocr2)
+                    best = ocr1;
+                else if (ocr1 == ocr3)
+                    best = ocr1;
+                else if (ocr2 == ocr3)
+                    best = ocr2;
                 else
-                    result = ocr1.ToString();
+                    best = ocr3; // Sin consenso → preferir lectura directa
+
+                return best;
             }
-
-            if (decimal.TryParse(result, out var bet))
-                return bet;
-
-            return 0;
+            finally
+            {
+                firstOcr?.Dispose();
+                secondOcr?.Dispose();
+            }
         }
 
         /// <summary>
