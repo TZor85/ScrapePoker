@@ -34,7 +34,9 @@
       "Bash(grep:*)",
       "Bash(ls C:/Code/Poker/ScrapePoker/src/OpenScrape.App/Services/*.cs)",
       "Bash(wc:*)",
-      "Bash(dotnet format:*)"
+      "Bash(dotnet format:*)",
+      "Bash(ls -la /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)",
+      "Bash(ls -1 /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)"
     ]
   }
 }

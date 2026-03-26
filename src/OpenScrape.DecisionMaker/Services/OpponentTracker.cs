@@ -66,7 +66,7 @@ public class OpponentTracker
     /// <summary>
     /// Registra una acción postflop del oponente.
     /// </summary>
-    public void RecordPostflopAction(string playerId, PostflopAction action)
+    public void RecordPostflopAction(string playerId, PostflopAction action, bool? isVillainInPosition = null)
     {
         var profile = GetProfile(playerId);
         switch (action)
@@ -83,6 +83,24 @@ public class OpponentTracker
             case PostflopAction.Fold:
                 profile.TimesPostflopFolded++;
                 break;
+        }
+
+        // Trackear agresión por posición si se conoce
+        if (isVillainInPosition.HasValue)
+        {
+            bool isAggressive = action is PostflopAction.Bet or PostflopAction.Raise;
+            bool isPassive = action == PostflopAction.Call;
+
+            if (isVillainInPosition.Value)
+            {
+                if (isAggressive) profile.TimesAggressiveIP++;
+                else if (isPassive) profile.TimesPassiveIP++;
+            }
+            else
+            {
+                if (isAggressive) profile.TimesAggressiveOOP++;
+                else if (isPassive) profile.TimesPassiveOOP++;
+            }
         }
     }
 

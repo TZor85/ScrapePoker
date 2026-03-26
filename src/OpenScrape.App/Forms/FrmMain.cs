@@ -308,25 +308,34 @@ namespace OpenScrape.App
         /// <summary>
         /// Obtiene el tipo del villano activo para decisiones (Unknown si < 20 manos).
         /// </summary>
-        private OpponentType GetVillainType()
+        private OpponentType GetVillainType(bool? heroIsInPosition = null)
         {
             var villainId = GetActiveVillainId();
             if (villainId == "Unknown") return OpponentType.Unknown;
             var profile = _opponentTracker.GetProfile(villainId);
-            return profile.IsReliable ? profile.Type : OpponentType.Unknown;
+            if (!profile.HasReliablePreflopData) return OpponentType.Unknown;
+
+            // Usar AF posicional si sabemos la posición (villain IP = hero OOP y viceversa)
+            if (heroIsInPosition.HasValue)
+                return profile.GetTypeForPosition(!heroIsInPosition.Value);
+
+            return profile.Type;
         }
 
         /// <summary>
         /// Registra acciones de los villanos para tracking de oponente.
         /// </summary>
-        private void TrackVillainPostflopAction(decimal maxBet, bool isPreflopAggressor)
+        private void TrackVillainPostflopAction(decimal maxBet, bool isPreflopAggressor, bool? heroIsInPosition = null)
         {
             var villainId = GetActiveVillainId();
             if (villainId == "Unknown") return;
 
+            // Villain IP = hero OOP y viceversa
+            bool? villainIsIP = heroIsInPosition.HasValue ? !heroIsInPosition.Value : null;
+
             if (maxBet > 0)
             {
-                _opponentTracker.RecordPostflopAction(villainId, PostflopAction.Bet);
+                _opponentTracker.RecordPostflopAction(villainId, PostflopAction.Bet, villainIsIP);
                 if (isPreflopAggressor)
                     _opponentTracker.RecordCBetOpportunity(villainId, didCBet: true);
             }
@@ -1161,7 +1170,7 @@ namespace OpenScrape.App
             if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
             {
                 if (IsBoardCardVisible("Card4"))
-                    _gameLoopStateMachine.TryTransition(GameState.TurnDetected);
+                    _gameLoopStateMachine.TryTransition(GameState.TurnDetected, 4);
                 else
                 {
                     // Misma calle, reprocessar flop con info actualizada (pot y bets pueden haber cambiado)
@@ -1177,7 +1186,7 @@ namespace OpenScrape.App
             if (_gameLoopStateMachine.CurrentState == GameState.TurnAction)
             {
                 if (IsBoardCardVisible("Card5"))
-                    _gameLoopStateMachine.TryTransition(GameState.RiverDetected);
+                    _gameLoopStateMachine.TryTransition(GameState.RiverDetected, 5);
                 else
                 {
                     // Misma calle, reprocessar turn con info actualizada (pot y bets pueden haber cambiado)
@@ -1257,6 +1266,11 @@ namespace OpenScrape.App
             var inPosition = _playerGameState.IsInPosition;
             var maxBet = _playerGameState.Players.Max(m => m.Bet);
             var potSize = _playerGameState.PotSize;
+
+            // All-in detection
+            var villainStack = GetVillainStack();
+            if (maxBet > 0 && villainStack <= 0)
+                _postflopContext.IsAnyoneAllIn = true;
             var betSize = GetOpponentBetSize(maxBet, potSize);
             var texture = _riverBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
@@ -1304,12 +1318,13 @@ namespace OpenScrape.App
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
                 villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
                 villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
-                villainType: GetVillainType(),
+                villainType: GetVillainType(inPosition),
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
                 heroKickerStrength: _riverResult.HeroKickerStrength,
                 turnCalledWithFlushDanger: _postflopContext.TurnCalledWithFlushDanger,
                 heroBlocksTopCard: HeroBlocksTopBoardCard(),
-                heroCheckedAllStreets: _postflopContext.HeroCheckedAllStreets);
+                heroCheckedAllStreets: _postflopContext.HeroCheckedAllStreets,
+                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1593,6 +1608,11 @@ namespace OpenScrape.App
             var rawEquity = _flopResult.EquityPercentage;
             var inPosition = _playerGameState.IsInPosition;
             var maxBet = _playerGameState.Players.Max(m => m.Bet);
+
+            // All-in detection: villain apuesta todo su stack
+            var villainStack = GetVillainStack();
+            if (maxBet > 0 && villainStack <= 0)
+                _postflopContext.IsAnyoneAllIn = true;
             var potSize = _playerGameState.PotSize;
             var betSize = GetOpponentBetSize(maxBet, potSize);
 
@@ -1641,13 +1661,14 @@ namespace OpenScrape.App
                 hasComboDraw: _flopResult.HasComboDraw,
                 pairClassification: _flopResult.PairType,
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
-                villainType: GetVillainType(),
+                villainType: GetVillainType(inPosition),
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
                 heroKickerStrength: _flopResult.HeroKickerStrength,
-                heroBlocksTopCard: HeroBlocksTopBoardCard());
+                heroBlocksTopCard: HeroBlocksTopBoardCard(),
+                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
 
             // Tracking postflop del villano en flop
-            TrackVillainPostflopAction(maxBet, isPreflopAggressor);
+            TrackVillainPostflopAction(maxBet, isPreflopAggressor, inPosition);
 
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
             var draws = _flopResult.DrawTypes.Count > 0
@@ -1685,6 +1706,11 @@ namespace OpenScrape.App
             var inPosition = _playerGameState.IsInPosition;
             var maxBet = _playerGameState.Players.Max(m => m.Bet);
             var potSize = _playerGameState.PotSize;
+
+            // All-in detection
+            var villainStack = GetVillainStack();
+            if (maxBet > 0 && villainStack <= 0)
+                _postflopContext.IsAnyoneAllIn = true;
             var betSize = GetOpponentBetSize(maxBet, potSize);
             var texture = _turnBoardTexture.ToString();
             bool villainAggro = maxBet > 0;
@@ -1734,14 +1760,15 @@ namespace OpenScrape.App
                 pairClassification: _turnResult.PairType,
                 foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
                 villainBetSizeFlop: _postflopContext.VillainBetSizeFlop,
-                villainType: GetVillainType(),
+                villainType: GetVillainType(inPosition),
                 heroFloatedFlop: _postflopContext.HeroFloatedFlop,
                 villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
                 heroKickerStrength: _turnResult.HeroKickerStrength,
-                heroBlocksTopCard: HeroBlocksTopBoardCard());
+                heroBlocksTopCard: HeroBlocksTopBoardCard(),
+                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
 
             // Tracking postflop del villano en turn
-            TrackVillainPostflopAction(maxBet, turnIsAggressor);
+            TrackVillainPostflopAction(maxBet, turnIsAggressor, inPosition);
 
             double effectiveEquity = equity - dangerPenalty;
             double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
@@ -3921,7 +3948,7 @@ namespace OpenScrape.App
                                 // Detección de flop mejorada
                                 if (detectionResult.ShouldCaptureFlop)
                                 {
-                                    _gameLoopStateMachine.TryTransition(GameState.FlopDetected);
+                                    _gameLoopStateMachine.TryTransition(GameState.FlopDetected, 3);
                                     _detectionLoggerService.LogTurnDetected(
                                         new Point(regionAction.PosX, regionAction.PosY),
                                         detectionResult.ActionColor,
@@ -5270,6 +5297,7 @@ namespace OpenScrape.App
             dgvSessionHands.CellDoubleClick += DgvSessionHands_CellDoubleClick;
             dgvSessions.CellFormatting += DgvSessions_CellFormatting;
             dgvSessionHands.CellFormatting += DgvSessionHands_CellFormatting;
+            btnBacktest.Click += BtnBacktest_Click;
         }
 
         /// <summary>
@@ -5413,6 +5441,50 @@ namespace OpenScrape.App
                     e.CellStyle.ForeColor = AppThemeHelper.Success;
                 else if (val.StartsWith('-'))
                     e.CellStyle.ForeColor = AppThemeHelper.Danger;
+            }
+        }
+
+        /// <summary>
+        /// Ejecuta backtest A/B comparando decisiones históricas con el motor actual.
+        /// </summary>
+        private async void BtnBacktest_Click(object? sender, EventArgs e)
+        {
+            btnBacktest.Enabled = false;
+            btnBacktest.Text = "Analizando...";
+
+            try
+            {
+                // Cargar todas las manos disponibles
+                var hands = await _gameLoggerService.GetRecentHandsAsync(500);
+
+                if (hands == null || hands.Count == 0)
+                {
+                    MessageBox.Show("No hay manos en el historial para analizar.",
+                        "Backtest", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                // Determinar BigBlind de la sesión
+                decimal bigBlind = _loadedSessions?.FirstOrDefault()?.BigBlind ?? 0.50m;
+
+                // Ejecutar backtest
+                var backtester = new DecisionMaker.Services.StrategyBacktester(_postflopDecisionService);
+                var result = backtester.RunBacktest(hands, bigBlind);
+
+                // Mostrar resultado en popup
+                var msg = result.ToString();
+                MessageBox.Show(msg, $"Backtest A/B — {hands.Count} manos",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error en backtest: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                btnBacktest.Enabled = true;
+                btnBacktest.Text = "Backtest A/B";
             }
         }
 

@@ -145,6 +145,7 @@
             lblManosTitle = new Label();
             dgvSessionHands = new DataGridView();
             lblSessionStats = new Label();
+            btnBacktest = new Button();
             lbNamePlayerOne = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
@@ -1346,6 +1347,7 @@
             // tpHistorial
             //
             tpHistorial.Controls.Add(splitHistorialLeft);
+            tpHistorial.Controls.Add(btnBacktest);
             tpHistorial.Controls.Add(lblSessionStats);
             tpHistorial.Location = new Point(4, 24);
             tpHistorial.Name = "tpHistorial";
@@ -1425,9 +1427,19 @@
             lblSessionStats.Dock = DockStyle.Bottom;
             lblSessionStats.Location = new Point(0, 362);
             lblSessionStats.Name = "lblSessionStats";
-            lblSessionStats.Size = new Size(569, 30);
+            lblSessionStats.Size = new Size(449, 30);
             lblSessionStats.TabIndex = 1;
             lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
+            //
+            // btnBacktest
+            //
+            btnBacktest.Dock = DockStyle.Bottom;
+            btnBacktest.Location = new Point(449, 362);
+            btnBacktest.Name = "btnBacktest";
+            btnBacktest.Size = new Size(120, 30);
+            btnBacktest.TabIndex = 2;
+            btnBacktest.Text = "Backtest A/B";
+            btnBacktest.UseVisualStyleBackColor = true;
             //
             // lbNamePlayerOne
             // 
@@ -1640,5 +1652,6 @@
         private Label lblManosTitle;
         private DataGridView dgvSessionHands;
         private Label lblSessionStats;
+        private Button btnBacktest;
     }
 }

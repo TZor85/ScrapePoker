@@ -3342,8 +3342,9 @@ public class PostflopDecisionServiceTests
     public void ThinValue_TPWK_IP_DeberiaBet()
     {
         // OnePair con Weak kicker pero IP → aún puede bet thin value
+        // Equity 50: > ThinValueAbove(45) + RandomizationMargin(3) para evitar zona random
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
