@@ -92,6 +92,12 @@ namespace OpenScrape.App
         private string _tableName = string.Empty;
         private long _newTableHand;
         private bool _newHand;
+        /// <summary>
+        /// Stack del hero antes del auto-rebuy. Se actualiza durante la mano activa
+        /// y NO se actualiza cuando se detecta un rebuy (stack sube bruscamente).
+        /// Usado para calcular el profit real de la mano.
+        /// </summary>
+        private decimal _heroStackPreRebuy;
         private string _dealerPosition = "";
         private int _dealerValuePosition = -1;
         private string _previousDealerPlayerName = "";
@@ -489,7 +495,10 @@ namespace OpenScrape.App
                 try
                 {
                     if (_gameLoggerService.HasActiveHand)
-                        _gameLoggerService.EndHand(_playerGameState?.HeroStack ?? 0);
+                    {
+                        var closingStack = _heroStackPreRebuy > 0 ? _heroStackPreRebuy : (_playerGameState?.HeroStack ?? 0);
+                        _gameLoggerService.EndHand(closingStack);
+                    }
 
                     if (_gameLoggerService.HasActiveSession)
                         await _gameLoggerService.SaveSessionAsync();
@@ -839,7 +848,8 @@ namespace OpenScrape.App
                     var prevHoleCard1 = _playerGameState?.HoleCard1Face ?? string.Empty;
                     var prevHoleCard2 = _playerGameState?.HoleCard2Face ?? string.Empty;
                     var prevPosition = _playerGameState?.Position ?? TablePosition.None;
-                    var prevHeroStack = _playerGameState?.HeroStack ?? 0;
+                    // Usar stack pre-rebuy para calcular profit real (auto-rebuy a 100BB no contamina)
+                    var prevHeroStack = _heroStackPreRebuy > 0 ? _heroStackPreRebuy : (_playerGameState?.HeroStack ?? 0);
 
                     // Guardar estado postflop ANTES de resetear PlayerGameState, si aplica.
                     // Solo se guarda si es la misma mano (mismo hand number).
@@ -862,6 +872,7 @@ namespace OpenScrape.App
                     _frmOverlay?.ClearAll();
                     _playerGameState = new PlayerGameState();
                     _responseAction = new ResponseAction();
+                    _heroStackPreRebuy = 0; // Reset para nueva mano
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
                     _dealerValuePosition = -1;
                     _dealerPosition = string.Empty;
@@ -2431,6 +2442,23 @@ namespace OpenScrape.App
                 LogError($"[STACK] OCR falló tras reintentos, manteniendo valor anterior: {_playerGameState.HeroStack}");
                 lbUserStack.Text = _playerGameState.HeroStack.ToString();
                 return;
+            }
+
+            // Detección de auto-rebuy: si el stack sube más de lo que el pot podría explicar,
+            // es un auto-rebuy a 100BB. No actualizar _heroStackPreRebuy en ese caso.
+            bool isHandActive = !_gameLoopStateMachine.IsWaiting && !_gameLoopStateMachine.IsHandComplete;
+            decimal previousStack = _playerGameState.HeroStack;
+            decimal maxPossibleWin = previousStack + _playerGameState.PotSize;
+
+            if (isHandActive && previousStack > 0 && stackValue > maxPossibleWin + 1)
+            {
+                // Auto-rebuy detectado: stack subió más de lo posible por ganar el pot
+                Console.WriteLine($"[STACK] Auto-rebuy detectado: {previousStack} → {stackValue} (pot={_playerGameState.PotSize})");
+            }
+            else if (isHandActive && stackValue > 0)
+            {
+                // Stack normal durante mano activa: actualizar pre-rebuy tracker
+                _heroStackPreRebuy = stackValue;
             }
 
             _playerGameState.HeroStack = stackValue;
