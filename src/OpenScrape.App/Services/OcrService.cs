@@ -243,11 +243,12 @@ public class OcrService
                             imageData = invertedMs.ToArray();
                         }
 
-                        // Procesar OCR
+                        // Procesar OCR con scoring de confianza
                         using (var img = Pix.LoadFromMemory(imageData))
                         using (var page = _engine.Process(img))
                         {
                             var text = ProcessText(page.GetText().Trim());
+                            var confidence = page.GetMeanConfidence();
 
                             // Cache the result — LruCache descarta la entrada menos usada al superar la capacidad
                             _ocrCache.Set(hash, text);
@@ -258,7 +259,8 @@ public class OcrService
                                 result = new OcrResult
                                 {
                                     Text = text,
-                                    Image = new Bitmap(ms)
+                                    Image = new Bitmap(ms),
+                                    Confidence = confidence
                                 };
                             }
                         }
@@ -402,6 +404,16 @@ public class OcrResult : IDisposable
 {
     public string? Text { get; set; }
     public Bitmap? Image { get; set; }
+
+    /// <summary>
+    /// Confianza media de Tesseract (0.0 a 1.0). -1 si no disponible (cache hit).
+    /// </summary>
+    public float Confidence { get; set; } = -1;
+
+    /// <summary>
+    /// Indica si la confianza del OCR es suficiente para confiar en el resultado.
+    /// </summary>
+    public bool IsHighConfidence => Confidence < 0 || Confidence >= 0.70f;
 
     public void Dispose()
     {

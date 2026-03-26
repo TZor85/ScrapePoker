@@ -114,7 +114,10 @@ public class OpponentTracker
     public double GetAdjustedFoldEquity(string playerId, double baseFoldEquity)
     {
         var profile = GetProfile(playerId);
-        if (!profile.IsReliable)
+
+        // Usar HasReliableAFData (>= 10 acciones) en vez de IsReliable (>= 20 manos)
+        // Permite ajustar fold equity antes cuando hay datos de agresión suficientes
+        if (!profile.HasReliableAFData)
             return baseFoldEquity;
 
         return profile.Type switch
@@ -134,8 +137,9 @@ public class OpponentTracker
     public double GetFoldToBetPct(string playerId)
     {
         var profile = GetProfile(playerId);
+        // Usar HasReliableFoldData (>= 8 acciones) en vez de hardcoded 10
+        if (!profile.HasReliableFoldData) return -1;
         int totalFacingAction = profile.TimesPostflopFolded + profile.TimesPostflopCalled + profile.TimesPostflopRaised;
-        if (totalFacingAction < 10) return -1;
         return (double)profile.TimesPostflopFolded / totalFacingAction * 100.0;
     }
 

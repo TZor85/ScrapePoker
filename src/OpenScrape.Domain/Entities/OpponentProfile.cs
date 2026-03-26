@@ -82,9 +82,33 @@ public class OpponentProfile
     }
 
     /// <summary>
-    /// Mínimo de manos necesario para considerar las estadísticas fiables.
+    /// Mínimo de manos necesario para considerar el perfil global fiable.
     /// </summary>
     public bool IsReliable => HandsPlayed >= 20;
+
+    /// <summary>
+    /// Datos de C-bet fiables: al menos 5 oportunidades de c-bet vistas.
+    /// Permite usar CBetPct y FoldToCBetPct antes de 20 manos.
+    /// </summary>
+    public bool HasReliableCBetData => TimesCBetOpportunity >= 5 && TimesFacedCBet >= 5;
+
+    /// <summary>
+    /// Datos de agresión fiables: al menos 10 acciones postflop (bet/raise/call).
+    /// Permite usar AggressionFactor antes de 20 manos.
+    /// </summary>
+    public bool HasReliableAFData =>
+        (TimesPostflopBet + TimesPostflopRaised + TimesPostflopCalled) >= 10;
+
+    /// <summary>
+    /// Datos de fold to bet fiables: al menos 8 situaciones facing action.
+    /// </summary>
+    public bool HasReliableFoldData =>
+        (TimesPostflopFolded + TimesPostflopCalled + TimesPostflopRaised) >= 8;
+
+    /// <summary>
+    /// Datos de VPIP/PFR fiables: al menos 10 manos (más rápido que IsReliable).
+    /// </summary>
+    public bool HasReliablePreflopData => HandsPlayed >= 10;
 }
 
 public enum OpponentType

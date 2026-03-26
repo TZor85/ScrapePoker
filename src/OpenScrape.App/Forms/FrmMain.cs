@@ -3343,10 +3343,13 @@ namespace OpenScrape.App
                 if (string.IsNullOrEmpty(secondOcr.Text))
                     secondOcr.Text = "0";
 
-                var ocr1 = decimal.Parse(firstOcr.Text);
-                var ocr2 = decimal.Parse(secondOcr.Text);
+                var ocr1 = decimal.TryParse(firstOcr.Text, out var v1) ? v1 : 0m;
+                var ocr2 = decimal.TryParse(secondOcr.Text, out var v2) ? v2 : 0m;
 
-                if (ocr2 >= ocr1)
+                // Usar confianza para elegir: si ambos tienen valor, preferir el de mayor confianza
+                if (ocr1 > 0 && ocr2 > 0 && firstOcr.Confidence >= 0 && secondOcr.Confidence >= 0)
+                    result = (firstOcr.Confidence >= secondOcr.Confidence ? ocr1 : ocr2).ToString();
+                else if (ocr2 >= ocr1)
                     result = ocr2.ToString();
                 else
                     result = ocr1.ToString();
@@ -3570,8 +3573,8 @@ namespace OpenScrape.App
                 umbral ?? 0,
                 isOnlyNumber ?? false);
 
-            // Si no se obtiene texto, intentar con umbral inactivo
-            if (string.IsNullOrEmpty(ocr.Text))
+            // Si no se obtiene texto O confianza baja, intentar con umbral inactivo
+            if (string.IsNullOrEmpty(ocr.Text) || !ocr.IsHighConfidence)
             {
                 using var ocrRetry = _ocrService.ExtractTextFromRegionAndDebug(
                     _formImage.pbImage.Image,
@@ -3579,7 +3582,10 @@ namespace OpenScrape.App
                     inactiveUmbral ?? 0,
                     isOnlyNumber ?? false);
 
-                return ocrRetry.Text ?? string.Empty;
+                // Usar retry solo si mejora la confianza o tiene texto cuando original no tenía
+                if (!string.IsNullOrEmpty(ocrRetry.Text) &&
+                    (string.IsNullOrEmpty(ocr.Text) || ocrRetry.Confidence > ocr.Confidence))
+                    return ocrRetry.Text;
             }
 
             return ocr.Text ?? string.Empty;

@@ -1428,9 +1428,9 @@ public class PostflopDecisionServiceTests
     public void DoubleBarrel_HeroBetFlop_EquityMarginal_DeberiaBarrel()
     {
         // Turn_OpenRaise: FoldBelow=45, ThinValueAbove=45, ValueAbove=55
-        // Equity 48: > ThinValueAbove(45), < ValueAbove(55), previousStreetBet → thin value con IsBarrel
+        // Equity 50: > ThinValueAbove(45) + RandomizationMargin(3), < ValueAbove(55) → thin value con IsBarrel
         var result = _service.DetermineAction(
-            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             previousStreetBet: true, heroIsAggressor: true);
 
