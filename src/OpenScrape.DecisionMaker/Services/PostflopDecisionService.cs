@@ -110,7 +110,8 @@ public class PostflopDecisionService
         KickerStrength heroKickerStrength = KickerStrength.None,
         bool turnCalledWithFlushDanger = false,
         bool heroBlocksTopCard = false,
-        bool heroCheckedAllStreets = false)
+        bool heroCheckedAllStreets = false,
+        bool isAnyoneAllIn = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -143,10 +144,15 @@ public class PostflopDecisionService
         }
 
         // Reverse implied odds: penalizar calls en turn con mano vulnerable en board con draws
-        double reverseImpliedPenalty = CalculateReverseImpliedOdds(
+        // All-in: desactivar reverse implied (villain no puede apostar más)
+        double reverseImpliedPenalty = isAnyoneAllIn ? 0 : CalculateReverseImpliedOdds(
             boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification,
             heroBlocksDangerSuit);
         effectiveEquity -= reverseImpliedPenalty;
+
+        // All-in: desactivar fold equity (villain no puede foldear)
+        if (isAnyoneAllIn)
+            foldEquity = 0;
 
         // Modo simplificado (RaiseOverLimper)
         if (thresholds.IsSimplified)
@@ -182,18 +188,49 @@ public class PostflopDecisionService
                 adjustedFoldBelow += PokerConstants.VillainAggressionPenalty;
         }
 
-        // Multi-way penalty: IP puede aislar, OOP muy vulnerable
+        // Multi-way penalty: IP lineal, OOP cuadrático + street multiplier
         if (isMultiway)
         {
             int extraOpponents = numOpponents - 1;
-            double multiwayFoldPenalty = isInPosition
-                ? PokerConstants.MultiwayFoldBelowIP
-                : PokerConstants.MultiwayFoldBelowOOP;
-            double multiwayValuePenalty = isInPosition
-                ? PokerConstants.MultiwayThinValueIP
-                : PokerConstants.MultiwayThinValueOOP;
-            adjustedFoldBelow += extraOpponents * multiwayFoldPenalty;
-            adjustedThinValueAbove += extraOpponents * multiwayValuePenalty;
+
+            // Street multiplier: turn/river multiway más peligroso (ranges más estrechas)
+            double streetMult = street switch
+            {
+                BoardPosition.Turn => _profile.MultiwayStreetMultiplierTurn,
+                BoardPosition.River => _profile.MultiwayStreetMultiplierRiver,
+                _ => 1.0
+            };
+
+            double multiwayFoldPenalty;
+            double multiwayValuePenalty;
+
+            if (isInPosition)
+            {
+                // IP: lineal (como antes)
+                multiwayFoldPenalty = extraOpponents * PokerConstants.MultiwayFoldBelowIP;
+                multiwayValuePenalty = extraOpponents * PokerConstants.MultiwayThinValueIP;
+            }
+            else
+            {
+                // OOP: cuadrático (exponencialmente peor con más villanos detrás)
+                multiwayFoldPenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayFoldBelowOOP * 0.5;
+                multiwayValuePenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayThinValueOOP * 0.5;
+            }
+
+            adjustedFoldBelow += multiwayFoldPenalty * streetMult;
+            adjustedThinValueAbove += multiwayValuePenalty * streetMult;
+        }
+
+        // 3-Bet/4-Bet pot: rango villano más estrecho → umbrales más estrictos
+        if (situation is HandSituation.ThreeBet or HandSituation.OpenRaiseVs3Bet or HandSituation.Squeeze)
+        {
+            adjustedFoldBelow += _profile.ThreeBetPostflopFoldIncrease;
+            adjustedThinValueAbove += _profile.ThreeBetPostflopValueIncrease;
+        }
+        else if (situation == HandSituation.FourBet)
+        {
+            adjustedFoldBelow += _profile.FourBetPostflopFoldIncrease;
+            adjustedThinValueAbove += _profile.FourBetPostflopValueIncrease;
         }
 
         // Agresor vs caller
@@ -555,9 +592,14 @@ public class PostflopDecisionService
         bool ipTrap = isInPosition && hasStrongMade && !isMultiway &&
             boardTexture != "Wet" && boardTexture != "Monotone";
 
+        // SPR guard: si check-raise compromete el stack, exigir equity premium
+        double checkRaiseSPR = heroStack > 0 && potSize > 0 ? (double)(heroStack / potSize) : 99;
+        bool lowSPRBlocksCheckRaise = checkRaiseSPR < _profile.CheckRaiseSPRMinThreshold &&
+            equity < _profile.CheckRaiseLowSPRMinEquity;
+
         if (thresholds.CanCheckRaise && !isMultiway &&
             equity > thresholds.CheckRaiseThreshold &&
-            !heroIsAggressor)
+            !heroIsAggressor && !lowSPRBlocksCheckRaise)
         {
             // OOP: check-raise con mano fuerte o draw fuerte (prioridad)
             if (!isInPosition && (hasStrongMade || hasStrongDraw))
@@ -597,9 +639,30 @@ public class PostflopDecisionService
                 $"Slow play — {heroHandRank} en board seco{(street == BoardPosition.Turn ? " (turn)" : "")}, inducir bluff");
         }
 
-        // Float exit: hero floateó flop → debe apostar turn si villano chequea
+        // Float exit: hero floateó flop → apostar turn si villano chequea Y runout es favorable
         if (heroFloatedFlop && street == BoardPosition.Turn && !isMultiway)
         {
+            // Si hero mejoró a pair+ → value bet, ya no es float exit bluff
+            if (heroHandRank >= HandRank.OnePair)
+            {
+                var valueBet = AdjustBetSizeForSPR("Bet 1/2", heroStack, potSize, street);
+                return new PostflopDecisionResult(
+                    valueBet + " (Value)",
+                    $"Bet — value (mejoró a {heroHandRank} tras float)");
+            }
+
+            // Bad runout → abort float exit
+            bool badRunout = boardChange != null &&
+                (boardChange.OvercardAppeared ||
+                 (boardChange.FlushCompleted && !heroBlocksDangerSuit) ||
+                 boardChange.StraightCompleted);
+
+            if (badRunout)
+            {
+                return new PostflopDecisionResult("Check",
+                    "Float exit abortado — bad runout");
+            }
+
             var floatBet = AdjustBetSizeForSPR("Bet 1/2", heroStack, potSize, street);
             return new PostflopDecisionResult(
                 floatBet + " (Float Exit)",
@@ -771,11 +834,13 @@ public class PostflopDecisionService
                 if (heroHandRank == HandRank.OnePair && heroKickerStrength == KickerStrength.Strong)
                     betSize = IncreaseBetSize(betSize);
                 betSize = AdjustBetSizeForSPR(betSize, heroStack, potSize, street);
+                bool isBarrel = previousStreetBet && (street == BoardPosition.Turn || street == BoardPosition.River);
                 return new PostflopDecisionResult(
                     betSize + " (Thin Value)",
                     heroKickerStrength == KickerStrength.Strong
                         ? "Bet — thin value (kicker fuerte)"
-                        : "Bet — thin value");
+                        : "Bet — thin value",
+                    IsBarrel: isBarrel);
             }
 
             return new PostflopDecisionResult("Check", "Check — thin value OOP (showdown)");
@@ -894,11 +959,25 @@ public class PostflopDecisionService
 
         double spr = (double)(heroStack / potSize);
 
+        // Interpolación suave en zona push/fold (SPR < threshold)
         if (spr < _profile.SPRPushFoldThreshold)
-            return (-_profile.SPRPushFoldFoldReduction, _profile.SPRPushFoldValueIncrease, true);
+        {
+            // factor va de 1.0 (SPR=0) a 0.0 (SPR=threshold)
+            double factor = 1.0 - spr / _profile.SPRPushFoldThreshold;
+            double foldAdj = -_profile.SPRPushFoldFoldReduction * factor;
+            double valueAdj = _profile.SPRPushFoldValueIncrease * factor;
+            // isPushFold solo en mitad inferior de la zona (SPR muy corto)
+            bool isPF = spr < _profile.SPRPushFoldThreshold * 0.5;
+            return (foldAdj, valueAdj, isPF);
+        }
 
+        // Interpolación suave en zona deep (SPR > threshold)
         if (spr > _profile.SPRDeepCautionThreshold)
-            return (_profile.SPRDeepFoldIncrease, 0, false);
+        {
+            // factor va de 0.0 (SPR=threshold) a 1.0 (SPR=threshold+2)
+            double factor = Math.Min((spr - _profile.SPRDeepCautionThreshold) / 2.0, 1.0);
+            return (_profile.SPRDeepFoldIncrease * factor, 0, false);
+        }
 
         return (0, 0, false);
     }

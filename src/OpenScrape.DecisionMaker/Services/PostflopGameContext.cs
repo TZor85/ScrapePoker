@@ -49,6 +49,12 @@ public class PostflopGameContext
     public bool HeroCheckedAllStreets => !HeroBetFlop && !HeroBetTurn;
 
     /// <summary>
+    /// Algún oponente ya comprometió todo su stack (all-in).
+    /// Desactiva fold equity y reverse implied odds para ese jugador.
+    /// </summary>
+    public bool IsAnyoneAllIn { get; set; }
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
@@ -79,6 +85,7 @@ public class PostflopGameContext
         VillainCheckedMiddleStreet = false;
         HeroFloatedFlop = false;
         TurnCalledWithFlushDanger = false;
+        IsAnyoneAllIn = false;
         VillainBetSizeFlop = BetSizeCategory.NoBet;
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;

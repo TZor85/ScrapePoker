@@ -1331,11 +1331,11 @@ public class PostflopDecisionServiceTests
     [Test]
     public void SPRCorto_FacingBet_DeberiaAllIn()
     {
-        // SPR 1.5 < 2.0, equity 60 > ValueAbove(55), OnePair → All-In
+        // SPR 0.8 < 1.0 (mitad inferior push/fold), equity 60, OnePair → All-In
         var result = _service.DetermineAction(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair);
 
         Assert.That(result.Action, Does.Contain("All-In"));
     }
@@ -1343,11 +1343,11 @@ public class PostflopDecisionServiceTests
     [Test]
     public void SPRCorto_NoBet_DeberiaAllIn()
     {
-        // SPR 1.5, sin facing bet, equity > ValueAbove → All-In push
+        // SPR 0.8, sin facing bet, equity > ValueAbove → All-In push
         var result = _service.DetermineAction(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair);
 
         Assert.That(result.Action, Does.Contain("All-In"));
     }
@@ -1355,12 +1355,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void SPRCorto_HighCard_PushSiEVPositivo()
     {
-        // SPR 1.5, equity 60% → EV = 0.60×(10+30) - 0.40×15 = 18 > 0 → All-In
+        // SPR 0.8, equity 60% → EV positivo → All-In
         // S8.1: push/fold ahora basado en EV, no en HandRank
         var result = _service.DetermineAction(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 15, potSize: 10, heroHandRank: HandRank.HighCard);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.HighCard);
 
         Assert.That(result.Action, Does.Contain("All-In"),
             "SPR corto con EV positivo → all-in aunque sea HighCard");
@@ -1427,18 +1427,15 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DoubleBarrel_HeroBetFlop_EquityMarginal_DeberiaBarrel()
     {
-        // Turn_Call: FoldBelow=40, ThinValueAbove=40, ValueAbove=55
-        // Equity 42: > FoldBelow(40), > ThinValueAbove(40) → thin value primero
-        // Necesitamos equity en [FoldBelow, ThinValueAbove) para barrel, pero son iguales
-        // Usamos Turn_ThreeBet: FoldBelow=40, ThinValueAbove=45, ValueAbove=55
-        // Equity 42: > FoldBelow(40), < ThinValueAbove(45), < ValueAbove(55) → barrel range
+        // Turn_OpenRaise: FoldBelow=45, ThinValueAbove=45, ValueAbove=55
+        // Equity 48: > ThinValueAbove(45), < ValueAbove(55), previousStreetBet → thin value con IsBarrel
         var result = _service.DetermineAction(
-            equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
+            equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             previousStreetBet: true, heroIsAggressor: true);
 
-        Assert.That(result.IsBarrel, Is.True);
-        Assert.That(result.Action, Does.Contain("Barrel"));
+        Assert.That(result.IsBarrel, Is.True,
+            $"Esperado barrel pero fue: {result.Action} — {result.Reason}");
     }
 
     [Test]
@@ -2250,16 +2247,16 @@ public class PostflopDecisionServiceTests
     [Test]
     public void PushFold_EVPositivo_SinPar_DeberiaAllIn()
     {
-        // SPR 1.2, equity 42%, pot 100, stack 120 → EV = 0.42×(100+240) - 0.58×120 = 73.2
+        // SPR 0.6, equity 42%, pot 100, stack 60 → EV positivo → All-In
         var result = _service.DetermineAction(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 120, potSize: 100,
+            heroStack: 60, potSize: 100,
             heroHandRank: HandRank.HighCard);
 
         Assert.That(result.Action, Does.Contain("All-In"),
-            "SPR 1.2, equity 42% → EV all-in positivo, debería all-in sin par");
+            "SPR 0.6, equity 42% → EV all-in positivo, debería all-in sin par");
     }
 
     [Test]

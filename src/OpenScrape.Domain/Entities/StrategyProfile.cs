@@ -109,6 +109,20 @@ public class StrategyProfile
     public double SPRDeepCautionThreshold { get; set; } = 4.0;
     public double SPRDeepFoldIncrease { get; set; } = 3.0;
 
+    // Multiway street multipliers (turn/river más peligroso en multiway)
+    public double MultiwayStreetMultiplierTurn { get; set; } = 1.2;
+    public double MultiwayStreetMultiplierRiver { get; set; } = 1.4;
+
+    // 3-Bet/4-Bet pot postflop adjustments (rango villano más estrecho)
+    public double ThreeBetPostflopFoldIncrease { get; set; } = 5.0;
+    public double ThreeBetPostflopValueIncrease { get; set; } = 3.0;
+    public double FourBetPostflopFoldIncrease { get; set; } = 8.0;
+    public double FourBetPostflopValueIncrease { get; set; } = 5.0;
+
+    // Check-raise SPR guard (no check-raise cuando SPR compromete el stack)
+    public double CheckRaiseSPRMinThreshold { get; set; } = 1.5;
+    public double CheckRaiseLowSPRMinEquity { get; set; } = 60.0;
+
     // Reverse Implied Odds (penalización en turn al facing bet con mano vulnerable en board con draws)
     public double ReverseImpliedFlushDrawPenalty { get; set; } = 7.0;
     public double ReverseImpliedCoordinatedPenalty { get; set; } = 4.0;
