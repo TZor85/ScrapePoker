@@ -255,6 +255,15 @@ public class PostflopDecisionService
                 adjustedFoldBelow += PokerConstants.RangeNarrowingPerStreet * (villainBetStreets - 1);
         }
 
+        // Kicker quality adjustment en facing bet: TPTK más confiado, TPWK más cauto
+        if (isFacingBet && heroHandRank == HandRank.OnePair)
+        {
+            if (heroKickerStrength == KickerStrength.Strong)
+                adjustedFoldBelow -= _profile.KickerStrongEquityBonus; // TPTK: más fácil call
+            else if (heroKickerStrength == KickerStrength.Weak && !isInPosition)
+                adjustedFoldBelow += _profile.KickerWeakEquityPenalty; // TPWK OOP: más cautela
+        }
+
         // Villain barreling: distinguir barrel real (bet-bet) de bet-check-bet (reactivation)
         if (villainBarreling && isFacingBet)
         {
@@ -316,6 +325,21 @@ public class PostflopDecisionService
         var (sprFoldAdjust, sprValueAdjust, isPushFold) = GetSPRAdjustment(heroStack, potSize, street);
         adjustedFoldBelow += sprFoldAdjust;
         adjustedThinValueAbove += sprValueAdjust;
+
+        // C-bet: agresor preflop con equity baja apuesta por continuación (frecuencia > bluff puro)
+        if (!isFacingBet && heroIsAggressor && !isMultiway &&
+            effectiveEquity < adjustedFoldBelow && effectiveEquity > adjustedFoldBelow - 15)
+        {
+            double cbetFreq = GetCbetFrequency(street);
+            if (cbetFreq > 0 && Random.Shared.NextDouble() < cbetFreq)
+            {
+                var cbetSize = AdjustBetSizeForSPR(thresholds.BluffBetSize, heroStack, potSize, street);
+                return new PostflopDecisionResult(
+                    cbetSize + " (C-Bet)",
+                    $"Bet — continuation bet como agresor ({cbetFreq:P0})",
+                    IsBarrel: previousStreetBet);
+            }
+        }
 
         // Equity baja
         if (effectiveEquity < adjustedFoldBelow)
@@ -796,11 +820,25 @@ public class PostflopDecisionService
 
         // Randomización: equity justo encima del threshold → a veces check (anti-exploit)
         if (equity > thresholds.ThinValueAbove &&
-            equity <= thresholds.ThinValueAbove + PokerConstants.RandomizationMargin &&
-            Random.Shared.NextDouble() > PokerConstants.RandomizationBetFrequency)
+            equity <= thresholds.ThinValueAbove + PokerConstants.RandomizationMargin)
         {
-            return new PostflopDecisionResult("Check",
-                "Check — randomización (equity en boundary, proteger rango de check)");
+            // Randomización adaptativa por villain type:
+            // vs LAG: bet más (él ajusta → randomizar menos, explotar su call frequency)
+            // vs TAG/TP: check más (proteger rango, no regalar info)
+            double betFreq = villainType switch
+            {
+                OpponentType.LAG => 0.85,  // Bet 85% vs LAG (menos randomización)
+                OpponentType.LP => 0.80,   // Bet 80% vs fish (valor directo)
+                OpponentType.TP => 0.55,   // Check 45% vs nit (proteger rango)
+                OpponentType.TAG => 0.60,  // Check 40% vs reg (balance GTO)
+                _ => PokerConstants.RandomizationBetFrequency // 0.70 default
+            };
+
+            if (Random.Shared.NextDouble() > betFreq)
+            {
+                return new PostflopDecisionResult("Check",
+                    $"Check — randomización adaptativa ({villainType}, bet freq {betFreq:P0})");
+            }
         }
 
         // Thin value → bet solo IP (OOP check para proteger rango)
@@ -1228,6 +1266,14 @@ public class PostflopDecisionService
         BoardPosition.Flop => _profile.FlopBluffFrequency,
         BoardPosition.Turn => _profile.TurnBluffFrequency,
         BoardPosition.River => _profile.RiverBluffFrequency,
+        _ => 0.0
+    };
+
+    private double GetCbetFrequency(BoardPosition street) => street switch
+    {
+        BoardPosition.Flop => _profile.CbetFrequencyFlop,
+        BoardPosition.Turn => _profile.CbetFrequencyTurn,
+        BoardPosition.River => _profile.CbetFrequencyRiver,
         _ => 0.0
     };
 

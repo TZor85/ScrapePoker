@@ -26,6 +26,12 @@ public class OpponentProfile
     public int TimesFoldedToCBet { get; set; }
     public int TimesFacedCBet { get; set; }
 
+    // Contadores postflop por posición (IP vs OOP)
+    public int TimesAggressiveIP { get; set; }   // bet + raise estando IP
+    public int TimesPassiveIP { get; set; }       // call estando IP
+    public int TimesAggressiveOOP { get; set; }   // bet + raise estando OOP
+    public int TimesPassiveOOP { get; set; }      // call estando OOP
+
     // Estadísticas calculadas
     public double VPIP => HandsPlayed > 0 ? (double)TimesVoluntarilyPutMoneyIn / HandsPlayed * 100 : 50;
     public double PFR => HandsPlayed > 0 ? (double)TimesPreflopRaised / HandsPlayed * 100 : 15;
@@ -42,6 +48,32 @@ public class OpponentProfile
             int passive = TimesPostflopCalled;
             if (passive == 0) return aggressive > 0 ? 3.0 : 1.0;
             return (double)aggressive / passive;
+        }
+    }
+
+    /// <summary>
+    /// Aggression Factor estando In Position. -1 si datos insuficientes.
+    /// </summary>
+    public double AggressionFactorIP
+    {
+        get
+        {
+            if (TimesAggressiveIP + TimesPassiveIP < 5) return -1;
+            if (TimesPassiveIP == 0) return TimesAggressiveIP > 0 ? 3.0 : 1.0;
+            return (double)TimesAggressiveIP / TimesPassiveIP;
+        }
+    }
+
+    /// <summary>
+    /// Aggression Factor estando Out of Position. -1 si datos insuficientes.
+    /// </summary>
+    public double AggressionFactorOOP
+    {
+        get
+        {
+            if (TimesAggressiveOOP + TimesPassiveOOP < 5) return -1;
+            if (TimesPassiveOOP == 0) return TimesAggressiveOOP > 0 ? 3.0 : 1.0;
+            return (double)TimesAggressiveOOP / TimesPassiveOOP;
         }
     }
 
@@ -79,6 +111,30 @@ public class OpponentProfile
                 (false, false) => OpponentType.TP,    // Tight-Passive (nit)
             };
         }
+    }
+
+    /// <summary>
+    /// Tipo del oponente considerando si está IP o OOP.
+    /// Villano puede ser LAG IP pero TAG OOP. Usa AF posicional si hay datos, sino global.
+    /// </summary>
+    public OpponentType GetTypeForPosition(bool villainIsInPosition)
+    {
+        if (HandsPlayed < 10) return OpponentType.Unknown;
+
+        double af = villainIsInPosition ? AggressionFactorIP : AggressionFactorOOP;
+        // Fallback a AF global si no hay datos posicionales suficientes
+        if (af < 0) af = AggressionFactor;
+
+        bool isLoose = VPIP > 30;
+        bool isAggressive = af > 1.5;
+
+        return (isLoose, isAggressive) switch
+        {
+            (true, true) => OpponentType.LAG,
+            (true, false) => OpponentType.LP,
+            (false, true) => OpponentType.TAG,
+            (false, false) => OpponentType.TP,
+        };
     }
 
     /// <summary>

@@ -39,6 +39,15 @@ public class StrategyProfile
     public double TurnBluffFrequency { get; set; } = 0.12;
     public double RiverBluffFrequency { get; set; } = 0.10;
 
+    // C-Bet Frequencies (agresor preflop que apuesta por continuación — distinto de bluff puro)
+    public double CbetFrequencyFlop { get; set; } = 0.65;
+    public double CbetFrequencyTurn { get; set; } = 0.45;
+    public double CbetFrequencyRiver { get; set; } = 0.30;
+
+    // Kicker quality adjustment en facing bet (TPTK vs TPWK)
+    public double KickerStrongEquityBonus { get; set; } = 3.0;
+    public double KickerWeakEquityPenalty { get; set; } = 2.0;
+
     // Bluff frequency modulada por SPR (usado en HandleLowEquity)
     public double BluffSPRShortThreshold { get; set; } = 2.0;
     public double BluffSPRShortMultiplier { get; set; } = 0.5;
