@@ -71,6 +71,8 @@ namespace OpenScrape.App
         private string _folderPath = string.Empty;
         private string _tableHand = string.Empty;
         private List<RegionTableMap>? _regionsTableMap;
+        private readonly RegionLookupCache _regionLookupCache;
+        private readonly CardCacheService _cardCacheService;
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
@@ -126,15 +128,15 @@ namespace OpenScrape.App
                 _gameLoopStateMachine.CurrentState == GameState.HandComplete)
                 return;
 
-            var playingRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Playing");
-            if (playingRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+            var playingRegionsList = _regionLookupCache.GetRegions("Playing");
+            if (playingRegionsList == null || _formImage.pbImage.Image == null) return;
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
             foreach (var player in _playerGameState.Players.Where(p => p.Active && !p.HasFolded && p.Name != "P0"))
             {
                 var regionName = $"p{player.ValuePosition}playing";
-                var region = playingRegions.Regions.FirstOrDefault(r => r.Name == regionName);
+                var region = _regionLookupCache.GetRegion("Playing", regionName);
                 if (region == null) continue;
 
                 var scaled = GetScaledRegion(region);
@@ -155,12 +157,12 @@ namespace OpenScrape.App
         /// </summary>
         private void RefreshPlayerStates()
         {
-            var emptyRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Empty");
-            if (emptyRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+            var emptyRegionsList = _regionLookupCache.GetRegions("Empty");
+            if (emptyRegionsList == null || _formImage.pbImage.Image == null) return;
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
-            foreach (var region in emptyRegions.Regions)
+            foreach (var region in emptyRegionsList)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "empty");
                 if (playerNumber == null || playerNumber == 0) continue;
@@ -280,13 +282,13 @@ namespace OpenScrape.App
         /// </summary>
         private void RetryEmptyAliases()
         {
-            var nameRegions = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
-            if (nameRegions?.Regions == null || _formImage.pbImage.Image == null) return;
+            var nameRegionsList = _regionLookupCache.GetRegions("Names");
+            if (nameRegionsList == null || _formImage.pbImage.Image == null) return;
 
             foreach (var player in _playerGameState.Players.Where(p => p.Active && string.IsNullOrEmpty(p.Alias)))
             {
                 var regionName = $"p{player.ValuePosition}Name";
-                var region = nameRegions.Regions.FirstOrDefault(r => r.Name == regionName);
+                var region = _regionLookupCache.GetRegion("Names", regionName);
                 if (region == null) continue;
 
                 var scaled = GetScaledRegion(region);
@@ -417,7 +419,9 @@ namespace OpenScrape.App
                         PostflopDecisionService postflopDecisionService,
                         BoardTextureAnalyzer boardTextureAnalyzer,
                         OpponentTracker opponentTracker,
-                        IOptions<OverlayConfig> overlayConfigOptions)
+                        IOptions<OverlayConfig> overlayConfigOptions,
+                        RegionLookupCache regionLookupCache,
+                        CardCacheService cardCacheService)
         {
             InitializeComponent();
 
@@ -438,15 +442,17 @@ namespace OpenScrape.App
             _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
+            _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
+            _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
             _lastChecked = new RadioButton();
 
             _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
-            _getCardsFlopUseCase = new GetCardsFlopUseCase(_dataBase);
-            _getCardsTurnUseCase = new GetCardsTurnUseCase(_dataBase);
-            _getCardsRiverUseCase = new GetCardsRiverUseCase(_dataBase);
+            _getCardsFlopUseCase = new GetCardsFlopUseCase(_cardCacheService);
+            _getCardsTurnUseCase = new GetCardsTurnUseCase(_cardCacheService);
+            _getCardsRiverUseCase = new GetCardsRiverUseCase(_cardCacheService);
 
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
@@ -539,6 +545,7 @@ namespace OpenScrape.App
 
                 regions.AddRange(categories);
                 _regionsTableMap = regionsTableMap.ToList();
+                _regionLookupCache.Initialize(_regionsTableMap);
 
                 LoadTreeViewRegions(regionsTableMap);
             }
@@ -954,7 +961,7 @@ namespace OpenScrape.App
             try
             {
                 // Obtener la región uAction
-                var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
+                var regionAction = _regionLookupCache.GetRegion("User", "uAction");
 
                 if (regionAction == null)
                 {
@@ -1217,8 +1224,9 @@ namespace OpenScrape.App
             if (_formImage.pbImage.Image == null || _cardsImages == null || !_cardsImages.Any())
                 return false;
 
-            var boardRegion = _regionsTableMap?.FirstOrDefault(f => f.Id == "Board");
-            var cardRegion = boardRegion?.Regions?.FirstOrDefault(r => r.Name == cardRegionName && r.IsHash == true);
+            var cardRegion = _regionLookupCache.GetRegion("Board", cardRegionName);
+            if (cardRegion != null && cardRegion.IsHash != true)
+                cardRegion = null;
             if (cardRegion == null)
                 return false;
 
@@ -2321,12 +2329,12 @@ namespace OpenScrape.App
         private void SetBetPlayer()
         {
             using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImage.Image), _pictureUmbralBet));
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "Bets");
+            var betsRegions = _regionLookupCache.GetRegions("Bets");
 
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            if (betsRegions == null || _formImage.pbImage.Image == null)
                 return;
 
-            foreach (var region in regionTableMap.Regions)
+            foreach (var region in betsRegions)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
                 if (playerNumber == null) continue;
@@ -2363,12 +2371,8 @@ namespace OpenScrape.App
         /// </summary>
         private void SetHeroStack()
         {
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "User");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
-                return;
-
-            var region = regionTableMap.Regions.FirstOrDefault(r => r.Name == "uStack");
-            if (region == null)
+            var region = _regionLookupCache.GetRegion("User", "uStack");
+            if (region == null || _formImage.pbImage.Image == null)
                 return;
 
             // Limpiar cache OCR para evitar colisiones dHash entre valores similares (ej: 97 vs 92)
@@ -2476,8 +2480,8 @@ namespace OpenScrape.App
         /// </summary>
         private void SetEmptyPlayer()
         {
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Empty");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            var emptyRegionsList = _regionLookupCache.GetRegions("Empty");
+            if (emptyRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
             // P0 (héroe) siempre está activo — no tiene región Empty/Playing en Regiones.json
@@ -2490,7 +2494,7 @@ namespace OpenScrape.App
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
-            foreach (var region in regionTableMap.Regions)
+            foreach (var region in emptyRegionsList)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "empty");
                 if (playerNumber == null)
@@ -2516,13 +2520,13 @@ namespace OpenScrape.App
 
         private void SetActivePlayer()
         {
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Playing");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            var playingRegionsList = _regionLookupCache.GetRegions("Playing");
+            if (playingRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
             using var bitmap = new Bitmap(_formImage.pbImage.Image);
 
-            foreach (var region in regionTableMap.Regions)
+            foreach (var region in playingRegionsList)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "playing");
                 if (playerNumber == null)
@@ -2558,11 +2562,11 @@ namespace OpenScrape.App
         /// </summary>
         private void SetAliasVillain()
         {
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Names");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            var namesRegionsList = _regionLookupCache.GetRegions("Names");
+            if (namesRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
-            foreach (var region in regionTableMap.Regions)
+            foreach (var region in namesRegionsList)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "Name");
                 if (playerNumber == null) continue;
@@ -2612,11 +2616,9 @@ namespace OpenScrape.App
         /// </summary>
         private void SetPotValue()
         {
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            var regionPot = _regionLookupCache.GetRegion("Table", "pot");
+            if (_formImage.pbImage.Image == null)
                 return;
-
-            var regionPot = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "pot");
             if (regionPot != null)
             {
                 decimal potValue = 0;
@@ -2652,11 +2654,7 @@ namespace OpenScrape.App
             // SetDealerPlayer se llama desde InitializePlayersAsync después de crear los jugadores
             // SetDealerPlayer();
 
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Table");
-            if (regionTableMap == null)
-                return;
-
-            var regionTableHand = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablehand");
+            var regionTableHand = _regionLookupCache.GetRegion("Table", "tablehand");
             if (regionTableHand != null)
             {
                 var scaled = GetScaledRegion(regionTableHand);
@@ -2757,7 +2755,7 @@ namespace OpenScrape.App
                 }
             }
 
-            var regionTableName = regionTableMap.Regions?.FirstOrDefault(f => f.Name == "tablename");
+            var regionTableName = _regionLookupCache.GetRegion("Table", "tablename");
             if (regionTableName != null && string.IsNullOrEmpty(_tableName))
             {
                 var scaledName = GetScaledRegion(regionTableName);
@@ -2778,8 +2776,8 @@ namespace OpenScrape.App
             if (_playerGameState.Players.Count == 0)
                 return;
 
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "Dealer");
-            if (regionTableMap == null || regionTableMap.Regions == null || _formImage.pbImage.Image == null)
+            var dealerRegionsList = _regionLookupCache.GetRegions("Dealer");
+            if (dealerRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
             // Clear all previous dealer flags to ensure only one dealer per hand
@@ -2796,7 +2794,7 @@ namespace OpenScrape.App
             var allColorsLog = new System.Text.StringBuilder();
             int? detectedDealerPosition = null;
 
-            foreach (var region in regionTableMap.Regions.Where(x => x.IsColor.GetValueOrDefault()))
+            foreach (var region in dealerRegionsList.Where(x => x.IsColor.GetValueOrDefault()))
             {
                 var scaled = GetScaledRegion(region);
                 var centerColor = bitmap.GetPixel(scaled.X, scaled.Y);
@@ -2965,8 +2963,8 @@ namespace OpenScrape.App
         private void SetSitOutPlayer()
         {
             // Validación temprana con return
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(f => f.Id == "SitOut");
-            if (regionTableMap?.Regions == null || _formImage.pbImage.Image == null)
+            var sitOutRegionsList = _regionLookupCache.GetRegions("SitOut");
+            if (sitOutRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
             // Inicialización de diccionario con object initializer
@@ -2979,7 +2977,7 @@ namespace OpenScrape.App
                 {"p5sitout", 1}
             };
 
-            foreach (var region in regionTableMap.Regions)
+            foreach (var region in sitOutRegionsList)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "sitout");
                 if (playerNumber == null)
@@ -3261,20 +3259,14 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ObtainCardsPlayerAsync()
         {
-            using var session = _dataBase.LightweightSession();
-
-            var regionTableMap = _regionsTableMap?.FirstOrDefault(x => x.Id == "User");
-            if (regionTableMap?.Regions == null || _formImage.pbImage.Image == null)
+            var userRegionsList = _regionLookupCache.GetRegions("User");
+            if (userRegionsList == null || _formImage.pbImage.Image == null)
                 return;
 
-            var hashRegions = regionTableMap.Regions.Where(w => w.IsHash == true).ToList();
+            var hashRegions = userRegionsList.Where(w => w.IsHash == true).ToList();
 
-            // Carga de cartas una sola vez
-            if (_cardsImages == null)
-            {
-                var cards = await session.Query<Card>().ToListAsync();
-                _cardsImages = cards.Select(item => item.ToDto()).ToList();
-            }
+            // Carga de cartas desde cache singleton
+            _cardsImages ??= await _cardCacheService.GetCardsAsync();
 
             foreach (var region in hashRegions)
             {
@@ -3882,8 +3874,8 @@ namespace OpenScrape.App
                         }
 
                         // Validación de regiones
-                        var regionAction = _regionsTableMap?.FirstOrDefault(f => f.Id == "User")?.Regions?.FirstOrDefault(x => x.Name == "uAction");
-                        var flop = _regionsTableMap?.FirstOrDefault(f => f.Id == "Table")?.Regions?.FirstOrDefault(x => x.Name == "isFlop");
+                        var regionAction = _regionLookupCache.GetRegion("User", "uAction");
+                        var flop = _regionLookupCache.GetRegion("Table", "isFlop");
 
                         if (regionAction == null || flop == null)
                         {
@@ -4013,62 +4005,92 @@ namespace OpenScrape.App
                 var scaledAction = GetScaledRegion(regionAction);
                 var scaledFlop = GetScaledRegion(flop);
 
-                // Obtener color principal
-                Color primaryActionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
-                Color flopColor = bitmap.GetPixel(scaledFlop.X, scaledFlop.Y);
+                int w = bitmap.Width;
+                int h = bitmap.Height;
 
-                // Muestrear píxeles adicionales alrededor del punto principal para mayor robustez
-                var sampleColors = new List<Color> { primaryActionColor };
+                // Acceso directo al buffer de píxeles (evita marshaling de GetPixel)
+                var bmpData = bitmap.LockBits(
+                    new Rectangle(0, 0, w, h),
+                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
+                    bitmap.PixelFormat);
 
-                // Muestrear en un patrón de cruz pequeño (±2 píxeles)
-                var offsets = new[] { (-2, 0), (2, 0), (0, -2), (0, 2), (-1, -1), (1, 1), (-1, 1), (1, -1) };
-
-                foreach (var (dx, dy) in offsets)
+                try
                 {
-                    var x = scaledAction.X + dx;
-                    var y = scaledAction.Y + dy;
+                    int bpp = System.Drawing.Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+                    int stride = bmpData.Stride;
+                    nint scan0 = bmpData.Scan0;
 
-                    if (x >= 0 && x < bitmap.Width && y >= 0 && y < bitmap.Height)
+                    // Leer color principal de acción y flop
+                    var (actionR, actionG, actionB) = ReadPixelFromBuffer(scan0, stride, scaledAction.X, scaledAction.Y, bpp);
+                    var (flopR, flopG, flopB) = ReadPixelFromBuffer(scan0, stride, scaledFlop.X, scaledFlop.Y, bpp);
+
+                    Color primaryActionColor = Color.FromArgb(actionR, actionG, actionB);
+                    Color flopColor = Color.FromArgb(flopR, flopG, flopB);
+
+                    // Muestrear píxeles en patrón de cruz (±2 px) — suma manual sin LINQ
+                    int sumR = actionR, sumG = actionG, sumB = actionB;
+                    int count = 1;
+
+                    ReadOnlySpan<(int dx, int dy)> offsets =
+                    [
+                        (-2, 0), (2, 0), (0, -2), (0, 2),
+                        (-1, -1), (1, 1), (-1, 1), (1, -1)
+                    ];
+
+                    foreach (var (dx, dy) in offsets)
                     {
-                        sampleColors.Add(bitmap.GetPixel(x, y));
+                        int x = scaledAction.X + dx;
+                        int y = scaledAction.Y + dy;
+
+                        if (x >= 0 && x < w && y >= 0 && y < h)
+                        {
+                            var (r, g, b) = ReadPixelFromBuffer(scan0, stride, x, y, bpp);
+                            sumR += r;
+                            sumG += g;
+                            sumB += b;
+                            count++;
+                        }
                     }
+
+                    double avgB = (double)sumB / count;
+                    double avgR = (double)sumR / count;
+                    double avgG = (double)sumG / count;
+
+                    // Detección con rango de tolerancia en lugar de valor exacto
+                    const int TARGET_B = 24;
+                    const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
+
+                    bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
+                    bool shouldCapture = isActionColorInRange && !_executeCapture;
+
+                    // Detección de flop mejorada
+                    const int FLOP_TARGET_B = 255;
+                    const int FLOP_TOLERANCE = 10;
+                    bool isFlopVisible = Math.Abs(flopB - FLOP_TARGET_B) <= FLOP_TOLERANCE;
+                    bool shouldCaptureFlop = shouldCapture && isFlopVisible;
+
+                    return new DetectionResult
+                    {
+                        ActionColor = primaryActionColor,
+                        FlopColor = flopColor,
+                        AverageActionB = avgB,
+                        SampleCount = count,
+                        IsActionColorInRange = isActionColorInRange,
+                        ShouldCapture = shouldCapture,
+                        ShouldCaptureFlop = shouldCaptureFlop,
+                        IsFlopVisible = isFlopVisible
+                    };
                 }
-
-                // Análisis de colores con tolerancia
-                var avgB = sampleColors.Average(c => c.B);
-                var avgR = sampleColors.Average(c => c.R);
-                var avgG = sampleColors.Average(c => c.G);
-
-                // Detección con rango de tolerancia en lugar de valor exacto
-                const int TARGET_B = 24;
-                const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
-
-                bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
-                bool shouldCapture = isActionColorInRange && !_executeCapture;
-
-                // Detección de flop mejorada
-                const int FLOP_TARGET_B = 255;
-                const int FLOP_TOLERANCE = 10;
-                bool isFlopVisible = Math.Abs(flopColor.B - FLOP_TARGET_B) <= FLOP_TOLERANCE;
-                bool shouldCaptureFlop = shouldCapture && isFlopVisible;
-
-                return new DetectionResult
+                finally
                 {
-                    ActionColor = primaryActionColor,
-                    FlopColor = flopColor,
-                    AverageActionB = avgB,
-                    SampleCount = sampleColors.Count,
-                    IsActionColorInRange = isActionColorInRange,
-                    ShouldCapture = shouldCapture,
-                    ShouldCaptureFlop = shouldCaptureFlop,
-                    IsFlopVisible = isFlopVisible
-                };
+                    bitmap.UnlockBits(bmpData);
+                }
             }
             catch (Exception ex)
             {
                 _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
 
-                // Fallback a detección simple
+                // Fallback a detección simple (GetPixel como último recurso)
                 var scaledAction = GetScaledRegion(regionAction);
                 var scaledFlop = GetScaledRegion(flop);
                 Color actionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
@@ -4086,6 +4108,18 @@ namespace OpenScrape.App
                     IsFlopVisible = flopColor.B == 255
                 };
             }
+        }
+
+        /// <summary>
+        /// Lee un píxel directamente del buffer de LockBits (soporta 24bpp y 32bpp)
+        /// </summary>
+        private static (byte R, byte G, byte B) ReadPixelFromBuffer(nint scan0, int stride, int x, int y, int bpp)
+        {
+            int offset = y * stride + x * bpp;
+            byte b = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset);
+            byte g = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset + 1);
+            byte r = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset + 2);
+            return (r, g, b);
         }
 
         /// <summary>
@@ -4710,11 +4744,8 @@ namespace OpenScrape.App
                     _selectedRegion.Width,
                     _selectedRegion.Height);
 
-                // Carga de cartas una sola vez
-                if (_cardsImages == null)
-                {
-                    _cardsImages = await _cardUseCases.GetAllCards.ExecuteAsync();
-                }
+                // Carga de cartas desde cache singleton
+                _cardsImages ??= await _cardCacheService.GetCardsAsync();
 
                 if (_cardsImages?.Any() == true)
                 {

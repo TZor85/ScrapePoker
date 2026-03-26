@@ -243,6 +243,291 @@ public class MonteCarloSimulatorTests
             $"Win={result.WinProbability:P1}, Tie={result.TieProbability:P1}, Loss={result.LoseProbability:P1}, " +
             $"Sims={result.Simulations}");
     }
+
+    // ─── Tests de enumeración exacta ─────────────────────────────
+
+    [Test]
+    public void CalculateEquity_River_EnumeracionExacta_QuadAces()
+    {
+        // River completo: AA en board A A K 7 2 → quads, equity ~99%+
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.Ace, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Diamonds),
+            C(Rank.Ace, Suit.Clubs),
+            C(Rank.King, Suit.Spades),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.Two, Suit.Clubs)
+        };
+
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1);
+
+        // Enumeración exacta → equity determinística, siempre el mismo valor
+        Assert.That(result.Equity, Is.GreaterThanOrEqualTo(0.99));
+        // Simulations debe ser C(45,2) = 990
+        Assert.That(result.Simulations, Is.EqualTo(990));
+    }
+
+    [Test]
+    public void CalculateEquity_River_EnumeracionExacta_EsDeterminista()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades),
+            C(Rank.Queen, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Hearts),
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Three, Suit.Clubs),
+            C(Rank.Nine, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var result1 = _simulator.CalculateEquity(myCards, communityCards, 1);
+        var result2 = _simulator.CalculateEquity(myCards, communityCards, 1);
+
+        // Enumeración exacta → resultados idénticos entre ejecuciones
+        Assert.That(result1.Equity, Is.EqualTo(result2.Equity));
+        Assert.That(result1.WinProbability, Is.EqualTo(result2.WinProbability));
+    }
+
+    [Test]
+    public void CalculateEquity_Turn_EnumeracionExacta_TopPair()
+    {
+        // Turn: KQo en board K 7 3 9 → top pair, equity razonable
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades),
+            C(Rank.Queen, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Hearts),
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Three, Suit.Clubs),
+            C(Rank.Nine, Suit.Spades)
+        };
+
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1);
+
+        Assert.That(result.Equity, Is.InRange(0.60, 0.90));
+        // Debe ser enumeración exacta (no MC), así que determinístico
+        var result2 = _simulator.CalculateEquity(myCards, communityCards, 1);
+        Assert.That(result.Equity, Is.EqualTo(result2.Equity));
+    }
+
+    [Test]
+    public void CalculateEquity_Turn_ConRango_EnumeracionExacta()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Two, Suit.Clubs),
+            C(Rank.Nine, Suit.Hearts)
+        };
+
+        var range = VillainRange.GetForSituation(HandSituation.ThreeBet);
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1, null, range);
+
+        Assert.That(result.Equity, Is.InRange(0.40, 0.95));
+        // Determinístico con rango
+        var result2 = _simulator.CalculateEquity(myCards, communityCards, 1, null, range);
+        Assert.That(result.Equity, Is.EqualTo(result2.Equity));
+    }
+
+    [Test]
+    public void CalculateEquity_Flop_UsaIteracionesAdaptativas()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Jack, Suit.Spades),
+            C(Rank.Ten, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Clubs),
+            C(Rank.Five, Suit.Diamonds),
+            C(Rank.Eight, Suit.Hearts)
+        };
+
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1);
+
+        // Flop adaptativo: 50K iteraciones (menos skipped)
+        Assert.That(result.Simulations, Is.GreaterThanOrEqualTo(45_000));
+    }
+
+    [Test]
+    public void CalculateEquity_VillainRangeBloqueado_NoContaminaEquity()
+    {
+        // Rango muy reducido (4Bet: AA,KK,QQ,AK) con hero AK en board AAKK
+        // Muchos combos bloqueados → iteraciones skipped, equity no contaminada
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Ace, Suit.Diamonds),
+            C(Rank.King, Suit.Spades)
+        };
+
+        var range = VillainRange.GetForSituation(HandSituation.FourBet);
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1, 5000, range);
+
+        // Debe tener equity válida (no NaN o 0 por fallback corrupto)
+        Assert.That(result.Equity, Is.InRange(0.01, 0.99));
+        var total = result.WinProbability + result.TieProbability + result.LoseProbability;
+        Assert.That(total, Is.InRange(0.99, 1.01));
+    }
+}
+
+// ─── Tests de HandScore struct ───────────────────────────────
+
+[TestFixture]
+public class HandScoreTests
+{
+    private BitHandEvaluator _evaluator;
+
+    [SetUp]
+    public void Setup()
+    {
+        _evaluator = new BitHandEvaluator();
+    }
+
+    private static CardDataOuts C(Rank rank, Suit suit) => new(suit, rank);
+
+    [Test]
+    public void EvaluateHandScore_MismoRankQueEvaluateBestHand()
+    {
+        var cards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades), C(Rank.Ace, Suit.Hearts),
+            C(Rank.King, Suit.Diamonds), C(Rank.Seven, Suit.Clubs),
+            C(Rank.Three, Suit.Hearts), C(Rank.Nine, Suit.Spades),
+            C(Rank.Two, Suit.Clubs)
+        };
+
+        var full = _evaluator.EvaluateBestHand(cards);
+        var score = _evaluator.EvaluateHandScore(cards);
+
+        Assert.That(score.Rank, Is.EqualTo(full.Rank));
+    }
+
+    [Test]
+    public void HandScore_MejorManoGana_CompareTo()
+    {
+        // Flush > Straight
+        var flush = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts), C(Rank.Ten, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts), C(Rank.Three, Suit.Hearts),
+            C(Rank.Two, Suit.Hearts), C(Rank.King, Suit.Clubs),
+            C(Rank.Nine, Suit.Diamonds)
+        };
+        var straight = new List<CardDataOuts>
+        {
+            C(Rank.Ten, Suit.Spades), C(Rank.Nine, Suit.Hearts),
+            C(Rank.Eight, Suit.Diamonds), C(Rank.Seven, Suit.Clubs),
+            C(Rank.Six, Suit.Hearts), C(Rank.Two, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+
+        var flushScore = _evaluator.EvaluateHandScore(flush);
+        var straightScore = _evaluator.EvaluateHandScore(straight);
+
+        Assert.That(flushScore.CompareTo(straightScore), Is.GreaterThan(0));
+    }
+
+    [Test]
+    public void HandScore_KickersDesempatan()
+    {
+        // OnePair de Aces con K kicker vs OnePair de Aces con Q kicker
+        var aceK = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades), C(Rank.Ace, Suit.Hearts),
+            C(Rank.King, Suit.Diamonds), C(Rank.Seven, Suit.Clubs),
+            C(Rank.Three, Suit.Hearts)
+        };
+        var aceQ = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Diamonds), C(Rank.Ace, Suit.Clubs),
+            C(Rank.Queen, Suit.Spades), C(Rank.Seven, Suit.Hearts),
+            C(Rank.Three, Suit.Clubs)
+        };
+
+        var scoreK = _evaluator.EvaluateHandScore(aceK);
+        var scoreQ = _evaluator.EvaluateHandScore(aceQ);
+
+        Assert.That(scoreK.CompareTo(scoreQ), Is.GreaterThan(0));
+    }
+
+    [Test]
+    public void HandScore_DetectaTodosLosRanks()
+    {
+        // Straight Flush
+        var sf = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Hearts), C(Rank.Eight, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts), C(Rank.Six, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts), C(Rank.Two, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+        Assert.That(_evaluator.EvaluateHandScore(sf).Rank, Is.EqualTo(HandRank.StraightFlush));
+
+        // Four of a Kind
+        var quads = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades), C(Rank.King, Suit.Hearts),
+            C(Rank.King, Suit.Diamonds), C(Rank.King, Suit.Clubs),
+            C(Rank.Ace, Suit.Spades), C(Rank.Two, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+        Assert.That(_evaluator.EvaluateHandScore(quads).Rank, Is.EqualTo(HandRank.FourOfAKind));
+
+        // Full House
+        var fh = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades), C(Rank.King, Suit.Hearts),
+            C(Rank.King, Suit.Diamonds), C(Rank.Queen, Suit.Clubs),
+            C(Rank.Queen, Suit.Spades), C(Rank.Two, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+        Assert.That(_evaluator.EvaluateHandScore(fh).Rank, Is.EqualTo(HandRank.FullHouse));
+
+        // Two Pair
+        var tp = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades), C(Rank.King, Suit.Hearts),
+            C(Rank.Queen, Suit.Diamonds), C(Rank.Queen, Suit.Clubs),
+            C(Rank.Ace, Suit.Spades), C(Rank.Two, Suit.Clubs),
+            C(Rank.Three, Suit.Diamonds)
+        };
+        Assert.That(_evaluator.EvaluateHandScore(tp).Rank, Is.EqualTo(HandRank.TwoPair));
+
+        // High Card
+        var hc = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades), C(Rank.King, Suit.Hearts),
+            C(Rank.Nine, Suit.Diamonds), C(Rank.Seven, Suit.Clubs),
+            C(Rank.Three, Suit.Spades), C(Rank.Two, Suit.Clubs),
+            C(Rank.Four, Suit.Diamonds)
+        };
+        Assert.That(_evaluator.EvaluateHandScore(hc).Rank, Is.EqualTo(HandRank.HighCard));
+    }
 }
 
 [TestFixture]
