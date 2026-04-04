@@ -307,10 +307,10 @@ namespace OpenScrape.App.Forms
             lbShouldCall.ForeColor = phase.ToUpperInvariant() switch
             {
                 "PRE-FLOP" or "PREFLOP" => Color.FromArgb(180, 180, 200),
-                "FLOP"                  => Color.FromArgb(80, 160, 255),
-                "TURN"                  => Color.FromArgb(255, 180, 50),
-                "RIVER"                 => Color.FromArgb(255, 80, 80),
-                _                       => Color.FromArgb(180, 180, 200)
+                "FLOP" => Color.FromArgb(80, 160, 255),
+                "TURN" => Color.FromArgb(255, 180, 50),
+                "RIVER" => Color.FromArgb(255, 80, 80),
+                _ => Color.FromArgb(180, 180, 200)
             };
             lbShouldCall.Font = new Font("Segoe UI", _config.FontSize, FontStyle.Bold);
         }

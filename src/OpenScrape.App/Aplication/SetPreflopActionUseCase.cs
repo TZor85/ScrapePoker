@@ -61,16 +61,21 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
                 }
 
-                if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.ThreeBet)
+                if (request.ResponseAction.Action is not null &&
+                    (request.PlayerState.HandSituation == HandSituation.ThreeBet ||
+                     request.PlayerState.HandSituation == HandSituation.Squeeze))
                 {
-                    var action = await GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.First(w => w.Bet > request.PlayerState.CurrentBet).Position, request.PlayerState);
-                    if (!string.IsNullOrEmpty(action))
+                    var raiser = request.PlayerState.Players.FirstOrDefault(w => w.Bet > request.PlayerState.CurrentBet);
+                    if (raiser != null)
                     {
-                        request.ResponseAction.Action = action;
-                        request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
-                        request.ResponseAction.IsSecondAction = false;
+                        var action = await GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], raiser.Position, request.PlayerState);
+                        if (!string.IsNullOrEmpty(action))
+                        {
+                            request.ResponseAction.Action = action;
+                            request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
+                            request.ResponseAction.IsSecondAction = false;
+                        }
                     }
-
                 }
 
                 if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper))

@@ -37,7 +37,8 @@ public class OutsCalculatorTests
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
         Assert.That(result.HasFlushDraw, Is.True);
-        Assert.That(result.TotalOuts, Is.EqualTo(10)); // 9 flush + 1 backdoor straight
+        // 9 flush + 3 overcard(A, no es straight out) + 1 backdoor straight = 13
+        Assert.That(result.TotalOuts, Is.EqualTo(13));
     }
 
     [Test]
@@ -217,8 +218,8 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasFlushDraw, Is.True);
         Assert.That(result.HasGutshotStraightDraw, Is.True);
-        // 9 flush + 4 straight - 1 overlap = 12
-        Assert.That(result.TotalOuts, Is.EqualTo(12));
+        // 9 flush + 4 straight - 1 overlap + 3 overcard(J, no es straight out) = 15
+        Assert.That(result.TotalOuts, Is.EqualTo(15));
     }
 
     [Test]
@@ -389,9 +390,9 @@ public class OutsCalculatorTests
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
         Assert.That(result.HasFlushDraw, Is.True);
-        Assert.That(result.HasOvercards, Is.False);
-        // 9 flush outs + 1 backdoor straight (A-2-5 wheel)
-        Assert.That(result.TotalOuts, Is.EqualTo(10));
+        Assert.That(result.HasOvercards, Is.True);
+        // 9 flush + 6 overcards(A=3, K=3, ambos > 7) + 1 backdoor straight = 16
+        Assert.That(result.TotalOuts, Is.EqualTo(16));
     }
 
     #region [Backdoor Draws]
@@ -580,9 +581,9 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasFlushDraw, Is.True);
         Assert.That(result.EffectiveOuts, Is.GreaterThan(0));
-        // EffectiveOuts = CleanOuts + TaintedOuts * 0.5
+        // EffectiveOuts = CleanOuts + TaintedOuts * 0.7 (hero tiene flush draw → strong discount)
         Assert.That(result.EffectiveOuts,
-            Is.EqualTo(result.CleanOuts + result.TaintedOuts * 0.5).Within(0.01));
+            Is.EqualTo(result.CleanOuts + result.TaintedOuts * 0.7).Within(0.01));
     }
 
     [Test]

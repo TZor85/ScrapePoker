@@ -33,7 +33,7 @@ public partial class FrmDetectionDebug : Form
         _pokerWindowHandle = pokerWindowHandle;
         _currentRegion = region;
         _currentCoordinates = new Point(region.PosX, region.PosY);
-        
+
         // Configurar la ventana
         this.Text = $"Debug de Detección - Región: {region.Name}";
         lblRegionName.Text = $"Región: {region.Name}";
@@ -51,17 +51,17 @@ public partial class FrmDetectionDebug : Form
     {
         this.KeyPreview = true;
         this.KeyDown += FrmDetectionDebug_KeyDown;
-        
+
         btnStartCapture.Click += BtnStartCapture_Click;
         btnStopCapture.Click += BtnStopCapture_Click;
         btnSaveColor.Click += BtnSaveColor_Click;
         btnClearColors.Click += BtnClearColors_Click;
         btnSaveCoordinates.Click += BtnSaveCoordinates_Click;
-        
+
         // Configurar controles numéricos para coordenadas
         numX.ValueChanged += NumCoordinates_ValueChanged;
         numY.ValueChanged += NumCoordinates_ValueChanged;
-        
+
         // Configurar valores iniciales
         if (_currentRegion != null)
         {
@@ -99,7 +99,7 @@ public partial class FrmDetectionDebug : Form
         {
             // Capturar imagen de la ventana del poker
             var img = CaptureWindowsHelper.CaptureWindow(_pokerWindowHandle);
-            
+
             if (img == null)
             {
                 lblStatus.Text = "Error al capturar ventana";
@@ -121,26 +121,26 @@ public partial class FrmDetectionDebug : Form
 
                 // Obtener color del píxel actual
                 Color currentColor = bitmap.GetPixel(_currentCoordinates.X, _currentCoordinates.Y);
-                
+
                 // Actualizar información de color
                 lblCurrentColor.Text = $"Color Actual: R={currentColor.R}, G={currentColor.G}, B={currentColor.B}";
                 lblCurrentColorHex.Text = $"Hex: #{currentColor.R:X2}{currentColor.G:X2}{currentColor.B:X2}";
-                
+
                 // Mostrar el color actual
                 pnlCurrentColor.BackColor = currentColor;
-                
+
                 // Verificar si coincide con el valor esperado (B=24)
                 bool isExpectedColor = currentColor.B == 24;
                 lblDetectionStatus.Text = isExpectedColor ? "[SI] Color Detectado (B=24)" : "[NO] Color No Detectado";
                 lblDetectionStatus.ForeColor = isExpectedColor ? Color.Green : Color.Red;
-                
+
                 // Crear imagen ampliada del área alrededor del píxel
                 CreateZoomedImage(bitmap);
-                
+
                 // Actualizar estadísticas
                 UpdateColorStatistics(currentColor);
             }
-            
+
             lblStatus.Text = "Capturando...";
             lblStatus.ForeColor = Color.Green;
         }
@@ -160,19 +160,19 @@ public partial class FrmDetectionDebug : Form
         int startY = Math.Max(0, _currentCoordinates.Y - halfZoom);
         int endX = Math.Min(sourceBitmap.Width, _currentCoordinates.X + halfZoom);
         int endY = Math.Min(sourceBitmap.Height, _currentCoordinates.Y + halfZoom);
-        
+
         // Crear imagen ampliada
         var zoomedBitmap = new Bitmap(ZOOM_SIZE, ZOOM_SIZE);
         using (var g = Graphics.FromImage(zoomedBitmap))
         {
             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
             g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
-            
+
             var sourceRect = new Rectangle(startX, startY, endX - startX, endY - startY);
             var destRect = new Rectangle(0, 0, ZOOM_SIZE, ZOOM_SIZE);
-            
+
             g.DrawImage(sourceBitmap, destRect, sourceRect, GraphicsUnit.Pixel);
-            
+
             // Dibujar cruz en el centro para marcar el píxel exacto
             using (var pen = new Pen(Color.Red, 2))
             {
@@ -182,11 +182,11 @@ public partial class FrmDetectionDebug : Form
                 g.DrawLine(pen, centerX, centerY - 5, centerX, centerY + 5);
             }
         }
-        
+
         // Actualizar PictureBox
         if (pbZoomedArea.Image != null)
             pbZoomedArea.Image.Dispose();
-        
+
         pbZoomedArea.Image = zoomedBitmap;
     }
 
@@ -194,21 +194,21 @@ public partial class FrmDetectionDebug : Form
     {
         // Agregar color a la lista de colores capturados
         _capturedColors.Add(color);
-        
+
         // Mantener solo los últimos 100 colores para estadísticas
         if (_capturedColors.Count > 100)
             _capturedColors.RemoveAt(0);
-        
+
         // Calcular estadísticas
         if (_capturedColors.Count > 0)
         {
             var avgR = _capturedColors.Average(c => c.R);
             var avgG = _capturedColors.Average(c => c.G);
             var avgB = _capturedColors.Average(c => c.B);
-            
+
             var minB = _capturedColors.Min(c => c.B);
             var maxB = _capturedColors.Max(c => c.B);
-            
+
             lblColorStats.Text = $"Promedio: R={avgR:F1}, G={avgG:F1}, B={avgB:F1}\n" +
                                $"Rango B: {minB}-{maxB}\n" +
                                $"Muestras: {_capturedColors.Count}";
@@ -218,7 +218,7 @@ public partial class FrmDetectionDebug : Form
     private void FrmDetectionDebug_KeyDown(object? sender, KeyEventArgs e)
     {
         int step = e.Control ? 10 : 1; // Paso más grande con Ctrl
-        
+
         switch (e.KeyCode)
         {
             case Keys.Left:
@@ -240,7 +240,7 @@ public partial class FrmDetectionDebug : Form
                 BtnSaveCoordinates_Click(sender, e);
                 break;
         }
-        
+
         // Actualizar controles numéricos
         numX.Value = _currentCoordinates.X;
         numY.Value = _currentCoordinates.Y;
@@ -278,7 +278,7 @@ public partial class FrmDetectionDebug : Form
     {
         if (_capturedColors.Count == 0)
         {
-            MessageBox.Show("No hay colores capturados para guardar.", "Advertencia", 
+            MessageBox.Show("No hay colores capturados para guardar.", "Advertencia",
                           MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
@@ -328,17 +328,17 @@ public partial class FrmDetectionDebug : Form
         {
             // TODO: Implementar guardado en base de datos
             var colorHex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
-            
+
             // Por ahora, mostrar en un archivo de log
             var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Color guardado: {colorHex} (R={color.R}, G={color.G}, B={color.B})";
             File.AppendAllText("detection_calibration.log", logEntry + Environment.NewLine);
-            
-            MessageBox.Show($"Color guardado: {colorHex}", "Éxito", 
+
+            MessageBox.Show($"Color guardado: {colorHex}", "Éxito",
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error al guardar color: {ex.Message}", "Error", 
+            MessageBox.Show($"Error al guardar color: {ex.Message}", "Error",
                           MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
@@ -348,17 +348,17 @@ public partial class FrmDetectionDebug : Form
         try
         {
             // TODO: Implementar guardado en base de datos
-            
+
             // Por ahora, mostrar en un archivo de log
             var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Coordenadas guardadas: X={coordinates.X}, Y={coordinates.Y}";
             File.AppendAllText("detection_calibration.log", logEntry + Environment.NewLine);
-            
-            MessageBox.Show($"Coordenadas guardadas: ({coordinates.X}, {coordinates.Y})", "Éxito", 
+
+            MessageBox.Show($"Coordenadas guardadas: ({coordinates.X}, {coordinates.Y})", "Éxito",
                           MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error al guardar coordenadas: {ex.Message}", "Error", 
+            MessageBox.Show($"Error al guardar coordenadas: {ex.Message}", "Error",
                           MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }

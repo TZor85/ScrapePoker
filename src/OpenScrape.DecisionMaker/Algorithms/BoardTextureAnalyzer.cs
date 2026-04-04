@@ -20,12 +20,15 @@ public record BoardTextureResult(
     /// <summary>
     /// Mapeo retrocompatible a las categorías simples Dry/Coordinated/Paired.
     /// </summary>
-    public string SimplifiedTexture => Category switch
-    {
-        BoardTextureCategory.Paired => "Paired",
-        BoardTextureCategory.Wet or BoardTextureCategory.SemiWet => "Coordinated",
-        _ => "Dry"
-    };
+    public string SimplifiedTexture => IsMonotone
+        ? "Monotone"
+        : Category switch
+        {
+            BoardTextureCategory.Paired => "Paired",
+            BoardTextureCategory.Wet => "Wet",
+            BoardTextureCategory.SemiWet => "Coordinated",
+            _ => "Dry"
+        };
 }
 
 /// <summary>
@@ -283,6 +286,60 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
         if (cardCount >= 5) score += PokerConstants.WetnessExtraCardsBonus;
 
         return Math.Max(0, Math.Min(100, score));
+    }
+
+    /// <summary>
+    /// Analiza el estado base de peligro del flop (no es un "cambio" sino un estado inicial).
+    /// Detecta flush draw presence, straight draw presence, board paired.
+    /// </summary>
+    public BoardChangeResult AnalyzeInitialBoard(List<int> ranks, List<int> suits)
+    {
+        if (ranks.Count < 3)
+            return BoardChangeResult.Safe;
+
+        var suitGroups = suits.GroupBy(s => s).ToDictionary(g => g.Key, g => g.Count());
+        var rankGroups = ranks.GroupBy(r => r).ToDictionary(g => g.Key, g => g.Count());
+
+        // 2+ cartas del mismo palo → flush draw presente desde flop
+        bool flushDrawPresent = suitGroups.Values.Any(c => c >= 2);
+        int flushDrawSuit = flushDrawPresent
+            ? suitGroups.Where(g => g.Value >= 2).OrderByDescending(g => g.Value).First().Key
+            : -1;
+
+        // 3 cartas del mismo palo → monotone (flush ya posible)
+        bool flushPossible = suitGroups.Values.Any(c => c >= 3);
+
+        // Board paired desde flop
+        bool boardPaired = rankGroups.Values.Any(c => c >= 2);
+
+        // Straight draw presente
+        bool straightDrawPresent = HasStraightDraw(ranks.Distinct().OrderBy(r => r).ToList());
+
+        // Calcular danger level
+        int dangerLevel = 0;
+        if (flushPossible) dangerLevel += 3;
+        else if (flushDrawPresent) dangerLevel += 1;
+        if (straightDrawPresent) dangerLevel += 1;
+        if (boardPaired) dangerLevel += 1;
+
+        return new BoardChangeResult(
+            FlushCompleted: false,
+            FlushDrawAppeared: flushDrawPresent,
+            StraightCompleted: false,
+            BoardPaired: boardPaired,
+            OvercardAppeared: false,
+            CompletedFlushSuit: flushDrawSuit,
+            DangerLevel: dangerLevel);
+    }
+
+    /// <summary>
+    /// Versión que acepta CardDataOuts directamente.
+    /// </summary>
+    public BoardChangeResult AnalyzeInitialBoard(List<CardDataOuts> communityCards)
+    {
+        var ranks = communityCards.Select(c => (int)c.Rank).ToList();
+        var suits = communityCards.Select(c => (int)c.Suit).ToList();
+        return AnalyzeInitialBoard(ranks, suits);
     }
 
     private static BoardTextureCategory CategorizeBoard(double wetnessScore, bool isPaired, bool hasTrips)

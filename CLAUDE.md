@@ -45,11 +45,11 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 2. **OpenScrape.Features** — Scoped use cases organized by feature: `Table/`, `Cards/`, `ActionScenario/`, `RegionsTableMap/`, `GameRound/`. `Services.cs` registers all use cases. Uses `Ardalis.Result` for return types.
 3. **OpenScrape.Infrastructure** — Marten (PostgreSQL document DB) setup. `Services.cs` configures the document store.
 4. **OpenScrape.DecisionMaker** — Poker algorithms and decision services. See "Decision Engine" below.
-5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder with `DOTNET_ENVIRONMENT` (defaults to `"Development"`). Key services: `OcrService` (Tesseract OCR with bounded caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine`, `GameLoggerService`. Forms: `FrmMain` (main window, 5 tabs: Juego/Config/Tablas/Logs/Historial), `FrmOverlay` (table overlay with 9 rows + action panel + street indicator), `FrmHandDetail` (hand history popup with colored RichTextBox), `FrmDetectionDebug`.
+5. **OpenScrape.App** — WinForms UI and composition root. `Program.cs` wires DI via Host builder with `DOTNET_ENVIRONMENT` (defaults to `"Development"`). Key services: `OcrService` (Tesseract OCR with confidence scoring + bounded caching), `ColorDetectionService`, `ImageCropperService`, `GameLoopStateMachine` (with board card validation), `GameLoggerService`, `RegionLookupCache` (O(1) region lookups), `CardCacheService` (singleton lazy card loading). Forms: `FrmMain` (main window, 5 tabs: Juego/Config/Tablas/Logs/Historial with Backtest A/B button), `FrmOverlay` (table overlay with 9 rows + action panel + street indicator), `FrmHandDetail` (hand history popup with colored RichTextBox), `FrmDetectionDebug`.
 
 **Data flow:** Screen capture → Image preprocessing (OpenCvSharp/SkiaSharp) → OCR (Tesseract) → Domain model → Decision engine (equity calculation, hand evaluation) → Action recommendation.
 
-**DI pattern:** `FrmMain` is resolved from a scoped `ServiceProvider` (not root) because it depends on scoped use cases. All DecisionMaker services are singletons. Algorithms use forwarding pattern (concrete + interface factory → single shared instance). Database sessions use `using` per operation (no long-lived sessions).
+**DI pattern:** `FrmMain` is resolved from a scoped `ServiceProvider` (not root) because it depends on scoped use cases. All DecisionMaker services are singletons. Algorithms use forwarding pattern (concrete + interface factory → single shared instance). Database sessions use `await using` per operation (no long-lived sessions). New singletons: `RegionLookupCache` (O(1) region lookups), `CardCacheService` (lazy card loading, thread-safe).
 
 ## Configuration & Secrets
 
@@ -60,41 +60,65 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 
 ## Decision Engine (DecisionMaker)
 
-Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo 1000 iterations) → outs/draws (with tainted outs + combo draw detection) → hand evaluation (HandRank + KickerStrength) → fold equity → EV.
+Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo/exact enumeration) → outs/draws (with tainted outs + combo draw detection) → hand evaluation (HandRank + KickerStrength) → fold equity → EV.
 
 **Algorithms:**
-- `HandEvaluator` — Hand strength ranking
-- `MonteCarloSimulator` — Postflop equity via simulation
+- `BitHandEvaluator` — Hand strength ranking via bit-manipulation (zero-alloc, stackalloc). `EvaluateHandScore()` returns lightweight `HandScore` struct for MC.
+- `MonteCarloSimulator` — Equity calculation: exact enumeration on river (C(45,2)=990) and turn (45×C(44,2)≈42K), MC simulation on flop (50K iters) and preflop (30K). `HandScore` struct eliminates heap allocations. Villain range weighted selection with skip-on-block (no random fallback).
 - `PreflopEquityCalculator` — Preflop equity lookup
 - `OutsCalculator` — Draw detection, outs counting, tainted outs, combo draw detection
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
+- `StrategyBacktester` — Replays historical hands against current engine, compares decisions, estimates BB/100 impact.
 
-**PostflopDecisionService — Five decision paths:**
-1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call even with high equity). Bet-size penalties (Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand. Caller vs cbet: FoldBelow+2. Bluff catching on river (OnePair+ with equity >= FoldBelow×0.85, non-large bet → call).
-2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired). Hand strength relative adjusts thresholds (nuts −4 to −8, vulnerable +2 to +4). Overbet on dry boards (flop/turn: aggressor; river: TwoPair+ NUTS). Bet sizing adjusted by SPR (short +1-2 levels, deep -1 level). Double barrel on turn/river (aggressor with marginal equity + previous street bet → barrel for range consistency).
-3. **Check-Raise** → OOP + equity > CheckRaiseThreshold + HandRank >= TwoPair + !heroIsAggressor + !multiway. Returns `IsCheckRaise=true`. Active on all streets (flop/turn/river).
-4. **Probe Bet** → Villain aggressor checked previous street + hero OOP + !multiway + equity >= ProbeBetMinEquity → Bet 1/3 (probe). Cross-street state via `_villainAggressorCheckedFlop`.
-5. **Low Equity** → Semi-bluff with combo draw sizing (12+ outs on flop → 3/4 pot), implied odds, pot odds marginal calls, bluff catching river.
+**PostflopDecisionService — Eight+ decision paths:**
+1. **Facing Bet** → Call/Raise/Fold. Raise only with TwoPair+ (OnePair → call, OnePair no raise en board con flush posible sin blocker). Underbet (< 15% pot, penalty 0) → raise con equity buena. Bet-size penalties (Underbet 0, Small+1, Medium+4, Large+8; VillainAggro+3). Agresor vs donk: FoldBelow−5, raise with strong hand (cross-street: HeroBetFlop/Turn = agresor). Caller vs cbet: FoldBelow+2. Pot commitment: SPR < 0.5 + EV(call) > 0 → Call.
+2. **No Bet** → Check/Bet with board-texture sizing (Dry/Coordinated/Paired/Monotone/Wet). Hand strength relative adjusts thresholds. Overbet on dry boards (flop/turn: aggressor); river: TwoPair+ NUTS en **cualquier textura**. River merged sizing: OnePair → ReduceBetSize, TwoPair+ → normal/polarizado. River danger board (3+ same suit sin blocker) → sizing reducido. Turn vulnerability sizing: OnePair en Wet/Coordinated → ReduceBetSize. Card removal: heroBlocksTopCard → value sizing mayor. Bet sizing adjusted by SPR. Double barrel condicionado al runout (bad runout → check).
+3. **Check-Raise** → OOP: TwoPair+ O draws fuertes (combo draw/flush draw 9+ outs, CheckRaiseDrawMinEquity=40). IP: TwoPair+ trap en board no Wet/Monotone. !heroIsAggressor + !multiway. Active on all streets.
+4. **Float Exit** → heroFloatedFlop + turn + villain check + !multiway → Bet 1/2 (float exit).
+5. **Probe Bet** → Villain aggressor checked previous street + !multiway + equity >= ProbeBetMinEquity. IP: Bet 1/2, OOP: Bet 1/3.
+6. **Pot Control** → Turn equity 40-55% + Coordinated/Wet/Monotone + !heroIsAggressor → check-back.
+7. **Delayed Value** → River + HeroCheckedAllStreets + OnePair TopPair+ → Bet 1/3 (delayed value).
+8. **Low Equity** → Semi-bluff con fold equity check (breakevenFE ajustado por draw equity). Bluff puro con fold equity ≥ breakeven. Pot odds marginales. Bluff catching con ajuste por: villainType (LAG ×0.80, TP ×1.20), runout (brick ×0.85, scare ×1.15), card removal (heroBlocksTopCard ×0.90), blocker bonus (×0.85).
+9. **Randomización** → Equity dentro de ±3% de ThinValueAbove → check adaptativo por villainType (LAG 85%, LP 80%, TAG 60%, TP 55%, Unknown 70%).
+10. **C-Bet** → Agresor preflop con equity baja (< FoldBelow dentro de -15) → c-bet a frecuencia propia (Flop 65%, Turn 45%, River 30%), prioridad sobre bluff genérico.
 
 **Additional decision modifiers:**
-- `heroIsAggressor` / `heroHandRank` / `heroKickerStrength` — affect raise/call/sizing decisions
-- `hasComboDraw` — flush+straight draw gets +6 equity bonus (ComboDrawEquityBonus)
-- `villainBarreling` — villain bet 2+ consecutive streets → FoldBelow+5, ThinValue+3 (narrower range)
-- SPR push/fold — SPR < 2: FoldBelow−8, equity > ValueAbove → All-In. SPR > 4: FoldBelow+3 (deep caution). Only turn/river.
-- Reverse implied odds — turn/river facing bet with OnePair/TwoPair on draw-heavy board: −4 to −6 equity penalty (river ×0.6 reduced)
-- Board texture per situation — 3bet pot aggressor keeps range advantage on low boards (overpairs)
-- Tainted outs — outs that also improve villain discounted ×0.5 (`EffectiveOuts`)
-- Cross-street state — `_villainBetFlop/Turn`, `_heroBetFlop/Turn`, `_villainAggressorCheckedFlop` tracked across streets
+- `heroIsAggressor` — cross-street: incluye HeroBetFlop/HeroBetTurn (no solo preflop)
+- `heroKickerStrength` — TPTK (Strong) → sizing mayor + FoldBelow -3 facing bet, TPWK (Weak) OOP → check + FoldBelow +2 facing bet
+- `heroBlocksTopCard` — hero tiene carta que matchea top board card → bluff catch ×0.90, value sizing mayor
+- `hasComboDraw` — flush+straight draw gets +6 equity bonus, only if HandRank < Straight
+- `villainBarreling` + `villainCheckedMiddleStreet` — bet-bet vs bet-check-bet differentiation
+- Range narrowing — villain apostó en 2+ calles → FoldBelow +3/calle (rango más estrecho)
+- SPR push/fold — Interpolación suave: factor = 1 - spr/threshold (no buckets discretos). isPushFold solo con SPR < 1.0.
+- Reverse implied odds — turn/river facing bet, OnePair/TwoPair, draw-heavy board, blocker reduction. Desactivado si villain all-in.
+- Board texture per situation — 3bet pot: range advantage con 1+ carta alta (Q, K, A)
+- Tainted outs — flush draw ×0.7, sin flush ×0.3
+- 3-bet/4-bet pot adjustment — ThreeBet/Squeeze: FoldBelow +5, ThinValue +3. FourBet: FoldBelow +8, ThinValue +5.
+- Multiway penalty — IP: lineal. OOP: cuadrático (n² × penalty × 0.5). Street multiplier: turn ×1.2, river ×1.4.
+- Float exit abort — Verifica runout antes de bet. Bad runout (overcard/flush/straight complete) → Check.
+- All-in detection — `IsAnyoneAllIn` → foldEquity=0, reverseImplied=0.
+- Check-raise SPR guard — SPR < 1.5 + equity < 60% → skip check-raise.
+- effectiveEquity floor — Math.Max(0, effectiveEquity) tras penalizaciones.
+- Cross-street state — `PostflopGameContext`: VillainBet/HeroBet per street, VillainBetSize, FloatedFlop, TurnCalledWithFlushDanger, HeroCheckedAllStreets, IsAnyoneAllIn. Reset incondicional al detectar nueva mano.
+- VillainRange — ajustado por posición villain (EP ×0.7, BTN ×1.3) y HandSituation
+- OpponentProfile — AF por posición (AggressionFactorIP/OOP), `GetTypeForPosition(bool villainIsIP)`, stat-specific reliability (`HasReliableCBetData`≥5, `HasReliableAFData`≥10, `HasReliableFoldData`≥8)
+- Fold equity — stats reales OpponentTracker (GetFoldToBetPct) o fallback multipliers estáticos
+- Implied odds — ajustadas por numOpponents (OOP multiway peor, IP con draw mejor)
+- DonkBet detection — cross-street: HeroBetFlop/Turn activa donk bet en turn/river
 
 **Danger card penalty system:**
-- Percentage penalties (proportional): FlushComplete = equity×25% (requires 4+ same suit on board), StraightComplete = equity×18%
-- Flat penalties: BoardPaired −5, Overcard −3, FlushDraw −5 (3 same suit on board)
-- FacingBetMultiplier ×1.4 (villain represents completed draw)
-- Hero blocker effect: penalty ×0.5 if hero holds danger suit
-- NoBet cap: `DangerCompletedDrawNoBetCap=45` (no value bet on completed draw board, skipped if hero has the completed draw)
-- Danger propagation: turn `_lastBoardChange` carries to river via `CombineBoardChanges()`
-- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap if applicable, then `- reverseImpliedPenalty`
-- Never folds without facing bet → Check instead
+- Percentage penalties (proportional, Math.Max not sum): FlushComplete = equity×35%, StraightComplete = equity×18%.
+- FlushDraw (3 same suit): equity × 8% × streetMultiplier (proporcional, no flat). Reducido con mano fuerte (OnePair ×0.75, TwoPair+ ×0.5).
+- Flat penalties: BoardPaired −5, Overcard −3.
+- Street multipliers: Flop ×1.3, Turn ×1.0, River ×0.8.
+- FacingBetMultiplier ×1.4.
+- Hero blocker effect granular: nut ×0.35, non-nut ×0.55, board4flush ×0.7.
+- NoBet cap: `DangerCompletedDrawNoBetCap=45` (skipped if hero has completed draw).
+- `dangerousFlushBoard`: flop solo monotone (DangerLevel >= 3), turn/river FlushDrawAppeared. Afecta raise decisions (OnePair no raise).
+- Turn-river plan: `TurnCalledWithFlushDanger` → river check si flush completa.
+- `effectiveEquity = equity - dangerPenalty + comboDrawBonus`, then cap, then `- reverseImpliedPenalty`, then `Math.Max(0, ...)`.
+- Never folds without facing bet → Check instead.
+- Auto-rebuy detection: `_heroStackPreRebuy` tracks stack during active hand, ignores sudden increases from auto-rebuy to 100BB.
 
 ## Game State Machine
 
@@ -112,7 +136,7 @@ Properties `IsFlop`, `IsTurn`, `IsRiver` cover both `*Detected` and `*Action` st
 - **Turn/River**: `IsBoardCardVisible("Card4"/"Card5")` in `ProcessPostFlopAsync` checks board card regions via image hash comparison (>80% confidence threshold) to detect new street cards. When in `FlopAction`/`TurnAction` and next card is visible → transitions to `TurnDetected`/`RiverDetected`. If no new card → reprocesses current street with updated bet info (villain raise scenario).
 - **Dealer detection**: `SetDealerPlayer()` retries on each loop iteration while `Position == None`, allowing detection even if first capture misses the dealer button.
 
-Includes `ForceState()` for test/debug mode and `MaxOcrRetries` for OCR failure handling.
+Includes `ForceState()` for test/debug mode, `MaxOcrRetries` for OCR failure handling, and `TryTransition(state, visibleBoardCards)` overload that validates card count vs expected street (FlopDetected≥3, TurnDetected≥4, RiverDetected≥5).
 
 ## Strategy Configuration
 
@@ -148,7 +172,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (385+ tests, no mocking framework)
+- **NUnit** — Testing framework (392+ tests, no mocking framework)
 
 ## Code Style
 
@@ -161,4 +185,4 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Specifications (openspec/)
 
-Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab).
+Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab), `bugfix-decision-engine` (5 bugfixes: bluff condition, danger penalty Math.Max, combo draw bonus guard, river probe bet, calibration).

@@ -39,9 +39,24 @@ public class StrategyProfile
     public double TurnBluffFrequency { get; set; } = 0.12;
     public double RiverBluffFrequency { get; set; } = 0.10;
 
+    // C-Bet Frequencies (agresor preflop que apuesta por continuación — distinto de bluff puro)
+    public double CbetFrequencyFlop { get; set; } = 0.65;
+    public double CbetFrequencyTurn { get; set; } = 0.45;
+    public double CbetFrequencyRiver { get; set; } = 0.30;
+
+    // Kicker quality adjustment en facing bet (TPTK vs TPWK)
+    public double KickerStrongEquityBonus { get; set; } = 3.0;
+    public double KickerWeakEquityPenalty { get; set; } = 2.0;
+
+    // Bluff frequency modulada por SPR (usado en HandleLowEquity)
+    public double BluffSPRShortThreshold { get; set; } = 2.0;
+    public double BluffSPRShortMultiplier { get; set; } = 0.5;
+    public double BluffSPRDeepThreshold { get; set; } = 4.0;
+    public double BluffSPRDeepMultiplier { get; set; } = 1.2;
+
     // Danger Card Penalties (usado en PostflopDecisionService)
     // Porcentual: reduce equity un X% cuando se completa draw (ej: 25 = -25% de equity)
-    public double DangerFlushCompletePct { get; set; } = 25.0;
+    public double DangerFlushCompletePct { get; set; } = 35.0;
     public double DangerStraightCompletePct { get; set; } = 18.0;
     // Flat: penalización fija en puntos de equity
     public double DangerBoardPairedPenalty { get; set; } = 5.0;
@@ -50,6 +65,14 @@ public class StrategyProfile
     // Multiplicadores
     public double DangerFacingBetMultiplier { get; set; } = 1.4;
     public double DangerHeroBlocksReduction { get; set; } = 0.5;
+    // Blocker granular: nut blocker (As del palo) elimina más combos que non-nut
+    public double DangerNutBlockerReduction { get; set; } = 0.35;
+    public double DangerNonNutBlockerReduction { get; set; } = 0.55;
+    // Board con 4+ cartas del palo: flush casi segura, blocker menos relevante
+    public double DangerBlockerBoard4FlushReduction { get; set; } = 0.7;
+    // Escalado de danger penalty por street: flop más riesgo (2 calles por venir), river menos (definitivo)
+    public double DangerPenaltyFlopMultiplier { get; set; } = 1.3;
+    public double DangerPenaltyRiverMultiplier { get; set; } = 0.8;
     // Tope de equity para APOSTAR cuando flush/straight completado y hero no lo tiene
     // (apostar solo consigue que nos paguen manos que nos ganan)
     public double DangerCompletedDrawNoBetCap { get; set; } = 45.0;
@@ -82,6 +105,10 @@ public class StrategyProfile
     // Penalización cuando villano apuesta en 2 calles consecutivas (rango más estrecho)
     public double VillainBarrelFoldIncrease { get; set; } = 5.0;
     public double VillainBarrelThinValueIncrease { get; set; } = 3.0;
+    // Sizing tell: penalización cuando villano escala tamaño de apuesta entre streets
+    public double VillainSizingEscalationPenalty { get; set; } = 4.0;
+    // Bet-check-bet: penalty menor que barrel (draw fallido reintentando)
+    public double VillainBetCheckBetPenalty { get; set; } = 2.0;
 
     // SPR Push/Fold (usado en PostflopDecisionService)
     // Con SPR corto, decisiones más binarias (commit o fold)
@@ -91,14 +118,32 @@ public class StrategyProfile
     public double SPRDeepCautionThreshold { get; set; } = 4.0;
     public double SPRDeepFoldIncrease { get; set; } = 3.0;
 
+    // Multiway street multipliers (turn/river más peligroso en multiway)
+    public double MultiwayStreetMultiplierTurn { get; set; } = 1.2;
+    public double MultiwayStreetMultiplierRiver { get; set; } = 1.4;
+
+    // 3-Bet/4-Bet pot postflop adjustments (rango villano más estrecho)
+    public double ThreeBetPostflopFoldIncrease { get; set; } = 5.0;
+    public double ThreeBetPostflopValueIncrease { get; set; } = 3.0;
+    public double FourBetPostflopFoldIncrease { get; set; } = 8.0;
+    public double FourBetPostflopValueIncrease { get; set; } = 5.0;
+
+    // Check-raise SPR guard (no check-raise cuando SPR compromete el stack)
+    public double CheckRaiseSPRMinThreshold { get; set; } = 1.5;
+    public double CheckRaiseLowSPRMinEquity { get; set; } = 60.0;
+
     // Reverse Implied Odds (penalización en turn al facing bet con mano vulnerable en board con draws)
-    public double ReverseImpliedFlushDrawPenalty { get; set; } = 4.0;
-    public double ReverseImpliedCoordinatedPenalty { get; set; } = 2.0;
+    public double ReverseImpliedFlushDrawPenalty { get; set; } = 7.0;
+    public double ReverseImpliedCoordinatedPenalty { get; set; } = 4.0;
     public double ReverseImpliedOnePairMultiplier { get; set; } = 1.5;
+    // Reducción de reverse implied odds cuando hero bloquea el palo del draw
+    public double ReverseImpliedBlockerReduction { get; set; } = 0.5;
 
     // Bluff Catching (usado en PostflopDecisionService)
     // Multiplicador sobre FoldBelow: equity >= FoldBelow * multiplier → call para atrapar bluffs
-    public double BluffCatchFoldBelowMultiplier { get; set; } = 0.85;
+    public double BluffCatchFoldBelowMultiplier { get; set; } = 0.75;
+    // Turn: umbral más estricto que river (más riesgo con 1 calle por venir)
+    public double BluffCatchTurnEquityMultiplier { get; set; } = 0.90;
 
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
@@ -107,13 +152,21 @@ public class StrategyProfile
     // Tainted Outs (usado en OutsCalculator)
     // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
     public double TaintedOutsDiscount { get; set; } = 0.5;
+    // Descuento variable: hero con flush draw (mejora más) → 0.7; sin flush draw → 0.3
+    public double TaintedOutsDiscountHeroStrong { get; set; } = 0.7;
+    public double TaintedOutsDiscountHeroWeak { get; set; } = 0.3;
 
     // Floating IP (call con posición para robar en turn)
-    public double FloatingIPMinEquity { get; set; } = 20.0;
+    public double FloatingIPMinEquity { get; set; } = 25.0;
     public double FloatingIPMaxEquity { get; set; } = 35.0;
+    // Outs mínimos para considerar draw real sin flush/combo draw (evitar floats con overcards)
+    public int FloatingIPMinOuts { get; set; } = 6;
 
     // Slow Play (check con nuts en board seco para inducir bluff)
-    public double SlowPlayMinEquity { get; set; } = 80.0;
+    public double SlowPlayMinEquity { get; set; } = 72.0;
+
+    // Check-raise con draws fuertes: equity mínima para check-raise semi-bluff en flop OOP
+    public double CheckRaiseDrawMinEquity { get; set; } = 40.0;
 
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
@@ -173,9 +226,11 @@ public class StrategyProfile
         if (RiverBluffFrequency < 0 || RiverBluffFrequency > 1)
             errors.Add($"RiverBluffFrequency ({RiverBluffFrequency}) debe estar entre 0 y 1");
 
-        // BluffCatch multiplier en rango (0, 1]
+        // BluffCatch multipliers en rango (0, 1]
         if (BluffCatchFoldBelowMultiplier <= 0 || BluffCatchFoldBelowMultiplier > 1)
             errors.Add($"BluffCatchFoldBelowMultiplier ({BluffCatchFoldBelowMultiplier}) debe estar entre 0 (excl.) y 1");
+        if (BluffCatchTurnEquityMultiplier <= 0 || BluffCatchTurnEquityMultiplier > 1)
+            errors.Add($"BluffCatchTurnEquityMultiplier ({BluffCatchTurnEquityMultiplier}) debe estar entre 0 (excl.) y 1");
 
         // Bet sizing multipliers deben ser > 0
         if (BetSizingSPRDeepMultiplier <= 0)

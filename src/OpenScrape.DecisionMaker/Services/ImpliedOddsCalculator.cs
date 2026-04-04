@@ -21,7 +21,8 @@ public class ImpliedOddsCalculator
         bool hasFlushDraw,
         decimal heroStack,
         decimal potSize,
-        StrategyProfile profile)
+        StrategyProfile profile,
+        int numOpponents = 1)
     {
         if (street == BoardPosition.River)
             return 1.0;
@@ -39,8 +40,10 @@ public class ImpliedOddsCalculator
         {
             double range = profile.ImpliedOddsSPRDeepThreshold - profile.ImpliedOddsSPRShallowThreshold;
             double position = (spr - profile.ImpliedOddsSPRShallowThreshold) / range;
+            // Interpolación cuadrática: implied odds crecen más rápido acercándose a deep
+            double curvedPosition = Math.Sqrt(position);
             sprFactor = profile.ImpliedOddsSPRShallowFactor +
-                (position * (profile.ImpliedOddsSPRDeepFactor - profile.ImpliedOddsSPRShallowFactor));
+                (curvedPosition * (profile.ImpliedOddsSPRDeepFactor - profile.ImpliedOddsSPRShallowFactor));
         }
 
         double streetFactor = street == BoardPosition.Turn
@@ -53,6 +56,16 @@ public class ImpliedOddsCalculator
 
         if (hasFlushDraw)
             sprFactor *= profile.ImpliedOddsFlushDrawBonus;
+
+        // Multiway: OOP implied odds peores (villain detrás puede raise)
+        // IP con draw: implied odds mejores (más gente que pagar)
+        if (numOpponents >= 2)
+        {
+            if (!isInPosition)
+                sprFactor *= 1.0 + 0.05 * (numOpponents - 1);
+            else if (hasFlushDraw)
+                sprFactor *= 1.0 - 0.03 * (numOpponents - 1);
+        }
 
         return Math.Max(0.50, Math.Min(1.0, sprFactor));
     }
@@ -69,7 +82,8 @@ public class ImpliedOddsCalculator
         BoardChangeResult? boardChange, HandRank heroHandRank, bool hasFlushDraw,
         BoardPosition street, bool isFacingBet,
         StrategyProfile profile,
-        PairClassification pairClassification = PairClassification.None)
+        PairClassification pairClassification = PairClassification.None,
+        bool heroBlocksDangerSuit = false)
     {
         if ((street != BoardPosition.Turn && street != BoardPosition.River) || !isFacingBet || boardChange == null)
             return 0;
@@ -90,16 +104,20 @@ public class ImpliedOddsCalculator
             // Multiplicador diferenciado por sub-tipo de par
             double multiplier = pairClassification switch
             {
-                PairClassification.Overpair        => 1.0,
-                PairClassification.TopPair         => 1.2,
-                PairClassification.MiddlePair      => 1.5,
+                PairClassification.Overpair => 1.0,
+                PairClassification.TopPair => 1.2,
+                PairClassification.MiddlePair => 1.5,
                 PairClassification.PocketPairUnder => 1.5,
-                PairClassification.BottomPair      => 1.8,
-                PairClassification.BoardPaired     => 2.0,
-                _                                  => profile.ReverseImpliedOnePairMultiplier
+                PairClassification.BottomPair => 1.8,
+                PairClassification.BoardPaired => 2.0,
+                _ => profile.ReverseImpliedOnePairMultiplier
             };
             penalty *= multiplier;
         }
+
+        // Hero bloquea el draw del villano → reduce penalización
+        if (heroBlocksDangerSuit && penalty > 0)
+            penalty *= profile.ReverseImpliedBlockerReduction;
 
         // River: penalización reducida (no hay más cartas por venir)
         if (street == BoardPosition.River)

@@ -76,14 +76,13 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int overlapOuts = overlapCards.Count;
 
             // 6. Overcards: cartas de hero más altas que todas las del board
-            // Solo se cuentan cuando NO hay flush draw ni OESD (draws principales ya dominan)
-            // Gutshot (1 completing rank) NO es "main draw" → overcards sí cuentan con gutshot
-            // y NO tienes ya una mano hecha (flush o straight completados)
+            // Se cuentan SIEMPRE (incluso con draws activos) pero sin doble-contar
+            // outs que ya son straight completing ranks.
+            // NO se cuentan si hero ya tiene mano hecha (flush o straight completados).
             int overcardOuts = 0;
-            bool hasMainDraw = flushOuts > 0 || straightCompletingRanks.Count >= 2;
             bool hasMadeHand = HasMadeFlush(allCards) || HasFiveCardStraight(
                 allCards.Select(c => (int)c.Rank).Distinct().ToHashSet());
-            if (communityCards.Count >= 3 && !hasMainDraw && !hasMadeHand)
+            if (communityCards.Count >= 3 && !hasMadeHand)
             {
                 var boardMaxRank = communityCards.Max(c => (int)c.Rank);
                 var overcards = myCards
@@ -133,7 +132,11 @@ namespace OpenScrape.DecisionMaker.Algorithms
             foreach (var c in straightOutCards) allOutCards.Add(c);
             result.TaintedOuts = CalculateTaintedOuts(allOutCards, communityCards);
             result.CleanOuts = result.TotalOuts - result.TaintedOuts;
-            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * _profile.TaintedOutsDiscount);
+            // Descuento variable: hero con flush draw (mejora fuerte) → 0.7; sin flush draw → 0.3
+            double taintedDiscount = flushOuts > 0
+                ? _profile.TaintedOutsDiscountHeroStrong
+                : _profile.TaintedOutsDiscountHeroWeak;
+            result.EffectiveOuts = result.CleanOuts + (result.TaintedOuts * taintedDiscount);
 
             // Clasificar tipos de draw
             if (flushOuts >= 9)

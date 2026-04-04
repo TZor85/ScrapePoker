@@ -178,16 +178,17 @@ public class OcrService
                     ulong hash = ComputeDHash(croppedBitmap);
                     if (_ocrCache.TryGet(hash, out var cachedText))
                     {
-                        // Cache hit: create result with cached text
+                        // Cache hit: crear bitmap independiente del stream (clonar para evitar use-after-dispose)
                         using var ms = new MemoryStream();
                         using var skImage = SKImage.FromBitmap(croppedBitmap);
                         using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
                         encoded.SaveTo(ms);
                         ms.Position = 0;
+                        using var tempBitmap = new Bitmap(ms);
                         result = new OcrResult
                         {
                             Text = cachedText,
-                            Image = new Bitmap(ms)
+                            Image = new Bitmap(tempBitmap) // Clon independiente del stream
                         };
                         return result;
                     }
@@ -243,22 +244,25 @@ public class OcrService
                             imageData = invertedMs.ToArray();
                         }
 
-                        // Procesar OCR
+                        // Procesar OCR con scoring de confianza
                         using (var img = Pix.LoadFromMemory(imageData))
                         using (var page = _engine.Process(img))
                         {
                             var text = ProcessText(page.GetText().Trim());
+                            var confidence = page.GetMeanConfidence();
 
                             // Cache the result — LruCache descarta la entrada menos usada al superar la capacidad
                             _ocrCache.Set(hash, text);
 
-                            // Crear el bitmap para el resultado
+                            // Crear bitmap independiente del stream (clonar para evitar use-after-dispose)
                             using (var ms = new MemoryStream(imageData))
+                            using (var tempBitmap = new Bitmap(ms))
                             {
                                 result = new OcrResult
                                 {
                                     Text = text,
-                                    Image = new Bitmap(ms)
+                                    Image = new Bitmap(tempBitmap),
+                                    Confidence = confidence
                                 };
                             }
                         }
@@ -326,7 +330,7 @@ public class OcrService
             byte value = brightness > thresholdValue ? (byte)255 : (byte)0;
 
             // Escribir pixel blanco o negro en destino
-            dstSpan[i]     = value; // B
+            dstSpan[i] = value; // B
             dstSpan[i + 1] = value; // G
             dstSpan[i + 2] = value; // R
             dstSpan[i + 3] = 255;   // A (opaco)
@@ -402,6 +406,16 @@ public class OcrResult : IDisposable
 {
     public string? Text { get; set; }
     public Bitmap? Image { get; set; }
+
+    /// <summary>
+    /// Confianza media de Tesseract (0.0 a 1.0). -1 si no disponible (cache hit).
+    /// </summary>
+    public float Confidence { get; set; } = -1;
+
+    /// <summary>
+    /// Indica si la confianza del OCR es suficiente para confiar en el resultado.
+    /// </summary>
+    public bool IsHighConfidence => Confidence < 0 || Confidence >= 0.70f;
 
     public void Dispose()
     {

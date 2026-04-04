@@ -62,6 +62,50 @@ public class GameLoopStateMachine
         return true;
     }
 
+    /// <summary>
+    /// Transición con validación de board cards visibles.
+    /// Previene decidir en street equivocada (ej: FlopDetected con 4 cartas visibles).
+    /// </summary>
+    public bool TryTransition(GameState newState, int visibleBoardCards)
+    {
+        // Validar coherencia entre estado destino y cartas visibles
+        int expectedMinCards = newState switch
+        {
+            GameState.FlopDetected or GameState.FlopAction => 3,
+            GameState.TurnDetected or GameState.TurnAction => 4,
+            GameState.RiverDetected or GameState.RiverAction => 5,
+            _ => 0 // WaitingForHand, HandDetected, PreflopAction, HandComplete: no requiere cartas
+        };
+
+        if (visibleBoardCards > 0 && expectedMinCards > 0 && visibleBoardCards < expectedMinCards)
+        {
+            _logger.LogWarning(
+                "Transición bloqueada por board cards: {CurrentState} -> {NewState}, " +
+                "cartas visibles={VisibleCards}, mínimo requerido={ExpectedMin}",
+                CurrentState, newState, visibleBoardCards, expectedMinCards);
+            return false;
+        }
+
+        // Warn si hay más cartas de las esperadas (posible desfase de state)
+        int expectedMaxCards = newState switch
+        {
+            GameState.FlopDetected or GameState.FlopAction => 3,
+            GameState.TurnDetected or GameState.TurnAction => 4,
+            GameState.RiverDetected or GameState.RiverAction => 5,
+            _ => 99
+        };
+
+        if (visibleBoardCards > expectedMaxCards)
+        {
+            _logger.LogWarning(
+                "Posible desfase de street: {CurrentState} -> {NewState}, " +
+                "cartas visibles={VisibleCards} > esperado={ExpectedMax}",
+                CurrentState, newState, visibleBoardCards, expectedMaxCards);
+        }
+
+        return TryTransition(newState);
+    }
+
     public void Reset()
     {
         var previousState = CurrentState;

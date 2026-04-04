@@ -16,10 +16,49 @@ public class PostflopGameContext
     public bool HeroBetTurn { get; set; }
     public bool PreviousStreetWasBet { get; set; }
 
+    // === Tamaño de apuesta del villano por street (sizing tells) ===
+    public BetSizeCategory VillainBetSizeFlop { get; set; } = BetSizeCategory.NoBet;
+    public BetSizeCategory VillainBetSizeTurn { get; set; } = BetSizeCategory.NoBet;
+
     /// <summary>
     /// El agresor preflop checkeó en el flop → señal de debilidad para probe bet.
     /// </summary>
     public bool VillainAggressorCheckedFlop { get; set; }
+
+    /// <summary>
+    /// El villano apostó en flop pero checkeó en turn → patrón bet-check-bet si apuesta en river.
+    /// Indica debilidad (draw fallido que reintenta) vs barrel real (rango fuerte).
+    /// </summary>
+    public bool VillainCheckedMiddleStreet { get; set; }
+
+    /// <summary>
+    /// Hero floateó en flop (call con aire + posición) → en turn debe apostar si villano chequea.
+    /// </summary>
+    public bool HeroFloatedFlop { get; set; }
+
+    /// <summary>
+    /// Hero calleó turn con flush draw peligroso en board (3+ same suit).
+    /// Si river completa el flush → check automático.
+    /// </summary>
+    public bool TurnCalledWithFlushDanger { get; set; }
+
+    /// <summary>
+    /// Hero no apostó en ninguna calle previa (flop check, turn check).
+    /// En river, puede apostar delayed value con mano decente.
+    /// </summary>
+    public bool HeroCheckedAllStreets => !HeroBetFlop && !HeroBetTurn;
+
+    /// <summary>
+    /// Algún oponente ya comprometió todo su stack (all-in).
+    /// Desactiva fold equity y reverse implied odds para ese jugador.
+    /// </summary>
+    public bool IsAnyoneAllIn { get; set; }
+
+    /// <summary>
+    /// Estado base de peligro del flop (flush draw presence, paired, connected).
+    /// Se combina con boardChange del turn via CombineBoardChanges().
+    /// </summary>
+    public BoardChangeResult InitialBoardDanger { get; set; } = BoardChangeResult.Safe;
 
     /// <summary>
     /// Resultado del análisis de cambio de board (peligro de turn/river card).
@@ -43,6 +82,13 @@ public class PostflopGameContext
         HeroBetTurn = false;
         PreviousStreetWasBet = false;
         VillainAggressorCheckedFlop = false;
+        VillainCheckedMiddleStreet = false;
+        HeroFloatedFlop = false;
+        TurnCalledWithFlushDanger = false;
+        IsAnyoneAllIn = false;
+        VillainBetSizeFlop = BetSizeCategory.NoBet;
+        VillainBetSizeTurn = BetSizeCategory.NoBet;
+        InitialBoardDanger = BoardChangeResult.Safe;
         LastBoardChange = BoardChangeResult.Safe;
     }
 
@@ -62,6 +108,8 @@ public class PostflopGameContext
     /// </summary>
     public void UpdateTurnState(bool heroBet, bool villainBet)
     {
+        // Detectar patrón bet-check: villain apostó en flop pero no en turn
+        VillainCheckedMiddleStreet = VillainBetFlop && !villainBet;
         HeroBetTurn = heroBet;
         VillainBetTurn = villainBet;
         PreviousStreetWasBet = heroBet;

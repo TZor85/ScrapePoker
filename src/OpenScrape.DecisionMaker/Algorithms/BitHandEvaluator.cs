@@ -247,6 +247,167 @@ public class BitHandEvaluator : IHandEvaluator
     }
 
     /// <summary>
+    /// Evaluación ligera para Monte Carlo: zero allocations, retorna HandScore struct.
+    /// Misma lógica de bit-manipulation pero sin construir listas de Cards/Kickers.
+    /// </summary>
+    public HandScore EvaluateHandScore(List<CardDataOuts> cards)
+    {
+        int count = cards.Count;
+
+        Span<int> rankCount = stackalloc int[15];
+        Span<int> suitCount = stackalloc int[5];
+        int rankBits = 0;
+        Span<int> suitRankBits = stackalloc int[5];
+
+        for (int i = 0; i < count; i++)
+        {
+            int r = (int)cards[i].Rank;
+            int s = (int)cards[i].Suit;
+            rankCount[r]++;
+            suitCount[s]++;
+            rankBits |= 1 << r;
+            suitRankBits[s] |= 1 << r;
+        }
+
+        // Flush
+        int flushSuit = -1;
+        for (int s = 1; s <= 4; s++)
+        {
+            if (suitCount[s] >= 5) { flushSuit = s; break; }
+        }
+
+        if (flushSuit >= 0)
+        {
+            int sfHigh = FindStraightHigh(suitRankBits[flushSuit]);
+            if (sfHigh > 0)
+            {
+                return new HandScore(HandRank.StraightFlush,
+                    HandScore.BuildComposite((int)HandRank.StraightFlush, sfHigh));
+            }
+
+            // Flush: 5 kickers más altos del suit
+            int fk1 = 0, fk2 = 0, fk3 = 0, fk4 = 0, fk5 = 0;
+            int fkCount = 0;
+            int flushBits = suitRankBits[flushSuit];
+            for (int r = 14; r >= 2 && fkCount < 5; r--)
+            {
+                if ((flushBits & (1 << r)) != 0)
+                {
+                    switch (fkCount) { case 0: fk1 = r; break; case 1: fk2 = r; break; case 2: fk3 = r; break; case 3: fk4 = r; break; case 4: fk5 = r; break; }
+                    fkCount++;
+                }
+            }
+            return new HandScore(HandRank.Flush,
+                HandScore.BuildComposite((int)HandRank.Flush, fk1, fk2, fk3, fk4, fk5));
+        }
+
+        // Groups
+        int quadsRank = 0, tripsRank = 0, highPair = 0, lowPair = 0;
+        for (int r = 14; r >= 2; r--)
+        {
+            int c = rankCount[r];
+            if (c == 4 && quadsRank == 0) { quadsRank = r; }
+            else if (c == 3 && tripsRank == 0) { tripsRank = r; }
+            else if (c >= 2)
+            {
+                if (highPair == 0) highPair = r;
+                else if (lowPair == 0) { lowPair = r; break; }
+            }
+        }
+
+        int straightHigh = FindStraightHigh(rankBits);
+
+        // Four of a Kind
+        if (quadsRank > 0)
+        {
+            int kicker = FindHighestExcluding(rankCount, quadsRank, -1);
+            return new HandScore(HandRank.FourOfAKind,
+                HandScore.BuildComposite((int)HandRank.FourOfAKind, quadsRank, kicker));
+        }
+
+        // Full House
+        if (tripsRank > 0)
+        {
+            int pairRank = highPair > 0 ? highPair : 0;
+            for (int r = 14; r >= 2; r--)
+            {
+                if (r != tripsRank && rankCount[r] >= 3 && r > pairRank)
+                    pairRank = r;
+            }
+
+            if (pairRank > 0)
+            {
+                return new HandScore(HandRank.FullHouse,
+                    HandScore.BuildComposite((int)HandRank.FullHouse, tripsRank, pairRank));
+            }
+        }
+
+        // Straight (sin trips ni full)
+        if (straightHigh > 0 && tripsRank == 0)
+        {
+            return new HandScore(HandRank.Straight,
+                HandScore.BuildComposite((int)HandRank.Straight, straightHigh));
+        }
+
+        // Three of a Kind (con check de straight)
+        if (tripsRank > 0)
+        {
+            if (straightHigh > 0)
+            {
+                return new HandScore(HandRank.Straight,
+                    HandScore.BuildComposite((int)HandRank.Straight, straightHigh));
+            }
+
+            int tk1 = 0, tk2 = 0;
+            int tkc = 0;
+            for (int r = 14; r >= 2 && tkc < 2; r--)
+            {
+                if (r != tripsRank && rankCount[r] > 0) { if (tkc == 0) tk1 = r; else tk2 = r; tkc++; }
+            }
+            return new HandScore(HandRank.ThreeOfAKind,
+                HandScore.BuildComposite((int)HandRank.ThreeOfAKind, tripsRank, tk1, tk2));
+        }
+
+        // Straight tardío
+        if (straightHigh > 0)
+        {
+            return new HandScore(HandRank.Straight,
+                HandScore.BuildComposite((int)HandRank.Straight, straightHigh));
+        }
+
+        // Two Pair
+        if (highPair > 0 && lowPair > 0)
+        {
+            int kicker = FindHighestExcluding(rankCount, highPair, lowPair);
+            return new HandScore(HandRank.TwoPair,
+                HandScore.BuildComposite((int)HandRank.TwoPair, highPair, lowPair, kicker));
+        }
+
+        // One Pair
+        if (highPair > 0)
+        {
+            int pk1 = 0, pk2 = 0, pk3 = 0;
+            int pkc = 0;
+            for (int r = 14; r >= 2 && pkc < 3; r--)
+            {
+                if (r != highPair && rankCount[r] > 0) { if (pkc == 0) pk1 = r; else if (pkc == 1) pk2 = r; else pk3 = r; pkc++; }
+            }
+            return new HandScore(HandRank.OnePair,
+                HandScore.BuildComposite((int)HandRank.OnePair, highPair, pk1, pk2, pk3));
+        }
+
+        // High Card
+        int hk1 = 0, hk2 = 0, hk3 = 0, hk4 = 0, hk5 = 0;
+        int hkc = 0;
+        for (int r = 14; r >= 2 && hkc < 5; r--)
+        {
+            if (rankCount[r] > 0) { switch (hkc) { case 0: hk1 = r; break; case 1: hk2 = r; break; case 2: hk3 = r; break; case 3: hk4 = r; break; case 4: hk5 = r; break; } hkc++; }
+        }
+        return new HandScore(HandRank.HighCard,
+            HandScore.BuildComposite((int)HandRank.HighCard, hk1, hk2, hk3, hk4, hk5));
+    }
+
+    /// <summary>
     /// Busca la escalera más alta en un bitmask de ranks.
     /// Retorna el rank alto de la escalera (5-14), o 0 si no hay.
     /// El wheel (A-2-3-4-5) retorna 5.

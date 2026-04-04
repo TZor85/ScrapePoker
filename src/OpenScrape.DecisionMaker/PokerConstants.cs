@@ -42,14 +42,49 @@ public static class PokerConstants
     public const double FacingBetPenaltySmall = 1.0;
     public const double VillainAggressionPenalty = 3.0;
 
-    // === PostflopDecisionService: ajustes multiway ===
-    public const double MultiwayFoldBelowPerOpponent = 4.0;
-    public const double MultiwayThinValuePerOpponent = 3.0;
+    // === PostflopDecisionService: escalado de facing bet penalty por street ===
+    // Bets grandes en flop son normales (c-bets); en river representan rango fuerte
+    public const double FacingBetTurnMultiplier = 1.15;
+    public const double FacingBetRiverMultiplier = 1.30;
+
+    // === PostflopDecisionService: ajustes multiway (IP puede aislar, OOP vulnerable) ===
+    public const double MultiwayFoldBelowIP = 2.0;
+    public const double MultiwayFoldBelowOOP = 6.0;
+    public const double MultiwayThinValueIP = 2.0;
+    public const double MultiwayThinValueOOP = 4.0;
 
     // === PostflopDecisionService: ajustes agresor vs caller ===
     public const double AggressorVsDonkFoldReduction = 5.0;
     public const double AggressorVsDonkThinValueReduction = 3.0;
     public const double CallerVsCbetFoldIncrease = 2.0;
+
+    // === PostflopDecisionService: bluff catch multiplicadores por tipo de oponente ===
+    // < 1.0 = call más amplio (villain bluffea más), > 1.0 = call más estrecho
+    public const double BluffCatchLAGMultiplier = 0.80;
+    public const double BluffCatchLPMultiplier = 0.85;
+    public const double BluffCatchTAGMultiplier = 1.00;
+    public const double BluffCatchTPMultiplier = 1.20;
+
+    // === PostflopDecisionService: underbet ===
+    public const double FacingBetPenaltyUnderbet = 0.0;
+
+    // === PostflopDecisionService: pot commitment ===
+    public const double PotCommitmentSPRThreshold = 0.5;
+
+    // === PostflopDecisionService: range narrowing por línea agresiva ===
+    public const double RangeNarrowingPerStreet = 3.0;
+
+    // === PostflopDecisionService: randomización en threshold boundary ===
+    public const double RandomizationMargin = 3.0;
+    public const double RandomizationBetFrequency = 0.70;
+
+    // === PostflopDecisionService: pot control ===
+    public const double PotControlMinEquity = 40.0;
+    public const double PotControlMaxEquity = 55.0;
+
+    // === PostflopDecisionService: bluff catch runout ===
+    public const double BluffCatchBrickRunoutMultiplier = 0.85;
+    public const double BluffCatchScareRunoutMultiplier = 1.15;
 
     // === BoardTextureAnalyzer: pesos de wetness ===
     public const double WetnessMonotoneScore = 35.0;

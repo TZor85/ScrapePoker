@@ -56,8 +56,9 @@ public class DangerPenaltyCalculatorTests
     }
 
     [Test]
-    public void Calculate_FlushDrawAppeared_SinFlushComplete_DeberiaPenalizarFlat()
+    public void Calculate_FlushDrawAppeared_SinFlushComplete_DeberiaPenalizarProporcional()
     {
+        // Flush draw (3 same suit) → penalty proporcional: equity × 15% × streetMultiplier
         var change = new BoardChangeResult(
             FlushCompleted: false, FlushDrawAppeared: true,
             StraightCompleted: false, BoardPaired: false,
@@ -65,7 +66,9 @@ public class DangerPenaltyCalculatorTests
 
         var result = DangerPenaltyCalculator.Calculate(60, change, false, false, _profile);
 
-        Assert.That(result, Is.EqualTo(_profile.DangerFlushDrawPenalty).Within(0.01));
+        // 60 × 0.08 × 1.0 (turn default street multiplier) = 4.8
+        Assert.That(result, Is.EqualTo(4.8).Within(0.1),
+            "Flush draw penalty proporcional a equity (8%)");
     }
 
     [Test]
@@ -119,7 +122,8 @@ public class DangerPenaltyCalculatorTests
         var sinBlock = DangerPenaltyCalculator.Calculate(80, change, false, false, _profile);
         var conBlock = DangerPenaltyCalculator.Calculate(80, change, true, false, _profile);
 
-        Assert.That(conBlock, Is.EqualTo(sinBlock * _profile.DangerHeroBlocksReduction).Within(0.01));
+        // Non-nut blocker por defecto (heroHasNutBlocker=false), DangerLevel=3 (no board4flush)
+        Assert.That(conBlock, Is.EqualTo(sinBlock * _profile.DangerNonNutBlockerReduction).Within(0.01));
     }
 
     [Test]
@@ -148,7 +152,8 @@ public class DangerPenaltyCalculatorTests
         var result = DangerPenaltyCalculator.Calculate(60, change, true, true, _profile);
 
         double basePenalty = _profile.DangerBoardPairedPenalty + _profile.DangerOvercardPenalty;
-        double expected = basePenalty * _profile.DangerFacingBetMultiplier * _profile.DangerHeroBlocksReduction;
+        // Non-nut blocker (default), no flush completed → DangerNonNutBlockerReduction
+        double expected = basePenalty * _profile.DangerFacingBetMultiplier * _profile.DangerNonNutBlockerReduction;
         Assert.That(result, Is.EqualTo(expected).Within(0.01));
     }
 
@@ -163,5 +168,38 @@ public class DangerPenaltyCalculatorTests
         var result = DangerPenaltyCalculator.Calculate(50, change, false, false, _profile);
 
         Assert.That(result, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void Calculate_FlushYStraightCompletados_DeberiaUsarMaxNoSuma()
+    {
+        var change = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false,
+            StraightCompleted: true, BoardPaired: false,
+            OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = DangerPenaltyCalculator.Calculate(80, change, false, false, _profile);
+
+        double flushPenalty = 80 * (_profile.DangerFlushCompletePct / 100.0);
+        double straightPenalty = 80 * (_profile.DangerStraightCompletePct / 100.0);
+        double expected = Math.Max(flushPenalty, straightPenalty);
+        Assert.That(result, Is.EqualTo(expected).Within(0.01),
+            "Debe usar Math.Max de flush y straight, no la suma");
+    }
+
+    [Test]
+    public void Calculate_FlushYStraightCompletados_NuncaSuperaSumaIndividual()
+    {
+        var change = new BoardChangeResult(
+            FlushCompleted: true, FlushDrawAppeared: false,
+            StraightCompleted: true, BoardPaired: false,
+            OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
+
+        var result = DangerPenaltyCalculator.Calculate(70, change, false, false, _profile);
+
+        double flushPenalty = 70 * (_profile.DangerFlushCompletePct / 100.0);
+        double straightPenalty = 70 * (_profile.DangerStraightCompletePct / 100.0);
+        Assert.That(result, Is.LessThanOrEqualTo(flushPenalty + straightPenalty),
+            "No debe sumar ambas penalizaciones porcentuales");
     }
 }

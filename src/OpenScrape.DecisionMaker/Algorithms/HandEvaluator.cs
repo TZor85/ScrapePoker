@@ -5,6 +5,14 @@ namespace OpenScrape.DecisionMaker.Algorithms
 {
     public class HandEvaluator : IHandEvaluator
     {
+        /// <summary>
+        /// Delegación a BitHandEvaluator para HandScore (este evaluador legacy no lo implementa directamente).
+        /// </summary>
+        public HandScore EvaluateHandScore(List<CardDataOuts> cards)
+        {
+            var bitEval = new BitHandEvaluator();
+            return bitEval.EvaluateHandScore(cards);
+        }
 
         public HandEvaluation EvaluateBestHand(List<CardDataOuts> cards)
         {

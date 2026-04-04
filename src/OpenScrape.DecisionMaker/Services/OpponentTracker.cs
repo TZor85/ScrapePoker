@@ -66,7 +66,7 @@ public class OpponentTracker
     /// <summary>
     /// Registra una acción postflop del oponente.
     /// </summary>
-    public void RecordPostflopAction(string playerId, PostflopAction action)
+    public void RecordPostflopAction(string playerId, PostflopAction action, bool? isVillainInPosition = null)
     {
         var profile = GetProfile(playerId);
         switch (action)
@@ -83,6 +83,24 @@ public class OpponentTracker
             case PostflopAction.Fold:
                 profile.TimesPostflopFolded++;
                 break;
+        }
+
+        // Trackear agresión por posición si se conoce
+        if (isVillainInPosition.HasValue)
+        {
+            bool isAggressive = action is PostflopAction.Bet or PostflopAction.Raise;
+            bool isPassive = action == PostflopAction.Call;
+
+            if (isVillainInPosition.Value)
+            {
+                if (isAggressive) profile.TimesAggressiveIP++;
+                else if (isPassive) profile.TimesPassiveIP++;
+            }
+            else
+            {
+                if (isAggressive) profile.TimesAggressiveOOP++;
+                else if (isPassive) profile.TimesPassiveOOP++;
+            }
         }
     }
 
@@ -114,7 +132,10 @@ public class OpponentTracker
     public double GetAdjustedFoldEquity(string playerId, double baseFoldEquity)
     {
         var profile = GetProfile(playerId);
-        if (!profile.IsReliable)
+
+        // Usar HasReliableAFData (>= 10 acciones) en vez de IsReliable (>= 20 manos)
+        // Permite ajustar fold equity antes cuando hay datos de agresión suficientes
+        if (!profile.HasReliableAFData)
             return baseFoldEquity;
 
         return profile.Type switch
@@ -128,14 +149,62 @@ public class OpponentTracker
     }
 
     /// <summary>
+    /// Retorna % de veces que el villano foldeó ante una apuesta/raise postflop.
+    /// Retorna -1 si no hay suficientes situaciones (menos de 10 acciones facing bet).
+    /// </summary>
+    public double GetFoldToBetPct(string playerId)
+    {
+        var profile = GetProfile(playerId);
+        // Usar HasReliableFoldData (>= 8 acciones) en vez de hardcoded 10
+        if (!profile.HasReliableFoldData) return -1;
+        int totalFacingAction = profile.TimesPostflopFolded + profile.TimesPostflopCalled + profile.TimesPostflopRaised;
+        return (double)profile.TimesPostflopFolded / totalFacingAction * 100.0;
+    }
+
+    /// <summary>
     /// Obtiene todos los perfiles registrados en la sesión.
     /// </summary>
     public IReadOnlyDictionary<string, OpponentProfile> AllProfiles => _profiles;
 
+    // === Seat-alias cache: mapeo seat ("P3") → alias real ("PlayerA") ===
+    private readonly Dictionary<string, string> _seatAliasCache = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
-    /// Limpia todos los perfiles (inicio de nueva sesión).
+    /// Registra asociación seat → alias. Si existe perfil por seat name, lo migra al alias.
     /// </summary>
-    public void Reset() => _profiles.Clear();
+    public void RegisterSeatAlias(string seatName, string alias)
+    {
+        if (string.IsNullOrWhiteSpace(seatName) || string.IsNullOrWhiteSpace(alias))
+            return;
+
+        _seatAliasCache[seatName] = alias;
+
+        // Migrar perfil de seat a alias si existe (solo si no hay perfil con el alias)
+        if (_profiles.TryGetValue(seatName, out var seatProfile) &&
+            !_profiles.ContainsKey(alias))
+        {
+            seatProfile.PlayerId = alias;
+            _profiles[alias] = seatProfile;
+            _profiles.Remove(seatName);
+        }
+    }
+
+    /// <summary>
+    /// Resuelve un seat name a su alias conocido (o null si no hay).
+    /// </summary>
+    public string? ResolveName(string seatName)
+    {
+        return _seatAliasCache.TryGetValue(seatName, out var alias) ? alias : null;
+    }
+
+    /// <summary>
+    /// Limpia todos los perfiles y cache (inicio de nueva sesión).
+    /// </summary>
+    public void Reset()
+    {
+        _profiles.Clear();
+        _seatAliasCache.Clear();
+    }
 }
 
 public enum PostflopAction

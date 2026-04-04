@@ -19,7 +19,7 @@ public class DetectionLoggerService
         _logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "Detection");
         _screenshotDirectory = Path.Combine(_logDirectory, "Screenshots");
         _logFilePath = Path.Combine(_logDirectory, $"detection_{DateTime.Now:yyyyMMdd}.log");
-        
+
         // Crear directorios si no existen
         Directory.CreateDirectory(_logDirectory);
         Directory.CreateDirectory(_screenshotDirectory);
@@ -36,10 +36,10 @@ public class DetectionLoggerService
             Type = "ColorDetection",
             Region = regionName,
             Coordinates = new { X = coordinates.X, Y = coordinates.Y },
-            Color = new 
-            { 
-                R = detectedColor.R, 
-                G = detectedColor.G, 
+            Color = new
+            {
+                R = detectedColor.R,
+                G = detectedColor.G,
                 B = detectedColor.B,
                 Hex = $"#{detectedColor.R:X2}{detectedColor.G:X2}{detectedColor.B:X2}"
             },
@@ -60,10 +60,10 @@ public class DetectionLoggerService
             Timestamp = DateTime.Now,
             Type = "TurnDetected",
             Coordinates = new { X = coordinates.X, Y = coordinates.Y },
-            Color = new 
-            { 
-                R = detectedColor.R, 
-                G = detectedColor.G, 
+            Color = new
+            {
+                R = detectedColor.R,
+                G = detectedColor.G,
                 B = detectedColor.B,
                 Hex = $"#{detectedColor.R:X2}{detectedColor.G:X2}{detectedColor.B:X2}"
             },
@@ -117,7 +117,7 @@ public class DetectionLoggerService
     public void LogDetectionStatistics(int totalDetections, int successfulDetections, int falsePositives, TimeSpan sessionDuration)
     {
         var successRate = totalDetections > 0 ? (double)successfulDetections / totalDetections * 100 : 0;
-        
+
         var logEntry = new
         {
             Timestamp = DateTime.Now,
@@ -147,15 +147,15 @@ public class DetectionLoggerService
             // Crear una copia de la imagen con marcadores de debug
             using var debugImage = new Bitmap(screenshot);
             using var graphics = Graphics.FromImage(debugImage);
-            
+
             // Dibujar cruz roja en el punto de detección
             using var redPen = new Pen(Color.Red, 3);
             var crossSize = 10;
-            graphics.DrawLine(redPen, 
-                detectionPoint.X - crossSize, detectionPoint.Y, 
+            graphics.DrawLine(redPen,
+                detectionPoint.X - crossSize, detectionPoint.Y,
                 detectionPoint.X + crossSize, detectionPoint.Y);
-            graphics.DrawLine(redPen, 
-                detectionPoint.X, detectionPoint.Y - crossSize, 
+            graphics.DrawLine(redPen,
+                detectionPoint.X, detectionPoint.Y - crossSize,
                 detectionPoint.X, detectionPoint.Y + crossSize);
 
             // Dibujar información de color
@@ -163,7 +163,7 @@ public class DetectionLoggerService
             using var font = new Font("Arial", 12, FontStyle.Bold);
             var colorInfo = $"RGB({detectedColor.R},{detectedColor.G},{detectedColor.B}) B={detectedColor.B}";
             var textSize = graphics.MeasureString(colorInfo, font);
-            
+
             // Fondo semi-transparente para el texto
             using var backgroundBrush = new SolidBrush(Color.FromArgb(128, Color.Black));
             graphics.FillRectangle(backgroundBrush, 10, 10, textSize.Width + 10, textSize.Height + 5);
@@ -196,10 +196,10 @@ public class DetectionLoggerService
             Filename = filename,
             Context = context,
             DetectionPoint = new { X = detectionPoint.X, Y = detectionPoint.Y },
-            DetectedColor = new 
-            { 
-                R = detectedColor.R, 
-                G = detectedColor.G, 
+            DetectedColor = new
+            {
+                R = detectedColor.R,
+                G = detectedColor.G,
                 B = detectedColor.B,
                 Hex = $"#{detectedColor.R:X2}{detectedColor.G:X2}{detectedColor.B:X2}"
             },
@@ -255,7 +255,7 @@ public class DetectionLoggerService
 
             var lines = File.ReadAllLines(_logFilePath);
             var today = DateTime.Today;
-            
+
             var todayEntries = lines
                 .Where(line => !string.IsNullOrWhiteSpace(line))
                 .Select(line =>
@@ -270,7 +270,7 @@ public class DetectionLoggerService
                     }
                 })
                 .Where(entry => entry != null)
-                .Where(entry => 
+                .Where(entry =>
                 {
                     if (entry!.TryGetValue("timestamp", out var timestampObj))
                     {
@@ -311,7 +311,7 @@ public class DetectionLoggerService
         try
         {
             var cutoffDate = DateTime.Now.AddDays(-30);
-            
+
             // Limpiar archivos de log antiguos
             var logFiles = Directory.GetFiles(_logDirectory, "detection_*.log");
             foreach (var logFile in logFiles)
@@ -358,6 +358,6 @@ public class DetectionStatistics
     public int TurnDetections { get; set; }
     public int Errors { get; set; }
     public int ScreenshotsSaved { get; set; }
-    
+
     public double SuccessRate => TotalColorDetections > 0 ? (double)TurnDetections / TotalColorDetections * 100 : 0;
 }

@@ -12,6 +12,7 @@ namespace OpenScrape.App.Entities
         public bool Active { get; set; }
         public bool SitOut { get; set; }
         public bool Empty { get; set; }
+        public bool HasFolded { get; set; }
         public bool BigBlind { get; set; }
         public bool SmallBlind { get; set; }
         public TablePosition Position { get; set; }

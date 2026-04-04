@@ -234,4 +234,48 @@ public class PreflopAnalyzerTests
     }
 
     #endregion
+
+    // ─── Bugfix Live Session ─────────────────────────────────────
+
+    #region Bug 2 — Range advantage boards mixtos 3Bet
+
+    [Test]
+    public void RangeAdvantage_3BetPot_T52_MixedLow_DeberiaSerFalse()
+    {
+        // T-5-2: T=10 (no highCard), min=2 (≤6) → board mixto bajo → false
+        var ranks = new List<int> { 10, 5, 2 };
+        var texture = new BoardTextureResult(BoardTextureCategory.Dry, 10, false, false, true, false, false, false, true, false, false);
+
+        var result = PreflopAnalyzer.HasRangeAdvantageOnBoard(ranks, texture, true, HandSituation.ThreeBet);
+
+        Assert.That(result, Is.False,
+            "T-5-2 en 3Bet: board mixto bajo, caller conecta más");
+    }
+
+    [Test]
+    public void RangeAdvantage_3BetPot_AK3_ConAceKing_DeberiaSerTrue()
+    {
+        var ranks = new List<int> { 14, 13, 3 };
+        var texture = new BoardTextureResult(BoardTextureCategory.SemiDry, 20, false, true, false, false, false, false, false, false, false);
+
+        var result = PreflopAnalyzer.HasRangeAdvantageOnBoard(ranks, texture, true, HandSituation.ThreeBet);
+
+        Assert.That(result, Is.True,
+            "A-K-3: tiene A y K → 3Bet range tiene TPTK");
+    }
+
+    [Test]
+    public void RangeAdvantage_3BetPot_J62_MixedLow_DeberiaSerFalse()
+    {
+        // J=11 (highCards=0 porque 11<12), min=2 → mixto bajo
+        var ranks = new List<int> { 11, 6, 2 };
+        var texture = new BoardTextureResult(BoardTextureCategory.Dry, 5, false, false, true, false, false, false, true, false, false);
+
+        var result = PreflopAnalyzer.HasRangeAdvantageOnBoard(ranks, texture, true, HandSituation.ThreeBet);
+
+        Assert.That(result, Is.False,
+            "J-6-2: sin highCards + min≤6 → board mixto bajo");
+    }
+
+    #endregion
 }

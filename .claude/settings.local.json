@@ -33,7 +33,10 @@
       "Bash(git -C /c/Code/Poker/ScrapePoker log --oneline --all --decorate)",
       "Bash(grep:*)",
       "Bash(ls C:/Code/Poker/ScrapePoker/src/OpenScrape.App/Services/*.cs)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(dotnet format:*)",
+      "Bash(ls -la /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)",
+      "Bash(ls -1 /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)"
     ]
   }
 }

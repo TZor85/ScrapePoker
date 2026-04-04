@@ -22,6 +22,8 @@ public record StreetThresholds
     public string DryBoardBetSize { get; init; } = "Bet 1/2";
     public string CoordinatedBoardBetSize { get; init; } = "Bet 1/2";
     public string PairedBoardBetSize { get; init; } = "Bet 3/4";
+    public string MonotoneBoardBetSize { get; init; } = "Bet 1/4";
+    public string WetBoardBetSize { get; init; } = "Bet 1/3";
 
     // Comportamiento de bluff
     public bool CanBluff { get; init; }
@@ -60,6 +62,7 @@ public record StreetThresholds
     // Probe bet: bet pequeño cuando agresor preflop checkeó en street anterior
     public bool CanProbeBet { get; init; }
     public string ProbeBetSize { get; init; } = "Bet 1/3";
+    public string ProbeBetIPSize { get; init; } = "Bet 1/2";
     public double ProbeBetMinEquity { get; init; } = 25.0;
 
     // Modo simplificado (RaiseOverLimper: IP/OOP con bets fijos, sin board texture)
