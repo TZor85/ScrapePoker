@@ -21,11 +21,13 @@ public class PostflopDecisionService
 {
     private readonly StrategyProfile _profile;
     private readonly BetSizingService _betSizingService;
+    private readonly RangePolarizer _rangePolarizer;
 
-    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService)
+    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService, RangePolarizer rangePolarizer)
     {
         _profile = profileOptions.Value;
         _betSizingService = betSizingService;
+        _rangePolarizer = rangePolarizer;
     }
 
     /// <summary>
@@ -164,6 +166,15 @@ public class PostflopDecisionService
         // Ajustar thresholds si estamos facing a bet
         double adjustedFoldBelow = thresholds.FoldBelow;
         double adjustedThinValueAbove = thresholds.ThinValueAbove;
+
+        // [NUEVO] Aplicar ajustes de RangePolarizer según board texture, posición, SPR y street
+        if (street != BoardPosition.None)
+        {
+            var rangeAdjustment = GetRangeBasedThresholdAdjustment(boardTexture, isInPosition, potSize, heroStack, street);
+            adjustedFoldBelow += rangeAdjustment.foldBelowAdjust;
+            adjustedThinValueAbove += rangeAdjustment.thinValueAdjust;
+        }
+
         if (isFacingBet)
         {
             double facingBetPenalty = villainBetSize switch
@@ -1367,5 +1378,34 @@ public class PostflopDecisionService
             baseFraction, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
 
         return dynamicBet;
+    }
+
+    /// <summary>
+    /// Obtiene el ajuste de thresholds según el tipo de rango determinado por RangePolarizer.
+    /// </summary>
+    private (double foldBelowAdjust, double thinValueAdjust) GetRangeBasedThresholdAdjustment(
+        string boardTexture, bool isInPosition, decimal potSize, decimal heroStack, BoardPosition street)
+    {
+        var textureCategory = ConvertToBoardTextureCategory(boardTexture);
+        double spr = potSize > 0 ? (double)(heroStack / potSize) : 10;
+        return _rangePolarizer.GetThresholdAdjustmentBySituation(textureCategory, isInPosition, spr, street);
+    }
+
+    /// <summary>
+    /// Convierte el string de board texture a BoardTextureCategory enum.
+    /// </summary>
+    private static BoardTextureCategory ConvertToBoardTextureCategory(string texture)
+    {
+        return texture?.ToLower() switch
+        {
+            "dry" => BoardTextureCategory.Dry,
+            "paired" => BoardTextureCategory.Paired,
+            "wet" => BoardTextureCategory.Wet,
+            "coordinated" => BoardTextureCategory.SemiWet,
+            "monotone" => BoardTextureCategory.Wet,
+            "semidry" => BoardTextureCategory.SemiDry,
+            "semiwet" => BoardTextureCategory.SemiWet,
+            _ => BoardTextureCategory.Dry
+        };
     }
 }
