@@ -1,10 +1,7 @@
-﻿//using Android.Icu.Number;
-
 using SkiaSharp;
 using System.Collections.Concurrent;
 using System.Drawing.Imaging;
 using Tesseract;
-
 
 namespace OpenScrape.App.Services;
 
@@ -32,20 +29,17 @@ public class OcrService
 
     public OcrService()
     {
-        // Usamos el directorio de la aplicación
         _tessdataPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory);
         _engine = new TesseractEngine(Path.Combine(_tessdataPath, "tessdata"), "eng", EngineMode.Default);
 
         try
         {
-            // Crear directorio tessdata si no existe
             var tessdataDir = Path.Combine(_tessdataPath, "tessdata");
             if (!Directory.Exists(tessdataDir))
             {
                 Directory.CreateDirectory(tessdataDir);
             }
 
-            // Copiar archivo traineddata si no existe
             var trainedDataPath = Path.Combine(tessdataDir, "eng.traineddata");
             if (!File.Exists(trainedDataPath))
             {
@@ -65,32 +59,22 @@ public class OcrService
         }
     }
 
-    /// <summary>
-    /// Limpia el cache de resultados OCR para forzar re-lectura en la siguiente llamada.
-    /// Útil cuando se sabe que la imagen ha cambiado (ej: nuevo street, nuevo stack).
-    /// </summary>
     public void ClearCache()
     {
         _ocrCache.Clear();
     }
 
-    // Método general para texto normal
     public async Task<string> ExtractTextFromRegionAsync(string imagePath, int x, int y, int width, int height)
     {
         return await ExtractTextFromRegionAsync(imagePath, x, y, width, height, OcrMode.Normal);
     }
 
-    // Método específico para detectar BB (Big Blinds)
     public async Task<string> ExtractBBFromRegionAsync(string imagePath, int x, int y, int width, int height)
     {
         return await ExtractTextFromRegionAsync(imagePath, x, y, width, height, OcrMode.BB);
     }
 
-    private enum OcrMode
-    {
-        Normal,
-        BB
-    }
+    private enum OcrMode { Normal, BB }
 
     private async Task<string> ExtractTextFromRegionAsync(string imagePath, int x, int y, int width, int height, OcrMode mode)
     {
@@ -100,7 +84,6 @@ public class OcrService
             {
                 try
                 {
-                    // Asegurarse de que el engine está disponible
                     if (_engine == null || _engine.IsDisposed)
                     {
                         InitializeEngine();
@@ -113,7 +96,6 @@ public class OcrService
                     var sourceRect = new SKRectI(x, y, x + width, y + height);
                     canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
 
-                    // Aplicar efectos según el modo
                     if (mode == OcrMode.BB)
                     {
                         using var paint = new SKPaint();
@@ -133,7 +115,6 @@ public class OcrService
                     data.SaveTo(processedMs);
                     processedMs.Position = 0;
 
-                    // Configurar Tesseract según el modo
                     if (mode == OcrMode.BB)
                     {
                         _engine.SetVariable("tessedit_char_whitelist", "0123456789.BB");
@@ -163,121 +144,187 @@ public class OcrService
         {
             try
             {
-                // Asegurarse de que el engine está disponible
                 if (_engine == null || _engine.IsDisposed)
                 {
                     InitializeEngine();
                 }
 
-                // Crear el resultado fuera para poder manejarlo en el finally si es necesario
                 OcrResult result = null;
 
                 using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
                 {
-                    // Compute dHash for cache
                     ulong hash = ComputeDHash(croppedBitmap);
                     if (_ocrCache.TryGet(hash, out var cachedText))
                     {
-                        // Cache hit: crear bitmap independiente del stream (clonar para evitar use-after-dispose)
-                        using var ms = new MemoryStream();
+                        using var msCache = new MemoryStream();
                         using var skImage = SKImage.FromBitmap(croppedBitmap);
                         using var encoded = skImage.Encode(SKEncodedImageFormat.Png, 100);
-                        encoded.SaveTo(ms);
-                        ms.Position = 0;
-                        using var tempBitmap = new Bitmap(ms);
+                        encoded.SaveTo(msCache);
+                        msCache.Position = 0;
+                        using var tempBitmap = new Bitmap(msCache);
                         result = new OcrResult
                         {
                             Text = cachedText,
-                            Image = new Bitmap(tempBitmap) // Clon independiente del stream
+                            Image = new Bitmap(tempBitmap),
+                            Confidence = -1
                         };
                         return result;
                     }
 
-                    using (var processedBitmap = ProcessBitmap(croppedBitmap, width, height, umbral))
-                    using (var debugMs = new MemoryStream())
+                    var ocrResults = new List<(string Text, float Confidence, string Config)>();
+
+                    var attempt1 = TryOcrAttempt(croppedBitmap, width, height, umbral, onlyNumber, "default");
+                    if (!string.IsNullOrEmpty(attempt1.Text))
+                        ocrResults.Add(attempt1);
+
+                    if (umbral > 0)
                     {
-                        // Procesar la imagen
-                        using (var debugImage = SKImage.FromBitmap(processedBitmap))
-                        {
-                            var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
-                            encoded.SaveTo(debugMs);
-                            encoded.Dispose(); // Asegurar que se libera el encoded
-                        }
+                        var attempt2 = TryOcrAttempt(croppedBitmap, width, height, Math.Max(0, umbral - 20), onlyNumber, "lower");
+                        if (!string.IsNullOrEmpty(attempt2.Text))
+                            ocrResults.Add(attempt2);
 
-                        // Configurar Tesseract
-                        ConfigureTesseract(onlyNumber);
-
-                        // Convertir a array una sola vez
-                        byte[] imageData = debugMs.ToArray();
-
-                        // Invertir colores en la imagen (si es necesario)
-                        using (var ms = new MemoryStream(imageData))
-                        using (var invertedMs = new MemoryStream())
-                        {
-                            using (var bitmap = new Bitmap(ms))
-                            {
-                                Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-                                BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
-                                int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
-
-                                unsafe
-                                {
-                                    byte* ptr = (byte*)data.Scan0;
-                                    int totalBytes = bitmap.Height * data.Stride;
-
-                                    for (int i = 0; i < totalBytes; i += bytesPerPixel)
-                                    {
-                                        ptr[i] = (byte)(255 - ptr[i]);     // B
-                                        ptr[i + 1] = (byte)(255 - ptr[i + 1]); // G
-                                        ptr[i + 2] = (byte)(255 - ptr[i + 2]); // R
-                                        // Alpha se mantiene si existe
-                                    }
-                                }
-
-                                bitmap.UnlockBits(data);
-
-                                // Guardar la imagen invertida
-                                bitmap.Save(invertedMs, System.Drawing.Imaging.ImageFormat.Png);
-                            }
-
-                            // Usar la imagen invertida para OCR
-                            imageData = invertedMs.ToArray();
-                        }
-
-                        // Procesar OCR con scoring de confianza
-                        using (var img = Pix.LoadFromMemory(imageData))
-                        using (var page = _engine.Process(img))
-                        {
-                            var text = ProcessText(page.GetText().Trim());
-                            var confidence = page.GetMeanConfidence();
-
-                            // Cache the result — LruCache descarta la entrada menos usada al superar la capacidad
-                            _ocrCache.Set(hash, text);
-
-                            // Crear bitmap independiente del stream (clonar para evitar use-after-dispose)
-                            using (var ms = new MemoryStream(imageData))
-                            using (var tempBitmap = new Bitmap(ms))
-                            {
-                                result = new OcrResult
-                                {
-                                    Text = text,
-                                    Image = new Bitmap(tempBitmap),
-                                    Confidence = confidence
-                                };
-                            }
-                        }
+                        var attempt3 = TryOcrAttempt(croppedBitmap, width, height, Math.Min(255, umbral + 20), onlyNumber, "higher");
+                        if (!string.IsNullOrEmpty(attempt3.Text))
+                            ocrResults.Add(attempt3);
                     }
+
+                    var attempt4 = TryOcrAttempt(croppedBitmap, width, height, umbral, onlyNumber, "contrast");
+                    if (!string.IsNullOrEmpty(attempt4.Text))
+                        ocrResults.Add(attempt4);
+
+                    var bestResult = ocrResults
+                        .Where(r => !string.IsNullOrEmpty(r.Text))
+                        .OrderByDescending(r => r.Confidence)
+                        .ThenByDescending(r => r.Text.Length)
+                        .FirstOrDefault();
+
+                    if (string.IsNullOrEmpty(bestResult.Text) && ocrResults.Count > 0)
+                    {
+                        bestResult = ocrResults.OrderByDescending(r => r.Text.Length).First();
+                    }
+
+                    var finalText = string.IsNullOrEmpty(bestResult.Text) ? "" : ProcessText(bestResult.Text);
+
+                    _ocrCache.Set(hash, finalText);
+
+                    using var debugMs = new MemoryStream();
+                    using (var debugImage = SKImage.FromBitmap(croppedBitmap))
+                    {
+                        var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
+                        encoded.SaveTo(debugMs);
+                    }
+
+                    using var msResult = new MemoryStream(debugMs.ToArray());
+                    result = new OcrResult
+                    {
+                        Text = finalText,
+                        Image = new Bitmap(msResult),
+                        Confidence = bestResult.Confidence,
+                        Attempts = ocrResults.Count
+                    };
                 }
 
                 return result;
             }
             catch (Exception ex)
             {
-                _engine?.Dispose(); // Intentar liberar el engine si algo falla
+                _engine?.Dispose();
                 _engine = null;
                 throw new Exception($"Error en OCR: {ex.Message}", ex);
             }
         }
+    }
+
+    private (string Text, float Confidence, string Config) TryOcrAttempt(SKBitmap croppedBitmap, int width, int height, double threshold, bool onlyNumber, string configName)
+    {
+        try
+        {
+            using var processedBitmap = ProcessBitmap(croppedBitmap, width, height, threshold);
+
+            if (configName == "contrast")
+            {
+                using var contrastBitmap = ApplyContrast(processedBitmap, 1.5f);
+                return PerformOcr(contrastBitmap, onlyNumber, configName);
+            }
+
+            return PerformOcr(processedBitmap, onlyNumber, configName);
+        }
+        catch
+        {
+            return ("", 0, configName);
+        }
+    }
+
+    private SKBitmap ApplyContrast(SKBitmap source, float contrast)
+    {
+        var result = new SKBitmap(source.Width, source.Height);
+        var srcSpan = source.GetPixelSpan();
+        var dstSpan = result.GetPixelSpan();
+
+        for (int i = 0; i < srcSpan.Length; i += 4)
+        {
+            byte applyContrast(byte value) => (byte)Math.Clamp(((value - 128) * contrast) + 128, 0, 255);
+
+            dstSpan[i] = applyContrast(srcSpan[i]);
+            dstSpan[i + 1] = applyContrast(srcSpan[i + 1]);
+            dstSpan[i + 2] = applyContrast(srcSpan[i + 2]);
+            dstSpan[i + 3] = srcSpan[i + 3];
+        }
+
+        return result;
+    }
+
+    private (string Text, float Confidence, string Config) PerformOcr(SKBitmap bitmap, bool onlyNumber, string configName)
+    {
+        using var debugMs = new MemoryStream();
+        using (var debugImage = SKImage.FromBitmap(bitmap))
+        {
+            var encoded = debugImage.Encode(SKEncodedImageFormat.Png, 100);
+            encoded.SaveTo(debugMs);
+        }
+
+        byte[] imageData = InvertBitmap(debugMs.ToArray());
+
+        ConfigureTesseract(onlyNumber);
+
+        using var img = Pix.LoadFromMemory(imageData);
+        using var page = _engine.Process(img);
+
+        var text = page.GetText().Trim();
+        var confidence = page.GetMeanConfidence();
+
+        return (text, confidence, configName);
+    }
+
+    private byte[] InvertBitmap(byte[] imageData)
+    {
+        using var msInvert = new MemoryStream(imageData);
+        using var invertedMs = new MemoryStream();
+
+        using (var bitmap = new Bitmap(msInvert))
+        {
+            Rectangle rect = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
+            BitmapData data = bitmap.LockBits(rect, ImageLockMode.ReadWrite, bitmap.PixelFormat);
+            int bytesPerPixel = Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
+
+            unsafe
+            {
+                byte* ptr = (byte*)data.Scan0;
+                int totalBytes = bitmap.Height * data.Stride;
+
+                for (int i = 0; i < totalBytes; i += bytesPerPixel)
+                {
+                    ptr[i] = (byte)(255 - ptr[i]);
+                    ptr[i + 1] = (byte)(255 - ptr[i + 1]);
+                    ptr[i + 2] = (byte)(255 - ptr[i + 2]);
+                }
+            }
+
+            bitmap.UnlockBits(data);
+            bitmap.Save(invertedMs, System.Drawing.Imaging.ImageFormat.Png);
+        }
+
+        return invertedMs.ToArray();
     }
 
     private SKBitmap GetCroppedBitmap(Image sourceImage, int x, int y, int width, int height)
@@ -300,7 +347,6 @@ public class OcrService
         var sourceRect = new SKRectI(x, y, x + width, y + height);
         canvas.DrawBitmap(originalBitmap, sourceRect, new SKRect(0, 0, width, height));
 
-        // LruCache descarta el bitmap menos reciente cuando supera la capacidad
         _bitmapCache.Set(key, croppedBitmap.Copy());
         return croppedBitmap;
     }
@@ -310,30 +356,24 @@ public class OcrService
         var processedBitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque);
         var thresholdValue = (int)(porcentaje * 255);
 
-        // Acceso directo a memoria de píxeles — evita GetPixel/SetPixel que tienen overhead
-        // por llamada. ReadOnlySpan<byte> para lectura, Span<byte> para escritura.
-        var srcSpan = croppedBitmap.GetPixelSpan();  // BGRA fuente (read-only)
-        var dstSpan = processedBitmap.GetPixelSpan(); // BGRA destino (writable)
+        var srcSpan = croppedBitmap.GetPixelSpan();
+        var dstSpan = processedBitmap.GetPixelSpan();
 
-        // Cada píxel = 4 bytes: B, G, R, A (formato BGRA8888)
         int totalBytes = width * height * 4;
 
         for (int i = 0; i < totalBytes; i += 4)
         {
-            // Leer B, G, R del pixel fuente
             int b = srcSpan[i];
             int g = srcSpan[i + 1];
             int r = srcSpan[i + 2];
 
-            // Calcular brillo promedio y binarizar
             int brightness = (r + g + b) / 3;
             byte value = brightness > thresholdValue ? (byte)255 : (byte)0;
 
-            // Escribir pixel blanco o negro en destino
-            dstSpan[i] = value; // B
-            dstSpan[i + 1] = value; // G
-            dstSpan[i + 2] = value; // R
-            dstSpan[i + 3] = 255;   // A (opaco)
+            dstSpan[i] = value;
+            dstSpan[i + 1] = value;
+            dstSpan[i + 2] = value;
+            dstSpan[i + 3] = 255;
         }
 
         return processedBitmap;
@@ -348,7 +388,6 @@ public class OcrService
         _engine.SetVariable("textord_min_linesize", "2.5");
         _engine.SetVariable("textord_debug_block", "0");
         _engine.SetVariable("edges_max_children_per_outline", "40");
-
     }
 
     private string ProcessText(string text)
@@ -398,23 +437,15 @@ public class OcrService
         }
         _bitmapCache.Clear();
     }
-
-
 }
 
 public class OcrResult : IDisposable
 {
     public string? Text { get; set; }
     public Bitmap? Image { get; set; }
-
-    /// <summary>
-    /// Confianza media de Tesseract (0.0 a 1.0). -1 si no disponible (cache hit).
-    /// </summary>
     public float Confidence { get; set; } = -1;
+    public int Attempts { get; set; } = 1;
 
-    /// <summary>
-    /// Indica si la confianza del OCR es suficiente para confiar en el resultado.
-    /// </summary>
     public bool IsHighConfidence => Confidence < 0 || Confidence >= 0.70f;
 
     public void Dispose()

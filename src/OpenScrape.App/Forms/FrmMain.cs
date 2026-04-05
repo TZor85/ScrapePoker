@@ -31,6 +31,7 @@ using static OpenScrape.App.Helpers.CaptureWindowsHelper;
 using Image = System.Drawing.Image;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
 
 namespace OpenScrape.App
 {
@@ -2429,17 +2430,24 @@ namespace OpenScrape.App
             using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImage.Image), _pictureUmbralBet));
             var betsRegions = _regionLookupCache.GetRegions("Bets");
 
+            LogInformation($"[SetBetPlayer] Total regions: {betsRegions?.Count ?? 0}");
+
             if (betsRegions == null || _formImage.pbImage.Image == null)
                 return;
 
             foreach (var region in betsRegions)
             {
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
+                LogInformation($"[SetBetPlayer] Region: {region.Name}, parsed playerNumber: {playerNumber}");
+                
                 if (playerNumber == null) continue;
 
                 var scaled = GetScaledRegion(region);
                 var betValue = SetBetValue(scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
+                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber, playerNumber);
+
+                // Log para debug de bets
+                LogInformation($"[SetBetValue] Region: {region.Name}, Player: P{playerNumber}, Value: {betValue}");
 
                 // Normalizar: detecta decimal separator perdido (593 → 5,93), artefacto "8"
                 betValue = NormalizeBetValue(betValue, _playerGameState.PotSize);
@@ -2624,14 +2632,46 @@ namespace OpenScrape.App
 
         /// <summary>
         /// Limpia el texto OCR dejando solo caracteres numéricos válidos (dígitos, coma, punto)
+        /// También maneja el caso "1 BB" que al invertirse puede convertirse en "188"
         /// </summary>
         private static string CleanOcrNumericText(string? ocrText)
         {
             if (string.IsNullOrWhiteSpace(ocrText))
                 return "0";
 
+            var original = ocrText.Trim().ToUpper();
+
+            // Detectar patrones como "1 BB", "2BB", "1BB", "1BB" (BB puede verse como 88 o B8)
+            // Después de invertir colores, "BB" se convierte en caracteres similares a "88"
+            var bbRegex = new System.Text.RegularExpressions.Regex(@"^(\d+)\s*[IBS]{2,3}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var bbMatch = bbRegex.Match(original);
+            if (bbMatch.Success && int.TryParse(bbMatch.Groups[1].Value, out var bbValue))
+            {
+                return bbValue.ToString();
+            }
+
+            // También detectar "88" al final que viene de "BB"
+            var bb88Regex = new System.Text.RegularExpressions.Regex(@"^(\d+)\s*88\s*$");
+            var bb88Match = bb88Regex.Match(original);
+            if (bb88Match.Success && int.TryParse(bb88Match.Groups[1].Value, out var bbValue88))
+            {
+                return bbValue88.ToString();
+            }
+
+            // Detectar si hay "88" que probablemente es "BB"
+            // Si el texto termina en "88" después de dígitos,很可能 es "BB"
+            var endsWith88 = System.Text.RegularExpressions.Regex.Match(original, @"^(\d+).*88\s*$");
+            if (endsWith88.Success && int.TryParse(endsWith88.Groups[1].Value, out var endsValue))
+            {
+                return endsValue.ToString();
+            }
+
             // Eliminar espacios, letras y caracteres no numéricos excepto separadores decimales
-            var cleaned = new string(ocrText.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+            var cleaned = new string(original.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+
+            // Si el resultado es muy largo (más de 6 dígitos), tomar solo los primeros 6
+            if (cleaned.Length > 6)
+                cleaned = cleaned.Substring(0, 6);
 
             return string.IsNullOrEmpty(cleaned) ? "0" : cleaned;
         }
@@ -3476,7 +3516,7 @@ namespace OpenScrape.App
         /// Establece el valor de la apuesta para una región
         /// </summary>
         /// <returns>Valor decimal de la apuesta</returns>
-        private decimal SetBetValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
+        private decimal SetBetValue(int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber, int? playerNum = null)
         {
             if (_formImage.pbImage.Image == null)
                 return 0;
@@ -3512,6 +3552,8 @@ namespace OpenScrape.App
                 var clean2 = CleanOcrNumericText(secondOcr.Text);
                 var clean3 = CleanOcrNumericText(thirdOcr.Text);
 
+                LogInformation($"[SetBetValue DEBUG] Region p{playerNum}bet - Raw: '{firstOcr.Text}' | '{secondOcr.Text}' | '{thirdOcr.Text}' => Clean: '{clean1}' | '{clean2}' | '{clean3}'");
+
                 decimal.TryParse(clean1, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.CurrentCulture, out var ocr1);
                 decimal.TryParse(clean2, System.Globalization.NumberStyles.Any,
@@ -3520,18 +3562,24 @@ namespace OpenScrape.App
                     System.Globalization.CultureInfo.CurrentCulture, out var ocr3);
 
                 // Consenso: si 2+ lecturas coinciden, usar ese valor
-                decimal best;
-                if (ocr1 == ocr2 && ocr1 == ocr3)
-                    best = ocr1;
+                // Pero si solo la lectura directa (third) tiene valor y las otras dos son 0, usar third
+                decimal best = 0;
+                LogInformation($"[SetBetValue CONSENSUS] ocr1={ocr1}, ocr2={ocr2}, ocr3={ocr3}");
+                
+                // PRIORIZAR ocr3 (lectura directa) cuando tiene valor
+                if (ocr3 != 0m)
+                {
+                    LogInformation($"[SetBetValue] Usando ocr3={ocr3} (lectura directa)");
+                    best = ocr3;
+                }
                 else if (ocr1 == ocr2)
                     best = ocr1;
-                else if (ocr1 == ocr3)
+                else if (ocr1 != 0m)
                     best = ocr1;
-                else if (ocr2 == ocr3)
+                else if (ocr2 != 0m)
                     best = ocr2;
-                else
-                    best = ocr3; // Sin consenso → preferir lectura directa
 
+                LogInformation($"[SetBetValue] RETURN best={best}");
                 return best;
             }
             finally
