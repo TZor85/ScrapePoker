@@ -56,7 +56,7 @@ namespace OpenScrape.App.Aplication.UseCases
         // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion"
         // Valor: equity en porcentaje (0-100)
         private readonly ConcurrentDictionary<string, double> _equityCache = new();
-        private const int EquityCacheMaxSize = 512;
+        private const int EquityCacheMaxSize = 2048;
 
         public UnifiedPokerCalculator(
             MonteCarloSimulator monteCarloSimulator,
@@ -257,16 +257,19 @@ namespace OpenScrape.App.Aplication.UseCases
 
         /// <summary>
         /// Iteraciones adaptativas: decisiones claras (equity >75% o <25%) usan menos iteraciones.
+        /// Optimizado para mantener latencia < 7 segundos.
         /// </summary>
         private int GetAdaptiveIterations(List<CardDataOuts> playerHand, int numOpponents)
         {
             // Usar lookup table preflop como estimación rápida
             double roughEquity = _preflopEquityCalculator.GetEquity(playerHand, numOpponents) * 100;
-            if (roughEquity > 75 || roughEquity < 25)
-                return 500;
+            if (roughEquity > 80 || roughEquity < 20)
+                return 250;
             if (roughEquity > 65 || roughEquity < 35)
+                return 500;
+            if (roughEquity > 55 || roughEquity < 45)
                 return 750;
-            return PokerConstants.DefaultMonteCarloIterations;
+            return 1500; // Reducido de 10000 a 1500 para mantener <7s
         }
 
         private static string BuildHandKey(List<CardDataOuts> playerHand) =>

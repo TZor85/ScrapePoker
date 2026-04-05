@@ -49,6 +49,7 @@
             lbTableName = new Label();
             btnCapture = new Button();
             btnDetectionDebug = new Button();
+            btnExploitability = new Button();
             panel8 = new Panel();
             lbPot = new Label();
             pbBoard5 = new PictureBox();
@@ -140,12 +141,12 @@
             tbResume = new TextBox();
             tpHistorial = new TabPage();
             splitHistorialLeft = new SplitContainer();
-            lblSesionesTitle = new Label();
             dgvSessions = new DataGridView();
-            lblManosTitle = new Label();
+            lblSesionesTitle = new Label();
             dgvSessionHands = new DataGridView();
-            lblSessionStats = new Label();
+            lblManosTitle = new Label();
             btnBacktest = new Button();
+            lblSessionStats = new Label();
             lbNamePlayerOne = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
@@ -212,7 +213,7 @@
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(577, 420);
+            tbControl.Size = new Size(577, 419);
             tbControl.TabIndex = 65;
             // 
             // tbJuego
@@ -227,6 +228,7 @@
             tbJuego.Controls.Add(panel9);
             tbJuego.Controls.Add(btnCapture);
             tbJuego.Controls.Add(btnDetectionDebug);
+            tbJuego.Controls.Add(btnExploitability);
             tbJuego.Controls.Add(panel8);
             tbJuego.Controls.Add(pbBoard5);
             tbJuego.Controls.Add(pbBoard4);
@@ -255,7 +257,7 @@
             tbJuego.Controls.Add(pnNamePlayerOne);
             tbJuego.Location = new Point(4, 24);
             tbJuego.Name = "tbJuego";
-            tbJuego.Size = new Size(569, 392);
+            tbJuego.Size = new Size(569, 391);
             tbJuego.TabIndex = 2;
             tbJuego.Text = "Juego";
             tbJuego.UseVisualStyleBackColor = true;
@@ -421,13 +423,23 @@
             // 
             // btnDetectionDebug
             // 
-            btnDetectionDebug.Location = new Point(8, 262);
+            btnDetectionDebug.Location = new Point(8, 428);
             btnDetectionDebug.Name = "btnDetectionDebug";
             btnDetectionDebug.Size = new Size(80, 60);
             btnDetectionDebug.TabIndex = 78;
             btnDetectionDebug.Text = "Debug";
             btnDetectionDebug.UseVisualStyleBackColor = true;
             btnDetectionDebug.Click += BtnDetectionDebug_Click;
+            // 
+            // btnExploitability
+            // 
+            btnExploitability.Location = new Point(8, 294);
+            btnExploitability.Name = "btnExploitability";
+            btnExploitability.Size = new Size(80, 30);
+            btnExploitability.TabIndex = 79;
+            btnExploitability.Text = "GTO";
+            btnExploitability.UseVisualStyleBackColor = true;
+            btnExploitability.Click += BtnExploitability_Click;
             // 
             // panel8
             // 
@@ -1343,9 +1355,9 @@
             tbResume.Name = "tbResume";
             tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
-            //
+            // 
             // tpHistorial
-            //
+            // 
             tpHistorial.Controls.Add(splitHistorialLeft);
             tpHistorial.Controls.Add(btnBacktest);
             tpHistorial.Controls.Add(lblSessionStats);
@@ -1355,92 +1367,92 @@
             tpHistorial.TabIndex = 4;
             tpHistorial.Text = "Historial";
             tpHistorial.UseVisualStyleBackColor = true;
-            //
+            // 
             // splitHistorialLeft
-            //
+            // 
             splitHistorialLeft.Dock = DockStyle.Fill;
             splitHistorialLeft.Location = new Point(0, 0);
             splitHistorialLeft.Name = "splitHistorialLeft";
             splitHistorialLeft.Orientation = Orientation.Horizontal;
-            //
+            // 
             // splitHistorialLeft.Panel1
-            //
+            // 
             splitHistorialLeft.Panel1.Controls.Add(dgvSessions);
             splitHistorialLeft.Panel1.Controls.Add(lblSesionesTitle);
-            //
+            // 
             // splitHistorialLeft.Panel2
-            //
+            // 
             splitHistorialLeft.Panel2.Controls.Add(dgvSessionHands);
             splitHistorialLeft.Panel2.Controls.Add(lblManosTitle);
-            splitHistorialLeft.Size = new Size(569, 362);
-            splitHistorialLeft.SplitterDistance = 180;
+            splitHistorialLeft.Size = new Size(569, 332);
+            splitHistorialLeft.SplitterDistance = 165;
             splitHistorialLeft.TabIndex = 0;
-            //
-            // lblSesionesTitle
-            //
-            lblSesionesTitle.Dock = DockStyle.Top;
-            lblSesionesTitle.Location = new Point(0, 0);
-            lblSesionesTitle.Name = "lblSesionesTitle";
-            lblSesionesTitle.Size = new Size(350, 30);
-            lblSesionesTitle.TabIndex = 0;
-            lblSesionesTitle.Text = "Sesiones";
-            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
             // dgvSessions
-            //
+            // 
+            dgvSessions.AllowUserToAddRows = false;
             dgvSessions.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvSessions.Dock = DockStyle.Fill;
             dgvSessions.Location = new Point(0, 30);
+            dgvSessions.MultiSelect = false;
             dgvSessions.Name = "dgvSessions";
             dgvSessions.ReadOnly = true;
             dgvSessions.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessions.MultiSelect = false;
-            dgvSessions.AllowUserToAddRows = false;
-            dgvSessions.Size = new Size(569, 150);
+            dgvSessions.Size = new Size(569, 135);
             dgvSessions.TabIndex = 1;
-            //
-            // lblManosTitle
-            //
-            lblManosTitle.Dock = DockStyle.Top;
-            lblManosTitle.Location = new Point(0, 0);
-            lblManosTitle.Name = "lblManosTitle";
-            lblManosTitle.Size = new Size(350, 30);
-            lblManosTitle.TabIndex = 0;
-            lblManosTitle.Text = "Manos";
-            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
+            // lblSesionesTitle
+            // 
+            lblSesionesTitle.Dock = DockStyle.Top;
+            lblSesionesTitle.Location = new Point(0, 0);
+            lblSesionesTitle.Name = "lblSesionesTitle";
+            lblSesionesTitle.Size = new Size(569, 30);
+            lblSesionesTitle.TabIndex = 0;
+            lblSesionesTitle.Text = "Sesiones";
+            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // dgvSessionHands
-            //
+            // 
+            dgvSessionHands.AllowUserToAddRows = false;
             dgvSessionHands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvSessionHands.Dock = DockStyle.Fill;
             dgvSessionHands.Location = new Point(0, 30);
+            dgvSessionHands.MultiSelect = false;
             dgvSessionHands.Name = "dgvSessionHands";
             dgvSessionHands.ReadOnly = true;
             dgvSessionHands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessionHands.MultiSelect = false;
-            dgvSessionHands.AllowUserToAddRows = false;
-            dgvSessionHands.Size = new Size(569, 152);
+            dgvSessionHands.Size = new Size(569, 133);
             dgvSessionHands.TabIndex = 1;
-            //
-            // lblSessionStats
-            //
-            lblSessionStats.Dock = DockStyle.Bottom;
-            lblSessionStats.Location = new Point(0, 362);
-            lblSessionStats.Name = "lblSessionStats";
-            lblSessionStats.Size = new Size(449, 30);
-            lblSessionStats.TabIndex = 1;
-            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
+            // lblManosTitle
+            // 
+            lblManosTitle.Dock = DockStyle.Top;
+            lblManosTitle.Location = new Point(0, 0);
+            lblManosTitle.Name = "lblManosTitle";
+            lblManosTitle.Size = new Size(569, 30);
+            lblManosTitle.TabIndex = 0;
+            lblManosTitle.Text = "Manos";
+            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // btnBacktest
-            //
+            // 
             btnBacktest.Dock = DockStyle.Bottom;
-            btnBacktest.Location = new Point(449, 362);
+            btnBacktest.Location = new Point(0, 332);
             btnBacktest.Name = "btnBacktest";
-            btnBacktest.Size = new Size(120, 30);
+            btnBacktest.Size = new Size(569, 30);
             btnBacktest.TabIndex = 2;
             btnBacktest.Text = "Backtest A/B";
             btnBacktest.UseVisualStyleBackColor = true;
-            //
+            // 
+            // lblSessionStats
+            // 
+            lblSessionStats.Dock = DockStyle.Bottom;
+            lblSessionStats.Location = new Point(0, 362);
+            lblSessionStats.Name = "lblSessionStats";
+            lblSessionStats.Size = new Size(569, 30);
+            lblSessionStats.TabIndex = 1;
+            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // lbNamePlayerOne
             // 
             lbNamePlayerOne.AutoSize = true;
@@ -1453,7 +1465,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(577, 420);
+            ClientSize = new Size(577, 419);
             Controls.Add(tbControl);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "FrmMain";
@@ -1522,13 +1534,13 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
+            tpHistorial.ResumeLayout(false);
             splitHistorialLeft.Panel1.ResumeLayout(false);
             splitHistorialLeft.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).EndInit();
             splitHistorialLeft.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvSessions).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvSessionHands).EndInit();
-            tpHistorial.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -1642,6 +1654,7 @@
         private RadioButton rbRiver;
         private RadioButton rbTurn;
         private Button btnClear;
+        private Button btnExploitability;
         private Label lbPositionAction;
         private Panel pnlUserStack;
         private Label lbUserStack;

@@ -10,6 +10,7 @@ using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
+using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
@@ -460,6 +461,7 @@ namespace OpenScrape.App
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
+        private readonly ExploitabilityCalculator _exploitabilityCalculator;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly OpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
@@ -479,6 +481,7 @@ namespace OpenScrape.App
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
                         PostflopDecisionService postflopDecisionService,
+                        ExploitabilityCalculator exploitabilityCalculator,
                         BoardTextureAnalyzer boardTextureAnalyzer,
                         OpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
@@ -501,6 +504,7 @@ namespace OpenScrape.App
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
+            _exploitabilityCalculator = exploitabilityCalculator ?? throw new ArgumentNullException(nameof(exploitabilityCalculator));
             _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
@@ -1057,6 +1061,70 @@ namespace OpenScrape.App
         }
 
         /// <summary>
+        /// Muestra el análisis de exploitabilidad de la sesión
+        /// </summary>
+        private void BtnExploitability_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var gtoDistance = _exploitabilityCalculator.CalculateGTODistance();
+                var sessionAnalysis = _exploitabilityCalculator.CalculateSessionAnalysis();
+
+                string message = $"=== Análisis GTO ===\n\n" +
+                    $"Status: {gtoDistance.Status}\n" +
+                    $"Distancia: {gtoDistance.DistanceMbb:F1} mbb/hand\n" +
+                    $"Decisiones analizadas: {gtoDistance.TotalDecisionsAnalyzed}\n" +
+                    $"% Exploitables: {gtoDistance.ExploitablePercentage:F1}%\n\n" +
+                    $"=== Sesión ===\n\n" +
+                    $"Total decisiones: {sessionAnalysis.TotalDecisions}\n" +
+                    $"Promedio mbb: {sessionAnalysis.AverageExploitabilityMbb:F1}\n" +
+                    $"Máximo mbb: {sessionAnalysis.MaxExploitabilityMbb:F1}\n";
+
+                if (sessionAnalysis.ExploitabilityByStreet.Any())
+                {
+                    message += $"\nPor calle:\n";
+                    foreach (var kvp in sessionAnalysis.ExploitabilityByStreet)
+                    {
+                        message += $"  {kvp.Key}: {kvp.Value:F1} mbb\n";
+                    }
+                }
+
+                if (sessionAnalysis.ExploitabilityByPosition.Any())
+                {
+                    message += $"\nPor posición:\n";
+                    foreach (var kvp in sessionAnalysis.ExploitabilityByPosition)
+                    {
+                        message += $"  {kvp.Key}: {kvp.Value:F1} mbb\n";
+                    }
+                }
+
+                if (sessionAnalysis.TopLeaks.Any())
+                {
+                    message += $"\nTop leaks:\n";
+                    foreach (var leak in sessionAnalysis.TopLeaks.Take(3))
+                    {
+                        message += $"  {leak.Category}: {leak.Frequency} veces, {leak.AverageExploitabilityMbb:F1} mbb avg\n";
+                    }
+                }
+
+                if (gtoDistance.Recommendations.Any())
+                {
+                    message += $"\nRecomendaciones:\n";
+                    foreach (var rec in gtoDistance.Recommendations)
+                    {
+                        message += $"  - {rec}\n";
+                    }
+                }
+
+                MessageBox.Show(message, "Análisis GTO", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al analizar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
         /// Inicializa los datos de los jugadores
         /// </summary>
         private async Task InitializePlayersAsync()
@@ -1419,6 +1487,29 @@ namespace OpenScrape.App
                 _riverResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
                 maxBet, effectiveSituation, inPosition,
                 Reason: decision.Reason, BoardTexture: texture, TotalOuts: _riverResult.TotalOuts, SPR: riverSpr));
+
+            // Registrar en ExploitabilityCalculator
+            var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity);
+            var analysis = _exploitabilityCalculator.AnalyzeDecision(
+                decision.Action, equity, _riverResult.PotOddsPercentage, foldEquity,
+                BoardPosition.River, effectiveSituation, inPosition, texture,
+                _playerGameState.PotSize, betSize);
+            _exploitabilityCalculator.RecordDecision(new DecisionRecord
+            {
+                OurDecision = decision.Action,
+                Equity = equity,
+                PotOdds = _riverResult.PotOddsPercentage,
+                FoldEquity = foldEquity,
+                Street = BoardPosition.River,
+                Situation = effectiveSituation,
+                IsInPosition = inPosition,
+                BoardTexture = texture,
+                PotSize = _playerGameState.PotSize,
+                VillainBetSize = betSize,
+                OurDecisionEV = analysis.OurDecisionEV,
+                BestResponseEV = analysis.BestResponseEV,
+                ExploitabilityMbb = analysis.ExploitabilityMbb
+            });
             var riverCardName = _playerGameState.BoardCards
                 .FirstOrDefault(b => b.Position == BoardPosition.River)?.Name;
             _gameLoggerService.UpdateBoard([], riverCard: riverCardName);
@@ -1748,6 +1839,29 @@ namespace OpenScrape.App
 
             // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
             _postflopContext.VillainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSizeCategory.NoBet;
+
+            // Registrar en ExploitabilityCalculator
+            var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity);
+            var flopAnalysis = _exploitabilityCalculator.AnalyzeDecision(
+                decision.Action, effectiveEquity, _flopResult.PotOddsPercentage, foldEquity,
+                BoardPosition.Flop, effectiveSituation, inPosition, texture,
+                potSize, betSize);
+            _exploitabilityCalculator.RecordDecision(new DecisionRecord
+            {
+                OurDecision = decision.Action,
+                Equity = effectiveEquity,
+                PotOdds = _flopResult.PotOddsPercentage,
+                FoldEquity = foldEquity,
+                Street = BoardPosition.Flop,
+                Situation = effectiveSituation,
+                IsInPosition = inPosition,
+                BoardTexture = texture,
+                PotSize = potSize,
+                VillainBetSize = betSize,
+                OurDecisionEV = flopAnalysis.OurDecisionEV,
+                BestResponseEV = flopAnalysis.BestResponseEV,
+                ExploitabilityMbb = flopAnalysis.ExploitabilityMbb
+            });
         }
 
         /// <summary>
@@ -1864,6 +1978,30 @@ namespace OpenScrape.App
                 _turnResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
                 maxBet, effectiveSituation, inPosition,
                 Reason: decision.Reason, BoardTexture: texture, TotalOuts: _turnResult.TotalOuts, SPR: turnSpr));
+
+            // Registrar en ExploitabilityCalculator
+            var turnFoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity);
+            var turnAnalysis = _exploitabilityCalculator.AnalyzeDecision(
+                decision.Action, equity, _turnResult.PotOddsPercentage, turnFoldEquity,
+                BoardPosition.Turn, effectiveSituation, inPosition, texture,
+                potSize, betSize);
+            _exploitabilityCalculator.RecordDecision(new DecisionRecord
+            {
+                OurDecision = decision.Action,
+                Equity = equity,
+                PotOdds = _turnResult.PotOddsPercentage,
+                FoldEquity = turnFoldEquity,
+                Street = BoardPosition.Turn,
+                Situation = effectiveSituation,
+                IsInPosition = inPosition,
+                BoardTexture = texture,
+                PotSize = potSize,
+                VillainBetSize = betSize,
+                OurDecisionEV = turnAnalysis.OurDecisionEV,
+                BestResponseEV = turnAnalysis.BestResponseEV,
+                ExploitabilityMbb = turnAnalysis.ExploitabilityMbb
+            });
+
             var turnCardName = _playerGameState.BoardCards
                 .FirstOrDefault(b => b.Position == BoardPosition.Turn)?.Name;
             _gameLoggerService.UpdateBoard([], turnCard: turnCardName);

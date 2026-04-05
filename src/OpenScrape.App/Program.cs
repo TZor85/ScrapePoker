@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
+using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
@@ -64,6 +65,8 @@ namespace OpenScrape.App
                     services.AddSingleton<PostflopDecisionService>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<StrategyAnalyzerService>();
+                    services.AddSingleton<ExploitabilityCalculator>();
+                    services.AddSingleton<RangePolarizer>();
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
