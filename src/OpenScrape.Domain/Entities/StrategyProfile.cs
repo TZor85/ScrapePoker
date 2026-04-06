@@ -181,6 +181,12 @@ public class StrategyProfile
     public double DeepStackEquityBonus { get; set; } = 1.0;
     public double BetEVThreshold { get; set; } = 5.0;
 
+    // Bankroll Settings
+    public decimal InitialBankroll { get; set; } = 100.0m;
+    public decimal BuyInMax { get; set; } = 2.0m;
+    public int MinSessionsForRecommendation { get; set; } = 20;
+    public double RiskOfRuinThreshold { get; set; } = 0.05;
+
     /// <summary>
     /// Valida que los parámetros del perfil sean consistentes.
     /// Retorna lista de errores encontrados (vacía si todo es correcto).

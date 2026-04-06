@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Marten;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
@@ -67,6 +69,13 @@ namespace OpenScrape.App
                     services.AddSingleton<StrategyAnalyzerService>();
                     services.AddSingleton<ExploitabilityCalculator>();
                     services.AddSingleton<RangePolarizer>();
+                    services.AddSingleton<AutoCalibrationService>();
+                    services.AddSingleton(sp =>
+                    {
+                        var store = sp.GetRequiredService<IDocumentStore>();
+                        var profile = sp.GetRequiredService<IOptions<StrategyProfile>>().Value;
+                        return new BankrollTrackerService(store, profile);
+                    });
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();

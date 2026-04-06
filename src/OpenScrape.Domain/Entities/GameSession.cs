@@ -17,6 +17,11 @@ public class GameSession
     public DateTime EndTime { get; set; } = DateTime.UtcNow;
     public decimal BigBlind { get; set; } = 0.50m;
 
+    // Bankroll tracking fields
+    public decimal StartingBankroll { get; set; }
+    public decimal EndingBankroll { get; set; }
+    public decimal PeakBankroll { get; set; }
+
     // Manos de esta sesión — no se persisten embebidas; cada HandRecord
     // vive en su propia colección Marten con FK GameSessionId.
     // Esta lista se usa solo en memoria durante la sesión activa.

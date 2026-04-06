@@ -462,6 +462,8 @@ namespace OpenScrape.App
         private readonly StrategyProfileService _strategyProfileService;
         private readonly PostflopDecisionService _postflopDecisionService;
         private readonly ExploitabilityCalculator _exploitabilityCalculator;
+        private readonly AutoCalibrationService _autoCalibrationService;
+        private readonly BankrollTrackerService _bankrollTrackerService;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly OpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
@@ -482,6 +484,8 @@ namespace OpenScrape.App
                         StrategyProfileService strategyProfileService,
                         PostflopDecisionService postflopDecisionService,
                         ExploitabilityCalculator exploitabilityCalculator,
+                        AutoCalibrationService autoCalibrationService,
+                        BankrollTrackerService bankrollTrackerService,
                         BoardTextureAnalyzer boardTextureAnalyzer,
                         OpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
@@ -505,6 +509,8 @@ namespace OpenScrape.App
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
             _exploitabilityCalculator = exploitabilityCalculator ?? throw new ArgumentNullException(nameof(exploitabilityCalculator));
+            _autoCalibrationService = autoCalibrationService ?? throw new ArgumentNullException(nameof(autoCalibrationService));
+            _bankrollTrackerService = bankrollTrackerService ?? throw new ArgumentNullException(nameof(bankrollTrackerService));
             _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
@@ -583,6 +589,8 @@ namespace OpenScrape.App
 
                 _formImage.Location = new Point(Width, Location.Y);
                 _formImage.Show();
+
+                UpdateBankrollDashboard();
             }
             catch (Exception ex)
             {
@@ -1121,6 +1129,126 @@ namespace OpenScrape.App
             catch (Exception ex)
             {
                 MessageBox.Show($"Error al analizar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Ejecuta la calibración automática de parámetros
+        /// </summary>
+        private void BtnCalibrate_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var preview = _autoCalibrationService.GetPreview(
+                    _exploitabilityCalculator,
+                    _strategyProfileService.Profile);
+
+                if (preview.ProposedAdjustments.Count == 0)
+                {
+                    MessageBox.Show(
+                        $"No hay suficientes datos para calibrar.\n" +
+                        $"Decisiones actuales: {_exploitabilityCalculator.CalculateSessionAnalysis().TotalDecisions}\n" +
+                        $"Mínimo requerido: 20",
+                        "Calibración",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                    return;
+                }
+
+                string message = "=== Vista Previa de Calibración ===\n\n";
+                message += $"Explotabilidad actual: {preview.CurrentExploitability:F1} mbb/hand\n";
+                message += $"Explotabilidad estimada: {preview.EstimatedNewExploitability:F1} mbb/hand\n\n";
+                message += "Ajustes propuestos:\n";
+
+                foreach (var adj in preview.ProposedAdjustments)
+                {
+                    message += $"\n{adj.ParameterName}:\n";
+                    message += $"  Anterior: {adj.OldValue:F1}\n";
+                    message += $"  Nuevo: {adj.NewValue:F1}\n";
+                    message += $"  Razón: {adj.Reason}\n";
+                }
+
+                var result = MessageBox.Show(
+                    message + "\n\n¿Aplicar ajustes?",
+                    "Confirmar Calibración",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.Yes)
+                {
+                    var calibrationResult = _autoCalibrationService.Calibrate(
+                        _exploitabilityCalculator,
+                        _strategyProfileService.Profile);
+
+                    MessageBox.Show(
+                        calibrationResult.Message,
+                        "Calibración",
+                        MessageBoxButtons.OK,
+                        calibrationResult.Success ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al calibrar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el dashboard de bankroll con las métricas actuales
+        /// </summary>
+        private void UpdateBankrollDashboard()
+        {
+            try
+            {
+                var stats = _bankrollTrackerService.GetBankrollStats();
+
+                lblBankrollCurrent.Text = $"Bankroll: €{stats.CurrentBankroll:N2}";
+                lblBankrollPeak.Text = $"Peak: €{stats.PeakBankroll:N2}";
+                lblBankrollMaxDD.Text = $"Max Drawdown: {stats.MaxDrawdownPercent:F1}%";
+
+                lblWinRate.Text = $"Win Rate: {stats.WinRateBB100:F1} BB/100";
+                lblStdDev.Text = $"Std Dev: {stats.StdDeviation:F1} BB/100";
+
+                var rorPercent = stats.RiskOfRuin * 100;
+                lblRiskOfRuin.Text = $"Risk of Ruin: {rorPercent:F1}%";
+
+                switch (stats.RiskLevel)
+                {
+                    case "Green":
+                        lblRiskOfRuin.ForeColor = Color.FromArgb(0, 200, 0);
+                        break;
+                    case "Yellow":
+                        lblRiskOfRuin.ForeColor = Color.Orange;
+                        break;
+                    case "Red":
+                        lblRiskOfRuin.ForeColor = Color.Red;
+                        break;
+                }
+
+                lblRecommendation.Text = stats.LimitRecommendation;
+                switch (stats.LimitRecommendation)
+                {
+                    case var r when r.StartsWith("SUBIR"):
+                        lblRecommendation.ForeColor = Color.FromArgb(0, 200, 0);
+                        break;
+                    case var r when r.StartsWith("BAJAR"):
+                        lblRecommendation.ForeColor = Color.Red;
+                        break;
+                    default:
+                        lblRecommendation.ForeColor = Color.Orange;
+                        break;
+                }
+
+                var winRate = stats.TotalSessions > 0
+                    ? (double)stats.WinningSessions / stats.TotalSessions * 100
+                    : 0;
+                lblTotalSessions.Text = $"Sesiones: {stats.TotalSessions} ({stats.WinningSessions} ganadas, {winRate:F0}%)";
+                lblTotalHands.Text = $"Manos: {stats.TotalHands}";
+            }
+            catch (Exception ex)
+            {
+                lblBankrollCurrent.Text = "Bankroll: €0.00";
+                lblRecommendation.Text = "Error loading stats";
             }
         }
 
