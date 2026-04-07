@@ -60,11 +60,11 @@ dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release 
 
 ## Decision Engine (DecisionMaker)
 
-Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo/exact enumeration) → outs/draws (with tainted outs + combo draw detection) → hand evaluation (HandRank + KickerStrength) → fold equity → EV.
+Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: pot odds → raw equity (Monte Carlo/exact enumeration with adaptive villain ranges) → outs/draws (with tainted outs + combo draw detection) → hand evaluation (HandRank + KickerStrength) → fold equity → EV. `IPokerCalculator.Calculate` accepts optional `OpponentProfile` to adapt villain ranges based on observed VPIP/3Bet%.
 
 **Algorithms:**
 - `BitHandEvaluator` — Hand strength ranking via bit-manipulation (zero-alloc, stackalloc). `EvaluateHandScore()` returns lightweight `HandScore` struct for MC.
-- `MonteCarloSimulator` — Equity calculation: exact enumeration on river (C(45,2)=990) and turn (45×C(44,2)≈42K), MC simulation on flop (50K iters) and preflop (30K). `HandScore` struct eliminates heap allocations. Villain range weighted selection with skip-on-block (no random fallback).
+- `MonteCarloSimulator` — Equity calculation: exact enumeration on river (C(45,2)=990) and turn (45×C(44,2)≈42K), MC simulation on flop (50K iters) and preflop (30K). `HandScore` struct eliminates heap allocations. Villain range weighted selection with skip-on-block (20 retry attempts, `SkippedSimulations` tracking).
 - `PreflopEquityCalculator` — Preflop equity lookup
 - `OutsCalculator` — Draw detection, outs counting, tainted outs, combo draw detection
 - `BoardTextureAnalyzer` — 5-category wetness scoring (Dry <15, SemiDry 15-35, SemiWet 35-60, Wet 60+, Paired) and board change detection (`AnalyzeBoardChange()`) across streets
@@ -80,7 +80,7 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 7. **Delayed Value** → River + HeroCheckedAllStreets + OnePair TopPair+ → Bet 1/3 (delayed value).
 8. **Low Equity** → Semi-bluff con fold equity check (breakevenFE ajustado por draw equity). Bluff puro con fold equity ≥ breakeven. Pot odds marginales. Bluff catching con ajuste por: villainType (LAG ×0.80, TP ×1.20), runout (brick ×0.85, scare ×1.15), card removal (heroBlocksTopCard ×0.90), blocker bonus (×0.85).
 9. **Randomización** → Equity dentro de ±3% de ThinValueAbove → check adaptativo por villainType (LAG 85%, LP 80%, TAG 60%, TP 55%, Unknown 70%).
-10. **C-Bet** → Agresor preflop con equity baja (< FoldBelow dentro de -15) → c-bet a frecuencia propia (Flop 65%, Turn 45%, River 30%), prioridad sobre bluff genérico.
+10. **C-Bet** → Agresor preflop con equity baja (< FoldBelow dentro de -15) → c-bet a frecuencia propia (Flop 65%, Turn 45%, River 30%), prioridad sobre bluff genérico. C-bet mixing: agresor con equity media [FoldBelow, ThinValueAbove) chequea a frecuencia (1-cbetFreq) para proteger checking range (solo HU).
 
 **Additional decision modifiers:**
 - `heroIsAggressor` — cross-street: incluye HeroBetFlop/HeroBetTurn (no solo preflop)
@@ -89,7 +89,7 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - `hasComboDraw` — flush+straight draw gets +6 equity bonus, only if HandRank < Straight
 - `villainBarreling` + `villainCheckedMiddleStreet` — bet-bet vs bet-check-bet differentiation
 - Range narrowing — villain apostó en 2+ calles → FoldBelow +3/calle (rango más estrecho)
-- SPR push/fold — Interpolación suave: factor = 1 - spr/threshold (no buckets discretos). isPushFold solo con SPR < 1.0.
+- SPR push/fold — Interpolación suave: factor = 1 - spr/threshold (no buckets discretos). isPushFold solo con SPR < 1.0. `CalculateAllinEV`: `equity×(pot+stack) - (1-equity)×stack`.
 - Reverse implied odds — turn/river facing bet, OnePair/TwoPair, draw-heavy board, blocker reduction. Desactivado si villain all-in.
 - Board texture per situation — 3bet pot: range advantage con 1+ carta alta (Q, K, A)
 - Tainted outs — flush draw ×0.7, sin flush ×0.3
@@ -100,7 +100,7 @@ Entry point: `IPokerCalculator` → `UnifiedPokerCalculator`. Equity pipeline: p
 - Check-raise SPR guard — SPR < 1.5 + equity < 60% → skip check-raise.
 - effectiveEquity floor — Math.Max(0, effectiveEquity) tras penalizaciones.
 - Cross-street state — `PostflopGameContext`: VillainBet/HeroBet per street, VillainBetSize, FloatedFlop, TurnCalledWithFlushDanger, HeroCheckedAllStreets, IsAnyoneAllIn. Reset incondicional al detectar nueva mano.
-- VillainRange — ajustado por posición villain (EP ×0.7, BTN ×1.3) y HandSituation
+- VillainRange — ajustado por posición villain (EP ×0.7, BTN ×1.3), HandSituation, y OpponentProfile (VPIP escala ancho [0.5x-2.0x], 3Bet% ajusta rangos 3bet)
 - OpponentProfile — AF por posición (AggressionFactorIP/OOP), `GetTypeForPosition(bool villainIsIP)`, stat-specific reliability (`HasReliableCBetData`≥5, `HasReliableAFData`≥10, `HasReliableFoldData`≥8)
 - Fold equity — stats reales OpponentTracker (GetFoldToBetPct) o fallback multipliers estáticos
 - Implied odds — ajustadas por numOpponents (OOP multiway peor, IP con draw mejor)
@@ -136,7 +136,7 @@ Properties `IsFlop`, `IsTurn`, `IsRiver` cover both `*Detected` and `*Action` st
 - **Turn/River**: `IsBoardCardVisible("Card4"/"Card5")` in `ProcessPostFlopAsync` checks board card regions via image hash comparison (>80% confidence threshold) to detect new street cards. When in `FlopAction`/`TurnAction` and next card is visible → transitions to `TurnDetected`/`RiverDetected`. If no new card → reprocesses current street with updated bet info (villain raise scenario).
 - **Dealer detection**: `SetDealerPlayer()` retries on each loop iteration while `Position == None`, allowing detection even if first capture misses the dealer button.
 
-Includes `ForceState()` for test/debug mode, `MaxOcrRetries` for OCR failure handling, and `TryTransition(state, visibleBoardCards)` overload that validates card count vs expected street (FlopDetected≥3, TurnDetected≥4, RiverDetected≥5).
+Includes `ForceState()` for test/debug mode (validates state exists in transition map), `MaxOcrRetries` for OCR failure handling, `TryTransition(state, visibleBoardCards)` overload that validates card count vs expected street (FlopDetected≥3, TurnDetected≥4, RiverDetected≥5), and `lock(_stateLock)` for thread-safe state transitions.
 
 ## Strategy Configuration
 
@@ -185,4 +185,4 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Specifications (openspec/)
 
-Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab), `bugfix-decision-engine` (5 bugfixes: bluff condition, danger penalty Math.Max, combo draw bonus guard, river probe bet, calibration), `refactoring-arquitectura` (8 phases completed: interfaces, DTOs, DI migration, CoordinateScaler, GameCoordinator, ScreenReaderService, TableLayoutService, thread safety).
+Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab), `bugfix-decision-engine` (5 bugfixes: bluff condition, danger penalty Math.Max, combo draw bonus guard, river probe bet, calibration), `refactoring-arquitectura` (8 phases completed: interfaces, DTOs, DI migration, CoordinateScaler, GameCoordinator, ScreenReaderService, TableLayoutService, thread safety), `bugfix-equity-critico` (16 issues analyzed: 10 fixed [BF1-3, H1-4, M2, M5], 3 verified non-bugs, 6 pending low priority [L1-L6]).
