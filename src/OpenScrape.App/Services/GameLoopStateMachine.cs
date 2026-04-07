@@ -19,6 +19,7 @@ public enum GameState
 public class GameLoopStateMachine
 {
     private readonly ILogger<GameLoopStateMachine> _logger;
+    private readonly object _stateLock = new();
 
     private static readonly Dictionary<GameState, HashSet<GameState>> _validTransitions = new()
     {
@@ -43,23 +44,26 @@ public class GameLoopStateMachine
 
     public bool TryTransition(GameState newState)
     {
-        if (!_validTransitions.TryGetValue(CurrentState, out var validTargets) ||
-            !validTargets.Contains(newState))
+        lock (_stateLock)
         {
-            _logger.LogWarning(
-                "Transición inválida: {CurrentState} -> {NewState}",
-                CurrentState, newState);
-            return false;
+            if (!_validTransitions.TryGetValue(CurrentState, out var validTargets) ||
+                !validTargets.Contains(newState))
+            {
+                _logger.LogWarning(
+                    "Transición inválida: {CurrentState} -> {NewState}",
+                    CurrentState, newState);
+                return false;
+            }
+
+            var previousState = CurrentState;
+            CurrentState = newState;
+
+            _logger.LogInformation(
+                "Transición de estado: {PreviousState} -> {NewState}",
+                previousState, newState);
+
+            return true;
         }
-
-        var previousState = CurrentState;
-        CurrentState = newState;
-
-        _logger.LogInformation(
-            "Transición de estado: {PreviousState} -> {NewState}",
-            previousState, newState);
-
-        return true;
     }
 
     /// <summary>
@@ -108,12 +112,15 @@ public class GameLoopStateMachine
 
     public void Reset()
     {
-        var previousState = CurrentState;
-        CurrentState = GameState.WaitingForHand;
+        lock (_stateLock)
+        {
+            var previousState = CurrentState;
+            CurrentState = GameState.WaitingForHand;
 
-        _logger.LogInformation(
-            "Estado reseteado: {PreviousState} -> WaitingForHand",
-            previousState);
+            _logger.LogInformation(
+                "Estado reseteado: {PreviousState} -> WaitingForHand",
+                previousState);
+        }
     }
 
     public bool IsInStreet(GameState streetDetected, GameState streetAction)
@@ -129,17 +136,27 @@ public class GameLoopStateMachine
     public bool IsHandComplete => CurrentState == GameState.HandComplete;
 
     /// <summary>
-    /// Fuerza el estado directamente (solo para modo test/debug con radiobuttons).
-    /// Salta la validación de transiciones.
+    /// Fuerza el estado directamente (solo para modo test/debug o restauración postflop).
+    /// Valida que el estado destino es un GameState válido (no arbitrario).
     /// </summary>
     public void ForceState(GameState state)
     {
-        var previousState = CurrentState;
-        CurrentState = state;
+        lock (_stateLock)
+        {
+            if (!_validTransitions.ContainsKey(state))
+            {
+                _logger.LogError(
+                    "ForceState rechazado: estado inválido {State}", state);
+                return;
+            }
 
-        _logger.LogWarning(
-            "Estado forzado (test): {PreviousState} -> {NewState}",
-            previousState, state);
+            var previousState = CurrentState;
+            CurrentState = state;
+
+            _logger.LogWarning(
+                "Estado forzado: {PreviousState} -> {NewState}",
+                previousState, state);
+        }
     }
 
     /// <summary>
