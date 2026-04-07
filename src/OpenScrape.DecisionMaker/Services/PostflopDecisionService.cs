@@ -289,14 +289,17 @@ public class PostflopDecisionService : IPostflopDecisionService
         }
 
         // Range narrowing: villain apostó en múltiples calles → rango más estrecho
-        // Cada calle donde villain apostó estrecha su rango → FoldBelow sube
+        // Bet-check-bet indica debilidad (draw fallido), penaliza menos que bet-bet-bet
         if (isFacingBet && street >= BoardPosition.Turn)
         {
             int villainBetStreets = (villainBetSizeFlop != BetSizeCategory.NoBet ? 1 : 0)
                 + (villainBetSizeTurn != BetSizeCategory.NoBet ? 1 : 0)
                 + (isFacingBet && street == BoardPosition.River ? 1 : 0);
             if (villainBetStreets >= 2)
-                adjustedFoldBelow += PokerConstants.RangeNarrowingPerStreet * (villainBetStreets - 1);
+            {
+                double narrowingMultiplier = villainCheckedMiddleStreet ? 0.5 : 1.0;
+                adjustedFoldBelow += PokerConstants.RangeNarrowingPerStreet * (villainBetStreets - 1) * narrowingMultiplier;
+            }
         }
 
         // Kicker quality adjustment en facing bet: TPTK más confiado, TPWK más cauto
@@ -547,15 +550,27 @@ public class PostflopDecisionService : IPostflopDecisionService
             return new PostflopDecisionResult("Call", "Call — equity buena vs bet");
         }
 
-        // Thin value → call si pot odds (con implied) favorables, sino depende de posición
+        // Thin value → call si pot odds favorables o mano con potencial
+        // Manos fuertes (TopPair+/TwoPair+) son mejores calls que BottomPair/MiddlePair
         if (equity > adjustedThinValueAbove)
         {
             if (adjustedPotOdds > 0 && equity >= adjustedPotOdds)
                 return new PostflopDecisionResult("Call",
                     $"Call — implied odds favorables (SPR factor={impliedOddsFactor:F2})");
 
-            if (isInPosition)
-                return new PostflopDecisionResult("Call", "Call — thin value IP");
+            // Mano fuerte (TwoPair+ o TopPair): call en cualquier posición
+            bool isStrongThinValue = heroHandRank >= HandRank.TwoPair ||
+                (heroHandRank == HandRank.OnePair && pairClassification >= PairClassification.TopPair);
+
+            if (isInPosition || isStrongThinValue)
+                return new PostflopDecisionResult("Call",
+                    isStrongThinValue ? $"Call — thin value ({pairClassification})" : "Call — thin value IP");
+
+            // OOP con mano débil (BottomPair/MiddlePair): más cautela
+            bool isWeakHolding = heroHandRank == HandRank.OnePair &&
+                pairClassification <= PairClassification.MiddlePair;
+            if (isWeakHolding)
+                return new PostflopDecisionResult("Fold", $"Fold — thin value OOP con {pairClassification}");
 
             var fallback = thresholds.ThinValueOOPFallback == "CheckCall" ? "Call" : "Fold";
             return new PostflopDecisionResult(fallback, "Thin value OOP vs bet");
@@ -952,17 +967,20 @@ public class PostflopDecisionService : IPostflopDecisionService
                 (boardChange.OvercardAppeared || boardChange.FlushCompleted ||
                  boardChange.StraightCompleted || boardChange.BoardPaired);
 
-            if (!badRunout)
+            if (badRunout)
             {
-                var barrelBet = boardTexture == "Dry"
-                    ? thresholds.ThinValueBetSize
-                    : thresholds.BluffBetSize;
-                barrelBet = AdjustBetSizeForSPR(barrelBet, heroStack, potSize, street);
-                return new PostflopDecisionResult(
-                    barrelBet + " (Barrel)",
-                    "Double barrel — brick, consistencia de rango",
-                    IsBarrel: true);
+                return new PostflopDecisionResult("Check",
+                    "Check — bad runout, no barrel (overcard/draw/pair)");
             }
+
+            var barrelBet = boardTexture == "Dry"
+                ? thresholds.ThinValueBetSize
+                : thresholds.BluffBetSize;
+            barrelBet = AdjustBetSizeForSPR(barrelBet, heroStack, potSize, street);
+            return new PostflopDecisionResult(
+                barrelBet + " (Barrel)",
+                "Double barrel — brick, consistencia de rango",
+                IsBarrel: true);
         }
 
         // Showdown value en river
