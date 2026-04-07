@@ -110,7 +110,7 @@ namespace OpenScrape.App
                     services.AddSingleton<ImageCropperService>();
                     services.AddSingleton<DetectionLoggerService>();
                     services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
-                    services.AddSingleton<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
+                    services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
                     services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
                     services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
                     services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
@@ -125,6 +125,10 @@ namespace OpenScrape.App
                     services.AddSingleton<GameLoopStateMachine>();
                     services.AddSingleton<RegionLookupCache>();
                     services.AddSingleton<CardCacheService>();
+
+                    // Table layout (detección jugadores, dealer, posiciones)
+                    services.AddScoped<TableLayoutService>();
+                    services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
 
                     // Game coordinator
                     services.AddScoped<GameCoordinator>();

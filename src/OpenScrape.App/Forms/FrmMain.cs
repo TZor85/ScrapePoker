@@ -1,4 +1,4 @@
-using JasperFx.Core;
+﻿using JasperFx.Core;
 using Marten;
 using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication;
@@ -79,9 +79,6 @@ namespace OpenScrape.App
         private readonly ICoordinateScaler _coordinateScaler;
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
-        private readonly List<int> _colorDealer = new() { 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
-        private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 }; //, 41, 42, 43, 44, 45, 46, 47, 48, 49, 57, 66, 67, 68, 69 };
-        private readonly List<int> _colorPlaying = new() { 17 };
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
@@ -102,9 +99,6 @@ namespace OpenScrape.App
         /// Usado para calcular el profit real de la mano.
         /// </summary>
         private decimal _heroStackPreRebuy;
-        private string _dealerPosition = "";
-        private int _dealerValuePosition = -1;
-        private string _previousDealerPlayerName = "";
         private string _previousSBPlayerName = "";
         private string _previousBBPlayerName = "";
         private int _lastActivePlayerCount = 0;
@@ -151,136 +145,16 @@ namespace OpenScrape.App
             return action;
         }
 
-        /// <summary>
-        /// Verifica si un valor de canal B coincide con algún expected value dentro de tolerancia.
-        /// </summary>
-        private static bool IsColorMatch(int actualB, IEnumerable<int> expectedValues, int tolerance = 5)
-        {
-            return expectedValues.Any(expected => Math.Abs(actualB - expected) <= tolerance);
-        }
-
-        /// <summary>
-        /// Detecta villanos que foldearon mid-hand (color de playing desaparece).
-        /// </summary>
-        private void DetectFoldedPlayers()
-        {
-            // Detectar folds en cualquier estado de hand activa (preflop incluido)
-            if (_gameLoopStateMachine.CurrentState == GameState.WaitingForHand ||
-                _gameLoopStateMachine.CurrentState == GameState.HandComplete)
-                return;
-
-            var playingRegionsList = _regionLookupCache.GetRegions("Playing");
-            if (playingRegionsList == null || _formImage.pbImage.Image == null) return;
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-
-            foreach (var player in _playerGameState.Players.Where(p => p.Active && !p.HasFolded && p.Name != "P0"))
-            {
-                var regionName = $"p{player.ValuePosition}playing";
-                var region = _regionLookupCache.GetRegion("Playing", regionName);
-                if (region == null) continue;
-
-                var scaled = GetScaledRegion(region);
-                var color = bitmap.GetPixel(scaled.X, scaled.Y);
-
-                if (!IsColorMatch(color.B, _colorPlaying))
-                {
-                    player.HasFolded = true;
-                    player.Active = false;
-                    LogDebug($"[FOLD] {player.Name} ({player.Alias ?? "?"}) foldeó mid-hand");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Re-evalúa Empty para jugadores no-hero en cada iteración del game loop.
-        /// Detecta jugadores que se van mid-session.
-        /// </summary>
-        private void RefreshPlayerStates()
-        {
-            var emptyRegionsList = _regionLookupCache.GetRegions("Empty");
-            if (emptyRegionsList == null || _formImage.pbImage.Image == null) return;
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-
-            foreach (var region in emptyRegionsList)
-            {
-                var playerNumber = GetPlayerNumber(region.Name, "empty");
-                if (playerNumber == null || playerNumber == 0) continue;
-
-                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
-                if (player == null) continue;
-
-                var scaled = GetScaledRegion(region);
-                var color = bitmap.GetPixel(scaled.X, scaled.Y);
-
-                bool wasEmpty = player.Empty;
-                bool isNowEmpty = IsColorMatch(color.B, _colorEmpty);
-
-                if (!wasEmpty && isNowEmpty)
-                {
-                    player.Empty = true;
-                    player.Active = false;
-                    player.SitOut = false;
-                    LogDebug($"[LEFT] {player.Name} ({player.Alias ?? "?"}) dejó la mesa mid-session");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Validación cruzada: inferir Empty cuando múltiples señales coinciden.
-        /// </summary>
-        private void ValidatePlayerStates()
-        {
-            foreach (var player in _playerGameState.Players.Where(p => p.Name != "P0"))
-            {
-                // Sin datos → probablemente empty
-                if (!player.Active && !player.Empty && !player.SitOut &&
-                    string.IsNullOrEmpty(player.Alias) &&
-                    player.Stack == 0 && player.Bet == 0)
-                {
-                    player.Empty = true;
-                }
-
-                // Active pero sin stack/bet → warning
-                if (player.Active && player.Stack == 0 && player.Bet == 0 && !player.HasFolded)
-                {
-                    LogDebug($"[WARNING] {player.Name} activo pero stack=0, bet=0 — posible detección incorrecta");
-                }
-            }
-        }
-
         private string GetActiveVillainId()
             => _coordinator.GetActiveVillainId(_playerGameState);
 
-
-        /// <summary>
-        /// Re-lee nombres de jugadores activos con alias vacío.
-        /// </summary>
-        private void RetryEmptyAliases()
+        private static int? GetPlayerNumber(string regionName, string extraText = "")
         {
-            var nameRegionsList = _regionLookupCache.GetRegions("Names");
-            if (nameRegionsList == null || _formImage.pbImage.Image == null) return;
+            if (string.IsNullOrEmpty(regionName))
+                return null;
 
-            foreach (var player in _playerGameState.Players.Where(p => p.Active && string.IsNullOrEmpty(p.Alias)))
-            {
-                var regionName = $"p{player.ValuePosition}Name";
-                var region = _regionLookupCache.GetRegion("Names", regionName);
-                if (region == null) continue;
-
-                var scaled = GetScaledRegion(region);
-                double nameUmbral = Math.Min(region.Umbral ?? 0.80, 0.80);
-                var cleanName = _screenReader.ReadPlayerName(_formImage.pbImage.Image,
-                    scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    nameUmbral, region.InactiveUmbral ?? 0.30);
-
-                if (!string.IsNullOrEmpty(cleanName))
-                {
-                    player.Alias = cleanName;
-                    if (!string.IsNullOrEmpty(player.Name))
-                        _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
-                }
-            }
+            var match = System.Text.RegularExpressions.Regex.Match(regionName, @$"p(\d+){extraText}");
+            return match.Success ? int.Parse(match.Groups[1].Value) : null;
         }
 
         private OpponentType GetVillainType(bool? heroIsInPosition = null)
@@ -338,6 +212,7 @@ namespace OpenScrape.App
         private readonly OverlayConfig _overlayConfig;
         private readonly IGameCoordinator _coordinator;
         private readonly IScreenReaderService _screenReader;
+        private readonly ITableLayoutService _tableLayout;
         private readonly PostflopGameContext _postflopContext = new();
         #endregion
 
@@ -377,7 +252,8 @@ namespace OpenScrape.App
                         IGetCardsRiverUseCase getCardsRiverUseCase,
                         ISetPreflopActionUseCase setPreflopActionUseCase,
                         IGameCoordinator coordinator,
-                        IScreenReaderService screenReader)
+                        IScreenReaderService screenReader,
+                        ITableLayoutService tableLayout)
         {
             InitializeComponent();
 
@@ -418,6 +294,7 @@ namespace OpenScrape.App
             _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
+            _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -830,8 +707,7 @@ namespace OpenScrape.App
                     _responseAction = new ResponseAction();
                     _heroStackPreRebuy = 0; // Reset para nueva mano
                     _preflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>();
-                    _dealerValuePosition = -1;
-                    _dealerPosition = string.Empty;
+                    _tableLayout.ResetDealerState();
                     _newHand = false;
 
                     // State machine: transicionar a nueva mano
@@ -886,15 +762,15 @@ namespace OpenScrape.App
 
                 if (needsInitialization)
                 {
-                    SetEmptyPlayer();
-                    SetSitOutPlayer();
-                    SetActivePlayer();
-                    await InitializePlayersAsync();
+                    _tableLayout.SetEmptyPlayer(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.SetSitOutPlayer(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.SetActivePlayer(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.InitializePlayers(_formImage.pbImage.Image, _playerGameState);
                 }
                 else
                 {
-                    SetActivePlayer();
-                    RefreshPlayerStates();
+                    _tableLayout.SetActivePlayer(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.RefreshPlayerStates(_formImage.pbImage.Image, _playerGameState);
 
                     int currentActiveCount = _playerGameState.Players.Count(p => !p.Empty && !p.SitOut && p.ValuePosition != 0);
                     bool playerCountChanged = currentActiveCount != _lastActivePlayerCount;
@@ -906,16 +782,16 @@ namespace OpenScrape.App
 
                     if (shouldRecalculate)
                     {
-                        SetDealerPlayer();
-                        if (_dealerValuePosition >= 0 && _playerGameState.Position != TablePosition.None)
-                            SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
+                        _tableLayout.SetDealerPlayer(_formImage.pbImage.Image, _playerGameState);
+                        if (_tableLayout.DealerValuePosition >= 0 && _playerGameState.Position != TablePosition.None)
+                            _tableLayout.SetVillainPosition(_playerGameState, _playerGameState.Position, _tableLayout.DealerValuePosition);
                     }
                 }
 
                 SetBetPlayer();
                 SetHeroStack();
-                RetryEmptyAliases();
-                ValidatePlayerStates();
+                _tableLayout.RetryEmptyAliases(_formImage.pbImage.Image, _playerGameState);
+                _tableLayout.ValidatePlayerStates(_playerGameState);
 
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
@@ -1158,31 +1034,6 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Inicializa los datos de los jugadores
-        /// </summary>
-        private async Task InitializePlayersAsync()
-        {
-            try
-            {
-                // Las cartas y jugadores ya se obtienen antes
-                SetDealerPlayer();
-
-                // Log resultado de detección de dealer
-                LogInformation($"Dealer result: P{_dealerValuePosition}, Position: {_playerGameState.Position}, IsDealer: {_playerGameState.IsDealer}, Players: {_playerGameState.Players.Count}");
-
-                if (_dealerValuePosition >= 0)
-                    SetVillainPosition(_playerGameState.Position, _dealerValuePosition);
-                SetAliasVillain();
-            }
-            catch (Exception ex)
-            {
-                // Log del error específico
-                LogError($"Error en InitializePlayersAsync: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Procesa la información de la mesa
         /// </summary>
         private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
@@ -1321,7 +1172,7 @@ namespace OpenScrape.App
             LogInformation($"ProcessPostFlopAsync: Estado actual = {_gameLoopStateMachine.CurrentState}");
 
             // Detectar villanos que foldearon mid-hand (actualiza Active/numOpponents)
-            DetectFoldedPlayers();
+            _tableLayout.DetectFoldedPlayers(_formImage.pbImage.Image, _playerGameState, _gameLoopStateMachine.CurrentState);
 
             // Detectar transición a nueva calle verificando si hay carta visible en el board
             if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
@@ -1467,7 +1318,7 @@ namespace OpenScrape.App
 
             // Indicador 5: Dealer cambió (nueva ronda)
             string currentDealerPlayerName = _playerGameState?.Players.FirstOrDefault(d => d.Dealer == true)?.Name ?? "";
-            bool indicator5 = !string.IsNullOrEmpty(currentDealerPlayerName) && currentDealerPlayerName != _previousDealerPlayerName;
+            bool indicator5 = !string.IsNullOrEmpty(currentDealerPlayerName) && currentDealerPlayerName != _tableLayout.PreviousDealerPlayerName;
 
             // Indicador 6: SB cambió
             string currentSBPlayerName = _playerGameState?.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "";
@@ -1491,7 +1342,7 @@ namespace OpenScrape.App
             // Actualizar nombres previos si se detectó nueva mano
             if (isNewHand)
             {
-                _previousDealerPlayerName = currentDealerPlayerName;
+                _tableLayout.SavePreviousDealer();
                 _previousSBPlayerName = currentSBPlayerName;
                 _previousBBPlayerName = currentBBPlayerName;
             }
@@ -1584,7 +1435,7 @@ namespace OpenScrape.App
             UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
-            SetIsInPosition();
+            _tableLayout.SetIsInPosition(_playerGameState);
 
             // Analizar el flop y determinar acción usando PostflopDecisionService (unificado con turn/river)
             DetermineFlopActionUnified();
@@ -1637,51 +1488,6 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Valida las asignaciones de posiciones para asegurar consistencia
-        /// </summary>
-        /// <param name="players">Lista de jugadores activos</param>
-        private void ValidatePositionAssignments(List<Player> players)
-        {
-            // Validar exactamente un dealer
-            var dealers = players.Where(p => p.Dealer).ToList();
-            if (dealers.Count != 1)
-            {
-                LogInformation($"Advertencia: Se encontraron {dealers.Count} dealers. Debe haber exactamente 1.");
-            }
-
-            // Validar posiciones únicas (excepto None)
-            var assignedPositions = players.Where(p => p.Position != TablePosition.None)
-                                           .GroupBy(p => p.Position)
-                                           .Where(g => g.Count() > 1)
-                                           .Select(g => g.Key)
-                                           .ToList();
-            if (assignedPositions.Any())
-            {
-                LogInformation($"Advertencia: Posiciones duplicadas: {string.Join(", ", assignedPositions)}");
-            }
-
-            // Validar blinds si hay suficientes jugadores
-            if (players.Count >= 2)
-            {
-                var hasSmallBlind = players.Any(p => p.Position == TablePosition.SmallBlind);
-                var hasBigBlind = players.Any(p => p.Position == TablePosition.BigBlind);
-                if (!hasSmallBlind || !hasBigBlind)
-                {
-                    LogDebug("Advertencia: Faltan asignar SmallBlind o BigBlind.");
-                }
-            }
-
-            // Validar Button si hay suficientes jugadores
-            if (players.Count >= 3)
-            {
-                var hasButton = players.Any(p => p.Position == TablePosition.Button);
-                if (!hasButton)
-                {
-                    LogDebug("Advertencia: Falta asignar Button.");
-                }
-            }
-        }
-
         /// <summary>
         /// Procesa la fase de turn
         /// </summary>
@@ -1757,7 +1563,7 @@ namespace OpenScrape.App
             UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
-            SetIsInPosition();
+            _tableLayout.SetIsInPosition(_playerGameState);
 
             // Determinar acción en el turn
             DetermineTurnAction();
@@ -1841,7 +1647,7 @@ namespace OpenScrape.App
             _riverBoardTexture = AnalyzeRiverBoardTexture(dataBoard);
 
             // Determinar si estamos en posición
-            SetIsInPosition();
+            _tableLayout.SetIsInPosition(_playerGameState);
 
             // Determinar acción en el river
             DetermineRiverAction();
@@ -2297,143 +2103,6 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece los jugadores vacíos
-        /// </summary>
-        private void SetEmptyPlayer()
-        {
-            var emptyRegionsList = _regionLookupCache.GetRegions("Empty");
-            if (emptyRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            // P0 (héroe) siempre está activo — no tiene región Empty/Playing en Regiones.json
-            if (!_playerGameState.Players.Any(p => p.ValuePosition == 0))
-            {
-                var heroPlayer = CreatePlayerData(0);
-                heroPlayer.Active = true;
-                _playerGameState.Players.Add(heroPlayer);
-            }
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-
-            foreach (var region in emptyRegionsList)
-            {
-                var playerNumber = GetPlayerNumber(region.Name, "empty");
-                if (playerNumber == null)
-                    continue;
-
-                var scaled = GetScaledRegion(region);
-                var color = bitmap.GetPixel(scaled.X, scaled.Y);
-                var colorMatch = IsColorMatch(color.B, _colorEmpty);
-
-                _playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
-
-                // Verificamos si el jugador está vacío (Empty ≠ SitOut, son estados independientes)
-                if (region.Name.Contains("empty") && colorMatch)
-                {
-                    var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-                    if (player != null)
-                    {
-                        player.Empty = true;
-                    }
-                }
-            }
-        }
-
-        private void SetActivePlayer()
-        {
-            var playingRegionsList = _regionLookupCache.GetRegions("Playing");
-            if (playingRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-
-            foreach (var region in playingRegionsList)
-            {
-                var playerNumber = GetPlayerNumber(region.Name, "playing");
-                if (playerNumber == null)
-                    continue;
-
-                var scaled = GetScaledRegion(region);
-                var color = bitmap.GetPixel(scaled.X, scaled.Y);
-
-                //_playerGameState.Players.Add(CreatePlayerData(playerNumber.Value));
-
-                // Verificamos si el jugador está vacío
-                var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-                if (region.Name.Contains("playing") && IsColorMatch(color.B, _colorPlaying))
-                {
-                    if (player != null)
-                    {
-                        player.Active = true;
-                    }
-                }
-                else
-                {
-                    if (player != null)
-                    {
-                        player.Active = false;
-                    }
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// Establece los alias de los villanos
-        /// </summary>
-        private void SetAliasVillain()
-        {
-            var namesRegionsList = _regionLookupCache.GetRegions("Names");
-            if (namesRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            foreach (var region in namesRegionsList)
-            {
-                var playerNumber = GetPlayerNumber(region.Name, "Name");
-                if (playerNumber == null) continue;
-
-                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
-                if (player != null)
-                {
-                    var scaled = GetScaledRegion(region);
-                    double nameUmbral = Math.Min(region.Umbral ?? 0.80, 0.80);
-                    var cleanName = _screenReader.ReadPlayerName(_formImage.pbImage.Image,
-                        scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                        nameUmbral, region.InactiveUmbral ?? 0.30);
-                    player.Alias = cleanName;
-
-                    if (!string.IsNullOrEmpty(cleanName) && !string.IsNullOrEmpty(player.Name))
-                        _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Crea un objeto PlayerData con los datos básicos
-        /// </summary>
-        private Player CreatePlayerData(int playerNumber) =>
-            new Player
-            {
-                Name = $"P{playerNumber}",
-                Active = false,
-                Empty = false,
-                SitOut = false,
-                ValuePosition = playerNumber
-            };
-
-        /// <summary>
-        /// Extrae el número de jugador de un nombre de región
-        /// </summary>
-        private int? GetPlayerNumber(string regionName, string extraText = "")
-        {
-            if (string.IsNullOrEmpty(regionName))
-                return null;
-
-            var match = System.Text.RegularExpressions.Regex.Match(regionName, @$"p(\d+){extraText}");
-            return match.Success ? int.Parse(match.Groups[1].Value) : null;
-        }
-
-        /// <summary>
         /// Establece el valor del bote
         /// </summary>
         private void SetPotValue()
@@ -2591,369 +2260,7 @@ namespace OpenScrape.App
                 _tableName = Regex.Replace(_tableName, @"\d", "");
             }
         }
-        #region [Dealer and Positions]
 
-        /// <summary>
-        /// Establece el dealer entre los jugadores
-        /// </summary>
-        private void SetDealerPlayer()
-        {
-            // Si no hay jugadores, no podemos determinar el dealer
-            if (_playerGameState.Players.Count == 0)
-                return;
-
-            var dealerRegionsList = _regionLookupCache.GetRegions("Dealer");
-            if (dealerRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            // Clear all previous dealer flags to ensure only one dealer per hand
-            _playerGameState.Players.ForEach(p => p.Dealer = false);
-
-            using var bitmap = new Bitmap(_formImage.pbImage.Image);
-
-            var emptyPositions = _playerGameState.Players
-                .Where(w => w.Empty || w.SitOut)
-                .Select(s => s.ValuePosition)
-                .ToList();
-
-            // Log de todas las regiones para diagnóstico
-            var allColorsLog = new System.Text.StringBuilder();
-            int? detectedDealerPosition = null;
-
-            foreach (var region in dealerRegionsList.Where(x => x.IsColor.GetValueOrDefault()))
-            {
-                var scaled = GetScaledRegion(region);
-                var centerColor = bitmap.GetPixel(scaled.X, scaled.Y);
-                allColorsLog.Append($"{region.Name}=RGB({centerColor.R},{centerColor.G},{centerColor.B}) ");
-
-                // Detección robusta: color dorado/amarillo del dealer button
-                // #ffd800 = R:255, G:216, B:0 — verificar los 3 canales
-                bool isDealerColor = IsDealerButtonColor(bitmap, scaled.X, scaled.Y, searchRadius: 3);
-
-                if (isDealerColor)
-                {
-                    var playerNumber = GetPlayerNumber(region.Name, "dealer");
-                    if (playerNumber != null && detectedDealerPosition == null)
-                    {
-                        detectedDealerPosition = playerNumber.Value;
-                    }
-                }
-            }
-
-            LogInformation($"Dealer scan: {allColorsLog}| Detectado: {(detectedDealerPosition.HasValue ? $"P{detectedDealerPosition}" : "NINGUNO")} | Imagen: {bitmap.Width}x{bitmap.Height}");
-
-            if (detectedDealerPosition.HasValue)
-            {
-                SetDealerForPlayer(detectedDealerPosition.Value, emptyPositions);
-            }
-        }
-
-        /// <summary>
-        /// Verifica si el pixel y su entorno corresponden al color del dealer button (dorado/amarillo)
-        /// </summary>
-        private bool IsDealerButtonColor(Bitmap bitmap, int centerX, int centerY, int searchRadius)
-        {
-            for (int dx = -searchRadius; dx <= searchRadius; dx++)
-            {
-                for (int dy = -searchRadius; dy <= searchRadius; dy++)
-                {
-                    int px = centerX + dx;
-                    int py = centerY + dy;
-
-                    if (px < 0 || py < 0 || px >= bitmap.Width || py >= bitmap.Height)
-                        continue;
-
-                    var c = bitmap.GetPixel(px, py);
-
-                    // Dealer button dorado: R alto (>=200), G medio-alto (>=140), B bajo (<=80)
-                    // Esto excluye blancos (B alto), grises, fondos oscuros, etc.
-                    if (c.R >= 200 && c.G >= 140 && c.B <= 80)
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Establece el dealer para un jugador específico
-        /// </summary>
-        /// <param name="playerNumber">Número del jugador</param>
-        /// <param name="emptyPositions">Lista de posiciones vacías</param>
-        private void SetDealerForPlayer(int playerNumber, List<int> emptyPositions)
-        {
-            // Validación de parámetros
-            if (emptyPositions == null)
-                throw new ArgumentNullException(nameof(emptyPositions));
-
-            // Para P0 (caso especial: héroe es el dealer)
-            if (playerNumber == 0)
-            {
-                _playerGameState.IsDealer = true;
-                _playerGameState.Position = TablePosition.Button;
-                _dealerValuePosition = 0;
-
-                // Establecer la posición del jugador P0 (héroe)
-                var heroP0 = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
-                if (heroP0 != null)
-                {
-                    heroP0.Position = TablePosition.Button;
-                    heroP0.Dealer = true;
-                }
-
-                // Asignar posiciones a villanos
-                SetVillainPosition(TablePosition.Button, 0);
-                return;
-            }
-
-            // Marcar dealer en el jugador si existe en la lista
-            var player = _playerGameState.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-
-            if (player != null)
-            {
-                // Skip dealer assignment if the seat is truly empty (no active, no playing)
-                // Un jugador puede estar marcado Empty por detección de color pero Active por Playing
-                if ((player.Empty || player.SitOut) && !player.Active)
-                    return;
-
-                player.Dealer = true;
-            }
-
-            LogDebug($"Dealer assigned to player P{playerNumber}");
-
-            // Determinar posición P0 basado en la posición del dealer y asientos vacíos
-            var p0Pos = DetermineP0Position(playerNumber, emptyPositions);
-            LogDebug($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
-            _playerGameState.Position = p0Pos;
-
-            // Establecer la posición del jugador P0 (héroe)
-            var heroPlayer = _playerGameState.Players.FirstOrDefault(p => p.ValuePosition == 0);
-            if (heroPlayer != null)
-            {
-                heroPlayer.Position = p0Pos;
-                LogDebug($"Héroe P0 position establecida: {p0Pos}");
-            }
-
-            _previousDealerPlayerName = _dealerPosition;
-            _dealerPosition = player?.Name ?? $"P{playerNumber}";
-            _dealerValuePosition = playerNumber;
-
-            // Asignar posiciones a villanos usando la posición del dealer
-            SetVillainPosition(p0Pos, playerNumber);
-        }
-
-        /// <summary>
-        /// Determina la posición de P0 basado en la posición del dealer y asientos vacíos
-        /// </summary>
-        /// <param name="dealerPosition">Posición del dealer</param>
-        /// <param name="emptyPositions">Lista de posiciones vacías</param>
-        /// <returns>Posición de la mesa para P0</returns>
-        private TablePosition DetermineP0Position(int dealerPosition, List<int> emptyPositions)
-        {
-            var position = PositionCalculator.DetermineP0Position(dealerPosition, _playerGameState.Players);
-
-            var activeSeats = _playerGameState.Players
-                .Where(p => !p.Empty && !p.SitOut)
-                .Select(p => p.ValuePosition)
-                .OrderBy(s => s)
-                .ToList();
-
-            LogDebug($"Posición del héroe calculada: {position} (dealer: {dealerPosition}, activos: {string.Join(",", activeSeats)})");
-            return position;
-        }
-
-        /// <summary>
-        /// Establece los jugadores que están en "sit out"
-        /// </summary>
-        private void SetSitOutPlayer()
-        {
-            // Validación temprana con return
-            var sitOutRegionsList = _regionLookupCache.GetRegions("SitOut");
-            if (sitOutRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            // Inicialización de diccionario con object initializer
-            var colorSitOutMap = new Dictionary<string, int>
-            {
-                {"p1sitout", 0},
-                {"p2sitout", 0},
-                {"p3sitout", 2},
-                {"p4sitout", 1},
-                {"p5sitout", 1}
-            };
-
-            foreach (var region in sitOutRegionsList)
-            {
-                var playerNumber = GetPlayerNumber(region.Name, "sitout");
-                if (playerNumber == null)
-                    continue;
-
-                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
-                if (player == null)
-                    continue;
-
-                var colorIndex = colorSitOutMap.TryGetValue(region.Name, out var index) ? index : 0;
-
-                var active = !player.Active;
-                var empty = !player.Empty;
-                var scaled = GetScaledRegion(region);
-                var textoo = _screenReader.ReadTextWithMultipleThresholds(_formImage.pbImage.Image,
-                    scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
-
-                // Extracción de condición compleja a variable
-                bool isSittingOut = !player.Empty && !player.Active &&
-                    _screenReader.ReadText(_formImage.pbImage.Image,
-                               scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                               region.Umbral, region.InactiveUmbral, region.IsOnlyNumber)
-                    .Contains("SIT");
-
-                if (isSittingOut)
-                {
-                    player.SitOut = true;
-                    // NO marcar Empty — jugador sitout sigue sentado, puede volver
-                }
-            }
-        }
-
-        private bool HeroBlocksTopBoardCard()
-            => _coordinator.HeroBlocksTopBoardCard(_playerGameState);
-
-        private void SetIsInPosition()
-        {
-            var activePlayers = _playerGameState.Players.Where(w => w.Active &&
-                                                                   w.ValuePosition != 5 &&
-                                                                   w.ValuePosition != 6);
-
-            // Por defecto, asumimos que está en posición
-            _playerGameState.IsInPosition = true;
-
-            if (activePlayers.Any(item => (int)_playerGameState.Position > item.ValuePosition) ||
-                activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
-            {
-                _playerGameState.IsInPosition = false;
-            }
-
-            // Simplificación de condiciones específicas
-            if (_playerGameState.Position == TablePosition.BigBlind &&
-                _playerGameState.Players.Any(a => a.Active && a.Position != TablePosition.SmallBlind))
-            {
-                _playerGameState.IsInPosition = false;
-            }
-
-            if (_playerGameState.Position == TablePosition.SmallBlind)
-            {
-                _playerGameState.IsInPosition = false;
-            }
-
-            if (_playerGameState.Position == TablePosition.BigBlind &&
-                _playerGameState.Players.Count(w => w.Active) == 1 &&
-                _playerGameState.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
-            {
-                _playerGameState.IsInPosition = true;
-            }
-        }
-
-        /// <summary>
-        /// Establece las posiciones de los villanos basado en la posición de P0 y del dealer
-        /// </summary>
-        /// <param name="p0Position">Posición de P0</param>
-        /// <param name="dealerPosition">Posición del dealer</param>
-        private void SetVillainPosition(TablePosition p0Position, int dealerPosition)
-        {
-            var allPlayers = _playerGameState.Players.ToList();
-            if (allPlayers == null || allPlayers.Count == 0)
-                return;
-
-            var activePlayers = allPlayers
-                .Where(p => p != null && !p.Empty && !p.SitOut)
-                .OrderBy(p => p.ValuePosition)
-                .ToList();
-
-            if (!activePlayers.Any())
-                return;
-
-            LogDebug($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {p0Position}, Dealer: {dealerPosition}");
-
-            // Limpiar posiciones previas de jugadores activos (excepto héroe P0)
-            foreach (var p in activePlayers.Where(p => p.ValuePosition != 0))
-            {
-                p.Position = TablePosition.None;
-            }
-
-            // Usar PositionCalculator para asignar posiciones a villanos (basado en posición del héroe)
-            var villainPositions = PositionCalculator.AssignVillainPositions(p0Position, allPlayers);
-
-            foreach (var kvp in villainPositions)
-            {
-                var player = activePlayers.FirstOrDefault(p => p.ValuePosition == kvp.Key);
-                if (player != null)
-                {
-                    player.Position = kvp.Value;
-                }
-            }
-
-            var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
-            LogDebug($"Posiciones asignadas: {positionLog}");
-
-            ValidatePositionAssignments(activePlayers);
-        }
-
-        /// <summary>
-        /// Extiende la funcionalidad de SetVillainPosition para asignar posiciones a los jugadores
-        /// </summary>
-        /// <param name="players">Lista de jugadores (ordenados por ValuePosition) a considerar</param>
-        /// <param name="positions">Lista de posiciones a asignar (ya recortada a jugadores activos)</param>
-        private void SetVillainPositionExtension(List<Player> players, List<TablePosition> positions)
-        {
-            // Validación de parámetros
-            if (players == null || players.Count == 0 || positions == null || positions.Count == 0)
-                return;
-
-            // Asignación secuencial respetando blinds cuando sea posible
-            foreach (var position in positions)
-            {
-                Player? assigned = null;
-
-                foreach (var player in players.OrderBy(o => o.ValuePosition))
-                {
-                    if (player == null)
-                        continue;
-
-                    // Elegibles solamente jugadores activos (excluir héroe P0)
-                    bool shouldAssignPosition = !player.Empty && !player.SitOut &&
-                                               player.Position == TablePosition.None &&
-                                               player.ValuePosition != 0; // Excluir héroe
-                    if (!shouldAssignPosition)
-                        continue;
-
-                    // Para blinds, preferir quien muestre apuesta (> 0) si está disponible
-                    if (position == TablePosition.SmallBlind || position == TablePosition.BigBlind)
-                    {
-                        // Si no tiene apuesta, intentar encontrar otro con apuesta para blind
-                        if (player.Bet <= 0)
-                            continue;
-                    }
-
-                    assigned = player;
-                    break;
-                }
-
-                // Si no se pudo respetar la preferencia de apuesta en blinds, asignar el siguiente disponible
-                if (assigned == null)
-                {
-                    assigned = players.OrderBy(o => o.ValuePosition)
-                                      .FirstOrDefault(p => p != null && !p.Empty && !p.SitOut && p.Position == TablePosition.None);
-                }
-
-                if (assigned != null)
-                {
-                    assigned.Position = position;
-                }
-            }
-        }
-
-        #endregion
 
         #region [Image capture and process]
 

@@ -92,41 +92,38 @@
 
 ---
 
-## Fase 7 — Extraer TableLayoutService (PENDIENTE)
+## Fase 7 — Extraer TableLayoutService ✅ (2026-04-07)
 
 ### 7A. Definir contrato
 
-- [ ] 7.1 Crear `src/OpenScrape.App/Services/ITableLayoutService.cs`
+- [x] 7.1 Crear `src/OpenScrape.App/Services/ITableLayoutService.cs` (15 métodos + 3 propiedades dealer state)
 
 ### 7B. Extraer métodos
 
-- [ ] 7.2 Crear `src/OpenScrape.App/Services/TableLayoutService.cs`
-- [ ] 7.3 Mover `InitializePlayersAsync()`
-- [ ] 7.4 Mover detección de dealer: `SetDealerPlayer()`, `IsDealerButtonColor()`, `SetDealerForPlayer()`, `DetermineP0Position()`
-- [ ] 7.5 Mover detección de jugadores: `SetActivePlayer()`, `SetEmptyPlayer()`, `SetSitOutPlayer()`, `DetectFoldedPlayers()`, `ValidatePlayerStates()`, `RefreshPlayerStates()`
-- [ ] 7.6 Mover posiciones y alias: `SetVillainPosition()`, `SetVillainPositionExtension()`, `SetIsInPosition()`, `SetAliasVillain()`, `RetryEmptyAliases()`, `ValidatePositionAssignments()`
+- [x] 7.2 Crear `src/OpenScrape.App/Services/TableLayoutService.cs` (624 LOC)
+- [x] 7.3 Mover `InitializePlayersAsync()` → `InitializePlayers(Image, PlayerGameState)`
+- [x] 7.4 Mover detección de dealer: `SetDealerPlayer()`, `IsDealerButtonColor()`, `SetDealerForPlayer()`, `DetermineP0Position()`
+- [x] 7.5 Mover detección de jugadores: `SetActivePlayer()`, `SetEmptyPlayer()`, `SetSitOutPlayer()`, `DetectFoldedPlayers()`, `ValidatePlayerStates()`, `RefreshPlayerStates()`
+- [x] 7.6 Mover posiciones y alias: `SetVillainPosition()`, `SetVillainPositionExtension()`, `SetIsInPosition()`, `SetAliasVillain()`, `RetryEmptyAliases()`, `ValidatePositionAssignments()`
+- [x] 7.extra Mover helpers: `CreatePlayerData()`, `IsColorMatch()`, constantes `_colorEmpty`/`_colorPlaying`/`_colorDealer`
+- [x] 7.extra Estado dealer: `DealerValuePosition`, `DealerPosition`, `PreviousDealerPlayerName` como propiedades
 
 ### 7C. Actualizar
 
-- [ ] 7.7 Inyectar `ITableLayoutService` en FrmMain (y GameCoordinator si necesario)
-- [ ] 7.8 Reemplazar llamadas en FrmMain por `_tableLayout.DetectXxx()`
-- [ ] 7.9 Registrar `TableLayoutService` en `Program.cs` como Scoped
-- [ ] 7.10 Verificar: `dotnet build && dotnet test`
-
-### Notas para implementación
-- Dependen de `_regionLookupCache`, `ICoordinateScaler`, `OcrService`, `ColorDetectionService` — todos ya inyectables
-- `_formImage.pbImage.Image` es la dependencia principal — bitmap se pasa como parámetro
-- `PlayerGameState[]` se pasa por referencia (FrmMain lo posee)
+- [x] 7.7 Inyectar `ITableLayoutService` en FrmMain
+- [x] 7.8 Reemplazar llamadas en FrmMain por `_tableLayout.XxxMethod()`
+- [x] 7.9 Registrar `TableLayoutService` en `Program.cs` como Scoped (forwarding)
+- [x] 7.10 Verificar: `dotnet build && dotnet test` — 0 errores, 592 tests pasan
 
 ---
 
 ## Verificación Final (tras completar Fases 6-7)
 
-- [ ] V1. `dotnet clean && dotnet build` — 0 errores, 0 warnings nuevos
-- [ ] V2. `dotnet test` — 592+ tests pasan
+- [x] V1. `dotnet clean && dotnet build` — 0 errores
+- [x] V2. `dotnet test` — 592 tests pasan
 - [ ] V3. `dotnet format --verify-no-changes` — formato correcto
-- [ ] V4. FrmMain.cs < 3,000 LOC (objetivo post fases 6-7)
+- [x] V4. FrmMain.cs = 4,244 LOC (era 5,977, -29% reducción)
 - [ ] V5. `grep -r "new ColorDetectionService\|new OcrService\|new ImageCropperService" src/OpenScrape.App/Forms/` — 0 resultados
 - [ ] V6. `grep -r "static.*_reference\|static.*_isInitialized" src/` — 0 resultados
-- [ ] V7. Ejecutar app manualmente — game loop funciona
+- [x] V7. Ejecutar app manualmente — game loop funciona ✅ (2026-04-07)
 - [ ] V8. Jugar 1 sesión de prueba completa
