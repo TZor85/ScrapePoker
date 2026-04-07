@@ -6,7 +6,7 @@ namespace OpenScrape.DecisionMaker.Services;
 /// Servicio que acumula estadísticas de oponentes durante la sesión.
 /// Mantiene un perfil por jugador (identificado por nombre/seat).
 /// </summary>
-public class OpponentTracker
+public class OpponentTracker : Interfaces.IOpponentTracker
 {
     private readonly Dictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
 

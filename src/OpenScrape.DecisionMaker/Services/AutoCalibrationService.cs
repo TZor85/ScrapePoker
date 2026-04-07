@@ -1,3 +1,4 @@
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 
@@ -31,7 +32,7 @@ public class CalibrationPreview
     public double EstimatedNewExploitability { get; set; }
 }
 
-public class AutoCalibrationService
+public class AutoCalibrationService : Interfaces.IAutoCalibrationService
 {
     private const int MinDecisionsForCalibration = 20;
     private const int RecalibrateThreshold = 50;
@@ -43,7 +44,7 @@ public class AutoCalibrationService
     private DateTime _lastCalibrationTime = DateTime.MinValue;
 
     public CalibrationResult Calibrate(
-        ExploitabilityCalculator exploitabilityCalculator,
+        IExploitabilityCalculator exploitabilityCalculator,
         StrategyProfile currentProfile)
     {
         var sessionAnalysis = exploitabilityCalculator.CalculateSessionAnalysis();
@@ -110,7 +111,7 @@ public class AutoCalibrationService
         };
     }
 
-    public bool ShouldRecalibrate(ExploitabilityCalculator calculator)
+    public bool ShouldRecalibrate(IExploitabilityCalculator calculator)
     {
         var sessionAnalysis = calculator.CalculateSessionAnalysis();
         
@@ -130,7 +131,7 @@ public class AutoCalibrationService
     }
 
     public CalibrationPreview GetPreview(
-        ExploitabilityCalculator calculator,
+        IExploitabilityCalculator calculator,
         StrategyProfile profile)
     {
         var sessionAnalysis = calculator.CalculateSessionAnalysis();

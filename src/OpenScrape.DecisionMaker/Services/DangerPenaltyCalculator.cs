@@ -8,8 +8,18 @@ namespace OpenScrape.DecisionMaker.Services;
 /// Calcula penalizaciones de equity por cartas peligrosas en el board.
 /// Extraído de PostflopDecisionService para reducir responsabilidades.
 /// </summary>
-public class DangerPenaltyCalculator
+public class DangerPenaltyCalculator : Interfaces.IDangerPenaltyCalculator
 {
+    /// <summary>
+    /// Wrapper de instancia que delega al método estático. Permite inyección via interfaz.
+    /// </summary>
+    double Interfaces.IDangerPenaltyCalculator.Calculate(
+        double rawEquity, BoardChangeResult boardChange,
+        bool heroBlocksDangerSuit, bool isFacingBet,
+        StrategyProfile profile, BoardPosition street,
+        bool heroHasNutBlocker, HandRank heroHandRank)
+        => Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, profile, street, heroHasNutBlocker, heroHandRank);
+
     /// <summary>
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Flush/straight usan penalización porcentual escalada por street (flop más, river menos).

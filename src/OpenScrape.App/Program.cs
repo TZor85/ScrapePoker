@@ -7,6 +7,7 @@ using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
@@ -63,19 +64,38 @@ namespace OpenScrape.App
                     services.AddSingleton<PreflopEquityCalculator>();
                     services.AddSingleton<EquityCalculatorService>();
 
+                    // Servicios DecisionMaker: clase concreta + forwarding por interfaz
                     services.AddSingleton<BetSizingService>();
-                    services.AddSingleton<PostflopDecisionService>();
-                    services.AddSingleton<OpponentTracker>();
-                    services.AddSingleton<StrategyAnalyzerService>();
-                    services.AddSingleton<ExploitabilityCalculator>();
+                    services.AddSingleton<IBetSizingService>(sp => sp.GetRequiredService<BetSizingService>());
                     services.AddSingleton<RangePolarizer>();
+                    services.AddSingleton<IRangePolarizer>(sp => sp.GetRequiredService<RangePolarizer>());
+                    services.AddSingleton<PostflopDecisionService>();
+                    services.AddSingleton<IPostflopDecisionService>(sp => sp.GetRequiredService<PostflopDecisionService>());
+                    services.AddSingleton<OpponentTracker>();
+                    services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
+                    services.AddSingleton<StrategyAnalyzerService>();
+                    services.AddSingleton<IStrategyAnalyzerService>(sp => sp.GetRequiredService<StrategyAnalyzerService>());
+                    services.AddSingleton<ExploitabilityCalculator>();
+                    services.AddSingleton<IExploitabilityCalculator>(sp => sp.GetRequiredService<ExploitabilityCalculator>());
                     services.AddSingleton<AutoCalibrationService>();
+                    services.AddSingleton<IAutoCalibrationService>(sp => sp.GetRequiredService<AutoCalibrationService>());
+                    services.AddSingleton<DangerPenaltyCalculator>();
+                    services.AddSingleton<IDangerPenaltyCalculator>(sp => sp.GetRequiredService<DangerPenaltyCalculator>());
+                    services.AddSingleton<ImpliedOddsCalculator>();
+                    services.AddSingleton<IImpliedOddsCalculator>(sp => sp.GetRequiredService<ImpliedOddsCalculator>());
+                    services.AddSingleton<PreflopAnalyzer>();
+                    services.AddSingleton<IPreflopAnalyzer>(sp => sp.GetRequiredService<PreflopAnalyzer>());
+                    services.AddSingleton<EquityCalculatorService>();
+                    services.AddSingleton<IEquityCalculatorService>(sp => sp.GetRequiredService<EquityCalculatorService>());
+                    services.AddSingleton<StrategyBacktester>();
+                    services.AddSingleton<IStrategyBacktester>(sp => sp.GetRequiredService<StrategyBacktester>());
                     services.AddSingleton(sp =>
                     {
                         var store = sp.GetRequiredService<IDocumentStore>();
                         var profile = sp.GetRequiredService<IOptions<StrategyProfile>>().Value;
                         return new BankrollTrackerService(store, profile);
                     });
+                    services.AddSingleton<IBankrollTrackerService>(sp => sp.GetRequiredService<BankrollTrackerService>());
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();

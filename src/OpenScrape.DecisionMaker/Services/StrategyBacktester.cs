@@ -1,3 +1,4 @@
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -9,7 +10,7 @@ namespace OpenScrape.DecisionMaker.Services;
 /// con las decisiones originales almacenadas. Genera informe de divergencias
 /// y estimación de impacto en BB/100.
 /// </summary>
-public class StrategyBacktester(PostflopDecisionService decisionService)
+public class StrategyBacktester(IPostflopDecisionService decisionService) : Interfaces.IStrategyBacktester
 {
     /// <summary>
     /// Ejecuta el backtest sobre un conjunto de manos históricas.

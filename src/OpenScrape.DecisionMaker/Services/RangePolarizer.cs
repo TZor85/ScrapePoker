@@ -11,7 +11,7 @@ public enum RangeType
     Condensed
 }
 
-public class RangePolarizer
+public class RangePolarizer : Interfaces.IRangePolarizer
 {
     private const double SPRCondensedThreshold = 3.0;
     private const double DryTextureThreshold = 25.0;

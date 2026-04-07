@@ -4,7 +4,7 @@ using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Services;
 
-public class BankrollTrackerService
+public class BankrollTrackerService : Interfaces.IBankrollTrackerService
 {
     private readonly IDocumentStore _store;
     private readonly StrategyProfile _profile;

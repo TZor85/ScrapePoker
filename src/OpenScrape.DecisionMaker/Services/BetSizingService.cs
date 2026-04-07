@@ -19,7 +19,7 @@ namespace OpenScrape.DecisionMaker.Services
 
     public record BetSizingOption(double Size, string Label, BetSizingType Type);
 
-    public class BetSizingService
+    public class BetSizingService : Interfaces.IBetSizingService
     {
         private readonly StrategyProfile _profile;
 

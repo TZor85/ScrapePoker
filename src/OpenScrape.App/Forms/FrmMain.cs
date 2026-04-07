@@ -12,6 +12,7 @@ using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
@@ -453,7 +454,7 @@ namespace OpenScrape.App
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
         private readonly IPokerCalculator _pokerCalculator;
-        private readonly BetSizingService _betSizingService;
+        private readonly IBetSizingService _betSizingService;
         private readonly ColorDetectionService _colorDetectionService = new();
         private readonly OcrService _ocrService = new();
         private readonly CardUseCases _cardUseCases;
@@ -461,12 +462,12 @@ namespace OpenScrape.App
         private readonly DetectionLoggerService _detectionLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
-        private readonly PostflopDecisionService _postflopDecisionService;
-        private readonly ExploitabilityCalculator _exploitabilityCalculator;
-        private readonly AutoCalibrationService _autoCalibrationService;
-        private readonly BankrollTrackerService _bankrollTrackerService;
+        private readonly IPostflopDecisionService _postflopDecisionService;
+        private readonly IExploitabilityCalculator _exploitabilityCalculator;
+        private readonly IAutoCalibrationService _autoCalibrationService;
+        private readonly IBankrollTrackerService _bankrollTrackerService;
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
-        private readonly OpponentTracker _opponentTracker;
+        private readonly IOpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
         private readonly PostflopGameContext _postflopContext = new();
         #endregion
@@ -479,16 +480,16 @@ namespace OpenScrape.App
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases,
                         IPokerCalculator pokerCalculator,
-                        BetSizingService betSizingService,
+                        IBetSizingService betSizingService,
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
-                        PostflopDecisionService postflopDecisionService,
-                        ExploitabilityCalculator exploitabilityCalculator,
-                        AutoCalibrationService autoCalibrationService,
-                        BankrollTrackerService bankrollTrackerService,
+                        IPostflopDecisionService postflopDecisionService,
+                        IExploitabilityCalculator exploitabilityCalculator,
+                        IAutoCalibrationService autoCalibrationService,
+                        IBankrollTrackerService bankrollTrackerService,
                         BoardTextureAnalyzer boardTextureAnalyzer,
-                        OpponentTracker opponentTracker,
+                        IOpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
                         CardCacheService cardCacheService)

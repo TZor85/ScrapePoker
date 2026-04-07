@@ -5,6 +5,8 @@ using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
+using OpenScrape.DecisionMaker.Interfaces;
+
 namespace OpenScrape.DecisionMaker.Services;
 
 public enum BetSizeCategory { NoBet, Underbet, Small, Medium, Large }
@@ -17,7 +19,7 @@ public record PostflopDecisionResult(
     bool IsCheckRaise = false,
     bool IsFloating = false);
 
-public class PostflopDecisionService
+public class PostflopDecisionService : IPostflopDecisionService
 {
     private readonly StrategyProfile _profile;
     private readonly BetSizingService _betSizingService;

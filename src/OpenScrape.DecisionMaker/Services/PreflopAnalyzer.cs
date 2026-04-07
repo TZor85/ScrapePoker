@@ -9,8 +9,30 @@ namespace OpenScrape.DecisionMaker.Services;
 /// detección de agresor, ventaja de rango, ajuste de c-bet, donk bet.
 /// Extraído de FrmMain para separar lógica de dominio de UI.
 /// </summary>
-public class PreflopAnalyzer
+public class PreflopAnalyzer : Interfaces.IPreflopAnalyzer
 {
+    // Wrappers de instancia para la interfaz (delegan a los métodos estáticos)
+    bool Interfaces.IPreflopAnalyzer.IsPreflopAggressor(HandSituation situation)
+        => IsPreflopAggressor(situation);
+
+    bool Interfaces.IPreflopAnalyzer.HasRangeAdvantageOnBoard(
+        List<int> flopRanks, BoardTextureResult boardTexture,
+        bool isPreflopAggressor, HandSituation situation)
+        => HasRangeAdvantageOnBoard(flopRanks, boardTexture, isPreflopAggressor, situation);
+
+    double Interfaces.IPreflopAnalyzer.CalculateCbetAdjustment(
+        bool isPreflopAggressor, bool hasRangeAdvantage,
+        BoardTextureResult boardTexture, bool isInPosition,
+        int numOpponents, StrategyProfile profile)
+        => CalculateCbetAdjustment(isPreflopAggressor, hasRangeAdvantage, boardTexture, isInPosition, numOpponents, profile);
+
+    (bool IsDonkBet, HandSituation DonkBetSituation) Interfaces.IPreflopAnalyzer.DetectDonkBet(
+        decimal maxBet, bool villainWasPreflopAggressor, HandSituation currentSituation)
+        => DetectDonkBet(maxBet, villainWasPreflopAggressor, currentSituation);
+
+    BetSizeCategory Interfaces.IPreflopAnalyzer.CategorizeOpponentBet(decimal maxBet, decimal potSize)
+        => CategorizeOpponentBet(maxBet, potSize);
+
     /// <summary>
     /// Determina si hero fue el agresor preflop basado en la HandSituation.
     /// </summary>
