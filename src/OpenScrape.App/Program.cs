@@ -122,6 +122,10 @@ namespace OpenScrape.App
                     services.AddSingleton<RegionLookupCache>();
                     services.AddSingleton<CardCacheService>();
 
+                    // Game coordinator
+                    services.AddScoped<GameCoordinator>();
+                    services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());
+
                     // UseCases de cartas (necesitan CardCacheService + ICoordinateScaler)
                     services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
                     services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();

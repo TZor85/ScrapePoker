@@ -48,8 +48,7 @@ namespace OpenScrape.App
         #endregion
 
         #region [Enums]
-        internal enum TurnBoardTexture { Dry, Coordinated, Paired }
-        internal enum RiverBoardTexture { Dry, Coordinated, Paired }
+        // TurnBoardTexture y RiverBoardTexture movidos a Entities/BoardTextures.cs
         #endregion
 
         #region [Forms]
@@ -110,17 +109,7 @@ namespace OpenScrape.App
         private string _previousBBPlayerName = "";
         private int _lastActivePlayerCount = 0;
         private BetSizeCategory GetOpponentBetSize(decimal maxBet, decimal potSize)
-        {
-            if (maxBet == 0)
-                return BetSizeCategory.NoBet;
-            if (maxBet <= potSize * 0.15m)
-                return BetSizeCategory.Underbet;
-            if (maxBet <= potSize * 0.3m)
-                return BetSizeCategory.Small;
-            if (maxBet <= potSize * 0.7m)
-                return BetSizeCategory.Medium;
-            return BetSizeCategory.Large;
-        }
+            => _coordinator.GetOpponentBetSize(maxBet, potSize);
 
         /// <summary>
         /// Enriquece una acción preflop con multiplicador (ej: "3Bet x6") añadiendo el monto en BB.
@@ -261,24 +250,8 @@ namespace OpenScrape.App
             }
         }
 
-        /// <summary>
-        /// Obtiene el identificador del villano activo: alias real > cache seat > seat name.
-        /// </summary>
         private string GetActiveVillainId()
-        {
-            var villain = _playerGameState.Players
-                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name))
-                .OrderByDescending(p => p.Bet)
-                .FirstOrDefault();
-            if (villain == null) return "Unknown";
-
-            // Preferir alias real (nombre OCR) sobre seat name (P0, P1)
-            if (!string.IsNullOrEmpty(villain.Alias))
-                return villain.Alias;
-
-            // Fallback: buscar alias cacheado por seat
-            return _opponentTracker.ResolveName(villain.Name!) ?? villain.Name!;
-        }
+            => _coordinator.GetActiveVillainId(_playerGameState);
 
         /// <summary>
         /// Lee nombre de jugador con 2 lecturas + consenso + limpieza.
@@ -357,78 +330,17 @@ namespace OpenScrape.App
             }
         }
 
-        /// <summary>
-        /// Obtiene el tipo del villano activo para decisiones (Unknown si < 20 manos).
-        /// </summary>
         private OpponentType GetVillainType(bool? heroIsInPosition = null)
-        {
-            var villainId = GetActiveVillainId();
-            if (villainId == "Unknown") return OpponentType.Unknown;
-            var profile = _opponentTracker.GetProfile(villainId);
-            if (!profile.HasReliablePreflopData) return OpponentType.Unknown;
+            => _coordinator.GetVillainType(_playerGameState, heroIsInPosition);
 
-            // Usar AF posicional si sabemos la posición (villain IP = hero OOP y viceversa)
-            if (heroIsInPosition.HasValue)
-                return profile.GetTypeForPosition(!heroIsInPosition.Value);
-
-            return profile.Type;
-        }
-
-        /// <summary>
-        /// Registra acciones de los villanos para tracking de oponente.
-        /// </summary>
         private void TrackVillainPostflopAction(decimal maxBet, bool isPreflopAggressor, bool? heroIsInPosition = null)
-        {
-            var villainId = GetActiveVillainId();
-            if (villainId == "Unknown") return;
+            => _coordinator.TrackVillainPostflopAction(_playerGameState, maxBet, isPreflopAggressor, heroIsInPosition);
 
-            // Villain IP = hero OOP y viceversa
-            bool? villainIsIP = heroIsInPosition.HasValue ? !heroIsInPosition.Value : null;
-
-            if (maxBet > 0)
-            {
-                _opponentTracker.RecordPostflopAction(villainId, PostflopAction.Bet, villainIsIP);
-                if (isPreflopAggressor)
-                    _opponentTracker.RecordCBetOpportunity(villainId, didCBet: true);
-            }
-            else if (isPreflopAggressor)
-            {
-                _opponentTracker.RecordCBetOpportunity(villainId, didCBet: false);
-            }
-        }
-
-        /// <summary>
-        /// Obtiene el stack del villano principal (oponente activo con mayor stack).
-        /// </summary>
         private decimal GetVillainStack()
-        {
-            var activeVillains = _playerGameState.Players
-                .Where(p => p.Active && !string.IsNullOrEmpty(p.Name) && p.Name != "P0");
-            var villainStack = activeVillains.Any() ? activeVillains.Max(p => p.Stack) : 0;
-
-            // Fallback: si OCR falló (villain stack = 0 pero hay pot), estimar como hero stack
-            if (villainStack <= 0 && _playerGameState.HeroStack > 0)
-                return _playerGameState.HeroStack; // Estimación conservadora
-
-            return villainStack;
-        }
+            => _coordinator.GetVillainStack(_playerGameState);
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
-        {
-            // Verificar si villain fue agresor preflop
-            bool villainWasPreflopAggressor = _playerGameState.Players
-                .Any(p => p.Active && p.WasPreflopAggressor);
-
-            // En turn/river: si hero apostó/raiseó en calle anterior, villain que apuesta ahora
-            // es donk bet contra el agresor de la calle (no solo preflop)
-            bool heroWasPreviousStreetAggressor =
-                (_gameLoopStateMachine.IsTurn && _postflopContext.HeroBetFlop) ||
-                (_gameLoopStateMachine.IsRiver && _postflopContext.HeroBetTurn);
-
-            // Si hero fue agresor en calle anterior, villain no es "agresor" en esta calle
-            bool effectiveVillainAggressor = villainWasPreflopAggressor && !heroWasPreviousStreetAggressor;
-            return PreflopAnalyzer.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
-        }
+            => _coordinator.DetectDonkBet(_playerGameState, maxBet, isHeroInPosition, currentSituation);
         private bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -471,6 +383,7 @@ namespace OpenScrape.App
         private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly IOpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
+        private readonly IGameCoordinator _coordinator;
         private readonly PostflopGameContext _postflopContext = new();
         #endregion
 
@@ -508,7 +421,8 @@ namespace OpenScrape.App
                         IGetCardsFlopUseCase getCardsFlopUseCase,
                         IGetCardsTurnUseCase getCardsTurnUseCase,
                         IGetCardsRiverUseCase getCardsRiverUseCase,
-                        ISetPreflopActionUseCase setPreflopActionUseCase)
+                        ISetPreflopActionUseCase setPreflopActionUseCase,
+                        IGameCoordinator coordinator)
         {
             InitializeComponent();
 
@@ -547,6 +461,7 @@ namespace OpenScrape.App
             _getCardsTurnUseCase = getCardsTurnUseCase ?? throw new ArgumentNullException(nameof(getCardsTurnUseCase));
             _getCardsRiverUseCase = getCardsRiverUseCase ?? throw new ArgumentNullException(nameof(getCardsRiverUseCase));
             _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
+            _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -1546,141 +1461,15 @@ namespace OpenScrape.App
         #endregion
 
 
+        /// <summary>
+        /// Determina la acción del river delegando a GameCoordinator.
+        /// </summary>
         private void DetermineRiverAction()
         {
-            var equity = _riverResult.EquityPercentage;
-            var inPosition = _playerGameState.IsInPosition;
-            var maxBet = _playerGameState.Players.Max(m => m.Bet);
-            var potSize = _playerGameState.PotSize;
-
-            // All-in detection
-            var villainStack = GetVillainStack();
-            if (maxBet > 0 && villainStack <= 0)
-                _postflopContext.IsAnyoneAllIn = true;
-            var betSize = GetOpponentBetSize(maxBet, potSize);
-            var texture = _riverBoardTexture.ToString();
-            bool villainAggro = maxBet > 0;
-
-            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
-            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
-
-            // Analizar carta peligrosa: comparar turn (4 cartas) con river (5ª carta)
-            var riverChange = AnalyzeBoardChange(_playerGameState.BoardCards, 4);
-            // Combinar con peligro arrastrado del turn (flush/straight que sigue en board)
-            var boardChange = PostflopGameContext.CombineBoardChanges(_postflopContext.LastBoardChange, riverChange);
-            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
-                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
-                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
-            bool heroHasNutBlocker = heroBlocks &&
-                ((_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard1Rank == 14) ||
-                 (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
-
-            bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker, _riverResult.HeroHandRank);
-
-            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            // Hero es agresor si: fue agresor preflop, O apostó/raiseó en turn (o flop si no hubo turn bet)
-            bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
-                || _postflopContext.HeroBetTurn || _postflopContext.HeroBetFlop;
-            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
-            {
-                Equity = equity,
-                Street = BoardPosition.River,
-                Situation = effectiveSituation,
-                BoardTexture = texture,
-                IsInPosition = inPosition,
-                VillainBetSize = betSize,
-                PotOdds = _riverResult.PotOddsPercentage,
-                TotalOuts = _riverResult.TotalOuts,
-                PreviousStreetBet = _postflopContext.PreviousStreetWasBet,
-                VillainShowedAggression = villainAggro,
-                BoardChange = boardChange,
-                HeroBlocksDangerSuit = heroBlocks,
-                HeroStack = _playerGameState.HeroStack,
-                PotSize = _playerGameState.PotSize,
-                HasFlushDraw = _riverResult.DrawTypes.Contains("Flush Draw"),
-                NumOpponents = Math.Max(1, numOpponents),
-                HeroIsAggressor = riverIsAggressor,
-                HeroHandRank = _riverResult.HeroHandRank,
-                HasComboDraw = _riverResult.HasComboDraw,
-                VillainAggressorCheckedPreviousStreet = !_postflopContext.VillainBetTurn && !riverIsAggressor,
-                VillainBarreling = _postflopContext.VillainBetTurn && maxBet > 0,
-                PairClassification = _riverResult.PairType,
-                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
-                VillainBetSizeTurn = _postflopContext.VillainBetSizeTurn,
-                VillainCheckedMiddleStreet = _postflopContext.VillainCheckedMiddleStreet,
-                VillainType = GetVillainType(inPosition),
-                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                HeroKickerStrength = _riverResult.HeroKickerStrength,
-                TurnCalledWithFlushDanger = _postflopContext.TurnCalledWithFlushDanger,
-                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
-                HeroCheckedAllStreets = _postflopContext.HeroCheckedAllStreets,
-                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
-            });
-
-            // Tracking postflop del villano en river
-            if (maxBet > 0)
-                _opponentTracker.RecordPostflopAction(GetActiveVillainId(), PostflopAction.Bet);
-
-            double effectiveEquity = equity - dangerPenalty;
-            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
-            var dangerFlags = new List<string>();
-            if (boardChange.FlushCompleted) dangerFlags.Add("Flush completado");
-            if (boardChange.StraightCompleted) dangerFlags.Add("Straight completado");
-            if (boardChange.FlushDrawAppeared) dangerFlags.Add("Flush draw");
-            if (boardChange.BoardPaired) dangerFlags.Add("Board paired");
-            if (boardChange.OvercardAppeared) dangerFlags.Add("Overcard");
-            if (_postflopContext.LastBoardChange.DangerLevel > 0) dangerFlags.Add("Arrastrado del turn");
-            var dangerInfo = dangerFlags.Count > 0 ? string.Join(", ", dangerFlags) : "Ninguno";
-            var draws = _riverResult.DrawTypes.Count > 0
-                ? string.Join(", ", _riverResult.DrawTypes)
-                : "Ninguno";
-            LogError($"═══ [RIVER] ══════════════════════════════════════");
-            LogError($"  {FormatCardsForLog(BoardPosition.River)}");
-            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
-            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
-            LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_riverResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_riverResult.HeroHandRank}{(_riverResult.PairType != PairClassification.None ? $" ({_riverResult.PairType})" : "")}  |  Agresor preflop: {(riverIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
-            LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_riverResult.TotalOuts}  |  Draws: {draws}");
-            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}{(decision.IsBarrel ? "  [BARREL]" : "")}");
-
-            _responseAction.Action = decision.Action;
-            _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
-
-            // Persistir decisión y board en game logger
-            double riverSpr = _playerGameState.PotSize > 0
-                ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
-            _gameLoggerService.LogStreetDecision(new StreetDecision(
-                BoardPosition.River, equity, _riverResult.PotOddsPercentage, _riverResult.ExpectedValue,
-                _riverResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
-                maxBet, effectiveSituation, inPosition,
-                Reason: decision.Reason, BoardTexture: texture, TotalOuts: _riverResult.TotalOuts, SPR: riverSpr));
-
-            // Registrar en ExploitabilityCalculator
-            var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity);
-            var analysis = _exploitabilityCalculator.AnalyzeDecision(
-                decision.Action, equity, _riverResult.PotOddsPercentage, foldEquity,
-                BoardPosition.River, effectiveSituation, inPosition, texture,
-                _playerGameState.PotSize, betSize);
-            _exploitabilityCalculator.RecordDecision(new DecisionRecord
-            {
-                OurDecision = decision.Action,
-                Equity = equity,
-                PotOdds = _riverResult.PotOddsPercentage,
-                FoldEquity = foldEquity,
-                Street = BoardPosition.River,
-                Situation = effectiveSituation,
-                IsInPosition = inPosition,
-                BoardTexture = texture,
-                PotSize = _playerGameState.PotSize,
-                VillainBetSize = betSize,
-                OurDecisionEV = analysis.OurDecisionEV,
-                BestResponseEV = analysis.BestResponseEV,
-                ExploitabilityMbb = analysis.ExploitabilityMbb
-            });
-            var riverCardName = _playerGameState.BoardCards
-                .FirstOrDefault(b => b.Position == BoardPosition.River)?.Name;
-            _gameLoggerService.UpdateBoard([], riverCard: riverCardName);
+            _coordinator.SetRiverResult(_riverResult);
+            var result = _coordinator.DetermineRiverAction(_playerGameState);
+            _responseAction.Action = result.Action;
+            LogError(result.LogText);
         }
 
         /// <summary>
@@ -1693,65 +1482,13 @@ namespace OpenScrape.App
         // CombineBoardChanges extraído a PostflopGameContext
 
         private BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount)
-        {
-            var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-            if (communityCards.Count <= previousCardCount)
-                return BoardChangeResult.Safe;
-
-            var previousRanks = communityCards.Take(previousCardCount).Select(c => c.Force).ToList();
-            var previousSuits = communityCards.Take(previousCardCount).Select(c => c.Suit).ToList();
-            var newCard = communityCards[previousCardCount];
-
-            return _boardTextureAnalyzer.AnalyzeBoardChange(previousRanks, previousSuits, newCard.Force, newCard.Suit);
-        }
+            => _coordinator.AnalyzeBoardChange(boardCards, previousCardCount);
 
         private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
-        {
-            // Analizar TODAS las cartas comunitarias (flop + turn), no solo la carta del turn
-            var turnCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-            if (turnCards.Count < 4) return TurnBoardTexture.Dry;
+            => _coordinator.AnalyzeTurnBoardTexture(boardCards);
 
-            var suits = turnCards.Select(b => b.Suit).ToList();
-            var ranks = turnCards.Select(b => b.Force).OrderBy(r => r).ToList();
-
-            // Check for pairs
-            if (ranks.GroupBy(r => r).Any(g => g.Count() >= 2))
-                return TurnBoardTexture.Paired;
-
-            // Check for flush draws or straight draws
-            bool hasFlushDraw = suits.GroupBy(s => s).Any(g => g.Count() >= 3);
-            bool hasStraightDraw = ranks.Count >= 3 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
-
-            if (hasFlushDraw || hasStraightDraw)
-                return TurnBoardTexture.Coordinated;
-
-            return TurnBoardTexture.Dry;
-        }
-
-        /// <summary>
-        /// Analiza la textura del board del river
-        /// </summary>
         private RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> boardCards)
-        {
-            var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-            if (communityCards.Count < 5) return RiverBoardTexture.Dry;
-
-            var suits = communityCards.Select(b => b.Suit).ToList();
-            var ranks = communityCards.Select(b => b.Force).OrderBy(r => r).ToList();
-
-            // Check for pairs (three of a kind or full house)
-            if (ranks.GroupBy(r => r).Any(g => g.Count() >= 3) || ranks.GroupBy(r => r).Count(g => g.Count() >= 2) >= 2)
-                return RiverBoardTexture.Paired;
-
-            // Check for flush or straight possibilities
-            bool hasFlush = suits.GroupBy(s => s).Any(g => g.Count() >= 5);
-            bool hasStraight = ranks.Count >= 5 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
-
-            if (hasFlush || hasStraight)
-                return RiverBoardTexture.Coordinated;
-
-            return RiverBoardTexture.Dry;
-        }
+            => _coordinator.AnalyzeRiverBoardTexture(boardCards);
 
         /// <summary>
         /// Detecta si se ha iniciado una nueva mano usando múltiples indicadores
@@ -1915,125 +1652,14 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Determina la acción del flop usando PostflopDecisionService + C-bet awareness + Range Advantage.
-        /// Ajusta equity efectiva según: agresor preflop, textura favorable al rango, posición, multiway.
+        /// Determina la acción del flop delegando a GameCoordinator.
         /// </summary>
         private void DetermineFlopActionUnified()
         {
-            var rawEquity = _flopResult.EquityPercentage;
-            var inPosition = _playerGameState.IsInPosition;
-            var maxBet = _playerGameState.Players.Max(m => m.Bet);
-
-            // All-in detection: villain apuesta todo su stack
-            var villainStack = GetVillainStack();
-            if (maxBet > 0 && villainStack <= 0)
-                _postflopContext.IsAnyoneAllIn = true;
-            var potSize = _playerGameState.PotSize;
-            var betSize = GetOpponentBetSize(maxBet, potSize);
-
-            // Analizar textura del board con BoardTextureAnalyzer
-            var flopCards = _playerGameState.BoardCards
-                .Where(b => b.Position == BoardPosition.Flop)
-                .ToList();
-            var flopRanks = flopCards.Select(c => c.Force).ToList();
-            var flopSuits = flopCards.Select(c => c.Suit).ToList();
-            var boardTexture = _boardTextureAnalyzer.Analyze(flopRanks, flopSuits);
-            var texture = boardTexture.SimplifiedTexture;
-
-            bool villainAggro = maxBet > 0;
-            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            var boardChange = _boardTextureAnalyzer.AnalyzeInitialBoard(flopRanks, flopSuits);
-            _postflopContext.InitialBoardDanger = boardChange;
-
-            // Detectar donk bet en flop (villano apuesta sin ser agresor preflop)
-            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
-            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
-
-            // C-bet awareness: ajustar equity según rol preflop y ventaja de rango
-            bool isPreflopAggressor = PreflopAnalyzer.IsPreflopAggressor(_playerGameState.HandSituation);
-            bool hasRangeAdvantage = PreflopAnalyzer.HasRangeAdvantageOnBoard(
-                flopRanks, boardTexture, isPreflopAggressor, _playerGameState.HandSituation);
-            double cbetAdjustment = PreflopAnalyzer.CalculateCbetAdjustment(
-                isPreflopAggressor, hasRangeAdvantage, boardTexture, inPosition, numOpponents,
-                _strategyProfileService.Profile);
-            double effectiveEquity = Math.Min(99, rawEquity + cbetAdjustment);
-
-            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
-            {
-                Equity = effectiveEquity,
-                Street = BoardPosition.Flop,
-                Situation = effectiveSituation,
-                BoardTexture = texture,
-                IsInPosition = inPosition,
-                VillainBetSize = betSize,
-                PotOdds = _flopResult.PotOddsPercentage,
-                TotalOuts = _flopResult.TotalOuts,
-                VillainShowedAggression = villainAggro,
-                BoardChange = boardChange,
-                HeroStack = _playerGameState.HeroStack,
-                PotSize = potSize,
-                HasFlushDraw = _flopResult.DrawTypes.Contains("Flush Draw"),
-                NumOpponents = numOpponents,
-                HeroIsAggressor = isPreflopAggressor,
-                HeroHandRank = _flopResult.HeroHandRank,
-                HasComboDraw = _flopResult.HasComboDraw,
-                PairClassification = _flopResult.PairType,
-                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
-                VillainType = GetVillainType(inPosition),
-                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                HeroKickerStrength = _flopResult.HeroKickerStrength,
-                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
-                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
-            });
-
-            // Tracking postflop del villano en flop
-            TrackVillainPostflopAction(maxBet, isPreflopAggressor, inPosition);
-
-            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
-            var draws = _flopResult.DrawTypes.Count > 0
-                ? string.Join(", ", _flopResult.DrawTypes)
-                : "Ninguno";
-            LogError($"═══ [FLOP] ═══════════════════════════════════════");
-            LogError($"  {FormatCardsForLog(BoardPosition.Flop)}");
-            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
-            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {numOpponents}");
-            LogError($"  Equity: {rawEquity:F1}%  |  C-bet adj: {cbetAdjustment:+0.0;-0.0}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_flopResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_flopResult.HeroHandRank}  |  Agresor preflop: {(isPreflopAggressor ? "Sí" : "No")}  |  Range advantage: {(hasRangeAdvantage ? "Sí" : "No")}");
-            LogError($"  Board: {texture}  |  Outs: {_flopResult.TotalOuts}  |  Draws: {draws}");
-            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
-
-            _responseAction.Action = decision.Action;
-            _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
-            _postflopContext.HeroBetFlop = _postflopContext.PreviousStreetWasBet;
-            _postflopContext.VillainBetFlop = maxBet > 0;
-            _postflopContext.VillainBetSizeFlop = betSize;
-            _postflopContext.HeroFloatedFlop = decision.IsFloating;
-
-            // Detectar si villano agresor preflop checkeó en flop (para probe bet en turn)
-            _postflopContext.VillainAggressorCheckedFlop = !isPreflopAggressor && betSize == BetSizeCategory.NoBet;
-
-            // Registrar en ExploitabilityCalculator
-            var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity);
-            var flopAnalysis = _exploitabilityCalculator.AnalyzeDecision(
-                decision.Action, effectiveEquity, _flopResult.PotOddsPercentage, foldEquity,
-                BoardPosition.Flop, effectiveSituation, inPosition, texture,
-                potSize, betSize);
-            _exploitabilityCalculator.RecordDecision(new DecisionRecord
-            {
-                OurDecision = decision.Action,
-                Equity = effectiveEquity,
-                PotOdds = _flopResult.PotOddsPercentage,
-                FoldEquity = foldEquity,
-                Street = BoardPosition.Flop,
-                Situation = effectiveSituation,
-                IsInPosition = inPosition,
-                BoardTexture = texture,
-                PotSize = potSize,
-                VillainBetSize = betSize,
-                OurDecisionEV = flopAnalysis.OurDecisionEV,
-                BestResponseEV = flopAnalysis.BestResponseEV,
-                ExploitabilityMbb = flopAnalysis.ExploitabilityMbb
-            });
+            _coordinator.SetFlopResult(_flopResult);
+            var result = _coordinator.DetermineFlopAction(_playerGameState);
+            _responseAction.Action = result.Action;
+            LogError(result.LogText);
         }
 
         /// <summary>
@@ -2042,148 +1668,16 @@ namespace OpenScrape.App
         // IsPreflopAggressor, HasRangeAdvantageOnBoard, CalculateCbetAdjustment
         // extraídos a PreflopAnalyzer en DecisionMaker
 
+        /// <summary>
+        /// Determina la acción del turn delegando a GameCoordinator.
+        /// </summary>
         private void DetermineTurnAction()
         {
-            var equity = _turnResult.EquityPercentage;
-            var inPosition = _playerGameState.IsInPosition;
-            var maxBet = _playerGameState.Players.Max(m => m.Bet);
-            var potSize = _playerGameState.PotSize;
-
-            // All-in detection
-            var villainStack = GetVillainStack();
-            if (maxBet > 0 && villainStack <= 0)
-                _postflopContext.IsAnyoneAllIn = true;
-            var betSize = GetOpponentBetSize(maxBet, potSize);
-            var texture = _turnBoardTexture.ToString();
-            bool villainAggro = maxBet > 0;
-
-            var (isDonkBet, donkSituation) = DetectDonkBet(maxBet, inPosition, _playerGameState.HandSituation);
-            var effectiveSituation = isDonkBet ? donkSituation : _playerGameState.HandSituation;
-
-            // Analizar carta peligrosa: comparar flop (3 cartas) con turn (4ª carta)
-            // Combinar con peligro base del flop (flush draw, paired, connected)
-            var turnChange = AnalyzeBoardChange(_playerGameState.BoardCards, 3);
-            var boardChange = PostflopGameContext.CombineBoardChanges(
-                _postflopContext.InitialBoardDanger, turnChange);
-            bool heroBlocks = boardChange.CompletedFlushSuit >= 0 &&
-                (_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit ||
-                 _playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit);
-            bool heroHasNutBlocker = heroBlocks &&
-                ((_playerGameState.HoleCard1Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard1Rank == 14) ||
-                 (_playerGameState.HoleCard2Suit == boardChange.CompletedFlushSuit && _playerGameState.HoleCard2Rank == 14));
-
-            bool isFacingBet = betSize != BetSizeCategory.NoBet;
-            var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.Turn, heroHasNutBlocker, _turnResult.HeroHandRank);
-
-            _postflopContext.LastBoardChange = boardChange;
-
-            var numOpponents = Math.Max(1, _playerGameState.Players.Count(p => p.Active) - 1);
-            // Hero es agresor si: fue agresor preflop con la situación actual, O apostó/raiseó en flop
-            bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
-                || _postflopContext.HeroBetFlop;
-            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
-            {
-                Equity = equity,
-                Street = BoardPosition.Turn,
-                Situation = effectiveSituation,
-                BoardTexture = texture,
-                IsInPosition = inPosition,
-                VillainBetSize = betSize,
-                PotOdds = _turnResult.PotOddsPercentage,
-                TotalOuts = _turnResult.TotalOuts,
-                PreviousStreetBet = _postflopContext.PreviousStreetWasBet,
-                VillainShowedAggression = villainAggro,
-                BoardChange = boardChange,
-                HeroBlocksDangerSuit = heroBlocks,
-                HeroStack = _playerGameState.HeroStack,
-                PotSize = _playerGameState.PotSize,
-                HasFlushDraw = _turnResult.DrawTypes.Contains("Flush Draw"),
-                NumOpponents = Math.Max(1, numOpponents),
-                HeroIsAggressor = turnIsAggressor,
-                HeroHandRank = _turnResult.HeroHandRank,
-                HasComboDraw = _turnResult.HasComboDraw,
-                VillainAggressorCheckedPreviousStreet = _postflopContext.VillainAggressorCheckedFlop,
-                VillainBarreling = _postflopContext.VillainBetFlop && maxBet > 0,
-                PairClassification = _turnResult.PairType,
-                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
-                VillainBetSizeFlop = _postflopContext.VillainBetSizeFlop,
-                VillainType = GetVillainType(inPosition),
-                HeroFloatedFlop = _postflopContext.HeroFloatedFlop,
-                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                HeroKickerStrength = _turnResult.HeroKickerStrength,
-                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
-                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
-            });
-
-            // Tracking postflop del villano en turn
-            TrackVillainPostflopAction(maxBet, turnIsAggressor, inPosition);
-
-            double effectiveEquity = equity - dangerPenalty;
-            double spr = potSize > 0 ? (double)(_playerGameState.HeroStack / potSize) : 0;
-            var dangerFlags = new List<string>();
-            if (boardChange.FlushCompleted) dangerFlags.Add("Flush completado");
-            if (boardChange.StraightCompleted) dangerFlags.Add("Straight completado");
-            if (boardChange.FlushDrawAppeared) dangerFlags.Add("Flush draw");
-            if (boardChange.BoardPaired) dangerFlags.Add("Board paired");
-            if (boardChange.OvercardAppeared) dangerFlags.Add("Overcard");
-            var dangerInfo = dangerFlags.Count > 0 ? string.Join(", ", dangerFlags) : "Ninguno";
-            var draws = _turnResult.DrawTypes.Count > 0
-                ? string.Join(", ", _turnResult.DrawTypes)
-                : "Ninguno";
-            LogError($"═══ [TURN] ═══════════════════════════════════════");
-            LogError($"  {FormatCardsForLog(BoardPosition.Turn)}");
-            LogError($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {_playerGameState.HeroStack:F0}  |  SPR: {spr:F1}");
-            LogError($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {Math.Max(1, numOpponents)}");
-            LogError($"  Equity: {equity:F1}%  |  Danger penalty: {dangerPenalty:F1}  |  Equity efectiva: {effectiveEquity:F1}%  |  Pot odds: {_turnResult.PotOddsPercentage:F1}%");
-            LogError($"  Mano hero: {_turnResult.HeroHandRank}{(_turnResult.PairType != PairClassification.None ? $" ({_turnResult.PairType})" : "")}  |  Agresor preflop: {(turnIsAggressor ? "Sí" : "No")}  |  Hero blocks: {(heroBlocks ? "Sí" : "No")}");
-            LogError($"  Board: {texture}  |  Peligro: {dangerInfo}  |  Outs: {_turnResult.TotalOuts}  |  Draws: {draws}");
-            LogError($"  ▶ DECISIÓN: {decision.Action}  —  {decision.Reason}{(decision.IsCheckRaise ? "  [CHECK-RAISE]" : "")}{(decision.IsBluff ? "  [BLUFF]" : "")}");
-
-            _responseAction.Action = decision.Action;
-            _postflopContext.PreviousStreetWasBet = decision.Action.Contains("Bet") || decision.Action.Contains("Raise");
-            _postflopContext.HeroBetTurn = _postflopContext.PreviousStreetWasBet;
-            _postflopContext.VillainBetTurn = maxBet > 0;
-            _postflopContext.VillainBetSizeTurn = betSize;
-            // Trackear si hero calleó turn con flush danger (para river plan)
-            _postflopContext.TurnCalledWithFlushDanger = decision.Action == "Call" &&
-                boardChange.FlushDrawAppeared && !heroBlocks;
-
-            // Persistir decisión y board en game logger
-            double turnSpr = _playerGameState.PotSize > 0
-                ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
-            _gameLoggerService.LogStreetDecision(new StreetDecision(
-                BoardPosition.Turn, equity, _turnResult.PotOddsPercentage, _turnResult.ExpectedValue,
-                _turnResult.RecommendedAction, decision.Action, _playerGameState.PotSize,
-                maxBet, effectiveSituation, inPosition,
-                Reason: decision.Reason, BoardTexture: texture, TotalOuts: _turnResult.TotalOuts, SPR: turnSpr));
-
-            // Registrar en ExploitabilityCalculator
-            var turnFoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity);
-            var turnAnalysis = _exploitabilityCalculator.AnalyzeDecision(
-                decision.Action, equity, _turnResult.PotOddsPercentage, turnFoldEquity,
-                BoardPosition.Turn, effectiveSituation, inPosition, texture,
-                potSize, betSize);
-            _exploitabilityCalculator.RecordDecision(new DecisionRecord
-            {
-                OurDecision = decision.Action,
-                Equity = equity,
-                PotOdds = _turnResult.PotOddsPercentage,
-                FoldEquity = turnFoldEquity,
-                Street = BoardPosition.Turn,
-                Situation = effectiveSituation,
-                IsInPosition = inPosition,
-                BoardTexture = texture,
-                PotSize = potSize,
-                VillainBetSize = betSize,
-                OurDecisionEV = turnAnalysis.OurDecisionEV,
-                BestResponseEV = turnAnalysis.BestResponseEV,
-                ExploitabilityMbb = turnAnalysis.ExploitabilityMbb
-            });
-
-            var turnCardName = _playerGameState.BoardCards
-                .FirstOrDefault(b => b.Position == BoardPosition.Turn)?.Name;
-            _gameLoggerService.UpdateBoard([], turnCard: turnCardName);
-            _gameLoggerService.UpdateSituation(effectiveSituation);
+            _coordinator.SetTurnResult(_turnResult);
+            _coordinator.TurnBoardTexture = _turnBoardTexture;
+            var result = _coordinator.DetermineTurnAction(_playerGameState);
+            _responseAction.Action = result.Action;
+            LogError(result.LogText);
         }
 
         /// <summary>
@@ -3527,24 +3021,8 @@ namespace OpenScrape.App
             }
         }
 
-        /// <summary>
-        /// Determina si el jugador P0 está en posición
-        /// </summary>
-        /// <summary>
-        /// Verifica si alguna hole card de hero matchea la carta más alta del board.
-        /// Card removal effect: hero bloquea combos premium del villain (QQ, AK, etc.)
-        /// </summary>
         private bool HeroBlocksTopBoardCard()
-        {
-            var boardCards = _playerGameState.BoardCards;
-            if (boardCards == null || boardCards.Count == 0) return false;
-
-            int topBoardRank = boardCards.Max(c => c.Force);
-            if (topBoardRank < 10) return false; // Solo relevante con cartas altas (T+)
-
-            return _playerGameState.HoleCard1Rank == topBoardRank ||
-                   _playerGameState.HoleCard2Rank == topBoardRank;
-        }
+            => _coordinator.HeroBlocksTopBoardCard(_playerGameState);
 
         private void SetIsInPosition()
         {
@@ -5371,29 +4849,7 @@ namespace OpenScrape.App
         /// </summary>
         private string FormatCardsForLog(BoardPosition street)
         {
-            var hero = $"[{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]";
-            var boardCards = _playerGameState.BoardCards
-                .Where(b => b.Position != BoardPosition.Hand)
-                .OrderBy(b => b.Location)
-                .ToList();
-
-            var flopCards = boardCards.Where(b => b.Position == BoardPosition.Flop)
-                .Select(b => b.Name ?? "??").ToList();
-            var flop = flopCards.Count > 0 ? $"[{string.Join(" ", flopCards)}]" : "";
-
-            if (street == BoardPosition.Flop)
-                return $"Hero: {hero}  Board: {flop}";
-
-            var turnCard = boardCards.FirstOrDefault(b => b.Position == BoardPosition.Turn);
-            var turn = turnCard != null ? $"[{turnCard.Name ?? "??"}]" : "";
-
-            if (street == BoardPosition.Turn)
-                return $"Hero: {hero}  Board: {flop} + {turn}";
-
-            var riverCard = boardCards.FirstOrDefault(b => b.Position == BoardPosition.River);
-            var river = riverCard != null ? $"[{riverCard.Name ?? "??"}]" : "";
-
-            return $"Hero: {hero}  Board: {flop} + {turn} + {river}";
+            return _coordinator.FormatCardsForLog(_playerGameState, street);
         }
 
         /// <summary>
@@ -5750,32 +5206,7 @@ namespace OpenScrape.App
         /// Ajusta el tamaño de apuesta basado en stack dinámico
         /// </summary>
         private string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
-        {
-            if (!action.StartsWith("Bet "))
-                return action;
-
-            var parts = action.Split(' ');
-            double baseSize;
-
-            if (parts[1] == "Pot")
-                baseSize = 1.0;
-            else if (parts[1].Contains('/'))
-            {
-                var frac = parts[1].Split('/');
-                if (frac.Length >= 2 &&
-                    double.TryParse(frac[0], out var num) &&
-                    double.TryParse(frac[1], out var den) && den > 0)
-                    baseSize = num / den;
-                else
-                    baseSize = 0.50; // Fallback seguro
-            }
-            else
-                return action; // not a standard bet
-
-            var adjustedBet = _betSizingService.CalculateDynamicBetSize(baseSize, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
-            var reason = action.Contains('(') ? action.Substring(action.IndexOf('(')) : "";
-            return adjustedBet + reason;
-        }
+            => _coordinator.AdjustBetSize(action, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
 
         #region Pestaña Historial
 
