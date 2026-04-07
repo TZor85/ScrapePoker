@@ -19,7 +19,7 @@ public class GetActionVs3BetAndCallUseCase : IGetActionVs3BetAndCallUseCase
         response.Action = await _actionScenarioUseCase.GetActionScenario.ExecuteAsync(GameSituation.VsThreeBetAndCall, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             ThreeBetPosition = request.ThreeBetPosition,
             Caller = request.CallerPosition,

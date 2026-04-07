@@ -19,7 +19,7 @@ public class GetActionCold4BetUseCase : IGetActionCold4BetUseCase
         response.Action = await _actionUseCase.GetActionScenario.ExecuteAsync(GameSituation.Cold4Bet, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             OpenRaiser = request.RaiserPosition,
             ThreeBetPosition = request.ThreeBetPosition

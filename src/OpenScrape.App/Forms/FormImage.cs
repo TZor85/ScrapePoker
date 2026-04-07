@@ -1,4 +1,4 @@
-﻿using OpenScrape.App.Helpers;
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Interfaces;
 using System.Diagnostics;
 
@@ -22,10 +22,10 @@ namespace OpenScrape.App
             this.Width = img.Width + this.Width / 11;
             this.Height = img.Height + this.Height / 4;
 
-            pbImagen.Width = img.Width;
-            pbImagen.Height = img.Height;
+            pbImage.Width = img.Width;
+            pbImage.Height = img.Height;
 
-            pbImagen.Image = img;
+            pbImage.Image = img;
 
         }
 
@@ -64,8 +64,8 @@ namespace OpenScrape.App
                     this.Width = bitmap.Width + this.Width / 11;
                     this.Height = bitmap.Height + this.Height / 4;
 
-                    pbImagen.Width = bitmap.Width;
-                    pbImagen.Height = bitmap.Height;
+                    pbImage.Width = bitmap.Width;
+                    pbImage.Height = bitmap.Height;
 
                     MostrarImagenActual();
                 }
@@ -77,7 +77,7 @@ namespace OpenScrape.App
             if (_listaImagenes.Count > 0 && _index >= 0 && _index < _listaImagenes.Count)
             {
                 // Cargar y mostrar la imagen actual
-                pbImagen.Image = Image.FromFile(_listaImagenes[_index]);
+                pbImage.Image = Image.FromFile(_listaImagenes[_index]);
                 lbPath.Text = _listaImagenes[_index];
                 lbTotal.Location = new Point(lbPath.Size.Width + 410, lbPath.Location.Y);
                 lbTotal.Text = $"{_index}/{_listaImagenes.Count - 1}";

@@ -2,7 +2,7 @@
 
 namespace OpenScrape.App.Aplication.UseCases.Actions;
 
-public class GetActionRaiseOverLimperUseCaseRequest : BaseRequest 
+public class GetActionRaiseOverLimperUseCaseRequest : BaseRequest
 {
     public TablePosition? LimperPosition { get; set; }
 }

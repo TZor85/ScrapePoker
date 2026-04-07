@@ -14,7 +14,7 @@ namespace OpenScrape.App
         public IAddImage AddImage { get; set; }
 
         public IntPtr handle;
-        
+
         public FormListApps()
         {
             InitializeComponent();
@@ -33,7 +33,7 @@ namespace OpenScrape.App
                 {
                     lbApps.Items.Add(item.Key);
                 }
-                
+
             }
 
         }
@@ -45,7 +45,7 @@ namespace OpenScrape.App
 
         private void lbApps_SelectedIndexChanged(object sender, EventArgs e)
         {
-            btnAceptar.Enabled = true;
+            btnAccept.Enabled = true;
         }
 
         private void btnAceptar_Click(object sender, EventArgs e)

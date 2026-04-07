@@ -9,10 +9,20 @@ public class ImageCropperService
 {
     private const int DefaultTolerance = 10;
     private const double SimilarityThreshold = 90.0;
+    private const int MaxImageCacheSize = 500;
 
-    // Cache para evitar decodificar la misma imagen múltiples veces
-    private readonly ConcurrentDictionary<string, byte[]> _imageCache = new();
+    // Distancia Hamming máxima entre dHashes para considerar candidatos a comparación pixel-a-pixel.
+    // Imágenes idénticas tienen distancia 0; cartas completamente distintas ~32+.
+    // Umbral conservador: si distancia > 15, imposible que sean ≥90% similares.
+    private const int DHashMaxDistance = 15;
+
+    // Cache LRU para bytes de imagen decodificados (evita re-decodificar base64 repetidamente)
+    private readonly LruCache<string, byte[]> _imageCache = new(MaxImageCacheSize);
     private readonly ConcurrentDictionary<string, WeakReference<Image>> _imageCache2 = new();
+
+    // Cache LRU de dHash: evita recomputar el hash perceptual de la misma imagen base64
+    private readonly LruCache<string, ulong> _dHashCache = new(600);
+
     private static readonly object _lock = new object();
 
     public string CropImageToBase64(Image sourceImage, int x, int y, int width, int height)
@@ -52,7 +62,7 @@ public class ImageCropperService
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error al recortar la imagen: {ex.Message}");
+                throw new Exception($"Error al recortar la imagen: {ex.Message}", ex);
             }
         }
     }
@@ -112,6 +122,16 @@ public class ImageCropperService
     {
         try
         {
+            // Fase 1: Pre-filtro dHash — O(1) comparación de hashes perceptuales.
+            // Si la distancia Hamming supera el umbral, las imágenes son demasiado distintas
+            // para alcanzar el 90% de similitud: descartamos sin comparación pixel-a-pixel.
+            ulong hash1 = GetOrComputeDHash(base64Image1);
+            ulong hash2 = GetOrComputeDHash(base64Image2);
+            int hammingDistance = HammingDistance(hash1, hash2);
+            if (hammingDistance > DHashMaxDistance)
+                return 0;
+
+            // Fase 2: Comparación pixel-a-pixel solo para candidatos con hash similar
             using var bitmap1 = GetLockedBitmap(base64Image1);
             using var bitmap2 = GetLockedBitmap(base64Image2);
 
@@ -122,8 +142,82 @@ public class ImageCropperService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}");
+            throw new Exception($"Error al comparar imágenes de cartas: {ex.Message}", ex);
         }
+    }
+
+    /// <summary>
+    /// Calcula o recupera del caché el dHash de 64 bits de una imagen base64.
+    /// </summary>
+    private ulong GetOrComputeDHash(string base64Image)
+    {
+        return _dHashCache.GetOrAdd(base64Image, key =>
+        {
+            var imageBytes = GetOrAddToCache(key);
+            return ComputeDHashFromBytes(imageBytes);
+        });
+    }
+
+    /// <summary>
+    /// Calcula el dHash (difference hash) de 64 bits a partir de bytes de imagen.
+    /// Algoritmo: redimensionar a 9x8, comparar píxeles horizontalmente adyacentes.
+    /// Imágenes visualmente similares producen hashes con baja distancia Hamming.
+    /// </summary>
+    private static ulong ComputeDHashFromBytes(byte[] imageBytes)
+    {
+        try
+        {
+            using var ms = new MemoryStream(imageBytes, writable: false);
+            using var original = SKBitmap.Decode(ms);
+            if (original == null) return 0;
+
+            // Redimensionar a 9x8 para generar 64 bits de hash (8 filas × 8 comparaciones)
+            using var resized = original.Resize(new SKImageInfo(9, 8), SKFilterQuality.Low);
+            if (resized == null) return 0;
+
+            ulong hash = 0;
+            int bitIndex = 0;
+
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    var pixel1 = resized.GetPixel(x, y);
+                    var pixel2 = resized.GetPixel(x + 1, y);
+
+                    int gray1 = (pixel1.Red + pixel1.Green + pixel1.Blue) / 3;
+                    int gray2 = (pixel2.Red + pixel2.Green + pixel2.Blue) / 3;
+
+                    if (gray1 > gray2)
+                        hash |= 1UL << bitIndex;
+
+                    bitIndex++;
+                }
+            }
+
+            return hash;
+        }
+        catch
+        {
+            return 0; // Si falla el hash, se procede a comparación pixel-a-pixel
+        }
+    }
+
+    /// <summary>
+    /// Calcula la distancia Hamming entre dos hashes de 64 bits.
+    /// Usa popcount (contar bits en 1) sobre el XOR de ambos hashes.
+    /// </summary>
+    private static int HammingDistance(ulong hash1, ulong hash2)
+    {
+        ulong xor = hash1 ^ hash2;
+        // Algoritmo de Brian Kernighan para contar bits en 1
+        int count = 0;
+        while (xor != 0)
+        {
+            xor &= xor - 1;
+            count++;
+        }
+        return count;
     }
 
     private FastBitmap GetLockedBitmap(string base64Image)
@@ -152,12 +246,32 @@ public class ImageCropperService
         var bytes1 = bmp1.GetBytes();
         var bytes2 = bmp2.GetBytes();
 
+        if (bytes1 == null || bytes2 == null)
+            return 0;
+
+        // Umbral de similitud mínimo: 90% de totalPixeles deben ser similares
+        int umbralMinimo = (int)(totalPixeles * SimilarityThreshold / 100.0);
+
+        // Terminación temprana: verificar cada N píxeles si aún es alcanzable el umbral
+        // Si los píxeles restantes + similares acumulados < umbral, imposible alcanzarlo
+        const int intervaloVerificacion = 32; // verificar cada 32 píxeles
+        int pixelesProcesados = 0;
+
         // Procesar los bytes de 4 en 4 (ARGB)
-        for (int i = 0; i < bytes1?.Length; i += 4)
+        for (int i = 0; i < bytes1.Length; i += 4)
         {
             if (IsPixelSimilar(bytes1, bytes2, i))
-            {
                 pixelesSimilares++;
+
+            pixelesProcesados++;
+
+            // Terminación temprana: cada 'intervaloVerificacion' píxeles
+            if (pixelesProcesados % intervaloVerificacion == 0)
+            {
+                int pixelesRestantes = totalPixeles - pixelesProcesados;
+                // Máximo posible = similares acumulados + todos los restantes
+                if (pixelesSimilares + pixelesRestantes < umbralMinimo)
+                    return 0; // Imposible alcanzar el umbral
             }
         }
 
@@ -226,6 +340,7 @@ public class FastBitmap : IDisposable
     private readonly Bitmap _bitmap;
     private BitmapData? _bitmapData;
     private byte[]? _bytes;
+    private bool _disposed;
 
     public int Width => _bitmap.Width;
     public int Height => _bitmap.Height;
@@ -234,6 +349,11 @@ public class FastBitmap : IDisposable
     {
         _bitmap = bitmap;
         Lock();
+    }
+
+    ~FastBitmap()
+    {
+        Dispose(false);
     }
 
     private void Lock()
@@ -253,11 +373,23 @@ public class FastBitmap : IDisposable
 
     public void Dispose()
     {
-        if (_bitmapData != null)
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        if (disposing)
         {
-            _bitmap.UnlockBits(_bitmapData);
-            _bitmapData = null;
+            if (_bitmapData != null)
+            {
+                _bitmap.UnlockBits(_bitmapData);
+                _bitmapData = null;
+            }
+            _bitmap.Dispose();
         }
-        _bitmap.Dispose();
     }
 }

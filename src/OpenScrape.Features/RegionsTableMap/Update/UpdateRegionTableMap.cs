@@ -26,7 +26,7 @@ public class UpdateRegionTableMap
             {
                 region.Regions?.Remove(regionToRemove);
             }
-            
+
             var regionCategory = new Domain.ValueObjects.Region(
                 request.Category,
                 request.Name,

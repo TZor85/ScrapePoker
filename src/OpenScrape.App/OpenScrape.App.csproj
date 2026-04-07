@@ -1,13 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<Platforms>AnyCPU;x64;x86;ARM32;ARM64</Platforms>
+		<ApplicationIcon>imagen_2025-08-19_153143860.ico</ApplicationIcon>
+	</PropertyGroup>
 
   <ItemGroup>
     <None Remove="Resources\tessdata\eng.traineddata" />
@@ -15,49 +17,52 @@
   </ItemGroup>
 
   <ItemGroup>
-    <COMReference Include="AutoItX3Lib">
-      <VersionMinor>0</VersionMinor>
-      <VersionMajor>1</VersionMajor>
-      <Guid>f8937e53-d444-4e71-9275-35b64210cc3b</Guid>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>false</Isolated>
-      <EmbedInteropTypes>true</EmbedInteropTypes>
-    </COMReference>
+    <Content Include="imagen_2025-08-19_153143860.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\tessdata\eng.traineddata" />
-    <EmbeddedResource Include="tessdata\eng.traineddata" />
+    <EmbeddedResource Include="tessdata\eng.traineddata">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Emgu.CV" Version="4.10.0.5680" />
-	<PackageReference Include="Marten" Version="8.0.0-alpha-3" />
-    <PackageReference Include="MediatR" Version="12.5.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0-preview.1.25080.5" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.1.25080.5" />
-    <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="Nancy" Version="2.0.0" />
-    <PackageReference Include="OpenCV" Version="2.4.11" />
-    <PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
-    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />
-    <PackageReference Include="Rijndael256" Version="3.2.0" />
-    <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageReference Include="Tesseract" Version="5.2.0" />
-    <PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
+	<PackageReference Include="Marten" Version="8.24.0" />
+	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+	<PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+	<PackageReference Include="OpenCvSharp4" Version="4.10.0.20241108" />
+	<PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20241108" />
+	<PackageReference Include="SkiaSharp" Version="3.119.2" />
+	<PackageReference Include="Tesseract" Version="5.2.0" />
+	<PackageReference Include="Tesseract.Drawing" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OpenScrape.DecisionMaker\OpenScrape.DecisionMaker.csproj" />
     <ProjectReference Include="..\OpenScrape.Domain\OpenScrape.Domain.csproj" />
     <ProjectReference Include="..\OpenScrape.Features\OpenScrape.Features.csproj" />
     <ProjectReference Include="..\OpenScrape.Infrastructure\OpenScrape.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
 

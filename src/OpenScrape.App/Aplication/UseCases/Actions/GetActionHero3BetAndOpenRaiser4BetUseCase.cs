@@ -19,13 +19,13 @@ public class GetActionHero3BetAndOpenRaiser4BetUseCase : IGetActionHero3BetAndOp
         response.Action = await _actionScenarioUseCases.GetActionScenario.ExecuteAsync(GameSituation.FourBet, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             OpenRaiser = request.RaiserPosition,
             ThreeBetPosition = request.Position,
             IsGreater = request.IsGreater,
         });
-        
+
         return response;
     }
 }

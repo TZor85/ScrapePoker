@@ -35,23 +35,22 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         _threeBetUseCase = new GetAction3BetUseCase(_actionScenarioUseCases);
         _raiseVsSBLimpUseCase = new GetActionRaiseVsSBLimpUseCase(_actionScenarioUseCases);
         _cold4BetUseCase = new GetActionCold4BetUseCase(_actionScenarioUseCases);
-        
+
     }
 
     public async Task<SetPreflopActionUseCaseResponse> Execute(SetPreflopActionUseCaseRequest request)
     {
-        if(request.ScrapeResult != null)
+        if (request.PlayerState != null)
         {
             if (request.ResponseAction.IsSecondAction)
             {
-                var pp = request.ScrapeResult;
-                if (request.ResponseAction.Action is not null && request.ScrapeResult.HandSituation == HandSituation.Call)
+                if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.Call)
                 {
                     var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
-                                    request.PreflopHeroPosition[request.ScrapeResult.P0Position],
-                                    request.ScrapeResult.DataPlayer.First(f => f.Bet == request.ScrapeResult.U0Bet && f.Position < request.ScrapeResult.P0Position).Position,
-                                    request.ScrapeResult.DataPlayer.First(w => w.Bet > request.ScrapeResult.U0Bet && w.Position > request.ScrapeResult.P0Position).Position,
-                                    request.ScrapeResult);
+                                    request.PreflopHeroPosition[request.PlayerState.Position],
+                                    request.PlayerState.Players.First(f => f.Bet == request.PlayerState.CurrentBet && f.Position < request.PlayerState.Position).Position,
+                                    request.PlayerState.Players.First(w => w.Bet > request.PlayerState.CurrentBet && w.Position > request.PlayerState.Position).Position,
+                                    request.PlayerState);
 
                     if (!string.IsNullOrEmpty(action))
                     {
@@ -59,43 +58,48 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                         request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
 
-                if (request.ResponseAction.Action is not null && request.ScrapeResult.HandSituation == HandSituation.ThreeBet)
+                if (request.ResponseAction.Action is not null &&
+                    (request.PlayerState.HandSituation == HandSituation.ThreeBet ||
+                     request.PlayerState.HandSituation == HandSituation.Squeeze))
                 {
-                    var action = await GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.First(w => w.Bet > request.ScrapeResult.U0Bet).Position, request.ScrapeResult);
-                    if (!string.IsNullOrEmpty(action))
+                    var raiser = request.PlayerState.Players.FirstOrDefault(w => w.Bet > request.PlayerState.CurrentBet);
+                    if (raiser != null)
                     {
-                        request.ResponseAction.Action = action;
-                        request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
-                        request.ResponseAction.IsSecondAction = false;
+                        var action = await GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], raiser.Position, request.PlayerState);
+                        if (!string.IsNullOrEmpty(action))
+                        {
+                            request.ResponseAction.Action = action;
+                            request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
+                            request.ResponseAction.IsSecondAction = false;
+                        }
                     }
-                    
                 }
 
-                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HandSituation == HandSituation.OpenRaise || request.ScrapeResult.HandSituation == HandSituation.RaiseOverLimper))
+                if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper))
                 {
-                    var action = await GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.FirstOrDefault(w => w.Bet >= 1)?.Position ?? TablePosition.None, request.ScrapeResult);
+                    var action = await GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.FirstOrDefault(w => w.Bet >= 1 && w.Position != TablePosition.BigBlind)?.Position ?? TablePosition.None, request.PlayerState);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
                         request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3Bet;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
 
-                if (request.ResponseAction.Action is not null && (request.ScrapeResult.HandSituation == HandSituation.OpenRaise || request.ScrapeResult.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.ScrapeResult))
+                if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.PlayerState))
                 {
-                    var action = await GetOpenRaiseVs3BetAndCallAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
+                    var action = await GetOpenRaiseVs3BetAndCallAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
                     if (!string.IsNullOrEmpty(action))
                     {
                         request.ResponseAction.Action = action;
                         request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3BetAndCall;
                         request.ResponseAction.IsSecondAction = false;
                     }
-                    
+
                 }
             }
         }
@@ -104,64 +108,69 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         //SQUEEZE
         if (request.ResponseAction.Action is null)
         {
-            var action = await GetSqueezeAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
+            var action = await GetSqueezeAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
             if (!string.IsNullOrEmpty(action))
             {
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.Squeeze;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
 
         //OPEN RAISE
         if (request.ResponseAction.Action is null)
         {
-            var action = await GetOpenRaiseAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
+            var action = await GetOpenRaiseAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
             if (!string.IsNullOrEmpty(action))
             {
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.OpenRaise;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //COLD 4BET
         if (request.ResponseAction.Action is null)
         {
-            var action = await Cold4BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
+            var action = await Cold4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
             if (!string.IsNullOrEmpty(action))
             {
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.Cold4Bet;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //GET RAISE OVER LIMPER
         if (request.ResponseAction.Action is null)
         {
-            var action = await GetRaiseOverLimperAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult);
+            var action = await GetRaiseOverLimperAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
             if (!string.IsNullOrEmpty(action))
             {
                 request.ResponseAction.Action = action;
                 request.ResponseAction.HandSituation = HandSituation.RaiseOverLimper;
                 request.ResponseAction.IsSecondAction = true;
-            };
+            }
+            ;
         }
 
         //GET 3BET
         if (request.ResponseAction.Action is null)
         {
-            if (request.ScrapeResult.DataPlayer.Count(a => a.Bet > 1) >= 1 && UserHandHelper.Exist4Bet(request.ScrapeResult))
+            if (request.PlayerState.Players.Count(a => a.Bet > 1) >= 1 && !UserHandHelper.Exist4Bet(request.PlayerState))
             {
-                var action = await Get3BetAction(request.PreflopHeroPosition[request.ScrapeResult.P0Position], request.ScrapeResult.DataPlayer.First(w => w.Bet > 1).Position, request.ScrapeResult);
+                var action = await Get3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.First(w => w.Bet > 1).Position, request.PlayerState);
                 if (!string.IsNullOrEmpty(action))
                 {
                     request.ResponseAction.Action = action;
                     request.ResponseAction.HandSituation = HandSituation.ThreeBet;
                     request.ResponseAction.IsSecondAction = true;
-                };
+                }
+                ;
             }
         }
 
@@ -175,17 +184,17 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         }
 
         if (request.ResponseAction.Action.Contains("Call"))
-            request.ScrapeResult.HandSituation = HandSituation.Call;
+            request.PlayerState.HandSituation = HandSituation.Call;
 
 
         return new SetPreflopActionUseCaseResponse
         {
             ResponseAction = request.ResponseAction,
-            ScrapeResult = request.ScrapeResult
+            PlayerState = request.PlayerState
         };
     }
 
-    private async Task<string> GetHeroCallOpenRaiseAndGetSqueezeAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition raiserPosition, TablePosition squeezerPosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetHeroCallOpenRaiseAndGetSqueezeAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition raiserPosition, TablePosition squeezerPosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionHeroCallOpenRaiseAndGetSqueezeResponse();
 
@@ -193,7 +202,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                             .Where(w => w.Key != TablePosition.BigBlind && w.Key != TablePosition.None)
                             .Select(s => s.Key).ToList();
 
-        var count = preflopTablePosition.Count(c => c.Value > scrapeResult.U0Bet);
+        var count = preflopTablePosition.Count(c => c.Value > playerState.CurrentBet);
         var raiserCall = false;
 
         if (count > 1)
@@ -201,8 +210,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         var request = new GetActionHeroCallOpenRaiseAndGetSqueezeRequest
         {
-            Hand = UserHandHelper.SetHandValue(scrapeResult),
-            Position = scrapeResult.P0Position,
+            Hand = UserHandHelper.SetHandValue(playerState),
+            Position = playerState.Position,
             SqueezerPosition = squeezerPosition,
             RaiserPosition = raiserPosition,
             RaiserFolds = !raiserCall
@@ -213,7 +222,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         return responseAction.Action;
     }
 
-    private async Task<string> GetHero3BetAndOpenRaiser4BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition raiserPosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetHero3BetAndOpenRaiser4BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition raiserPosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionHero3BetAndOpenRaiser4BetResponse();
 
@@ -226,11 +235,11 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         var request = new GetActionHero3BetAndOpenRaiser4BetRequest
         {
-            Hand = UserHandHelper.SetHandValue(scrapeResult),
-            Position = scrapeResult.P0Position,
+            Hand = UserHandHelper.SetHandValue(playerState),
+            Position = playerState.Position,
             RaiserPosition = raiserPosition,
             BetSize = betSize,
-            IsGreater = SetIsGreater(scrapeResult.P0Position, raiserPosition, betSize)
+            IsGreater = SetIsGreater(playerState.Position, raiserPosition, betSize)
         };
 
         responseAction = await _hero3BetAndOpenRaiser4BetUseCase.Execute(request);
@@ -274,16 +283,16 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         return threshold.HasValue ? betSize > threshold : null;
     }
 
-    private async Task<string> GetOpenRaiseVs3BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition villainPosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetOpenRaiseVs3BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition villainPosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionVs3BetUseCaseResponse();
 
-        if (preflopTablePosition.Any(a => a.Value > scrapeResult.U0Bet))
+        if (preflopTablePosition.Any(a => a.Value > playerState.CurrentBet))
         {
             var openRaiseCommand = new GetActionVs3BetUseCaseRequest
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position = scrapeResult.P0Position,
+                Hand = UserHandHelper.SetHandValue(playerState),
+                Position = playerState.Position,
                 ThreeBetPosition = villainPosition
             };
 
@@ -293,19 +302,19 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         return responseAction.Action;
     }
 
-    private async Task<string> GetOpenRaiseVs3BetAndCallAction(Dictionary<TablePosition, decimal> preflopTablePosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetOpenRaiseVs3BetAndCallAction(Dictionary<TablePosition, decimal> preflopTablePosition, PlayerGameState playerState)
     {
 
         var responseAction = new GetActionVs3BetAndCallUseCaseResponse();
 
-        if (preflopTablePosition.Any(a => a.Value > scrapeResult.U0Bet))
+        if (preflopTablePosition.Any(a => a.Value > playerState.CurrentBet))
         {
             var command = new GetActionVs3BetAndCallUseCaseRequest
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position = scrapeResult.P0Position,
-                ThreeBetPosition = preflopTablePosition.First(f => f.Value >  scrapeResult.U0Bet).Key,
-                CallerPosition = preflopTablePosition.Last(l => l.Value > scrapeResult.U0Bet).Key
+                Hand = UserHandHelper.SetHandValue(playerState),
+                Position = playerState.Position,
+                ThreeBetPosition = preflopTablePosition.First(f => f.Value > playerState.CurrentBet).Key,
+                CallerPosition = preflopTablePosition.Last(l => l.Value > playerState.CurrentBet).Key
             };
 
             responseAction = await _vs3BetAndCallUseCase.Execute(command);
@@ -314,7 +323,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         return responseAction.Action;
     }
 
-    private async Task<string?> GetSqueezeAction(Dictionary<TablePosition, decimal> preflopTablePosition, TableScrapeResult scrapeResult)
+    private async Task<string?> GetSqueezeAction(Dictionary<TablePosition, decimal> preflopTablePosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionSqueezeResponse();
 
@@ -324,7 +333,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         var betsPosition = preflopTablePosition
                             .Where(w => w.Key != TablePosition.BigBlind && w.Key != TablePosition.None)
-                            .Select(s => s.Key).ToList();
+                            .Select(s => s.Key).ToList().OrderBy(o => o);
 
         foreach (var item in betsPosition)
         {
@@ -344,8 +353,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         {
             var getSqueezeRequest = new GetActionSqueezeRequest
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position =  scrapeResult.P0Position,
+                Hand = UserHandHelper.SetHandValue(playerState),
+                Position = playerState.Position,
                 OpenRaiserPosition = raiser,
                 CallerPosition = caller
             };
@@ -356,7 +365,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         return responseAction.Action;
     }
 
-    private async Task<string> Cold4BetAction(Dictionary<TablePosition, decimal> dictionary, TableScrapeResult scrapeResult)
+    private async Task<string> Cold4BetAction(Dictionary<TablePosition, decimal> dictionary, PlayerGameState playerState)
     {
         var responseAction = new GetActionCold4BetUseCaseResponse();
         var openRaiseValue = 0m;
@@ -365,7 +374,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         var threeBetValue = 0m;
         var threeBetPosition = TablePosition.None;
 
-        foreach (var item in dictionary)
+        foreach (var item in dictionary.OrderBy(o => o.Key))
         {
             if (item.Value > 1 && openRaiseValue == 0)
             {
@@ -385,8 +394,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         {
             var Cold4BetCommand = new GetActionCold4BetUseCaseRequest
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position = scrapeResult.P0Position,
+                Hand = UserHandHelper.SetHandValue(playerState),
+                Position = playerState.Position,
                 RaiserPosition = openRaisePosition,
                 ThreeBetPosition = threeBetPosition
             };
@@ -398,14 +407,14 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
     }
 
 
-    private async Task<string> GetOpenRaiseAction(Dictionary<TablePosition, decimal> preflopTablePosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetOpenRaiseAction(Dictionary<TablePosition, decimal> preflopTablePosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionOpenRaiseUseCaseResponse();
 
         var cont = 0;
         var betsPosition = preflopTablePosition
                             .Where(w => w.Key != TablePosition.BigBlind && w.Key != TablePosition.SmallBlind && w.Key != TablePosition.None)
-                            .Select(s => s.Key).ToList();
+                            .Select(s => s.Key).ToList().OrderBy(o => o);
 
         foreach (var item in betsPosition)
         {
@@ -417,12 +426,12 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         if (cont == 0)
         {
-            if (scrapeResult.P0Position == TablePosition.BigBlind && scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet == 1)
+            if (playerState.Position == TablePosition.BigBlind && playerState.Players.First(f => f.Name == "P5").Bet == 1)
             {
                 var openRaiseVsLimpSBCommand = new GetActionRaiseVsSBLimpRequest
                 {
-                    Hand = UserHandHelper.SetHandValue(scrapeResult),
-                    Position = scrapeResult.P0Position,
+                    Hand = UserHandHelper.SetHandValue(playerState),
+                    Position = playerState.Position,
                     LimperPosition = TablePosition.SmallBlind,
                     ThreeBetPosition = null
                 };
@@ -431,12 +440,12 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 action = resultSBCall.Action;
             }
 
-            if (scrapeResult.P0Position == TablePosition.BigBlind && scrapeResult.DataPlayer.First(f => f.Name == "P5").Bet > 1)
+            if (playerState.Position == TablePosition.BigBlind && playerState.Players.First(f => f.Name == "P5").Bet > 1)
             {
                 var openRaiseVsLimpSBCommand = new GetActionRaiseVsSBLimpRequest
                 {
-                    Hand = UserHandHelper.SetHandValue(scrapeResult),
-                    Position = scrapeResult.P0Position,
+                    Hand = UserHandHelper.SetHandValue(playerState),
+                    Position = playerState.Position,
                     LimperPosition = TablePosition.SmallBlind,
                     ThreeBetPosition = TablePosition.SmallBlind
                 };
@@ -449,8 +458,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             {
                 var openRaiseCommand = new GetActionOpenRaiseUseCaseRequest
                 {
-                    Hand = UserHandHelper.SetHandValue(scrapeResult),
-                    Position = scrapeResult.P0Position
+                    Hand = UserHandHelper.SetHandValue(playerState),
+                    Position = playerState.Position
                 };
 
                 var result = await _openRaiseUseCase.Execute(openRaiseCommand);
@@ -460,33 +469,38 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         return action;
     }
-    private async Task<string> GetRaiseOverLimperAction(Dictionary<TablePosition, decimal> preflopTablePosition, TableScrapeResult scrapeResult)
+    private async Task<string> GetRaiseOverLimperAction(Dictionary<TablePosition, decimal> preflopTablePosition, PlayerGameState playerState)
     {
         var responseAction = new GetActionRaiseOverLimperUseCaseResponse();
         TablePosition? limperPosition = null;
 
-        if ((preflopTablePosition.ContainsKey(TablePosition.SmallBlind) && preflopTablePosition[TablePosition.SmallBlind] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Button) && preflopTablePosition[TablePosition.Button] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.CutOff) && preflopTablePosition[TablePosition.CutOff] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Middle) && preflopTablePosition[TablePosition.Middle] == 1) ||
-            (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
+        if (!playerState.Players.Any(a => a.Bet > 1))
         {
-            if(scrapeResult.P0Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
-                limperPosition = TablePosition.SmallBlind;
-
-            var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
+            if ((preflopTablePosition.ContainsKey(TablePosition.SmallBlind) && preflopTablePosition[TablePosition.SmallBlind] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Button) && preflopTablePosition[TablePosition.Button] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.CutOff) && preflopTablePosition[TablePosition.CutOff] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Middle) && preflopTablePosition[TablePosition.Middle] == 1) ||
+                (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position = scrapeResult.P0Position,
-                LimperPosition = limperPosition
-            };
 
-            responseAction = await _raiseOverLimperUseCase.Execute(openRaiseCommand);
+                if (playerState.Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
+                    limperPosition = TablePosition.SmallBlind;
+
+                var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
+                {
+                    Hand = UserHandHelper.SetHandValue(playerState),
+                    Position = playerState.Position,
+                    LimperPosition = limperPosition
+                };
+
+                responseAction = await _raiseOverLimperUseCase.Execute(openRaiseCommand);
+            }
         }
 
         return responseAction.Action;
     }
-    private async Task<string> Get3BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition villainPosition, TableScrapeResult scrapeResult)
+
+    private async Task<string> Get3BetAction(Dictionary<TablePosition, decimal> preflopTablePosition, TablePosition villainPosition, PlayerGameState playerState)
     {
         var responseAction = new GetAction3BetUseCaseResponse();
 
@@ -494,8 +508,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         {
             var openRaiseCommand = new GetAction3BetUseCaseRequest
             {
-                Hand = UserHandHelper.SetHandValue(scrapeResult),
-                Position = scrapeResult.P0Position,
+                Hand = UserHandHelper.SetHandValue(playerState),
+                Position = playerState.Position,
                 OpenRaiserPosition = villainPosition
             };
 

@@ -19,7 +19,7 @@ public class GetActionSqueezeUseCase : IGetActionSqueezeUseCase
         response.Action = await _actionScenarioUseCases.GetActionScenario.ExecuteAsync(GameSituation.Squeeze, new ActionScenarioRequest
         {
             HeroPosition = request.Position,
-            HandName = request.Hand,
+            HandName = request.Hand.Substring(0, 2),
             Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
             OpenRaiser = request.OpenRaiserPosition,
             Caller = request.CallerPosition

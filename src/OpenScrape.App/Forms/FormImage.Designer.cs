@@ -28,22 +28,22 @@
         /// </summary>
         private void InitializeComponent()
         {
-            pbImagen = new PictureBox();
+            pbImage = new PictureBox();
             btnLoad = new Button();
             lbPath = new Label();
             btnMinus = new Button();
             btnPlus = new Button();
             lbTotal = new Label();
-            ((System.ComponentModel.ISupportInitialize)pbImagen).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)pbImage).BeginInit();
             SuspendLayout();
             // 
             // pbImagen
             // 
-            pbImagen.Location = new Point(12, 30);
-            pbImagen.Name = "pbImagen";
-            pbImagen.Size = new Size(422, 246);
-            pbImagen.TabIndex = 1;
-            pbImagen.TabStop = false;
+            pbImage.Location = new Point(12, 30);
+            pbImage.Name = "pbImage";
+            pbImage.Size = new Size(422, 246);
+            pbImage.TabIndex = 1;
+            pbImage.TabStop = false;
             // 
             // btnLoad
             // 
@@ -101,18 +101,18 @@
             Controls.Add(btnMinus);
             Controls.Add(lbPath);
             Controls.Add(btnLoad);
-            Controls.Add(pbImagen);
+            Controls.Add(pbImage);
             Location = new Point(150, 0);
             Name = "FormImage";
             StartPosition = FormStartPosition.Manual;
             Text = "FormImage";
-            ((System.ComponentModel.ISupportInitialize)pbImagen).EndInit();
+            ((System.ComponentModel.ISupportInitialize)pbImage).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
 
         #endregion
-        public PictureBox pbImagen;
+        public PictureBox pbImage;
         private Button btnLoad;
         private Label lbPath;
         private Button btnMinus;

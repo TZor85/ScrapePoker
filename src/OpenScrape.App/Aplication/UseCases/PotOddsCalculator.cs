@@ -11,21 +11,25 @@ public class PotOddsCalculator : IPotOddsCalculator
         _outsCalculator = outsCalculator;
     }
 
-    public PotOddsResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards, decimal currentPotSize, decimal betToCall, List<CardDataOuts> blockedCards = null)
+    public PotOddsResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards, decimal currentPotSize, decimal betToCall, List<CardDataOuts>? blockedCards = null)
     {
         // 1. Calcular los outs y la equity usando el código existente
         var handStrength = _outsCalculator.CalculateAllOuts(playerHand, communityCards);
         decimal equity = CalculateTotalEquity(handStrength, communityCards.Count);
 
         // 2. Calcular las pot odds
-        decimal potAfterCall = currentPotSize + betToCall + betToCall; // Bote actual + apuesta rival + tu call
+        // Eliminar línea incorrecta
         decimal potOdds = 0;
-        
-        if (betToCall > 0) 
-            potOdds = betToCall / potAfterCall * 100;
+
+        if (betToCall > 0)
+        {
+            // Pot odds = Lo que pagas / (Bote actual + lo que pagas)
+            decimal totalPotAfterCall = currentPotSize + betToCall;
+            potOdds = (betToCall / totalPotAfterCall) * 100;
+        }
 
         // 3. Determinar si es rentable pagar
-        bool shouldCall = equity > potOdds;
+        bool shouldCall = equity >= potOdds;
 
         // 4. Obtener la calle actual
         string street = GetStreetName(communityCards.Count);
@@ -51,16 +55,16 @@ public class PotOddsCalculator : IPotOddsCalculator
 
         // Sumar todos los outs únicos (sin duplicados)
         var allOuts = handStrength.FlushDraw.Outs
-            .Concat(handStrength.StraightDraw.Outs)
-            .Concat(handStrength.SetDraw.Outs)
-            .DistinctBy(c => c.Id)
-            .ToList();
+        .Concat(handStrength.StraightDraw.Outs)
+        .Concat(handStrength.SetDraw.Outs)
+        .DistinctBy(c => c.Id)
+        .ToList();
 
         return cardsToCome switch
         {
-            2 => allOuts.Count * 4,   // Regla del 4%
-            1 => allOuts.Count * 2,   // Regla del 2%
-            _ => 0                    // Pre-flop o River
+            2 => allOuts.Count * 4m,   // Regla del 4% (flop a river)
+            1 => allOuts.Count * 2m,   // Regla del 2% (turn a river)
+            _ => 0m    // Pre-flop o River
         };
     }
 

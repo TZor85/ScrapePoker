@@ -23,85 +23,85 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
 
         // 1. Proyecto de color (Flush)
         strength.FlushDraw = CalculateDraw(
-            GetFlushOuts(allKnownCards),
-            unknownCardsCount,
-            cardsToCome
+        GetFlushOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome
         );
 
         // 2. Proyecto de escalera (Straight)
         strength.StraightDraw = CalculateDraw(
-            GetStraightOuts(allKnownCards),
-            unknownCardsCount,
-            cardsToCome
+        GetStraightOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome
         );
 
         // 3. Gutshot (escalera interna)
         strength.GutshotDraw = CalculateDraw(
-            GetGutshotOuts(allKnownCards),
-            unknownCardsCount,
-            cardsToCome);
+        GetGutshotOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome);
 
         // 4. Sets y Full Houses
         strength.SetDraw = CalculateDraw(
-            GetSetOuts(allKnownCards, playerHand),
-            unknownCardsCount,
-            cardsToCome);
+        GetSetOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome);
 
         strength.FullHouseDraw = CalculateDraw(
-            GetFullHouseOuts(allKnownCards), 
-            unknownCardsCount, 
-            cardsToCome);
+        GetFullHouseOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome);
 
         // 5. Overcards (cartas altas)
         strength.OvercardDraw = CalculateDraw(
-            GetOvercardOuts(allKnownCards, playerHand), 
-            unknownCardsCount, 
-            cardsToCome);
+        GetOvercardOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome);
 
         // 6. Dos parejas
         strength.TwoPairDraw = CalculateDraw(
-            GetTwoPairOuts(allKnownCards, playerHand),
-            unknownCardsCount,
-            cardsToCome);
+        GetTwoPairOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome);
 
         // 7. Doble Gut
         strength.DoubleGutshotDraw = CalculateDraw(
-            GetDoubleGutshotOuts(allKnownCards), 
-            unknownCardsCount, 
-            cardsToCome);
+        GetDoubleGutshotOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome);
 
         // 8. Proyecto de escalera de color (Straight Flush)
         strength.StraightFlushDraw = CalculateDraw(
-            GetStraightFlushOuts(allKnownCards),
-            unknownCardsCount,
-            cardsToCome);
+        GetStraightFlushOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome);
 
         // 9. Four of a Kind
         strength.FourOfAKindDraw = CalculateDraw(
-            GetFourOfAKindOuts(allKnownCards),
-            unknownCardsCount,
-            cardsToCome
+        GetFourOfAKindOuts(allKnownCards),
+        unknownCardsCount,
+        cardsToCome
         );
 
         // 10. Three of a Kind desde pareja
         strength.ThreeOfAKindDraw = CalculateDraw(
-            GetThreeOfAKindOuts(allKnownCards, playerHand),
-            unknownCardsCount,
-            cardsToCome
+        GetThreeOfAKindOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome
         );
 
         // 11. One Pair desde carta alta
         strength.OnePairDraw = CalculateDraw(
-            GetOnePairOuts(allKnownCards, playerHand),
-            unknownCardsCount,
-            cardsToCome
+        GetOnePairOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome
         );
 
         // 12. Mejorar carta alta
         strength.HighCardDraw = CalculateDraw(
-            GetHighCardOuts(allKnownCards, playerHand),
-            unknownCardsCount,
-            cardsToCome
+        GetHighCardOuts(allKnownCards, playerHand),
+        unknownCardsCount,
+        cardsToCome
         );
 
         return strength;
@@ -119,13 +119,13 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         }
 
         // Usar regla del 4 y 2 (aproximación rápida)
-        if (cardsToCome == 2)
-            draw.Probability = outs.Count * 4;
-        else if (cardsToCome == 1)
-            draw.Probability = outs.Count * 2;
+        //if (cardsToCome == 2)
+        //    draw.Probability = outs.Count * 4;
+        //else if (cardsToCome == 1)
+        //    draw.Probability = outs.Count * 2;
 
         // Opción: Cálculo exacto usando combinatoria
-        // draw.Probability = CalculateExactProbability(outs.Count, unknownCards, cardsToCome);
+        draw.Probability = CalculateExactProbability(outs.Count, unknownCards, cardsToCome);
 
         return draw;
     }
@@ -144,15 +144,15 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return 0;
     }
 
-    // ----------------------
+    // ----
     // Lógica para Flush
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetFlushOuts(List<CardDataOuts> knownCards)
     {
         var flushOuts = new List<CardDataOuts>();
         var suitGroups = knownCards
-            .GroupBy(c => c.Suit)
-            .Where(g => g.Count() >= 4);
+        .GroupBy(c => c.Suit)
+        .Where(g => g.Count() >= 4);
 
         foreach (var group in suitGroups)
         {
@@ -164,7 +164,7 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
             {
                 if (!existingRanks.Contains(rank))
                 {
-                    var card = new CardDataOuts { Suit = suit, Rank = rank };
+                    var card = new CardDataOuts(suit, rank);
                     if (!IsCardKnown(card, knownCards))
                         flushOuts.Add(card);
                 }
@@ -173,9 +173,9 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return flushOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para Escalera (Straight)
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetStraightOuts(List<CardDataOuts> knownCards)
     {
         var allRanks = knownCards.Select(c => (int)c.Rank).Distinct().ToList();
@@ -216,9 +216,9 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return straightOuts.DistinctBy(c => c.Id).ToList();
     }
 
-    // ----------------------
+    // ----
     // Lógica para Gutshot (escalera interna)
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetGutshotOuts(List<CardDataOuts> knownCards)
     {
         var allRanks = knownCards.Select(c => (int)c.Rank).Distinct().ToList();
@@ -241,32 +241,32 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return gutshotOuts.DistinctBy(c => c.Id).ToList();
     }
 
-    // ----------------------
+    // ----
     // Lógica para Sets
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetSetOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var setOuts = new List<CardDataOuts>();
         var playerPairs = playerHand
-            .GroupBy(c => c.Rank)
-            .Where(g => g.Count() == 2)
-            .Select(g => g.Key);
+        .GroupBy(c => c.Rank)
+        .Where(g => g.Count() == 2)
+        .Select(g => g.Key);
 
         foreach (var rank in playerPairs)
         {
             var remaining = Enum.GetValues(typeof(Suit))
-                .Cast<Suit>()
-                .Select(s => new CardDataOuts { Suit = s, Rank = rank })
-                .Where(c => !IsCardKnown(c, knownCards));
+            .Cast<Suit>()
+            .Select(s => new CardDataOuts(s, rank))
+            .Where(c => !IsCardKnown(c, knownCards));
 
             setOuts.AddRange(remaining);
         }
         return setOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para Full House
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetFullHouseOuts(List<CardDataOuts> knownCards)
     {
         var fullHouseOuts = new List<CardDataOuts>();
@@ -281,7 +281,7 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
             foreach (var pair in pairs)
             {
                 fullHouseOuts.AddRange(
-                    GenerateCardsForRank(pair.Key, knownCards)
+                GenerateCardsForRank(pair.Key, knownCards)
                 );
             }
         }
@@ -289,9 +289,9 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return fullHouseOuts.DistinctBy(c => c.Id).ToList();
     }
 
-    // ----------------------
+    // ----
     // Lógica para Overcards
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetOvercardOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var overcardOuts = new List<CardDataOuts>();
@@ -303,16 +303,16 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
             {
                 // Añadir todas las cartas restantes de este rango
                 overcardOuts.AddRange(
-                    GenerateCardsForRank(card.Rank, knownCards)
+                GenerateCardsForRank(card.Rank, knownCards)
                 );
             }
         }
         return overcardOuts.DistinctBy(c => c.Id).ToList();
     }
 
-    // ----------------------
+    // ----
     // Lógica para Dos parejas
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetTwoPairOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var twoPairOuts = new List<CardDataOuts>();
@@ -323,9 +323,9 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         if (playerHand.GroupBy(c => c.Rank).Any(g => g.Count() == 2))
         {
             var pairedBoardRanks = boardRanks
-                .GroupBy(r => r)
-                .Where(g => g.Count() == 1) // Rangos no pareados en el board
-                .Select(g => g.Key);
+            .GroupBy(r => r)
+            .Where(g => g.Count() == 1) // Rangos no pareados en el board
+            .Select(g => g.Key);
 
             foreach (var rank in pairedBoardRanks)
             {
@@ -336,10 +336,10 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         else
         {
             var allPossiblePairs = playerRanks
-                .Concat(boardRanks)
-                .GroupBy(r => r)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.Key);
+            .Concat(boardRanks)
+            .GroupBy(r => r)
+            .Where(g => g.Count() == 1)
+            .Select(g => g.Key);
 
             foreach (var rank in allPossiblePairs)
             {
@@ -350,9 +350,9 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return twoPairOuts.DistinctBy(c => c.Id).ToList();
     }
 
-    // ----------------------
+    // ----
     // Lógica para Doble Gutshot
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetDoubleGutshotOuts(List<CardDataOuts> knownCards)
     {
         var allRanks = knownCards.Select(c => (int)c.Rank).Distinct().ToList();
@@ -373,17 +373,17 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
 
         // Si hay al menos 2 gutshots diferentes
         var doubleGutshotOuts = gutshots
-            .Distinct()
-            .Take(2)
-            .SelectMany(r => GenerateCardsForRank(r, knownCards))
-            .ToList();
+        .Distinct()
+        .Take(2)
+        .SelectMany(r => GenerateCardsForRank(r, knownCards))
+        .ToList();
 
         return doubleGutshotOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para Straight Flush
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetStraightFlushOuts(List<CardDataOuts> knownCards)
     {
         var straightFlushOuts = new List<CardDataOuts>();
@@ -402,38 +402,38 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
         return straightFlushOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para Four of a Kind (poker)
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetFourOfAKindOuts(List<CardDataOuts> knownCards)
     {
         var fourOfAKindOuts = new List<CardDataOuts>();
         var trioGroups = knownCards
-            .GroupBy(c => c.Rank)
-            .Where(g => g.Count() == 3); // Buscar tríos en las cartas conocidas
+        .GroupBy(c => c.Rank)
+        .Where(g => g.Count() == 3); // Buscar tríos en las cartas conocidas
 
         foreach (var group in trioGroups)
         {
             Rank targetRank = group.Key;
             // La cuarta carta del mismo valor que el trío
             fourOfAKindOuts.AddRange(
-                GenerateCardsForRank(targetRank, knownCards)
+            GenerateCardsForRank(targetRank, knownCards)
             );
         }
         return fourOfAKindOuts;
     }
 
 
-    // ----------------------
+    // ----
     // Lógica para Three of a Kind (Trío)
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetThreeOfAKindOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var threeOfAKindOuts = new List<CardDataOuts>();
         var playerPairs = playerHand
-            .GroupBy(c => c.Rank)
-            .Where(g => g.Count() == 1) // Cartas únicas en la mano
-            .Select(g => g.Key);
+        .GroupBy(c => c.Rank)
+        .Where(g => g.Count() == 1) // Cartas únicas en la mano
+        .Select(g => g.Key);
 
         foreach (var rank in playerPairs)
         {
@@ -441,63 +441,63 @@ public class OutsCalculatorUseCase : IOutsCalculatorUseCase
             if (knownCards.Any(c => c.Rank == rank))
             {
                 threeOfAKindOuts.AddRange(
-                    GenerateCardsForRank(rank, knownCards)
+                GenerateCardsForRank(rank, knownCards)
                 );
             }
         }
         return threeOfAKindOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para una pareja
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetOnePairOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var onePairOuts = new List<CardDataOuts>();
         var playerHighCards = playerHand
-            .Where(c => !knownCards.Any(kc => kc.Rank == c.Rank)) // Cartas no pareadas en el board
-            .Select(c => c.Rank);
+        .Where(c => !knownCards.Any(kc => kc.Rank == c.Rank)) // Cartas no pareadas en el board
+        .Select(c => c.Rank);
 
         foreach (var rank in playerHighCards)
         {
             onePairOuts.AddRange(
-                GenerateCardsForRank(rank, knownCards)
+            GenerateCardsForRank(rank, knownCards)
             );
         }
         return onePairOuts;
     }
 
-    // ----------------------
+    // ----
     // Lógica para mejorar high card
-    // ----------------------
+    // ----
     private List<CardDataOuts> GetHighCardOuts(List<CardDataOuts> knownCards, List<CardDataOuts> playerHand)
     {
         var highCardOuts = new List<CardDataOuts>();
         var boardMaxRank = knownCards.Any() ? knownCards.Max(c => c.Rank) : Rank.Two;
         var playerHighRanks = playerHand
-            .Select(c => c.Rank)
-            .Where(r => r > boardMaxRank);
+        .Select(c => c.Rank)
+        .Where(r => r > boardMaxRank);
 
         foreach (var rank in playerHighRanks)
         {
             highCardOuts.AddRange(
-                GenerateCardsForRank(rank, knownCards)
+            GenerateCardsForRank(rank, knownCards)
             );
         }
         return highCardOuts;
     }
-       
 
-    // ----------------------
+
+    // ----
     // Métodos Auxiliares
-    // ----------------------
+    // ----
     private List<CardDataOuts> GenerateCardsForRank(Rank rank, List<CardDataOuts> knownCards)
     {
         return Enum.GetValues(typeof(Suit))
-            .Cast<Suit>()
-            .Select(s => new CardDataOuts { Suit = s, Rank = rank })
-            .Where(c => !IsCardKnown(c, knownCards))
-            .ToList();
+        .Cast<Suit>()
+        .Select(s => new CardDataOuts(s, rank))
+        .Where(c => !IsCardKnown(c, knownCards))
+        .ToList();
     }
 
     private List<CardDataOuts> GenerateCardsForRank(int rankValue, List<CardDataOuts> knownCards)

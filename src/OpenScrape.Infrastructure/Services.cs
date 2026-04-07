@@ -2,6 +2,7 @@
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.Infrastructure;
 
@@ -17,12 +18,18 @@ public static class Services
             // Specify that we want to use STJ as our serializer
             options.UseSystemTextJsonForSerialization();
 
-            //FK
-            //options.Schema.For<Domain.Entities.ProductSpecification>().ForeignKey<Domain.Entities.Product>(x => x.ProductId);
-            //options.Schema.For<Domain.Entities.Product>().ForeignKey<Domain.Entities.Provider>(x => x.ProviderId);
+            // Índices para GameSession — acelera consultas por fecha, sesión y mesa
+            options.Schema.For<GameSession>().Index(x => x.EndTime);
+            options.Schema.For<GameSession>().Index(x => x.SessionId);
+            options.Schema.For<GameSession>().Index(x => x.TableName);
 
-            // Indexes                        
-            //options.Schema.For<Domain.Entities.ProductSpecification>().Index(x => x.CountryCode);
+            // Índices para HandRecord — acelera consultas por sesión y por fecha
+            options.Schema.For<HandRecord>().Index(x => x.GameSessionId);
+            options.Schema.For<HandRecord>().Index(x => x.Timestamp);
+            // Índice compuesto para query "manos de sesión X ordenadas por fecha"
+            options.Schema.For<HandRecord>().Index(x => new { x.GameSessionId, x.Timestamp });
+            // Índice por posición para análisis estadístico
+            options.Schema.For<HandRecord>().Index(x => x.HeroPosition);
 
             // If we're running in development mode, let Marten just take care
             // of all necessary schema building and patching behind the scenes

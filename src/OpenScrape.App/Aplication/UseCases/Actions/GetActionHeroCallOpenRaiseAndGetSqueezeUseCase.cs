@@ -19,7 +19,7 @@ namespace OpenScrape.App.Aplication.UseCases.Actions
             response.Action = await _actionScenarioUseCases.GetActionScenario.ExecuteAsync(GameSituation.VsSqueeze, new ActionScenarioRequest
             {
                 HeroPosition = request.Position,
-                HandName = request.Hand,
+                HandName = request.Hand.Substring(0, 2),
                 Suited = request.Hand.Contains('s') ? true : request.Hand.Contains('o') ? false : null,
                 OpenRaiser = request.RaiserPosition,
                 Squeezer = request.SqueezerPosition,

@@ -12,6 +12,8 @@ namespace OpenScrape.App.Aplication
         public List<BoardData>? DataBoard { get; set; }
         public Image? Image { get; set; }
         public List<RegionTableMap> RegionsTableMap { get; set; } = new List<RegionTableMap>();
+        public int CurrentImageWidth { get; set; }
+        public int CurrentImageHeight { get; set; }
     }
 
     public class GetCardsTurnUseCaseResponse : BaseResponse
