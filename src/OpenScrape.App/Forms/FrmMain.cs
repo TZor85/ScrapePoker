@@ -12,6 +12,7 @@ using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
@@ -1558,35 +1559,41 @@ namespace OpenScrape.App
             // Hero es agresor si: fue agresor preflop, O apostó/raiseó en turn (o flop si no hubo turn bet)
             bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
                 || _postflopContext.HeroBetTurn || _postflopContext.HeroBetFlop;
-            var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.River, effectiveSituation, texture, inPosition,
-                betSize,
-                potOdds: _riverResult.PotOddsPercentage,
-                totalOuts: _riverResult.TotalOuts,
-                previousStreetBet: _postflopContext.PreviousStreetWasBet,
-                villainShowedAggression: villainAggro,
-                boardChange: boardChange,
-                heroBlocksDangerSuit: heroBlocks,
-                heroStack: _playerGameState.HeroStack,
-                potSize: _playerGameState.PotSize,
-                hasFlushDraw: _riverResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: Math.Max(1, numOpponents),
-                heroIsAggressor: riverIsAggressor,
-                heroHandRank: _riverResult.HeroHandRank,
-                hasComboDraw: _riverResult.HasComboDraw,
-                villainAggressorCheckedPreviousStreet: !_postflopContext.VillainBetTurn && !riverIsAggressor,
-                villainBarreling: _postflopContext.VillainBetTurn && maxBet > 0,
-                pairClassification: _riverResult.PairType,
-                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
-                villainBetSizeTurn: _postflopContext.VillainBetSizeTurn,
-                villainCheckedMiddleStreet: _postflopContext.VillainCheckedMiddleStreet,
-                villainType: GetVillainType(inPosition),
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _riverResult.HeroKickerStrength,
-                turnCalledWithFlushDanger: _postflopContext.TurnCalledWithFlushDanger,
-                heroBlocksTopCard: HeroBlocksTopBoardCard(),
-                heroCheckedAllStreets: _postflopContext.HeroCheckedAllStreets,
-                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
+            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = equity,
+                Street = BoardPosition.River,
+                Situation = effectiveSituation,
+                BoardTexture = texture,
+                IsInPosition = inPosition,
+                VillainBetSize = betSize,
+                PotOdds = _riverResult.PotOddsPercentage,
+                TotalOuts = _riverResult.TotalOuts,
+                PreviousStreetBet = _postflopContext.PreviousStreetWasBet,
+                VillainShowedAggression = villainAggro,
+                BoardChange = boardChange,
+                HeroBlocksDangerSuit = heroBlocks,
+                HeroStack = _playerGameState.HeroStack,
+                PotSize = _playerGameState.PotSize,
+                HasFlushDraw = _riverResult.DrawTypes.Contains("Flush Draw"),
+                NumOpponents = Math.Max(1, numOpponents),
+                HeroIsAggressor = riverIsAggressor,
+                HeroHandRank = _riverResult.HeroHandRank,
+                HasComboDraw = _riverResult.HasComboDraw,
+                VillainAggressorCheckedPreviousStreet = !_postflopContext.VillainBetTurn && !riverIsAggressor,
+                VillainBarreling = _postflopContext.VillainBetTurn && maxBet > 0,
+                PairClassification = _riverResult.PairType,
+                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _riverResult.FoldEquity),
+                VillainBetSizeTurn = _postflopContext.VillainBetSizeTurn,
+                VillainCheckedMiddleStreet = _postflopContext.VillainCheckedMiddleStreet,
+                VillainType = GetVillainType(inPosition),
+                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                HeroKickerStrength = _riverResult.HeroKickerStrength,
+                TurnCalledWithFlushDanger = _postflopContext.TurnCalledWithFlushDanger,
+                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
+                HeroCheckedAllStreets = _postflopContext.HeroCheckedAllStreets,
+                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
+            });
 
             // Tracking postflop del villano en river
             if (maxBet > 0)
@@ -1928,29 +1935,33 @@ namespace OpenScrape.App
                 _strategyProfileService.Profile);
             double effectiveEquity = Math.Min(99, rawEquity + cbetAdjustment);
 
-            var decision = _postflopDecisionService.DetermineAction(
-                effectiveEquity, BoardPosition.Flop, effectiveSituation, texture, inPosition,
-                betSize,
-                potOdds: _flopResult.PotOddsPercentage,
-                totalOuts: _flopResult.TotalOuts,
-                previousStreetBet: false,
-                villainShowedAggression: villainAggro,
-                boardChange: boardChange,
-                heroBlocksDangerSuit: false,
-                heroStack: _playerGameState.HeroStack,
-                potSize: potSize,
-                hasFlushDraw: _flopResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: numOpponents,
-                heroIsAggressor: isPreflopAggressor,
-                heroHandRank: _flopResult.HeroHandRank,
-                hasComboDraw: _flopResult.HasComboDraw,
-                pairClassification: _flopResult.PairType,
-                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
-                villainType: GetVillainType(inPosition),
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _flopResult.HeroKickerStrength,
-                heroBlocksTopCard: HeroBlocksTopBoardCard(),
-                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
+            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = effectiveEquity,
+                Street = BoardPosition.Flop,
+                Situation = effectiveSituation,
+                BoardTexture = texture,
+                IsInPosition = inPosition,
+                VillainBetSize = betSize,
+                PotOdds = _flopResult.PotOddsPercentage,
+                TotalOuts = _flopResult.TotalOuts,
+                VillainShowedAggression = villainAggro,
+                BoardChange = boardChange,
+                HeroStack = _playerGameState.HeroStack,
+                PotSize = potSize,
+                HasFlushDraw = _flopResult.DrawTypes.Contains("Flush Draw"),
+                NumOpponents = numOpponents,
+                HeroIsAggressor = isPreflopAggressor,
+                HeroHandRank = _flopResult.HeroHandRank,
+                HasComboDraw = _flopResult.HasComboDraw,
+                PairClassification = _flopResult.PairType,
+                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _flopResult.FoldEquity),
+                VillainType = GetVillainType(inPosition),
+                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                HeroKickerStrength = _flopResult.HeroKickerStrength,
+                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
+                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
+            });
 
             // Tracking postflop del villano en flop
             TrackVillainPostflopAction(maxBet, isPreflopAggressor, inPosition);
@@ -2047,33 +2058,39 @@ namespace OpenScrape.App
             // Hero es agresor si: fue agresor preflop con la situación actual, O apostó/raiseó en flop
             bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation)
                 || _postflopContext.HeroBetFlop;
-            var decision = _postflopDecisionService.DetermineAction(
-                equity, BoardPosition.Turn, effectiveSituation, texture, inPosition,
-                betSize,
-                potOdds: _turnResult.PotOddsPercentage,
-                totalOuts: _turnResult.TotalOuts,
-                previousStreetBet: _postflopContext.PreviousStreetWasBet,
-                villainShowedAggression: villainAggro,
-                boardChange: boardChange,
-                heroBlocksDangerSuit: heroBlocks,
-                heroStack: _playerGameState.HeroStack,
-                potSize: _playerGameState.PotSize,
-                hasFlushDraw: _turnResult.DrawTypes.Contains("Flush Draw"),
-                numOpponents: Math.Max(1, numOpponents),
-                heroIsAggressor: turnIsAggressor,
-                heroHandRank: _turnResult.HeroHandRank,
-                hasComboDraw: _turnResult.HasComboDraw,
-                villainAggressorCheckedPreviousStreet: _postflopContext.VillainAggressorCheckedFlop,
-                villainBarreling: _postflopContext.VillainBetFlop && maxBet > 0,
-                pairClassification: _turnResult.PairType,
-                foldEquity: _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
-                villainBetSizeFlop: _postflopContext.VillainBetSizeFlop,
-                villainType: GetVillainType(inPosition),
-                heroFloatedFlop: _postflopContext.HeroFloatedFlop,
-                villainFoldToBetPct: _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
-                heroKickerStrength: _turnResult.HeroKickerStrength,
-                heroBlocksTopCard: HeroBlocksTopBoardCard(),
-                isAnyoneAllIn: _postflopContext.IsAnyoneAllIn);
+            var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = equity,
+                Street = BoardPosition.Turn,
+                Situation = effectiveSituation,
+                BoardTexture = texture,
+                IsInPosition = inPosition,
+                VillainBetSize = betSize,
+                PotOdds = _turnResult.PotOddsPercentage,
+                TotalOuts = _turnResult.TotalOuts,
+                PreviousStreetBet = _postflopContext.PreviousStreetWasBet,
+                VillainShowedAggression = villainAggro,
+                BoardChange = boardChange,
+                HeroBlocksDangerSuit = heroBlocks,
+                HeroStack = _playerGameState.HeroStack,
+                PotSize = _playerGameState.PotSize,
+                HasFlushDraw = _turnResult.DrawTypes.Contains("Flush Draw"),
+                NumOpponents = Math.Max(1, numOpponents),
+                HeroIsAggressor = turnIsAggressor,
+                HeroHandRank = _turnResult.HeroHandRank,
+                HasComboDraw = _turnResult.HasComboDraw,
+                VillainAggressorCheckedPreviousStreet = _postflopContext.VillainAggressorCheckedFlop,
+                VillainBarreling = _postflopContext.VillainBetFlop && maxBet > 0,
+                PairClassification = _turnResult.PairType,
+                FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(), _turnResult.FoldEquity),
+                VillainBetSizeFlop = _postflopContext.VillainBetSizeFlop,
+                VillainType = GetVillainType(inPosition),
+                HeroFloatedFlop = _postflopContext.HeroFloatedFlop,
+                VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId()),
+                HeroKickerStrength = _turnResult.HeroKickerStrength,
+                HeroBlocksTopCard = HeroBlocksTopBoardCard(),
+                IsAnyoneAllIn = _postflopContext.IsAnyoneAllIn
+            });
 
             // Tracking postflop del villano en turn
             TrackVillainPostflopAction(maxBet, turnIsAggressor, inPosition);

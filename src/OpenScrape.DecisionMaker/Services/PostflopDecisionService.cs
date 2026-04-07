@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.DTOs;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
-
-using OpenScrape.DecisionMaker.Interfaces;
 
 namespace OpenScrape.DecisionMaker.Services;
 
@@ -78,8 +78,36 @@ public class PostflopDecisionService : IPostflopDecisionService
             street, isInPosition, hasFlushDraw, heroStack, potSize, _profile, numOpponents);
 
     /// <summary>
+    /// Determina la acción postflop a partir de un objeto de contexto inmutable.
+    /// </summary>
+    public PostflopDecisionResult DetermineAction(PostflopDecisionInput input)
+    {
+#pragma warning disable CS0618 // Suppress obsolete warning for internal delegation
+        return DetermineAction(
+            input.Equity, input.Street, input.Situation,
+            input.BoardTexture, input.IsInPosition, input.VillainBetSize,
+            input.PotOdds, input.TotalOuts,
+            input.PreviousStreetBet, input.VillainShowedAggression,
+            input.BoardChange, input.HeroBlocksDangerSuit,
+            input.HeroStack, input.PotSize,
+            input.HasFlushDraw, input.NumOpponents,
+            input.HeroIsAggressor, input.HeroHandRank,
+            input.HasComboDraw, input.VillainAggressorCheckedPreviousStreet,
+            input.VillainBarreling, input.VillainType,
+            input.PairClassification, input.FoldEquity,
+            input.VillainBetSizeFlop, input.VillainBetSizeTurn,
+            input.VillainCheckedMiddleStreet, input.HeroHasNutBlocker,
+            input.HeroFloatedFlop, input.VillainFoldToBetPct,
+            input.HeroKickerStrength, input.TurnCalledWithFlushDanger,
+            input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
+            input.IsAnyoneAllIn);
+#pragma warning restore CS0618
+    }
+
+    /// <summary>
     /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
     /// </summary>
+    [Obsolete("Usar DetermineAction(PostflopDecisionInput) en su lugar")]
     public PostflopDecisionResult DetermineAction(
         double equity,
         BoardPosition street,

@@ -1,4 +1,5 @@
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -30,6 +31,9 @@ public interface IPostflopDecisionService
         PairClassification pairClassification = PairClassification.None,
         bool heroBlocksDangerSuit = false);
 
+    PostflopDecisionResult DetermineAction(PostflopDecisionInput input);
+
+    [Obsolete("Usar DetermineAction(PostflopDecisionInput) en su lugar")]
     PostflopDecisionResult DetermineAction(
         double equity, BoardPosition street, HandSituation situation,
         string boardTexture, bool isInPosition,
