@@ -116,6 +116,10 @@ namespace OpenScrape.App
                     services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
                     services.AddSingleton<GetWindowsScreenUseCase>();
 
+                    // Screen reader (OCR + preprocesamiento + normalización)
+                    services.AddSingleton<ScreenReaderService>();
+                    services.AddSingleton<IScreenReaderService>(sp => sp.GetRequiredService<ScreenReaderService>());
+
                     // Game logger y state machine
                     services.AddScoped<GameLoggerService>();
                     services.AddSingleton<GameLoopStateMachine>();

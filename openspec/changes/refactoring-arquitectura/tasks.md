@@ -63,50 +63,32 @@
 
 ---
 
-## Fase 6 — Extraer ScreenReaderService (PENDIENTE)
+## Fase 6 — Extraer ScreenReaderService ✅ (2026-04-07)
 
 ### 6A. Definir contrato
 
-- [ ] 6.1 Crear `src/OpenScrape.App/Services/IScreenReaderService.cs`:
-  ```csharp
-  public interface IScreenReaderService
-  {
-      Bitmap CaptureScreen(IntPtr windowHandle);
-      string ReadPlayerName(Bitmap screenshot, int x, int y, int w, int h, double umbral, double inactiveUmbral);
-      decimal ReadBetValue(Bitmap screenshot, int posX, int posY, int width, int height, decimal potSize);
-      decimal ReadStackValue(Bitmap screenshot, int posX, int posY, int width, int height, double? umbral, double? inactiveUmbral, bool? isOnlyNumber);
-      string ReadHandNumber(Bitmap screenshot, int x, int y, int w, int h);
-      string ReadText(Bitmap screenshot, int x, int y, int w, int h, double? umbral);
-      bool DetectColor(Bitmap screenshot, int x, int y, int w, int h, List<string> targetColors);
-      OcrResultWithConfidence ReadWithConfidence(Bitmap screenshot, int x, int y, int w, int h);
-  }
-  ```
+- [x] 6.1 Crear `src/OpenScrape.App/Services/IScreenReaderService.cs` (8 métodos: ReadPlayerName, ReadBetValue, ReadStackValue, ReadHandNumber, ReadText, ReadTextWithMultipleThresholds, NormalizeBetValue, NormalizeStackValue)
 
 ### 6B. Extraer métodos
 
-- [ ] 6.2 Crear `src/OpenScrape.App/Services/ScreenReaderService.cs`
-- [ ] 6.3 Mover `ReadPlayerNameOCR()` → `ScreenReaderService.ReadPlayerName()`
-- [ ] 6.4 Mover `SetBetValue()` → `ScreenReaderService.ReadBetValue()` (incluye consensus 3-read, PreprocessImageForOCR, CleanOcrNumericText)
-- [ ] 6.5 Mover `SetStackValue()` → `ScreenReaderService.ReadStackValue()`
-- [ ] 6.6 Mover `SetHandNumberOCR()` → `ScreenReaderService.ReadHandNumber()`
-- [ ] 6.7 Mover `SetTextOCR()` → `ScreenReaderService.ReadText()`
-- [ ] 6.8 Mover `PreprocessImageForOCR()` → método privado de ScreenReaderService
-- [ ] 6.9 Mover `TryMultipleOCRThresholds()` → método privado
-- [ ] 6.10 Mover `NormalizeBetValue()` → método privado
-- [ ] 6.11 Mover `NormalizeStackValue()` → método privado
+- [x] 6.2 Crear `src/OpenScrape.App/Services/ScreenReaderService.cs`
+- [x] 6.3 Mover `ReadPlayerNameOCR()` → `ScreenReaderService.ReadPlayerName()`
+- [x] 6.4 Mover `SetBetValue()` → `ScreenReaderService.ReadBetValue()` (incluye consensus 3-read, PreprocessImageForOCR, CleanOcrNumericText)
+- [x] 6.5 Mover `SetStackValue()` → `ScreenReaderService.ReadStackValue()`
+- [x] 6.6 Mover `SetHandNumberOCR()` → `ScreenReaderService.ReadHandNumber()`
+- [x] 6.7 Mover `SetTextOCR()` → `ScreenReaderService.ReadText()`
+- [x] 6.8 Mover `PreprocessImageForOCR()` → método privado de ScreenReaderService
+- [x] 6.9 Mover `TryMultipleOCRThresholds()` → `ReadTextWithMultipleThresholds()` público
+- [x] 6.10 Mover `NormalizeBetValue()` → método público de ScreenReaderService
+- [x] 6.11 Mover `NormalizeStackValue()` → método público de ScreenReaderService
+- [x] 6.extra Mover `CleanOcrPlayerName()`, `CleanOcrNumericText()`, `CleanOcrHandNumber()` → privados
 
 ### 6C. Actualizar
 
-- [ ] 6.12 Inyectar `IScreenReaderService` en FrmMain
-- [ ] 6.13 Reemplazar llamadas OCR en FrmMain por `_screenReader.ReadXxx()`
-- [ ] 6.14 Registrar `ScreenReaderService` en `Program.cs` como Singleton
-- [ ] 6.15 Verificar: `dotnet build && dotnet test`
-
-### Notas para implementación
-- Todos los métodos OCR reciben `Bitmap` de `_formImage.pbImage.Image` — el servicio recibirá bitmap como parámetro
-- `OcrService`, `ColorDetectionService`, `ImageCropperService` ya son DI (Fase 3) — ScreenReaderService los inyecta
-- `NormalizeBetValue` depende de `_playerGameState.PotSize` — pasar como parámetro
-- `SetBetValue` tiene lógica de 3-read consensus — mover completa
+- [x] 6.12 Inyectar `IScreenReaderService` en FrmMain
+- [x] 6.13 Reemplazar llamadas OCR en FrmMain por `_screenReader.ReadXxx()`
+- [x] 6.14 Registrar `ScreenReaderService` en `Program.cs` como Singleton (con forwarding)
+- [x] 6.15 Verificar: `dotnet build && dotnet test` — 0 errores, 592 tests pasan
 
 ---
 
