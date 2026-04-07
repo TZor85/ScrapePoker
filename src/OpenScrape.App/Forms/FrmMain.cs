@@ -105,6 +105,7 @@ namespace OpenScrape.App
         private string _previousDealerPlayerName = "";
         private string _previousSBPlayerName = "";
         private string _previousBBPlayerName = "";
+        private int _lastActivePlayerCount = 0;
         private BetSizeCategory GetOpponentBetSize(decimal maxBet, decimal potSize)
         {
             if (maxBet == 0)
@@ -999,7 +1000,15 @@ namespace OpenScrape.App
                     SetActivePlayer();
                     RefreshPlayerStates();
 
-                    if (_playerGameState.Position == TablePosition.None)
+                    int currentActiveCount = _playerGameState.Players.Count(p => !p.Empty && !p.SitOut && p.ValuePosition != 0);
+                    bool playerCountChanged = currentActiveCount != _lastActivePlayerCount;
+                    _lastActivePlayerCount = currentActiveCount;
+
+                    LogDebug($"Jugadores activos: {currentActiveCount}, Cambió: {playerCountChanged}, Posición actual: {_playerGameState.Position}");
+
+                    bool shouldRecalculate = _playerGameState.Position == TablePosition.None || playerCountChanged;
+
+                    if (shouldRecalculate)
                     {
                         SetDealerPlayer();
                         if (_dealerValuePosition >= 0 && _playerGameState.Position != TablePosition.None)
@@ -2782,6 +2791,7 @@ namespace OpenScrape.App
             {
                 // Auto-rebuy detectado: stack subió más de lo posible por ganar el pot
                 Console.WriteLine($"[STACK] Auto-rebuy detectado: {previousStack} → {stackValue} (pot={_playerGameState.PotSize})");
+                _gameLoggerService.RegisterAutoRebuy(100);
             }
             else if (isHandActive && stackValue > 0)
             {

@@ -92,7 +92,7 @@ public class GameLoggerService
             HeroCard1 = heroCard1,
             HeroCard2 = heroCard2,
             HeroPosition = heroPosition,
-            HeroStackStart = heroStack,
+            HeroStackStart = _sessionTotalHands == 0 && heroStack == 0 ? 100 : heroStack,
             NumOpponents = numOpponents,
             BlindPosted = blindPosted
         };
@@ -137,6 +137,15 @@ public class GameLoggerService
     {
         if (_currentHand != null)
             _currentHand.Situation = situation;
+    }
+
+    public void RegisterAutoRebuy(decimal amount)
+    {
+        if (_currentHand != null)
+        {
+            _currentHand.AutoRebuy = amount;
+            _logger.LogInformation("Auto-rebuy registrado: {Amount}BB en mano {HandNumber}", amount, _currentHand.HandNumber);
+        }
     }
 
     /// <summary>
