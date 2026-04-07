@@ -9,11 +9,14 @@ namespace OpenScrape.App.Aplication.UseCases
     public class GetCardsFlopUseCase : IGetCardsFlopUseCase
     {
         private readonly CardCacheService _cardCache;
-        private ImageCropperService _imageCropperService = new();
+        private readonly ImageCropperService _imageCropperService;
+        private readonly ICoordinateScaler _coordinateScaler;
 
-        public GetCardsFlopUseCase(CardCacheService cardCache)
+        public GetCardsFlopUseCase(CardCacheService cardCache, ImageCropperService imageCropperService, ICoordinateScaler coordinateScaler)
         {
             _cardCache = cardCache;
+            _imageCropperService = imageCropperService;
+            _coordinateScaler = coordinateScaler;
         }
 
         public async Task<GetCardsFlopUseCaseResponse> ExecuteAsync(GetCardsFlopUseCaseRequest request)
@@ -100,12 +103,12 @@ namespace OpenScrape.App.Aplication.UseCases
             int posX, int posY, int width, int height,
             int currentWidth, int currentHeight)
         {
-            if (currentWidth <= 0 || currentHeight <= 0 || !CoordinateScaler.IsInitialized)
+            if (currentWidth <= 0 || currentHeight <= 0 || !_coordinateScaler.IsInitialized)
             {
                 return (posX, posY, width, height);
             }
 
-            return CoordinateScaler.ScaleRegion(posX, posY, width, height, currentWidth, currentHeight);
+            return _coordinateScaler.ScaleRegion(posX, posY, width, height, currentWidth, currentHeight);
         }
     }
 }

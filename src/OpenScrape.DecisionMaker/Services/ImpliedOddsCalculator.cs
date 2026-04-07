@@ -8,8 +8,25 @@ namespace OpenScrape.DecisionMaker.Services;
 /// Calcula el factor de implied odds y reverse implied odds.
 /// Extraído de PostflopDecisionService para reducir responsabilidades.
 /// </summary>
-public class ImpliedOddsCalculator
+public class ImpliedOddsCalculator : Interfaces.IImpliedOddsCalculator
 {
+    /// <summary>
+    /// Wrapper de instancia para CalculateImpliedOddsFactor. Permite inyección via interfaz.
+    /// </summary>
+    double Interfaces.IImpliedOddsCalculator.CalculateImpliedOddsFactor(
+        BoardPosition street, bool isInPosition, bool hasFlushDraw,
+        decimal heroStack, decimal potSize, StrategyProfile profile, int numOpponents)
+        => CalculateImpliedOddsFactor(street, isInPosition, hasFlushDraw, heroStack, potSize, profile, numOpponents);
+
+    /// <summary>
+    /// Wrapper de instancia para CalculateReverseImpliedOdds. Permite inyección via interfaz.
+    /// </summary>
+    double Interfaces.IImpliedOddsCalculator.CalculateReverseImpliedOdds(
+        BoardChangeResult? boardChange, HandRank heroHandRank, bool hasFlushDraw,
+        BoardPosition street, bool isFacingBet, StrategyProfile profile,
+        PairClassification pairClassification, bool heroBlocksDangerSuit)
+        => CalculateReverseImpliedOdds(boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, profile, pairClassification, heroBlocksDangerSuit);
+
     /// <summary>
     /// Calcula el factor de implied odds basado en SPR, posición, street y tipo de draw.
     /// Retorna un valor entre 0.5 y 1.0: menor = mejores implied odds.

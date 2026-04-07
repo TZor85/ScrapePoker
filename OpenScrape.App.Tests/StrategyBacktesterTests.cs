@@ -18,7 +18,8 @@ public class StrategyBacktesterTests
         var profile = new StrategyProfile();
         var options = Options.Create(profile);
         var betSizing = new BetSizingService(options);
-        var service = new PostflopDecisionService(options, betSizing);
+        var rangePolarizer = new RangePolarizer();
+        var service = new PostflopDecisionService(options, betSizing, rangePolarizer);
         _backtester = new StrategyBacktester(service);
     }
 

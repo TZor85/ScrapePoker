@@ -1,12 +1,14 @@
+using OpenScrape.App.Services;
+
 namespace OpenScrape.App.Helpers;
 
-public static class CoordinateScaler
+public class CoordinateScaler : ICoordinateScaler
 {
-    private static int _referenceWidth;
-    private static int _referenceHeight;
-    private static bool _isInitialized;
+    private int _referenceWidth;
+    private int _referenceHeight;
+    private bool _isInitialized;
 
-    public static void Initialize(int referenceWidth, int referenceHeight)
+    public void Initialize(int referenceWidth, int referenceHeight)
     {
         if (!_isInitialized && referenceWidth > 0 && referenceHeight > 0)
         {
@@ -16,7 +18,7 @@ public static class CoordinateScaler
         }
     }
 
-    public static (int X, int Y, int Width, int Height) ScaleRegion(
+    public (int X, int Y, int Width, int Height) ScaleRegion(
         int posX, int posY, int width, int height,
         int currentWidth, int currentHeight)
     {
@@ -37,14 +39,7 @@ public static class CoordinateScaler
         );
     }
 
-    public static bool IsInitialized => _isInitialized;
-    public static int ReferenceWidth => _referenceWidth;
-    public static int ReferenceHeight => _referenceHeight;
-
-    public static void Reset()
-    {
-        _isInitialized = false;
-        _referenceWidth = 0;
-        _referenceHeight = 0;
-    }
+    public bool IsInitialized => _isInitialized;
+    public int ReferenceWidth => _referenceWidth;
+    public int ReferenceHeight => _referenceHeight;
 }

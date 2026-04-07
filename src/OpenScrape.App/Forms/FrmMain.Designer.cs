@@ -49,6 +49,8 @@
             lbTableName = new Label();
             btnCapture = new Button();
             btnDetectionDebug = new Button();
+            btnExploitability = new Button();
+            btnCalibrate = new Button();
             panel8 = new Panel();
             lbPot = new Label();
             pbBoard5 = new PictureBox();
@@ -140,13 +142,23 @@
             tbResume = new TextBox();
             tpHistorial = new TabPage();
             splitHistorialLeft = new SplitContainer();
-            lblSesionesTitle = new Label();
             dgvSessions = new DataGridView();
-            lblManosTitle = new Label();
+            lblSesionesTitle = new Label();
             dgvSessionHands = new DataGridView();
-            lblSessionStats = new Label();
+            lblManosTitle = new Label();
             btnBacktest = new Button();
+            lblSessionStats = new Label();
+            tpBankroll = new TabPage();
             lbNamePlayerOne = new Label();
+            lblBankrollCurrent = new Label();
+            lblBankrollPeak = new Label();
+            lblBankrollMaxDD = new Label();
+            lblWinRate = new Label();
+            lblStdDev = new Label();
+            lblRiskOfRuin = new Label();
+            lblRecommendation = new Label();
+            lblTotalSessions = new Label();
+            lblTotalHands = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
             pnlUserStack.SuspendLayout();
@@ -208,11 +220,12 @@
             tbControl.Controls.Add(tbTables);
             tbControl.Controls.Add(tbLogs);
             tbControl.Controls.Add(tpHistorial);
+            tbControl.Controls.Add(tpBankroll);
             tbControl.Dock = DockStyle.Fill;
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
             tbControl.SelectedIndex = 0;
-            tbControl.Size = new Size(577, 420);
+            tbControl.Size = new Size(577, 419);
             tbControl.TabIndex = 65;
             // 
             // tbJuego
@@ -227,6 +240,8 @@
             tbJuego.Controls.Add(panel9);
             tbJuego.Controls.Add(btnCapture);
             tbJuego.Controls.Add(btnDetectionDebug);
+            tbJuego.Controls.Add(btnExploitability);
+            tbJuego.Controls.Add(btnCalibrate);
             tbJuego.Controls.Add(panel8);
             tbJuego.Controls.Add(pbBoard5);
             tbJuego.Controls.Add(pbBoard4);
@@ -255,7 +270,7 @@
             tbJuego.Controls.Add(pnNamePlayerOne);
             tbJuego.Location = new Point(4, 24);
             tbJuego.Name = "tbJuego";
-            tbJuego.Size = new Size(569, 392);
+            tbJuego.Size = new Size(569, 391);
             tbJuego.TabIndex = 2;
             tbJuego.Text = "Juego";
             tbJuego.UseVisualStyleBackColor = true;
@@ -421,13 +436,33 @@
             // 
             // btnDetectionDebug
             // 
-            btnDetectionDebug.Location = new Point(8, 262);
+            btnDetectionDebug.Location = new Point(8, 428);
             btnDetectionDebug.Name = "btnDetectionDebug";
             btnDetectionDebug.Size = new Size(80, 60);
             btnDetectionDebug.TabIndex = 78;
             btnDetectionDebug.Text = "Debug";
             btnDetectionDebug.UseVisualStyleBackColor = true;
             btnDetectionDebug.Click += BtnDetectionDebug_Click;
+            // 
+            // btnExploitability
+            // 
+            btnExploitability.Location = new Point(8, 294);
+            btnExploitability.Name = "btnExploitability";
+            btnExploitability.Size = new Size(80, 30);
+            btnExploitability.TabIndex = 79;
+            btnExploitability.Text = "GTO";
+            btnExploitability.UseVisualStyleBackColor = true;
+            btnExploitability.Click += BtnExploitability_Click;
+            // 
+            // btnCalibrate
+            // 
+            btnCalibrate.Location = new Point(8, 483);
+            btnCalibrate.Name = "btnCalibrate";
+            btnCalibrate.Size = new Size(80, 30);
+            btnCalibrate.TabIndex = 80;
+            btnCalibrate.Text = "Calibrar";
+            btnCalibrate.UseVisualStyleBackColor = true;
+            btnCalibrate.Click += BtnCalibrate_Click;
             // 
             // panel8
             // 
@@ -1343,9 +1378,9 @@
             tbResume.Name = "tbResume";
             tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
-            //
+            // 
             // tpHistorial
-            //
+            // 
             tpHistorial.Controls.Add(splitHistorialLeft);
             tpHistorial.Controls.Add(btnBacktest);
             tpHistorial.Controls.Add(lblSessionStats);
@@ -1355,92 +1390,92 @@
             tpHistorial.TabIndex = 4;
             tpHistorial.Text = "Historial";
             tpHistorial.UseVisualStyleBackColor = true;
-            //
+            // 
             // splitHistorialLeft
-            //
+            // 
             splitHistorialLeft.Dock = DockStyle.Fill;
             splitHistorialLeft.Location = new Point(0, 0);
             splitHistorialLeft.Name = "splitHistorialLeft";
             splitHistorialLeft.Orientation = Orientation.Horizontal;
-            //
+            // 
             // splitHistorialLeft.Panel1
-            //
+            // 
             splitHistorialLeft.Panel1.Controls.Add(dgvSessions);
             splitHistorialLeft.Panel1.Controls.Add(lblSesionesTitle);
-            //
+            // 
             // splitHistorialLeft.Panel2
-            //
+            // 
             splitHistorialLeft.Panel2.Controls.Add(dgvSessionHands);
             splitHistorialLeft.Panel2.Controls.Add(lblManosTitle);
-            splitHistorialLeft.Size = new Size(569, 362);
-            splitHistorialLeft.SplitterDistance = 180;
+            splitHistorialLeft.Size = new Size(569, 332);
+            splitHistorialLeft.SplitterDistance = 165;
             splitHistorialLeft.TabIndex = 0;
-            //
-            // lblSesionesTitle
-            //
-            lblSesionesTitle.Dock = DockStyle.Top;
-            lblSesionesTitle.Location = new Point(0, 0);
-            lblSesionesTitle.Name = "lblSesionesTitle";
-            lblSesionesTitle.Size = new Size(350, 30);
-            lblSesionesTitle.TabIndex = 0;
-            lblSesionesTitle.Text = "Sesiones";
-            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
             // dgvSessions
-            //
+            // 
+            dgvSessions.AllowUserToAddRows = false;
             dgvSessions.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvSessions.Dock = DockStyle.Fill;
             dgvSessions.Location = new Point(0, 30);
+            dgvSessions.MultiSelect = false;
             dgvSessions.Name = "dgvSessions";
             dgvSessions.ReadOnly = true;
             dgvSessions.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessions.MultiSelect = false;
-            dgvSessions.AllowUserToAddRows = false;
-            dgvSessions.Size = new Size(569, 150);
+            dgvSessions.Size = new Size(569, 135);
             dgvSessions.TabIndex = 1;
-            //
-            // lblManosTitle
-            //
-            lblManosTitle.Dock = DockStyle.Top;
-            lblManosTitle.Location = new Point(0, 0);
-            lblManosTitle.Name = "lblManosTitle";
-            lblManosTitle.Size = new Size(350, 30);
-            lblManosTitle.TabIndex = 0;
-            lblManosTitle.Text = "Manos";
-            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
+            // lblSesionesTitle
+            // 
+            lblSesionesTitle.Dock = DockStyle.Top;
+            lblSesionesTitle.Location = new Point(0, 0);
+            lblSesionesTitle.Name = "lblSesionesTitle";
+            lblSesionesTitle.Size = new Size(569, 30);
+            lblSesionesTitle.TabIndex = 0;
+            lblSesionesTitle.Text = "Sesiones";
+            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // dgvSessionHands
-            //
+            // 
+            dgvSessionHands.AllowUserToAddRows = false;
             dgvSessionHands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvSessionHands.Dock = DockStyle.Fill;
             dgvSessionHands.Location = new Point(0, 30);
+            dgvSessionHands.MultiSelect = false;
             dgvSessionHands.Name = "dgvSessionHands";
             dgvSessionHands.ReadOnly = true;
             dgvSessionHands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessionHands.MultiSelect = false;
-            dgvSessionHands.AllowUserToAddRows = false;
-            dgvSessionHands.Size = new Size(569, 152);
+            dgvSessionHands.Size = new Size(569, 133);
             dgvSessionHands.TabIndex = 1;
-            //
-            // lblSessionStats
-            //
-            lblSessionStats.Dock = DockStyle.Bottom;
-            lblSessionStats.Location = new Point(0, 362);
-            lblSessionStats.Name = "lblSessionStats";
-            lblSessionStats.Size = new Size(449, 30);
-            lblSessionStats.TabIndex = 1;
-            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
-            //
+            // 
+            // lblManosTitle
+            // 
+            lblManosTitle.Dock = DockStyle.Top;
+            lblManosTitle.Location = new Point(0, 0);
+            lblManosTitle.Name = "lblManosTitle";
+            lblManosTitle.Size = new Size(569, 30);
+            lblManosTitle.TabIndex = 0;
+            lblManosTitle.Text = "Manos";
+            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // btnBacktest
-            //
+            // 
             btnBacktest.Dock = DockStyle.Bottom;
-            btnBacktest.Location = new Point(449, 362);
+            btnBacktest.Location = new Point(0, 332);
             btnBacktest.Name = "btnBacktest";
-            btnBacktest.Size = new Size(120, 30);
+            btnBacktest.Size = new Size(569, 30);
             btnBacktest.TabIndex = 2;
             btnBacktest.Text = "Backtest A/B";
             btnBacktest.UseVisualStyleBackColor = true;
-            //
+            // 
+            // lblSessionStats
+            // 
+            lblSessionStats.Dock = DockStyle.Bottom;
+            lblSessionStats.Location = new Point(0, 362);
+            lblSessionStats.Name = "lblSessionStats";
+            lblSessionStats.Size = new Size(569, 30);
+            lblSessionStats.TabIndex = 1;
+            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
+            // 
             // lbNamePlayerOne
             // 
             lbNamePlayerOne.AutoSize = true;
@@ -1453,7 +1488,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(577, 420);
+            ClientSize = new Size(577, 419);
             Controls.Add(tbControl);
             Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "FrmMain";
@@ -1522,13 +1557,125 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
             tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
+            // 
+            // tpBankroll
+            // 
+            tpBankroll.Controls.Add(lblBankrollCurrent);
+            tpBankroll.Controls.Add(lblBankrollPeak);
+            tpBankroll.Controls.Add(lblBankrollMaxDD);
+            tpBankroll.Controls.Add(lblWinRate);
+            tpBankroll.Controls.Add(lblStdDev);
+            tpBankroll.Controls.Add(lblRiskOfRuin);
+            tpBankroll.Controls.Add(lblRecommendation);
+            tpBankroll.Controls.Add(lblTotalSessions);
+            tpBankroll.Controls.Add(lblTotalHands);
+            tpBankroll.Dock = DockStyle.Fill;
+            tpBankroll.Location = new Point(4, 24);
+            tpBankroll.Name = "tpBankroll";
+            tpBankroll.Size = new Size(569, 392);
+            tpBankroll.TabIndex = 5;
+            tpBankroll.Text = "Bankroll";
+            tpBankroll.UseVisualStyleBackColor = true;
+            // 
+            // lblBankrollCurrent
+            // 
+            lblBankrollCurrent.AutoSize = true;
+            lblBankrollCurrent.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lblBankrollCurrent.ForeColor = Color.FromArgb(0, 200, 0);
+            lblBankrollCurrent.Location = new Point(20, 20);
+            lblBankrollCurrent.Name = "lblBankrollCurrent";
+            lblBankrollCurrent.Size = new Size(120, 25);
+            lblBankrollCurrent.TabIndex = 0;
+            lblBankrollCurrent.Text = "Bankroll: €0.00";
+            // 
+            // lblBankrollPeak
+            // 
+            lblBankrollPeak.AutoSize = true;
+            lblBankrollPeak.Font = new Font("Segoe UI", 10F);
+            lblBankrollPeak.Location = new Point(20, 55);
+            lblBankrollPeak.Name = "lblBankrollPeak";
+            lblBankrollPeak.Size = new Size(100, 19);
+            lblBankrollPeak.TabIndex = 1;
+            lblBankrollPeak.Text = "Peak: €0.00";
+            // 
+            // lblBankrollMaxDD
+            // 
+            lblBankrollMaxDD.AutoSize = true;
+            lblBankrollMaxDD.Font = new Font("Segoe UI", 10F);
+            lblBankrollMaxDD.ForeColor = Color.Red;
+            lblBankrollMaxDD.Location = new Point(20, 80);
+            lblBankrollMaxDD.Name = "lblBankrollMaxDD";
+            lblBankrollMaxDD.Size = new Size(130, 19);
+            lblBankrollMaxDD.TabIndex = 2;
+            lblBankrollMaxDD.Text = "Max Drawdown: 0.0%";
+            // 
+            // lblWinRate
+            // 
+            lblWinRate.AutoSize = true;
+            lblWinRate.Font = new Font("Segoe UI", 10F);
+            lblWinRate.Location = new Point(20, 120);
+            lblWinRate.Name = "lblWinRate";
+            lblWinRate.Size = new Size(100, 19);
+            lblWinRate.TabIndex = 3;
+            lblWinRate.Text = "Win Rate: 0.0 BB/100";
+            // 
+            // lblStdDev
+            // 
+            lblStdDev.AutoSize = true;
+            lblStdDev.Font = new Font("Segoe UI", 10F);
+            lblStdDev.Location = new Point(20, 145);
+            lblStdDev.Name = "lblStdDev";
+            lblStdDev.Size = new Size(100, 19);
+            lblStdDev.TabIndex = 4;
+            lblStdDev.Text = "Std Dev: 0.0 BB/100";
+            // 
+            // lblRiskOfRuin
+            // 
+            lblRiskOfRuin.AutoSize = true;
+            lblRiskOfRuin.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lblRiskOfRuin.Location = new Point(20, 190);
+            lblRiskOfRuin.Name = "lblRiskOfRuin";
+            lblRiskOfRuin.Size = new Size(150, 21);
+            lblRiskOfRuin.TabIndex = 5;
+            lblRiskOfRuin.Text = "Risk of Ruin: 0.0%";
+            // 
+            // lblRecommendation
+            // 
+            lblRecommendation.AutoSize = true;
+            lblRecommendation.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lblRecommendation.Location = new Point(20, 230);
+            lblRecommendation.Name = "lblRecommendation";
+            lblRecommendation.Size = new Size(200, 25);
+            lblRecommendation.TabIndex = 6;
+            lblRecommendation.Text = "MANTENER";
+            // 
+            // lblTotalSessions
+            // 
+            lblTotalSessions.AutoSize = true;
+            lblTotalSessions.Font = new Font("Segoe UI", 9F);
+            lblTotalSessions.Location = new Point(20, 280);
+            lblTotalSessions.Name = "lblTotalSessions";
+            lblTotalSessions.Size = new Size(120, 15);
+            lblTotalSessions.TabIndex = 7;
+            lblTotalSessions.Text = "Sesiones: 0 (0 ganadas)";
+            // 
+            // lblTotalHands
+            // 
+            lblTotalHands.AutoSize = true;
+            lblTotalHands.Font = new Font("Segoe UI", 9F);
+            lblTotalHands.Location = new Point(20, 305);
+            lblTotalHands.Name = "lblTotalHands";
+            lblTotalHands.Size = new Size(100, 15);
+            lblTotalHands.TabIndex = 8;
+            lblTotalHands.Text = "Manos: 0";
+            // 
+            tpHistorial.ResumeLayout(false);
             splitHistorialLeft.Panel1.ResumeLayout(false);
             splitHistorialLeft.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).EndInit();
             splitHistorialLeft.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvSessions).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvSessionHands).EndInit();
-            tpHistorial.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -1642,10 +1789,13 @@
         private RadioButton rbRiver;
         private RadioButton rbTurn;
         private Button btnClear;
+        private Button btnExploitability;
+        private Button btnCalibrate;
         private Label lbPositionAction;
         private Panel pnlUserStack;
         private Label lbUserStack;
         private TabPage tpHistorial;
+        private TabPage tpBankroll;
         private SplitContainer splitHistorialLeft;
         private Label lblSesionesTitle;
         private DataGridView dgvSessions;
@@ -1653,5 +1803,14 @@
         private DataGridView dgvSessionHands;
         private Label lblSessionStats;
         private Button btnBacktest;
+        private Label lblBankrollCurrent;
+        private Label lblBankrollPeak;
+        private Label lblBankrollMaxDD;
+        private Label lblWinRate;
+        private Label lblStdDev;
+        private Label lblRiskOfRuin;
+        private Label lblRecommendation;
+        private Label lblTotalSessions;
+        private Label lblTotalHands;
     }
 }

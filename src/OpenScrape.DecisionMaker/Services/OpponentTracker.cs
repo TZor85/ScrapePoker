@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.DecisionMaker.Services;
@@ -6,9 +8,9 @@ namespace OpenScrape.DecisionMaker.Services;
 /// Servicio que acumula estadísticas de oponentes durante la sesión.
 /// Mantiene un perfil por jugador (identificado por nombre/seat).
 /// </summary>
-public class OpponentTracker
+public class OpponentTracker : Interfaces.IOpponentTracker
 {
-    private readonly Dictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Obtiene o crea el perfil de un oponente.
@@ -18,13 +20,7 @@ public class OpponentTracker
         if (string.IsNullOrWhiteSpace(playerId))
             return new OpponentProfile();
 
-        if (!_profiles.TryGetValue(playerId, out var profile))
-        {
-            profile = new OpponentProfile { PlayerId = playerId };
-            _profiles[playerId] = profile;
-        }
-
-        return profile;
+        return _profiles.GetOrAdd(playerId, id => new OpponentProfile { PlayerId = id });
     }
 
     /// <summary>
@@ -167,7 +163,7 @@ public class OpponentTracker
     public IReadOnlyDictionary<string, OpponentProfile> AllProfiles => _profiles;
 
     // === Seat-alias cache: mapeo seat ("P3") → alias real ("PlayerA") ===
-    private readonly Dictionary<string, string> _seatAliasCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _seatAliasCache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Registra asociación seat → alias. Si existe perfil por seat name, lo migra al alias.
@@ -181,11 +177,10 @@ public class OpponentTracker
 
         // Migrar perfil de seat a alias si existe (solo si no hay perfil con el alias)
         if (_profiles.TryGetValue(seatName, out var seatProfile) &&
-            !_profiles.ContainsKey(alias))
+            _profiles.TryAdd(alias, seatProfile))
         {
             seatProfile.PlayerId = alias;
-            _profiles[alias] = seatProfile;
-            _profiles.Remove(seatName);
+            _profiles.TryRemove(seatName, out _);
         }
     }
 

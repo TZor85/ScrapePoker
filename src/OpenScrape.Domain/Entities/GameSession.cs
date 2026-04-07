@@ -17,6 +17,11 @@ public class GameSession
     public DateTime EndTime { get; set; } = DateTime.UtcNow;
     public decimal BigBlind { get; set; } = 0.50m;
 
+    // Bankroll tracking fields
+    public decimal StartingBankroll { get; set; }
+    public decimal EndingBankroll { get; set; }
+    public decimal PeakBankroll { get; set; }
+
     // Manos de esta sesión — no se persisten embebidas; cada HandRecord
     // vive en su propia colección Marten con FK GameSessionId.
     // Esta lista se usa solo en memoria durante la sesión activa.
@@ -73,11 +78,18 @@ public class HandRecord
     public decimal BlindPosted { get; set; }
 
     /// <summary>
-    /// Profit neto excluyendo la ciega obligatoria.
+    /// Monto de auto-rebuy detectado durante la mano (típicamente 100BB).
+    /// Se resta del profit neto porque es dinero propio, no ganancia.
+    /// </summary>
+    public decimal AutoRebuy { get; set; }
+
+    /// <summary>
+    /// Profit neto excluyendo la ciega obligatoria y el auto-rebuy.
     /// Si hero paga BB (1.00) y foldea → NetProfit = 0 (no -1.00).
     /// Si hero paga BB (1.00) y gana 5.00 → NetProfit = +5.00 (no +4.00).
+    /// Si hace auto-rebuy de 100 y termina con 105 → NetProfit = +5 (no +105).
     /// </summary>
-    public decimal NetProfit => (HeroStackEnd - HeroStackStart) + BlindPosted;
+    public decimal NetProfit => (HeroStackEnd - HeroStackStart) - AutoRebuy + BlindPosted;
 
     // Board
     public List<string> FlopCards { get; set; } = new();

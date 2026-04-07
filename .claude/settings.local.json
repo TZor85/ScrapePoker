@@ -36,7 +36,13 @@
       "Bash(wc:*)",
       "Bash(dotnet format:*)",
       "Bash(ls -la /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)",
-      "Bash(ls -1 /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)"
+      "Bash(ls -1 /c/Code/Poker/ScrapePoker/OpenScrape.App.Tests/*.cs)",
+      "Bash(python -c ':*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge feature/solver --no-ff -m ':*)",
+      "Bash(git stash:*)"
     ]
   }
 }

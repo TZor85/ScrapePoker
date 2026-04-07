@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.DTOs;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -17,15 +19,17 @@ public record PostflopDecisionResult(
     bool IsCheckRaise = false,
     bool IsFloating = false);
 
-public class PostflopDecisionService
+public class PostflopDecisionService : IPostflopDecisionService
 {
     private readonly StrategyProfile _profile;
     private readonly BetSizingService _betSizingService;
+    private readonly RangePolarizer _rangePolarizer;
 
-    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService)
+    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService, RangePolarizer rangePolarizer)
     {
         _profile = profileOptions.Value;
         _betSizingService = betSizingService;
+        _rangePolarizer = rangePolarizer;
     }
 
     /// <summary>
@@ -74,8 +78,36 @@ public class PostflopDecisionService
             street, isInPosition, hasFlushDraw, heroStack, potSize, _profile, numOpponents);
 
     /// <summary>
+    /// Determina la acción postflop a partir de un objeto de contexto inmutable.
+    /// </summary>
+    public PostflopDecisionResult DetermineAction(PostflopDecisionInput input)
+    {
+#pragma warning disable CS0618 // Suppress obsolete warning for internal delegation
+        return DetermineAction(
+            input.Equity, input.Street, input.Situation,
+            input.BoardTexture, input.IsInPosition, input.VillainBetSize,
+            input.PotOdds, input.TotalOuts,
+            input.PreviousStreetBet, input.VillainShowedAggression,
+            input.BoardChange, input.HeroBlocksDangerSuit,
+            input.HeroStack, input.PotSize,
+            input.HasFlushDraw, input.NumOpponents,
+            input.HeroIsAggressor, input.HeroHandRank,
+            input.HasComboDraw, input.VillainAggressorCheckedPreviousStreet,
+            input.VillainBarreling, input.VillainType,
+            input.PairClassification, input.FoldEquity,
+            input.VillainBetSizeFlop, input.VillainBetSizeTurn,
+            input.VillainCheckedMiddleStreet, input.HeroHasNutBlocker,
+            input.HeroFloatedFlop, input.VillainFoldToBetPct,
+            input.HeroKickerStrength, input.TurnCalledWithFlushDanger,
+            input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
+            input.IsAnyoneAllIn);
+#pragma warning restore CS0618
+    }
+
+    /// <summary>
     /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
     /// </summary>
+    [Obsolete("Usar DetermineAction(PostflopDecisionInput) en su lugar")]
     public PostflopDecisionResult DetermineAction(
         double equity,
         BoardPosition street,
@@ -164,6 +196,15 @@ public class PostflopDecisionService
         // Ajustar thresholds si estamos facing a bet
         double adjustedFoldBelow = thresholds.FoldBelow;
         double adjustedThinValueAbove = thresholds.ThinValueAbove;
+
+        // [NUEVO] Aplicar ajustes de RangePolarizer según board texture, posición, SPR y street
+        if (street != BoardPosition.None)
+        {
+            var rangeAdjustment = GetRangeBasedThresholdAdjustment(boardTexture, isInPosition, potSize, heroStack, street);
+            adjustedFoldBelow += rangeAdjustment.foldBelowAdjust;
+            adjustedThinValueAbove += rangeAdjustment.thinValueAdjust;
+        }
+
         if (isFacingBet)
         {
             double facingBetPenalty = villainBetSize switch
@@ -378,6 +419,19 @@ public class PostflopDecisionService
             if (allinEV > 0)
                 return new PostflopDecisionResult("All-In (Value)",
                     $"Push +EV — SPR corto (EV={allinEV:F1}, equity={effectiveEquity:F1}%)");
+        }
+
+        // C-bet mixing: agresor con equity media puede chequear para proteger checking range
+        // Solo HU (no multiway) y rango entre FoldBelow y ThinValueAbove
+        if (heroIsAggressor && !isMultiway &&
+            effectiveEquity >= adjustedFoldBelow && effectiveEquity < adjustedThinValueAbove)
+        {
+            double cbetFreq = GetCbetFrequency(street);
+            if (cbetFreq > 0 && Random.Shared.NextDouble() >= cbetFreq)
+            {
+                return new PostflopDecisionResult("Check",
+                    $"Check — protección de range como agresor ({1 - cbetFreq:P0} check freq)");
+            }
         }
 
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
@@ -1025,16 +1079,18 @@ public class PostflopDecisionService
 
     /// <summary>
     /// Calcula EV de ir all-in vs fold. Usado cuando SPR &lt; 2.0.
-    /// EV(allin) = equity × (pot + 2×heroStack) - (1-equity) × heroStack
+    /// EV = P(win) × ganancia_neta - P(lose) × pérdida
+    ///    = (equity/100) × (pot + stack) - (1 - equity/100) × stack
+    ///    = (equity/100) × (pot + 2×stack) - stack
     /// Si EV > 0, all-in es +EV independientemente de HandRank.
     /// </summary>
-    private static double CalculateAllinEV(double equity, decimal heroStack, decimal potSize)
+    internal static double CalculateAllinEV(double equity, decimal heroStack, decimal potSize)
     {
         if (heroStack <= 0 || potSize <= 0) return 0;
         double pot = (double)potSize;
         double stack = (double)heroStack;
-        double totalPotIfCalled = pot + 2 * stack;
-        return (equity / 100.0) * totalPotIfCalled - (1.0 - equity / 100.0) * stack;
+        double equityFraction = equity / 100.0;
+        return equityFraction * (pot + stack) - (1.0 - equityFraction) * stack;
     }
 
     /// <summary>
@@ -1367,5 +1423,34 @@ public class PostflopDecisionService
             baseFraction, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
 
         return dynamicBet;
+    }
+
+    /// <summary>
+    /// Obtiene el ajuste de thresholds según el tipo de rango determinado por RangePolarizer.
+    /// </summary>
+    private (double foldBelowAdjust, double thinValueAdjust) GetRangeBasedThresholdAdjustment(
+        string boardTexture, bool isInPosition, decimal potSize, decimal heroStack, BoardPosition street)
+    {
+        var textureCategory = ConvertToBoardTextureCategory(boardTexture);
+        double spr = potSize > 0 ? (double)(heroStack / potSize) : 10;
+        return _rangePolarizer.GetThresholdAdjustmentBySituation(textureCategory, isInPosition, spr, street);
+    }
+
+    /// <summary>
+    /// Convierte el string de board texture a BoardTextureCategory enum.
+    /// </summary>
+    private static BoardTextureCategory ConvertToBoardTextureCategory(string texture)
+    {
+        return texture?.ToLower() switch
+        {
+            "dry" => BoardTextureCategory.Dry,
+            "paired" => BoardTextureCategory.Paired,
+            "wet" => BoardTextureCategory.Wet,
+            "coordinated" => BoardTextureCategory.SemiWet,
+            "monotone" => BoardTextureCategory.Wet,
+            "semidry" => BoardTextureCategory.SemiDry,
+            "semiwet" => BoardTextureCategory.SemiWet,
+            _ => BoardTextureCategory.Dry
+        };
     }
 }

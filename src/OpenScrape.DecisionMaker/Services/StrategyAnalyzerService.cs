@@ -100,7 +100,7 @@ public class EquityVsOutcome
 /// <summary>
 /// Servicio que analiza las manos persistidas y calcula métricas de rendimiento.
 /// </summary>
-public class StrategyAnalyzerService
+public class StrategyAnalyzerService : Interfaces.IStrategyAnalyzerService
 {
     /// <summary>
     /// Analiza sesiones junto con sus manos (cargadas por separado desde Marten).

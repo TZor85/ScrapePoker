@@ -171,7 +171,8 @@ public class PairClassificationTests
         var profile = new StrategyProfile();
         var options = Options.Create(profile);
         var betSizing = new BetSizingService(options);
-        return new PostflopDecisionService(options, betSizing);
+        var rangePolarizer = new RangePolarizer();
+        return new PostflopDecisionService(options, betSizing, rangePolarizer);
     }
 
     [Test]

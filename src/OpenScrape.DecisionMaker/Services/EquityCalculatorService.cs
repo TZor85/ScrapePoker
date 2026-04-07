@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace OpenScrape.DecisionMaker.Services
 {
-    public class EquityCalculatorService
+    public class EquityCalculatorService : Interfaces.IEquityCalculatorService
     {
         private readonly MonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
