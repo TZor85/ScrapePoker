@@ -15,6 +15,7 @@ public class GameLoggerService
 
     private readonly IDocumentStore _store;
     private readonly ILogger<GameLoggerService> _logger;
+    private readonly SemaphoreSlim _dbWriteLock = new(1, 1);
     private GameSession? _currentSession;
     private HandRecord? _currentHand;
 
@@ -182,9 +183,12 @@ public class GameLoggerService
         _currentSession.EndTime = DateTime.UtcNow;
 
         // Actualizar acumuladores antes de truncar
-        _sessionTotalHands++;
+        Interlocked.Increment(ref _sessionTotalHands);
         if (_currentHand.Result != HandResult.Unknown)
-            _sessionTotalProfit += _currentHand.HeroStackEnd - _currentHand.HeroStackStart;
+        {
+            var profit = _currentHand.HeroStackEnd - _currentHand.HeroStackStart;
+            lock (_dbWriteLock) { _sessionTotalProfit += profit; }
+        }
 
         // Agregar a la lista en memoria y mantener solo las últimas N manos
         _currentSession.Hands.Add(_currentHand);
@@ -192,6 +196,7 @@ public class GameLoggerService
             _currentSession.Hands.RemoveAt(0);
 
         // Persistir la mano como documento Marten independiente
+        await _dbWriteLock.WaitAsync();
         try
         {
             await using var session = _store.LightweightSession();
@@ -201,6 +206,10 @@ public class GameLoggerService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al persistir HandRecord #{HandNumber}", _currentHand.HandNumber);
+        }
+        finally
+        {
+            _dbWriteLock.Release();
         }
 
         _currentHand = null;
@@ -220,6 +229,7 @@ public class GameLoggerService
         if (_currentHand != null)
             await FinalizeAndPersistHandAsync();
 
+        await _dbWriteLock.WaitAsync();
         try
         {
             await using var session = _store.LightweightSession();
@@ -234,6 +244,10 @@ public class GameLoggerService
         {
             _logger.LogError(ex, "Error al guardar sesión: {SessionId}",
                 _currentSession?.SessionId);
+        }
+        finally
+        {
+            _dbWriteLock.Release();
         }
     }
 

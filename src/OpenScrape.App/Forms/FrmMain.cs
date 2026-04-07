@@ -87,7 +87,7 @@ namespace OpenScrape.App
         private string _session = string.Empty;
         private IntPtr _handle;
         private User32.RECT _locWindowRect = new();
-        private bool _executeCapture;
+        private volatile bool _executeCapture;
         // Street flags derivados del state machine
         private bool IsPreflop => _gameLoopStateMachine.IsPreflop;
         private bool IsFlop => _gameLoopStateMachine.IsFlop;
@@ -341,7 +341,7 @@ namespace OpenScrape.App
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
             => _coordinator.DetectDonkBet(_playerGameState, maxBet, isHeroInPosition, currentSituation);
-        private bool _backgroundExecute;
+        private volatile bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
         private PokerCalculationResult _flopResult;

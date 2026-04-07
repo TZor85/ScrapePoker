@@ -97,7 +97,7 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
         var estimatedImprovement = CalculateEstimatedImprovement(adjustments);
         var estimatedNewExploitability = Math.Max(0, previousExploitability - estimatedImprovement);
 
-        _decisionsSinceLastCalibration = 0;
+        Interlocked.Exchange(ref _decisionsSinceLastCalibration, 0);
         _lastCalibrationTime = DateTime.UtcNow;
 
         return new CalibrationResult
@@ -127,7 +127,7 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
 
     public void RecordDecision()
     {
-        _decisionsSinceLastCalibration++;
+        Interlocked.Increment(ref _decisionsSinceLastCalibration);
     }
 
     public CalibrationPreview GetPreview(
