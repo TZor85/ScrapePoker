@@ -77,6 +77,7 @@ namespace OpenScrape.App
         private List<RegionTableMap>? _regionsTableMap;
         private readonly RegionLookupCache _regionLookupCache;
         private readonly CardCacheService _cardCacheService;
+        private readonly ICoordinateScaler _coordinateScaler;
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private readonly List<int> _colorDealer = new() { 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255 };
@@ -439,25 +440,25 @@ namespace OpenScrape.App
         #endregion
 
         #region [Services and UseCases]
-        private readonly GetWindowsScreenUseCase _useCase = new();
+        private readonly GetWindowsScreenUseCase _useCase;
         private readonly ActionScenarioUseCases _actionScenarioUseCases;
         private readonly RegionTableMapUseCases _regionTableMapUseCases;
         private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
-        private readonly ImageCropperService _imageCropperService = new();
+        private readonly ImageCropperService _imageCropperService;
         private List<CardDTO>? _cardsImages;
         private readonly IDocumentStore _dataBase;
         // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
-        private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase = new SetFlopForceBoardUseCase();
-        private static readonly IGetHashImageUseCase _getHashImageUseCase = new GetHashImageUseCase();
-        private static readonly IGetCropImageUseCase _getCropImageUseCase = new GetCropImageUseCase();
+        private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase;
+        private readonly IGetHashImageUseCase _getHashImageUseCase;
+        private readonly IGetCropImageUseCase _getCropImageUseCase;
         private readonly IGetCardsFlopUseCase _getCardsFlopUseCase;
         private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
-        private readonly IOutsCalculatorUseCase _outsCalculatorUseCase = new OutsCalculatorUseCase();
+        private readonly IOutsCalculatorUseCase _outsCalculatorUseCase;
         private readonly IPokerCalculator _pokerCalculator;
         private readonly IBetSizingService _betSizingService;
-        private readonly ColorDetectionService _colorDetectionService = new();
-        private readonly OcrService _ocrService = new();
+        private readonly ColorDetectionService _colorDetectionService;
+        private readonly OcrService _ocrService;
         private readonly CardUseCases _cardUseCases;
         private readonly GameLoggerService _gameLoggerService;
         private readonly DetectionLoggerService _detectionLoggerService;
@@ -493,7 +494,21 @@ namespace OpenScrape.App
                         IOpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
-                        CardCacheService cardCacheService)
+                        CardCacheService cardCacheService,
+                        ICoordinateScaler coordinateScaler,
+                        OcrService ocrService,
+                        ColorDetectionService colorDetectionService,
+                        ImageCropperService imageCropperService,
+                        DetectionLoggerService detectionLoggerService,
+                        ISetFlopForceBoardUseCase setFlopForceBoardUseCase,
+                        IGetHashImageUseCase getHashImageUseCase,
+                        IGetCropImageUseCase getCropImageUseCase,
+                        IOutsCalculatorUseCase outsCalculatorUseCase,
+                        GetWindowsScreenUseCase getWindowsScreenUseCase,
+                        IGetCardsFlopUseCase getCardsFlopUseCase,
+                        IGetCardsTurnUseCase getCardsTurnUseCase,
+                        IGetCardsRiverUseCase getCardsRiverUseCase,
+                        ISetPreflopActionUseCase setPreflopActionUseCase)
         {
             InitializeComponent();
 
@@ -507,7 +522,7 @@ namespace OpenScrape.App
             _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
             _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
-            _detectionLoggerService = new DetectionLoggerService();
+            _detectionLoggerService = detectionLoggerService ?? throw new ArgumentNullException(nameof(detectionLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
@@ -519,15 +534,23 @@ namespace OpenScrape.App
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
             _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
             _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
+            _coordinateScaler = coordinateScaler ?? throw new ArgumentNullException(nameof(coordinateScaler));
+            _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
+            _colorDetectionService = colorDetectionService ?? throw new ArgumentNullException(nameof(colorDetectionService));
+            _imageCropperService = imageCropperService ?? throw new ArgumentNullException(nameof(imageCropperService));
+            _setFlopForceBoardUseCase = setFlopForceBoardUseCase ?? throw new ArgumentNullException(nameof(setFlopForceBoardUseCase));
+            _getHashImageUseCase = getHashImageUseCase ?? throw new ArgumentNullException(nameof(getHashImageUseCase));
+            _getCropImageUseCase = getCropImageUseCase ?? throw new ArgumentNullException(nameof(getCropImageUseCase));
+            _outsCalculatorUseCase = outsCalculatorUseCase ?? throw new ArgumentNullException(nameof(outsCalculatorUseCase));
+            _useCase = getWindowsScreenUseCase ?? throw new ArgumentNullException(nameof(getWindowsScreenUseCase));
+            _getCardsFlopUseCase = getCardsFlopUseCase ?? throw new ArgumentNullException(nameof(getCardsFlopUseCase));
+            _getCardsTurnUseCase = getCardsTurnUseCase ?? throw new ArgumentNullException(nameof(getCardsTurnUseCase));
+            _getCardsRiverUseCase = getCardsRiverUseCase ?? throw new ArgumentNullException(nameof(getCardsRiverUseCase));
+            _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
             _lastChecked = new RadioButton();
-
-            _setPreflopActionUseCase = new SetPreflopActionUseCase(_actionScenarioUseCases);
-            _getCardsFlopUseCase = new GetCardsFlopUseCase(_cardCacheService);
-            _getCardsTurnUseCase = new GetCardsTurnUseCase(_cardCacheService);
-            _getCardsRiverUseCase = new GetCardsRiverUseCase(_cardCacheService);
 
             _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
@@ -4149,9 +4172,9 @@ namespace OpenScrape.App
                 }
 
                 // Inicializar CoordinateScaler en primera captura y guardar en configuración
-                if (!CoordinateScaler.IsInitialized)
+                if (!_coordinateScaler.IsInitialized)
                 {
-                    CoordinateScaler.Initialize(capturedBitmap.Width, capturedBitmap.Height);
+                    _coordinateScaler.Initialize(capturedBitmap.Width, capturedBitmap.Height);
                     SaveReferenceDimensionsToConfig(capturedBitmap.Width, capturedBitmap.Height);
                 }
 
@@ -4270,7 +4293,7 @@ namespace OpenScrape.App
             int currentWidth = _formImage.pbImage.Image.Width;
             int currentHeight = _formImage.pbImage.Image.Height;
 
-            return CoordinateScaler.ScaleRegion(
+            return _coordinateScaler.ScaleRegion(
                 region.PosX, region.PosY, region.Width, region.Height,
                 currentWidth, currentHeight);
         }

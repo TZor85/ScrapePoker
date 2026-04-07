@@ -9,11 +9,14 @@ namespace OpenScrape.App.Aplication.UseCases;
 public class GetCardsRiverUseCase : IGetCardsRiverUseCase
 {
     private readonly CardCacheService _cardCache;
-    private ImageCropperService _imageCropperService = new();
+    private readonly ImageCropperService _imageCropperService;
+    private readonly ICoordinateScaler _coordinateScaler;
 
-    public GetCardsRiverUseCase(CardCacheService cardCache)
+    public GetCardsRiverUseCase(CardCacheService cardCache, ImageCropperService imageCropperService, ICoordinateScaler coordinateScaler)
     {
         _cardCache = cardCache;
+        _imageCropperService = imageCropperService;
+        _coordinateScaler = coordinateScaler;
     }
 
     public async Task<GetCardsRiverUseCaseResponse> ExecuteAsync(GetCardsRiverUseCaseRequest request)
@@ -93,11 +96,11 @@ public class GetCardsRiverUseCase : IGetCardsRiverUseCase
         int posX, int posY, int width, int height,
         int currentWidth, int currentHeight)
     {
-        if (currentWidth <= 0 || currentHeight <= 0 || !CoordinateScaler.IsInitialized)
+        if (currentWidth <= 0 || currentHeight <= 0 || !_coordinateScaler.IsInitialized)
         {
             return (posX, posY, width, height);
         }
 
-        return CoordinateScaler.ScaleRegion(posX, posY, width, height, currentWidth, currentHeight);
+        return _coordinateScaler.ScaleRegion(posX, posY, width, height, currentWidth, currentHeight);
     }
 }

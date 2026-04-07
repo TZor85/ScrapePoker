@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Marten;
+using OpenScrape.App.Aplication;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
@@ -62,7 +63,6 @@ namespace OpenScrape.App
                     services.AddSingleton<BoardTextureAnalyzer>();
                     services.AddSingleton<IBoardTextureAnalyzer>(sp => sp.GetRequiredService<BoardTextureAnalyzer>());
                     services.AddSingleton<PreflopEquityCalculator>();
-                    services.AddSingleton<EquityCalculatorService>();
 
                     // Servicios DecisionMaker: clase concreta + forwarding por interfaz
                     services.AddSingleton<BetSizingService>();
@@ -100,11 +100,32 @@ namespace OpenScrape.App
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
 
+                    // Fase 4: CoordinateScaler como servicio inyectable
+                    services.AddSingleton<CoordinateScaler>();
+                    services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
+
+                    // Fase 3: Servicios antes creados con new
+                    services.AddSingleton<OcrService>();
+                    services.AddSingleton<ColorDetectionService>();
+                    services.AddSingleton<ImageCropperService>();
+                    services.AddSingleton<DetectionLoggerService>();
+                    services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
+                    services.AddSingleton<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
+                    services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
+                    services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
+                    services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
+                    services.AddSingleton<GetWindowsScreenUseCase>();
+
                     // Game logger y state machine
                     services.AddScoped<GameLoggerService>();
                     services.AddSingleton<GameLoopStateMachine>();
                     services.AddSingleton<RegionLookupCache>();
                     services.AddSingleton<CardCacheService>();
+
+                    // UseCases de cartas (necesitan CardCacheService + ICoordinateScaler)
+                    services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
+                    services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
+                    services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();
@@ -121,7 +142,8 @@ namespace OpenScrape.App
                 int.TryParse(captureSettings["ReferenceImageHeight"], out var refHeight) &&
                 refWidth > 0 && refHeight > 0)
             {
-                CoordinateScaler.Initialize(refWidth, refHeight);
+                var scaler = host.Services.GetRequiredService<ICoordinateScaler>();
+                scaler.Initialize(refWidth, refHeight);
             }
 
             // Obtener el formulario principal desde un scope para resolver dependencias scoped
