@@ -1,3 +1,4 @@
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.Domain.ValueObjects;
@@ -108,6 +109,63 @@ public class VillainRange
             RangePercentage = baseRange.RangePercentage * positionMultiplier,
             Hands = adjustedHands
         };
+    }
+
+    /// <summary>
+    /// Obtiene el rango ajustado por posición del villain Y stats observados del oponente.
+    /// VPIP del villain escala el ancho del rango: VPIP alto → más amplio, VPIP bajo → más estrecho.
+    /// 3Bet% ajusta rangos de 3bet/4bet.
+    /// </summary>
+    public static VillainRange? GetForSituation(HandSituation situation, TablePosition villainPosition,
+        OpponentProfile? opponentProfile)
+    {
+        var baseRange = GetForSituation(situation, villainPosition);
+        if (baseRange == null || opponentProfile == null || !opponentProfile.HasReliablePreflopData)
+            return baseRange;
+
+        // Calcular multiplier basado en VPIP observado vs VPIP esperado del rango
+        double vpipMultiplier = CalculateVpipMultiplier(baseRange.RangePercentage, opponentProfile.VPIP);
+
+        // 3Bet% ajusta rangos de 3bet/4bet
+        double threeBetMultiplier = 1.0;
+        if (situation is HandSituation.OpenRaiseVs3Bet or HandSituation.VsSqueeze &&
+            opponentProfile.ThreeBetPct > 0)
+        {
+            double expected3Bet = 6.0; // 3bet promedio estándar
+            threeBetMultiplier = Math.Clamp(opponentProfile.ThreeBetPct / expected3Bet, 0.5, 2.0);
+        }
+
+        double combinedMultiplier = vpipMultiplier * threeBetMultiplier;
+        if (Math.Abs(combinedMultiplier - 1.0) < 0.05)
+            return baseRange;
+
+        var adjustedHands = new Dictionary<string, double>();
+        foreach (var (hand, freq) in baseRange.Hands)
+        {
+            adjustedHands[hand] = Math.Min(1.0, freq * combinedMultiplier);
+        }
+
+        return new VillainRange
+        {
+            Name = $"{baseRange.Name} (VPIP={opponentProfile.VPIP:F0}%)",
+            RangePercentage = baseRange.RangePercentage * combinedMultiplier,
+            Hands = adjustedHands
+        };
+    }
+
+    /// <summary>
+    /// Calcula multiplier de rango basado en VPIP observado vs VPIP esperado.
+    /// VPIP 25% con rango base 25% → 1.0x (neutro).
+    /// VPIP 40% con rango base 25% → ~1.4x (villain juega más manos).
+    /// VPIP 15% con rango base 25% → ~0.7x (villain juega menos).
+    /// Clamped a [0.5, 2.0] para evitar extremos.
+    /// </summary>
+    internal static double CalculateVpipMultiplier(double baseRangePercentage, double observedVPIP)
+    {
+        // VPIP esperado ≈ rango base (si el rango dice 25%, asumimos VPIP ~25%)
+        double expectedVPIP = Math.Max(baseRangePercentage, 10.0);
+        double ratio = observedVPIP / expectedVPIP;
+        return Math.Clamp(ratio, 0.5, 2.0);
     }
 
     private static VillainRange CreateRange(string name, double pct, Dictionary<string, double> hands)

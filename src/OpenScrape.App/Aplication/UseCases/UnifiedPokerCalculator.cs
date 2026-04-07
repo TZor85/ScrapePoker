@@ -18,7 +18,7 @@ namespace OpenScrape.App.Aplication.UseCases
         PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
             bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null,
-            TablePosition villainPosition = TablePosition.None);
+            TablePosition villainPosition = TablePosition.None, OpponentProfile? opponentProfile = null);
     }
 
     public class PokerCalculationResult
@@ -79,7 +79,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
             bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0, string? handSituation = null,
-            TablePosition villainPosition = TablePosition.None)
+            TablePosition villainPosition = TablePosition.None, OpponentProfile? opponentProfile = null)
         {
             var result = new PokerCalculationResult
             {
@@ -93,7 +93,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 result.PotOddsPercentage = CalculatePotOddsPercentage(currentPotSize, betToCall);
 
                 // 2. Calcular equity (con rango del villano si hay situación definida)
-                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations, handSituation, villainPosition);
+                result.EquityPercentage = CalculateEquity(playerHand, communityCards, numOpponents, monteCarloIterations, handSituation, villainPosition, opponentProfile);
 
                 // 3. Calcular outs y draws
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
@@ -191,16 +191,18 @@ namespace OpenScrape.App.Aplication.UseCases
 
         private double CalculateEquity(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
             int numOpponents, int? monteCarloIterations, string? handSituation = null,
-            TablePosition villainPosition = TablePosition.None)
+            TablePosition villainPosition = TablePosition.None, OpponentProfile? opponentProfile = null)
         {
             if (communityCards.Count == 0) // Preflop
             {
-                // Obtener rango del villano: ajustado por situación y posición del villain
+                // Obtener rango del villano: ajustado por situación, posición y stats observados
                 VillainRange? preflopRange = null;
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var preflopSituation))
-                    preflopRange = villainPosition != TablePosition.None
-                        ? VillainRange.GetForSituation(preflopSituation, villainPosition)
-                        : VillainRange.GetForSituation(preflopSituation);
+                    preflopRange = opponentProfile != null
+                        ? VillainRange.GetForSituation(preflopSituation, villainPosition, opponentProfile)
+                        : villainPosition != TablePosition.None
+                            ? VillainRange.GetForSituation(preflopSituation, villainPosition)
+                            : VillainRange.GetForSituation(preflopSituation);
                 preflopRange ??= VillainRange.GetForSituation(HandSituation.OpenRaise, villainPosition);
 
                 if (preflopRange != null)
@@ -228,13 +230,15 @@ namespace OpenScrape.App.Aplication.UseCases
                 if (_equityCache.TryGetValue(cacheKey, out double cached))
                     return cached;
 
-                // Obtener rango del villano según la situación y posición
+                // Obtener rango del villano según situación, posición y stats observados
                 VillainRange? villainRange = null;
                 if (handSituation != null && Enum.TryParse<HandSituation>(handSituation, out var situation))
                 {
-                    villainRange = villainPosition != TablePosition.None
-                        ? VillainRange.GetForSituation(situation, villainPosition)
-                        : VillainRange.GetForSituation(situation);
+                    villainRange = opponentProfile != null
+                        ? VillainRange.GetForSituation(situation, villainPosition, opponentProfile)
+                        : villainPosition != TablePosition.None
+                            ? VillainRange.GetForSituation(situation, villainPosition)
+                            : VillainRange.GetForSituation(situation);
                 }
 
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(

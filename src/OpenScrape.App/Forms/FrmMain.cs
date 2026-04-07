@@ -1429,7 +1429,8 @@ namespace OpenScrape.App
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
                 villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString());
+                handSituation: _playerGameState.HandSituation.ToString(),
+                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
 
             _flopResult = result;
             UpdateOverlayWithPotOdds(result);
@@ -1556,7 +1557,8 @@ namespace OpenScrape.App
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
                 villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString());
+                handSituation: _playerGameState.HandSituation.ToString(),
+                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
 
             _turnResult = result;
 
@@ -1637,7 +1639,8 @@ namespace OpenScrape.App
                 isInPosition: _playerGameState.IsInPosition,
                 heroStack: _playerGameState.HeroStack,
                 villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString());
+                handSituation: _playerGameState.HandSituation.ToString(),
+                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
 
             _riverResult = result;
 
@@ -1804,7 +1807,8 @@ namespace OpenScrape.App
                         numOpponents: numOpp,
                         heroStack: _playerGameState.HeroStack,
                         villainStack: GetVillainStack(),
-                        handSituation: _playerGameState.HandSituation.ToString());
+                        handSituation: _playerGameState.HandSituation.ToString(),
+                        opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
                     preflopEquity = preflopResult.EquityPercentage;
 
                     // Ajuste posicional: posiciones tardías tienen ventaja de información
