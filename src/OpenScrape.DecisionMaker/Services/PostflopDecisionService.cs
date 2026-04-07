@@ -421,6 +421,19 @@ public class PostflopDecisionService : IPostflopDecisionService
                     $"Push +EV — SPR corto (EV={allinEV:F1}, equity={effectiveEquity:F1}%)");
         }
 
+        // C-bet mixing: agresor con equity media puede chequear para proteger checking range
+        // Solo HU (no multiway) y rango entre FoldBelow y ThinValueAbove
+        if (heroIsAggressor && !isMultiway &&
+            effectiveEquity >= adjustedFoldBelow && effectiveEquity < adjustedThinValueAbove)
+        {
+            double cbetFreq = GetCbetFrequency(street);
+            if (cbetFreq > 0 && Random.Shared.NextDouble() >= cbetFreq)
+            {
+                return new PostflopDecisionResult("Check",
+                    $"Check — protección de range como agresor ({1 - cbetFreq:P0} check freq)");
+            }
+        }
+
         return HandleNoBet(effectiveEquity, thresholds, isInPosition, boardTexture,
             street, previousStreetBet, heroIsAggressor, heroHandRank, isMultiway,
             villainAggressorCheckedPreviousStreet, heroStack, potSize,
@@ -1066,16 +1079,18 @@ public class PostflopDecisionService : IPostflopDecisionService
 
     /// <summary>
     /// Calcula EV de ir all-in vs fold. Usado cuando SPR &lt; 2.0.
-    /// EV(allin) = equity × (pot + 2×heroStack) - (1-equity) × heroStack
+    /// EV = P(win) × ganancia_neta - P(lose) × pérdida
+    ///    = (equity/100) × (pot + stack) - (1 - equity/100) × stack
+    ///    = (equity/100) × (pot + 2×stack) - stack
     /// Si EV > 0, all-in es +EV independientemente de HandRank.
     /// </summary>
-    private static double CalculateAllinEV(double equity, decimal heroStack, decimal potSize)
+    internal static double CalculateAllinEV(double equity, decimal heroStack, decimal potSize)
     {
         if (heroStack <= 0 || potSize <= 0) return 0;
         double pot = (double)potSize;
         double stack = (double)heroStack;
-        double totalPotIfCalled = pot + 2 * stack;
-        return (equity / 100.0) * totalPotIfCalled - (1.0 - equity / 100.0) * stack;
+        double equityFraction = equity / 100.0;
+        return equityFraction * (pot + stack) - (1.0 - equityFraction) * stack;
     }
 
     /// <summary>

@@ -39,6 +39,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public double LoseProbability { get; set; }
             public double Equity { get; set; }
             public int Simulations { get; set; }
+            public int SkippedSimulations { get; set; }
             public Dictionary<HandRank, int> HandDistribution { get; set; } = new();
         }
 
@@ -366,6 +367,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 LoseProbability = (double)(effectiveCount - totalWins - totalTies) / effectiveCount,
                 Equity = (double)(totalWins + totalTies * 0.5) / effectiveCount,
                 Simulations = effectiveCount,
+                SkippedSimulations = totalSkipped,
                 HandDistribution = distribution
             };
         }
@@ -537,7 +539,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 return false;
             }
 
-            for (int attempt = 0; attempt < 10; attempt++)
+            for (int attempt = 0; attempt < 20; attempt++)
             {
                 double roll = Random.Shared.NextDouble() * totalWeight;
                 double cumulative = 0;

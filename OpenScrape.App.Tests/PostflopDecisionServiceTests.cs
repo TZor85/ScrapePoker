@@ -3776,4 +3776,79 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    // ─── BF1 — CalculateAllinEV fórmula corregida ─────────────────
+
+    #region BF1 — CalculateAllinEV
+
+    [Test]
+    public void CalculateAllinEV_EquityBaja_RetornaNegativo()
+    {
+        // equity 30%, stack 80, pot 100
+        // EV = 0.30 × (100+80) - 0.70 × 80 = 54 - 56 = -2.0
+        double ev = PostflopDecisionService.CalculateAllinEV(30, 80m, 100m);
+        Assert.That(ev, Is.EqualTo(-2.0).Within(0.01));
+    }
+
+    [Test]
+    public void CalculateAllinEV_EquityAlta_RetornaPositivo()
+    {
+        // equity 65%, stack 50, pot 150
+        // EV = 0.65 × (150+50) - 0.35 × 50 = 130 - 17.5 = +112.5
+        double ev = PostflopDecisionService.CalculateAllinEV(65, 50m, 150m);
+        Assert.That(ev, Is.EqualTo(112.5).Within(0.01));
+    }
+
+    [Test]
+    public void CalculateAllinEV_Breakeven_RetornaCero()
+    {
+        // Breakeven: E = 100 × S / (P + 2S) = 100 × 100 / 300 = 33.333...%
+        double ev = PostflopDecisionService.CalculateAllinEV(100.0 / 3.0, 100m, 100m);
+        Assert.That(ev, Is.EqualTo(0).Within(0.1));
+    }
+
+    [Test]
+    public void CalculateAllinEV_StackCero_RetornaCero()
+    {
+        double ev = PostflopDecisionService.CalculateAllinEV(50, 0m, 100m);
+        Assert.That(ev, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void CalculateAllinEV_PotCero_RetornaCero()
+    {
+        double ev = PostflopDecisionService.CalculateAllinEV(50, 100m, 0m);
+        Assert.That(ev, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void CalculateAllinEV_Equity100_RetornaPotMasStack()
+    {
+        // equity 100% → ganancia neta = pot + stack = 200 + 100 = 300
+        // EV = 1.0 × (200+100) - 0.0 × 100 = 300
+        double ev = PostflopDecisionService.CalculateAllinEV(100, 100m, 200m);
+        Assert.That(ev, Is.EqualTo(300).Within(0.01));
+    }
+
+    [Test]
+    public void CalculateAllinEV_Equity0_RetornaMenosStack()
+    {
+        // equity 0% → EV = 0 - 1.0 × stack = -100
+        double ev = PostflopDecisionService.CalculateAllinEV(0, 100m, 200m);
+        Assert.That(ev, Is.EqualTo(-100).Within(0.01));
+    }
+
+    [Test]
+    public void CalculateAllinEV_NoSobreestima_FormulaCorrecta()
+    {
+        // Verificar que la fórmula corregida no sobreestima
+        // equity 50%, stack 100, pot 200
+        // Correcto: 0.5 × (200+100) - 0.5 × 100 = 150 - 50 = +100
+        // Bug anterior: 0.5 × (200+200) - 0.5 × 100 = 200 - 50 = +150 (sobreestimaba)
+        double ev = PostflopDecisionService.CalculateAllinEV(50, 100m, 200m);
+        Assert.That(ev, Is.EqualTo(100).Within(0.01),
+            "Fórmula correcta: EV = equity×(pot+stack) - (1-equity)×stack");
+    }
+
+    #endregion
 }
