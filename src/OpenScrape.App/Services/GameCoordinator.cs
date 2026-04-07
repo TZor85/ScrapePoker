@@ -103,6 +103,14 @@ public class GameCoordinator : IGameCoordinator
         return profile.Type;
     }
 
+    public OpponentProfile? GetActiveVillainProfile(PlayerGameState state)
+    {
+        var villainId = GetActiveVillainId(state);
+        if (villainId == "Unknown") return null;
+        var profile = _opponentTracker.GetProfile(villainId);
+        return profile.HasReliablePreflopData ? profile : null;
+    }
+
     public void TrackVillainPostflopAction(PlayerGameState state, decimal maxBet, bool isPreflopAggressor, bool? heroIsInPosition = null)
     {
         var villainId = GetActiveVillainId(state);

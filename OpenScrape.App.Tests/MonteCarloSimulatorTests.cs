@@ -1,4 +1,5 @@
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
@@ -610,5 +611,103 @@ public class VillainRangeTests
                     $"Frecuencia inválida para {hand} en {situation}: {freq}");
             }
         }
+    }
+
+    // ─── H3 — Rangos adaptativos por OpponentProfile ─────────────
+
+    [Test]
+    public void VpipMultiplier_VPIPNormal_RetornaCercaDeUno()
+    {
+        // Rango base 25%, VPIP observado 25% → multiplier ≈ 1.0
+        double mult = VillainRange.CalculateVpipMultiplier(25.0, 25.0);
+        Assert.That(mult, Is.EqualTo(1.0).Within(0.01));
+    }
+
+    [Test]
+    public void VpipMultiplier_VPIPAlto_RetornaMayorQueUno()
+    {
+        // Rango base 25%, VPIP observado 40% → multiplier = 40/25 = 1.6
+        double mult = VillainRange.CalculateVpipMultiplier(25.0, 40.0);
+        Assert.That(mult, Is.EqualTo(1.6).Within(0.01));
+    }
+
+    [Test]
+    public void VpipMultiplier_VPIPBajo_RetornaMenorQueUno()
+    {
+        // Rango base 25%, VPIP observado 15% → multiplier = 15/25 = 0.6
+        double mult = VillainRange.CalculateVpipMultiplier(25.0, 15.0);
+        Assert.That(mult, Is.EqualTo(0.6).Within(0.01));
+    }
+
+    [Test]
+    public void VpipMultiplier_ClampMaximo_NoExcede2()
+    {
+        // VPIP 80% con rango 10% → ratio 8.0 → clamped a 2.0
+        double mult = VillainRange.CalculateVpipMultiplier(10.0, 80.0);
+        Assert.That(mult, Is.EqualTo(2.0));
+    }
+
+    [Test]
+    public void VpipMultiplier_ClampMinimo_NoMenorQue05()
+    {
+        // VPIP 5% con rango 25% → ratio 0.2 → clamped a 0.5
+        double mult = VillainRange.CalculateVpipMultiplier(25.0, 5.0);
+        Assert.That(mult, Is.EqualTo(0.5));
+    }
+
+    [Test]
+    public void GetForSituation_ConProfile_AjustaRangoPorVPIP()
+    {
+        var profile = new OpponentProfile
+        {
+            HandsPlayed = 50,
+            TimesVoluntarilyPutMoneyIn = 20 // VPIP = 40%
+        };
+
+        var baseRange = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.CutOff);
+        var adaptiveRange = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.CutOff, profile);
+
+        Assert.That(adaptiveRange, Is.Not.Null);
+        Assert.That(adaptiveRange!.RangePercentage, Is.GreaterThan(baseRange!.RangePercentage),
+            "VPIP 40% con rango base 25% → rango adaptativo más amplio");
+    }
+
+    [Test]
+    public void GetForSituation_ConProfileSinDatos_RetornaRangoBase()
+    {
+        var profile = new OpponentProfile { HandsPlayed = 5 }; // < 10, no fiable
+
+        var baseRange = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.CutOff);
+        var adaptiveRange = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.CutOff, profile);
+
+        // Sin datos fiables → retorna rango base sin cambios
+        Assert.That(adaptiveRange!.RangePercentage, Is.EqualTo(baseRange!.RangePercentage));
+    }
+
+    [Test]
+    public void GetForSituation_3Bet_AjustaPor3BetPct()
+    {
+        var profile = new OpponentProfile
+        {
+            HandsPlayed = 50,
+            TimesVoluntarilyPutMoneyIn = 15, // VPIP 30%
+            TimesThreeBet = 8                 // 3Bet% = 16% (alto, ~2.7x del promedio 6%)
+        };
+
+        var baseRange = VillainRange.GetForSituation(HandSituation.OpenRaiseVs3Bet, TablePosition.Button);
+        var adaptiveRange = VillainRange.GetForSituation(HandSituation.OpenRaiseVs3Bet, TablePosition.Button, profile);
+
+        Assert.That(adaptiveRange, Is.Not.Null);
+        Assert.That(adaptiveRange!.RangePercentage, Is.GreaterThan(baseRange!.RangePercentage),
+            "3Bet% 16% (alto) → rango de 3bettor más amplio");
+    }
+
+    [Test]
+    public void GetForSituation_ProfileNull_RetornaRangoConPosicion()
+    {
+        var range = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.Button, null);
+        var posRange = VillainRange.GetForSituation(HandSituation.OpenRaise, TablePosition.Button);
+
+        Assert.That(range!.RangePercentage, Is.EqualTo(posRange!.RangePercentage));
     }
 }

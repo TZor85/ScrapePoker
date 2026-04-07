@@ -46,6 +46,7 @@ public interface IGameCoordinator
     // Helpers
     BetSizeCategory GetOpponentBetSize(decimal maxBet, decimal potSize);
     OpponentType GetVillainType(PlayerGameState state, bool? heroIsInPosition = null);
+    OpponentProfile? GetActiveVillainProfile(PlayerGameState state);
     void TrackVillainPostflopAction(PlayerGameState state, decimal maxBet, bool isPreflopAggressor, bool? heroIsInPosition = null);
     decimal GetVillainStack(PlayerGameState state);
     string GetActiveVillainId(PlayerGameState state);
