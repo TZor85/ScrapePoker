@@ -117,14 +117,14 @@ namespace OpenScrape.DecisionMaker.Algorithms
             }
 
             // 7. Backdoor draws (solo en flop — necesitan 2 cartas runner-runner)
-            int backdoorOuts = 0;
+            double backdoorOuts = 0;
             if (communityCards.Count == 3)
             {
                 backdoorOuts = CalculateBackdoorOuts(allCards, myCards, flushOuts > 0, straightCompletingRanks.Count > 0, result);
             }
 
             // Total = flush + straight - overlap + overcards + backdoor (sin doble conteo)
-            result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts + backdoorOuts;
+            result.TotalOuts = flushOuts + straightOuts - overlapOuts + overcardOuts + (int)Math.Round(backdoorOuts);
 
             // Calcular tainted outs: outs que también mejoran la mano del villano
             var allOutCards = new HashSet<CardDataOuts>(CardComparer.Instance);
@@ -181,11 +181,11 @@ namespace OpenScrape.DecisionMaker.Algorithms
         /// Backdoor straight: 3 cartas dentro de ventana de 5 → ~1 out implícito.
         /// Solo se cuentan si NO hay ya un draw principal del mismo tipo.
         /// </summary>
-        private int CalculateBackdoorOuts(
+        private double CalculateBackdoorOuts(
             List<CardDataOuts> allCards, List<CardDataOuts> myCards,
             bool hasFlushDraw, bool hasStraightDraw, OutsResult result)
         {
-            int backdoorOuts = 0;
+            double backdoorOuts = 0;
 
             // Backdoor flush: 3 cartas del mismo palo (no si ya hay flush draw o mano hecha)
             bool hasMadeForBD = HasMadeFlush(allCards) || HasFiveCardStraight(
@@ -204,7 +204,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 {
                     result.HasBackdoorFlushDraw = true;
                     result.DrawTypes.Add("Backdoor Flush Draw");
-                    backdoorOuts += 1; // ~1.5 outs implícitos, redondeado a 1
+                    backdoorOuts += PokerConstants.BackdoorFlushImpliedOuts;
                 }
             }
 
@@ -246,7 +246,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 {
                     result.HasBackdoorStraightDraw = true;
                     result.DrawTypes.Add("Backdoor Straight Draw");
-                    backdoorOuts += 1; // ~1 out implícito
+                    backdoorOuts += PokerConstants.BackdoorStraightImpliedOuts;
                 }
             }
 
