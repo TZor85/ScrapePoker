@@ -3946,4 +3946,67 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    #region L5 — Combo Draw Bonus por Textura
+
+    [Test]
+    public void ComboDraw_DryBoard_BonusAumentado()
+    {
+        // En Dry board, combo draw bonus = 6.0 × 1.2 = 7.2
+        // equity 40 + 7.2 = 47.2 > FoldBelow 45 → sale de low equity
+        var result = _service.DetermineAction(
+            equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 14, hasComboDraw: true);
+
+        Assert.That(result.IsBluff, Is.False,
+            "Dry board: bonus 7.2 saca de low equity (40+7.2=47.2 > 45)");
+    }
+
+    [Test]
+    public void ComboDraw_TexturaDiferente_BonusDiferente()
+    {
+        // Dry (×1.2 = +7.2) vs Monotone (×0.5 = +3.0): con equity borderline,
+        // Dry produce effectiveEquity más alta que Monotone
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        // equity 40, FoldBelow 45
+        // Dry: 40 + 7.2 = 47.2 → sobre umbral
+        // Monotone: 40 + 3.0 = 43.0 → bajo umbral
+        var resultDry = service.DetermineAction(
+            equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 14, hasComboDraw: true);
+
+        var resultMonotone = service.DetermineAction(
+            equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Monotone", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 14, hasComboDraw: true);
+
+        // Dry debería tener acción más agresiva que Monotone
+        Assert.That(resultDry.Action, Is.Not.EqualTo(resultMonotone.Action),
+            "Dry board (bonus ×1.2) produce acción distinta que Monotone (×0.5)");
+    }
+
+    [Test]
+    public void ComboDraw_SinComboDraw_TexturaNoAfecta()
+    {
+        // hasComboDraw = false → sin bonus, textura no importa
+        var resultDry = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 0, hasComboDraw: false);
+
+        var resultWet = _service.DetermineAction(
+            equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 0, hasComboDraw: false);
+
+        // Sin combo draw, ambos deberían estar en low equity (42 < 45)
+        Assert.That(resultDry.Action, Is.EqualTo(resultWet.Action),
+            "Sin combo draw → textura no afecta al bonus (no hay bonus)");
+    }
+
+    #endregion
 }

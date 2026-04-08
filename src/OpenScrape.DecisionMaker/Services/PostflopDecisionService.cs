@@ -165,8 +165,20 @@ public class PostflopDecisionService : IPostflopDecisionService
 
         // Combo draw bonus: flush + straight draw = semi-bluff premium.
         // No aplicar si hero ya completó el draw (bonus es para draws pendientes).
+        // L5: Ajustar por textura del board (Dry más valioso, Wet/Monotone menos).
         if (hasComboDraw && street != BoardPosition.River && heroHandRank < HandRank.Straight)
-            effectiveEquity += _profile.ComboDrawEquityBonus;
+        {
+            double comboTextureMultiplier = boardTexture switch
+            {
+                "Dry" => _profile.ComboDrawTextureDry,
+                "SemiDry" => _profile.ComboDrawTextureSemiDry,
+                "SemiWet" => _profile.ComboDrawTextureSemiWet,
+                "Wet" => _profile.ComboDrawTextureWet,
+                "Monotone" => _profile.ComboDrawTextureMonotone,
+                _ => 1.0
+            };
+            effectiveEquity += _profile.ComboDrawEquityBonus * comboTextureMultiplier;
+        }
 
         // Tope de equity para APOSTAR en boards con draw completado que hero no tiene.
         // Aplicar ANTES de reverse implied odds para que el cap sea más conservador.
