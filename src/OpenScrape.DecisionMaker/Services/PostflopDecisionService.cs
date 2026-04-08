@@ -61,8 +61,8 @@ public class PostflopDecisionService : IPostflopDecisionService
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Delega a DangerPenaltyCalculator.
     /// </summary>
-    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false, HandRank heroHandRank = HandRank.HighCard)
-        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker, heroHandRank);
+    public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false, HandRank heroHandRank = HandRank.HighCard, bool heroCompletedFlush = false, bool heroCompletedStraight = false)
+        => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker, heroHandRank, heroCompletedFlush, heroCompletedStraight);
 
     /// <summary>
     /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
@@ -153,9 +153,13 @@ public class PostflopDecisionService : IPostflopDecisionService
         double impliedOddsFactor = CalculateImpliedOddsFactor(
             street, isInPosition, hasFlushDraw, heroStack, potSize, numOpponents);
 
+        // L3: Detectar si hero completó flush/straight para skip danger penalties
+        bool heroCompletedFlush = heroHandRank >= HandRank.Flush;
+        bool heroCompletedStraight = heroHandRank >= HandRank.Straight && heroHandRank < HandRank.Flush;
+
         // Aplicar penalización por carta peligrosa (escalada por street, blocker granular, mano hero)
         double dangerPenalty = boardChange != null
-            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street, heroHasNutBlocker, heroHandRank)
+            ? CalculateDangerPenalty(equity, boardChange, heroBlocksDangerSuit, isFacingBet, street, heroHasNutBlocker, heroHandRank, heroCompletedFlush, heroCompletedStraight)
             : 0;
         double effectiveEquity = equity - dangerPenalty;
 

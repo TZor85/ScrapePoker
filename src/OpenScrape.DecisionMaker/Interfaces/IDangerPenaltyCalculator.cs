@@ -14,5 +14,7 @@ public interface IDangerPenaltyCalculator
         bool heroBlocksDangerSuit, bool isFacingBet,
         StrategyProfile profile, BoardPosition street = BoardPosition.Turn,
         bool heroHasNutBlocker = false,
-        HandRank heroHandRank = HandRank.HighCard);
+        HandRank heroHandRank = HandRank.HighCard,
+        bool heroCompletedFlush = false,
+        bool heroCompletedStraight = false);
 }

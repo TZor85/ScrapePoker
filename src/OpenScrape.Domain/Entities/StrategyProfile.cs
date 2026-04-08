@@ -70,6 +70,9 @@ public class StrategyProfile
     public double DangerNonNutBlockerReduction { get; set; } = 0.55;
     // Board con 4+ cartas del palo: flush casi segura, blocker menos relevante
     public double DangerBlockerBoard4FlushReduction { get; set; } = 0.7;
+    // Blocker reduction para flush DRAW (no completado) — L2
+    public double DangerFlushDrawNutBlockerReduction { get; set; } = 0.50;
+    public double DangerFlushDrawNonNutBlockerReduction { get; set; } = 0.70;
     // Escalado de danger penalty por street: flop más riesgo (2 calles por venir), river menos (definitivo)
     public double DangerPenaltyFlopMultiplier { get; set; } = 1.3;
     public double DangerPenaltyRiverMultiplier { get; set; } = 0.8;
