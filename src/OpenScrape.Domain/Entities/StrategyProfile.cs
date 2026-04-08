@@ -154,6 +154,12 @@ public class StrategyProfile
     // Combo Draw Bonus (usado en PostflopDecisionService)
     // Bonus de equity para combo draws (flush + straight draw) como semi-bluff premium
     public double ComboDrawEquityBonus { get; set; } = 6.0;
+    // Multiplicadores de textura para combo draw bonus (L5)
+    public double ComboDrawTextureDry { get; set; } = 1.2;
+    public double ComboDrawTextureSemiDry { get; set; } = 1.0;
+    public double ComboDrawTextureSemiWet { get; set; } = 0.8;
+    public double ComboDrawTextureWet { get; set; } = 0.6;
+    public double ComboDrawTextureMonotone { get; set; } = 0.5;
 
     // Tainted Outs (usado en OutsCalculator)
     // Descuento por out que también mejora la mano del villano (0.5 = vale la mitad)
