@@ -122,6 +122,9 @@ public class StrategyProfile
     public double MultiwayStreetMultiplierTurn { get; set; } = 1.2;
     public double MultiwayStreetMultiplierRiver { get; set; } = 1.4;
 
+    // Factor de amortiguación para penalty cuadrático OOP multiway (rango: 0.3-0.7)
+    public double MultiwayOOPQuadraticDamping { get; set; } = 0.5;
+
     // 3-Bet/4-Bet pot postflop adjustments (rango villano más estrecho)
     public double ThreeBetPostflopFoldIncrease { get; set; } = 5.0;
     public double ThreeBetPostflopValueIncrease { get; set; } = 3.0;
