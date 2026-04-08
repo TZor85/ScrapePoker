@@ -1174,16 +1174,25 @@ namespace OpenScrape.App
             // Detectar villanos que foldearon mid-hand (actualiza Active/numOpponents)
             _tableLayout.DetectFoldedPlayers(_formImage.pbImage.Image, _playerGameState, _gameLoopStateMachine.CurrentState);
 
-            // Detectar transición a nueva calle verificando si hay carta visible en el board
+            // Detectar transición a nueva calle verificando cartas visibles en el board.
+            // Validar con conteo REAL de cartas (no hardcodeado) para evitar falsos positivos.
             if (_gameLoopStateMachine.CurrentState == GameState.FlopAction)
             {
-                if (IsBoardCardVisible("Card4"))
-                    _gameLoopStateMachine.TryTransition(GameState.TurnDetected, 4);
-                else
+                bool card4Visible = IsBoardCardVisible("Card4");
+                bool transitioned = false;
+
+                if (card4Visible)
+                {
+                    int visibleCards = CountVisibleBoardCards();
+                    transitioned = _gameLoopStateMachine.TryTransition(GameState.TurnDetected, visibleCards);
+                    if (!transitioned)
+                        LogInformation($"Transición a Turn bloqueada: Card4 visible pero solo {visibleCards} cartas detectadas (necesita 4)");
+                }
+
+                if (!transitioned)
                 {
                     // Misma calle, reprocessar flop con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
-                    // Actualizar bet size del villano antes de reprocessar (puede haber raise)
                     var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
                     _postflopContext.VillainBetSizeFlop = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
                     _postflopContext.VillainBetFlop = reprocessMaxBet > 0;
@@ -1193,13 +1202,21 @@ namespace OpenScrape.App
 
             if (_gameLoopStateMachine.CurrentState == GameState.TurnAction)
             {
-                if (IsBoardCardVisible("Card5"))
-                    _gameLoopStateMachine.TryTransition(GameState.RiverDetected, 5);
-                else
+                bool card5Visible = IsBoardCardVisible("Card5");
+                bool transitioned = false;
+
+                if (card5Visible)
+                {
+                    int visibleCards = CountVisibleBoardCards();
+                    transitioned = _gameLoopStateMachine.TryTransition(GameState.RiverDetected, visibleCards);
+                    if (!transitioned)
+                        LogInformation($"Transición a River bloqueada: Card5 visible pero solo {visibleCards} cartas detectadas (necesita 5)");
+                }
+
+                if (!transitioned)
                 {
                     // Misma calle, reprocessar turn con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
-                    // Actualizar bet size del villano antes de reprocessar (puede haber raise)
                     var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
                     _postflopContext.VillainBetSizeTurn = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
                     _postflopContext.VillainBetTurn = reprocessMaxBet > 0;
@@ -1260,6 +1277,24 @@ namespace OpenScrape.App
             // Umbral de confianza: >80% indica carta real, <80% indica fondo de mesa
             LogDebug($"IsBoardCardVisible({cardRegionName}): bestMatch={bestMatch:F1}%, visible={bestMatch > 80.0}");
             return bestMatch > 80.0;
+        }
+
+        /// <summary>
+        /// Cuenta cuántas cartas del board son realmente visibles (Card1 a Card5).
+        /// Las cartas son secuenciales: si Card3 no es visible, Card4/5 tampoco.
+        /// </summary>
+        private int CountVisibleBoardCards()
+        {
+            int count = 0;
+            string[] cardRegions = { "Card1", "Card2", "Card3", "Card4", "Card5" };
+            foreach (var region in cardRegions)
+            {
+                if (IsBoardCardVisible(region))
+                    count++;
+                else
+                    break;
+            }
+            return count;
         }
 
         #region [Legacy Turn/River Handlers - REMOVED]
