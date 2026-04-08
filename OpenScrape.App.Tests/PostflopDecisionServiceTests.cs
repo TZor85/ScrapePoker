@@ -3851,4 +3851,99 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    #region L6 — Multiway OOP Quadratic Damping
+
+    [Test]
+    public void MultiwayOOP_DefaultDamping_ComportamientoIdentico()
+    {
+        // Default 0.5: 2 extra opp OOP → FoldBelow +12 (2²×6×0.5=12)
+        // equity 53, FoldBelow 45, adjustedFB = 45+12 = 57 → 53 < 57 → Check
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "Default 0.5: OOP 3-way penalty sube FoldBelow a 57 → Check");
+    }
+
+    [Test]
+    public void MultiwayOOP_DampingReducido_MenosPenalty()
+    {
+        // Verificar que damping bajo produce resultado distinto vs damping alto
+        // usando 4 opp (3 extra) para maximizar diferencia cuadrática.
+        // Damping 0.0 → penalty OOP = 0 (como IP). Damping 1.0 → penalty máximo.
+        var profileZero = CreateDefaultProfile();
+        profileZero.MultiwayOOPQuadraticDamping = 0.0;
+        var serviceZero = CreateService(profileZero);
+
+        var profileMax = CreateDefaultProfile();
+        profileMax.MultiwayOOPQuadraticDamping = 1.0;
+        var serviceMax = CreateService(profileMax);
+
+        // equity 60, 4 oponentes (3 extra)
+        // Damping 0: OOP penalty = 3²×6×0 = 0, adjustedFB = 45
+        // Damping 1: OOP penalty = 3²×6×1×1.2 = 64.8, adjustedFB = 109.8
+        var resultZero = serviceZero.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 4);
+
+        var resultMax = serviceMax.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 4);
+
+        // Con penalty 0, equity 60 > FoldBelow 45 → alguna acción de valor
+        // Con penalty máximo, equity 60 < FoldBelow 109 → Check/Fold
+        Assert.That(resultZero.Action, Does.Not.EqualTo(resultMax.Action),
+            "Damping 0.0 vs 1.0 produce decisiones diferentes en multiway OOP");
+    }
+
+    [Test]
+    public void MultiwayOOP_DampingAumentado_MasPenalty()
+    {
+        // Damping 0.7: 2 extra opp OOP → FoldBelow +16.8 (2²×6×0.7=16.8)
+        // equity 60, adjustedFB = 45+16.8 = 61.8 → 60 < 61.8 → Check
+        var profile = CreateDefaultProfile();
+        profile.MultiwayOOPQuadraticDamping = 0.7;
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        Assert.That(result.Action, Is.EqualTo("Check"),
+            "Damping 0.7: penalty mayor fuerza Check incluso con equity 60");
+    }
+
+    [Test]
+    public void MultiwayIP_NoAfectadoPorDamping()
+    {
+        // IP siempre usa lineal, damping no aplica
+        var profile = CreateDefaultProfile();
+        profile.MultiwayOOPQuadraticDamping = 0.1; // valor extremo
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            numOpponents: 3);
+
+        // IP: 2 extra × 2.0 = 4, adjustedFB = 45+4 = 49. 53 > 49 → value
+        Assert.That(result.Action, Does.Not.EqualTo("Check"),
+            "IP no usa damping cuadrático");
+    }
+
+    #endregion
 }

@@ -256,9 +256,9 @@ public class PostflopDecisionService : IPostflopDecisionService
             }
             else
             {
-                // OOP: cuadrático (exponencialmente peor con más villanos detrás)
-                multiwayFoldPenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayFoldBelowOOP * 0.5;
-                multiwayValuePenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayThinValueOOP * 0.5;
+                // OOP: cuadrático con factor de amortiguación configurable
+                multiwayFoldPenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayFoldBelowOOP * _profile.MultiwayOOPQuadraticDamping;
+                multiwayValuePenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayThinValueOOP * _profile.MultiwayOOPQuadraticDamping;
             }
 
             adjustedFoldBelow += multiwayFoldPenalty * streetMult;
