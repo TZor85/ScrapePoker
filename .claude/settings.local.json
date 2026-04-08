@@ -42,7 +42,10 @@
       "Bash(git commit -m ':*)",
       "Bash(git checkout:*)",
       "Bash(git merge feature/solver --no-ff -m ':*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git merge feature/decision-engine-improvements --no-ff -m ':*)",
+      "Bash(git merge feature/gameloop-stability --no-ff -m ':*)",
+      "Bash(git merge:*)"
     ]
   }
 }
