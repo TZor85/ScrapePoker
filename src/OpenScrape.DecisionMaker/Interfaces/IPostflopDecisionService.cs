@@ -19,7 +19,9 @@ public interface IPostflopDecisionService
         bool heroBlocksDangerSuit, bool isFacingBet,
         BoardPosition street = BoardPosition.Turn,
         bool heroHasNutBlocker = false,
-        HandRank heroHandRank = HandRank.HighCard);
+        HandRank heroHandRank = HandRank.HighCard,
+        bool heroCompletedFlush = false,
+        bool heroCompletedStraight = false);
 
     double CalculateImpliedOddsFactor(
         BoardPosition street, bool isInPosition, bool hasFlushDraw,

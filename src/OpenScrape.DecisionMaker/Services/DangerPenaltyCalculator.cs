@@ -17,20 +17,25 @@ public class DangerPenaltyCalculator : Interfaces.IDangerPenaltyCalculator
         double rawEquity, BoardChangeResult boardChange,
         bool heroBlocksDangerSuit, bool isFacingBet,
         StrategyProfile profile, BoardPosition street,
-        bool heroHasNutBlocker, HandRank heroHandRank)
-        => Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, profile, street, heroHasNutBlocker, heroHandRank);
+        bool heroHasNutBlocker, HandRank heroHandRank,
+        bool heroCompletedFlush, bool heroCompletedStraight)
+        => Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, profile, street, heroHasNutBlocker, heroHandRank, heroCompletedFlush, heroCompletedStraight);
 
     /// <summary>
     /// Calcula la penalización de equity por carta peligrosa en el board.
     /// Flush/straight usan penalización porcentual escalada por street (flop más, river menos).
     /// Facing bet multiplica la penalización (villano representa el draw completado).
+    /// Skip penalty si hero completó el draw (L3).
+    /// Blocker adjustment en flush draw (L2).
     /// </summary>
     public static double Calculate(
         double rawEquity, BoardChangeResult boardChange,
         bool heroBlocksDangerSuit, bool isFacingBet,
         StrategyProfile profile, BoardPosition street = BoardPosition.Turn,
         bool heroHasNutBlocker = false,
-        HandRank heroHandRank = HandRank.HighCard)
+        HandRank heroHandRank = HandRank.HighCard,
+        bool heroCompletedFlush = false,
+        bool heroCompletedStraight = false)
     {
         if (boardChange.DangerLevel == 0)
             return 0;
@@ -46,11 +51,11 @@ public class DangerPenaltyCalculator : Interfaces.IDangerPenaltyCalculator
         };
 
         // Completaciones mayores: porcentual sobre equity × multiplicador de street.
-        // Villano tiene UNA de las dos (flush o straight), no ambas → usar Math.Max.
-        double flushCompletePenalty = boardChange.FlushCompleted
+        // Skip si hero completó el draw (L3: no penalizar cuando hero se beneficia).
+        double flushCompletePenalty = (boardChange.FlushCompleted && !heroCompletedFlush)
             ? rawEquity * (profile.DangerFlushCompletePct / 100.0) * streetDangerMultiplier
             : 0;
-        double straightCompletePenalty = boardChange.StraightCompleted
+        double straightCompletePenalty = (boardChange.StraightCompleted && !heroCompletedStraight)
             ? rawEquity * (profile.DangerStraightCompletePct / 100.0) * streetDangerMultiplier
             : 0;
         penalty += Math.Max(flushCompletePenalty, straightCompletePenalty);
@@ -67,6 +72,15 @@ public class DangerPenaltyCalculator : Interfaces.IDangerPenaltyCalculator
                 flushDrawPenalty *= 0.5;
             else if (heroHandRank == HandRank.OnePair)
                 flushDrawPenalty *= 0.75;
+
+            // L2: Blocker adjustment para flush draw (antes solo aplicaba a flush completado)
+            if (heroBlocksDangerSuit)
+            {
+                flushDrawPenalty *= heroHasNutBlocker
+                    ? profile.DangerFlushDrawNutBlockerReduction
+                    : profile.DangerFlushDrawNonNutBlockerReduction;
+            }
+
             penalty += flushDrawPenalty;
         }
 
