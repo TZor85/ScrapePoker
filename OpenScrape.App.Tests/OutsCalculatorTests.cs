@@ -687,4 +687,115 @@ public class OutsCalculatorTests
     }
 
     #endregion
+
+    #region L1: Backdoor Outs Calibrados
+
+    [Test]
+    public void BackdoorFlush_DeberiaRetornar2OutsRedondeados()
+    {
+        // Hero: Ah 5h, Flop: 2h 7c Kc → 3 hearts = backdoor flush
+        // Sin otros draws → TotalOuts = Math.Round(1.5) = 2
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.True);
+        // Backdoor flush = 1.5, + overcard A(3) + overcard nada más
+        // A > K, 5 < K → 1 overcard (A) = 3 outs
+        // Backdoor straight: A-2 en ventana... A,2,5,7,K → check ventanas
+        // Ventana A-2-3-4-5: tiene A,2,5 = 3 cartas, hero contribuye (A,5) → backdoor straight
+        // TotalOuts = 3 overcards + Round(1.5 + 1.0) = 3 + 2 = 5
+        Assert.That(result.TotalOuts, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void BackdoorStraight_Solo_DeberiaRetornar1OutRedondeado()
+    {
+        // Hero: 9c 2d, Flop: Th 7c 3s → 9-T-7 en ventana 7-8-9-T-J
+        // No flush draw, no OESD, solo backdoor straight
+        // Overcards: 9 < T, 2 < T → 0 overcards
+        // TotalOuts = Math.Round(1.0) = 1
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Two, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ten, Suit.Hearts),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.Three, Suit.Spades)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorStraightDraw, Is.True);
+        Assert.That(result.HasBackdoorFlushDraw, Is.False);
+        // Solo backdoor straight = Math.Round(1.0) = 1
+        Assert.That(result.TotalOuts, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void BackdoorAmbos_DeberiaRetornarOutsRedondeados()
+    {
+        // Hero: Ks 3s, Flop: 5s 2c Jh
+        // 3 spades (Ks,3s,5s) = backdoor flush draw
+        // Backdoor straight: K no ayuda, pero 2-3-5 en ventana A-2-3-4-5 = 3 cartas, hero contribuye (3)
+        // No OESD ni gutshot principal → backdoor straight aplica
+        // Overcards: K > J = 1 overcard = 3 outs
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Spades),
+            C(Rank.Three, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Five, Suit.Spades),
+            C(Rank.Two, Suit.Clubs),
+            C(Rank.Jack, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.True);
+        Assert.That(result.HasBackdoorStraightDraw, Is.True);
+        // backdoorOuts = 1.5 + 1.0 = 2.5, Math.Round(2.5) = 2 (banker's rounding)
+        // Overcards K = 3 outs → Total = 3 + 2 = 5
+        Assert.That(result.TotalOuts, Is.EqualTo(5));
+    }
+
+    [Test]
+    public void BackdoorOuts_NoAplicaEnTurn()
+    {
+        // 4 community cards = turn → backdoor outs = 0
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Eight, Suit.Spades),
+            C(Rank.Nine, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Five, Suit.Spades),
+            C(Rank.Seven, Suit.Clubs),
+            C(Rank.Jack, Suit.Hearts),
+            C(Rank.Two, Suit.Diamonds)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+
+        Assert.That(result.HasBackdoorFlushDraw, Is.False);
+        Assert.That(result.HasBackdoorStraightDraw, Is.False);
+    }
+
+    #endregion
 }

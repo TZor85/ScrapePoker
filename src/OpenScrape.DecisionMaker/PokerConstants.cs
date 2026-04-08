@@ -19,8 +19,8 @@ public static class PokerConstants
 
     // === OutsCalculator: valores estándar de draws ===
     public const int FlushDrawOuts = 9;
-    public const int BackdoorFlushImpliedOuts = 1;
-    public const int BackdoorStraightImpliedOuts = 1;
+    public const double BackdoorFlushImpliedOuts = 1.5;
+    public const double BackdoorStraightImpliedOuts = 1.0;
     public const int OvercardOutsPerCard = 3;
 
     // === MonteCarloSimulator ===
