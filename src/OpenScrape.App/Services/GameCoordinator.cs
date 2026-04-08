@@ -182,12 +182,22 @@ public class GameCoordinator : IGameCoordinator
 
     public (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(PlayerGameState state, decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
     {
+        // Excluir hero (P0, ValuePosition=0) del check de agresor villain
         bool villainWasPreflopAggressor = state.Players
-            .Any(p => p.Active && p.WasPreflopAggressor);
+            .Any(p => p.Active && p.WasPreflopAggressor && p.ValuePosition != 0);
 
         bool heroWasPreviousStreetAggressor =
             (_gameLoopStateMachine.IsTurn && PostflopContext.HeroBetFlop) ||
             (_gameLoopStateMachine.IsRiver && PostflopContext.HeroBetTurn);
+
+        // Hero es agresor si: raiseó preflop (WasPreflopAggressor en P0) O apostó calle anterior
+        var heroPlayer = state.Players.FirstOrDefault(p => p.ValuePosition == 0);
+        bool heroWasPreflopAggressor = heroPlayer?.WasPreflopAggressor == true;
+        bool heroIsAggressor = heroWasPreflopAggressor || heroWasPreviousStreetAggressor;
+
+        // DonkBet requiere que hero sea el agresor; sin agresor no hay donk bet
+        if (!heroIsAggressor)
+            return (false, currentSituation);
 
         bool effectiveVillainAggressor = villainWasPreflopAggressor && !heroWasPreviousStreetAggressor;
         return PreflopAnalyzer.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
