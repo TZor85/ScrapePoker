@@ -64,17 +64,18 @@ public class OpponentTrackerTests
         profile.TimesPostflopRaised = 4;
         profile.TimesPostflopCalled = 5;
 
-        // AF = (6+4) / 5 = 2.0
-        Assert.That(profile.AggressionFactor, Is.EqualTo(2.0));
+        // AF Laplace = (10+1) / (5+1) = 11/6 ≈ 1.833
+        Assert.That(profile.AggressionFactor, Is.EqualTo(11.0 / 6.0).Within(0.01));
     }
 
     [Test]
-    public void AggressionFactor_SinCalls_DeberiaRetornar3()
+    public void AggressionFactor_SinCalls_DeberiaRetornarLaplaceSmoothed()
     {
         var profile = _tracker.GetProfile("P1");
         profile.TimesPostflopBet = 5;
 
-        Assert.That(profile.AggressionFactor, Is.EqualTo(3.0));
+        // AF Laplace = (5+1) / (0+1) = 6.0
+        Assert.That(profile.AggressionFactor, Is.EqualTo(6.0));
     }
 
     [Test]
@@ -265,5 +266,116 @@ public class OpponentTrackerTests
         Assert.That(_tracker.ResolveName("P3"), Is.EqualTo("PlayerB"));
         Assert.That(_tracker.GetProfile("PlayerA").HandsPlayed, Is.EqualTo(1),
             "PlayerA mantiene su perfil");
+    }
+
+    // ─── L4: AF Laplace Smoothing ────────────────────────────
+
+    [Test]
+    public void AF_PassiveZero_UnaAccion_RetornaSmoothed()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesPostflopBet = 1;
+        profile.TimesPostflopCalled = 0;
+
+        // Laplace: (1+1)/(0+1) = 2.0 (antes era 3.0)
+        Assert.That(profile.AggressionFactor, Is.EqualTo(2.0));
+    }
+
+    [Test]
+    public void AF_SinAcciones_RetornaUno()
+    {
+        var profile = _tracker.GetProfile("P1");
+
+        // Laplace: (0+1)/(0+1) = 1.0
+        Assert.That(profile.AggressionFactor, Is.EqualTo(1.0));
+    }
+
+    [Test]
+    public void AF_PassiveZero_MultiplesAcciones_RetornaSmoothed()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesPostflopBet = 3;
+        profile.TimesPostflopRaised = 1;
+
+        // Laplace: (4+1)/(0+1) = 5.0 (antes era 3.0)
+        Assert.That(profile.AggressionFactor, Is.EqualTo(5.0));
+    }
+
+    [Test]
+    public void AF_ConvergeConSampleGrande()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesPostflopBet = 25;
+        profile.TimesPostflopRaised = 5;
+        profile.TimesPostflopCalled = 10;
+
+        // Laplace: (30+1)/(10+1) = 31/11 ≈ 2.818
+        // Real sin smoothing: 30/10 = 3.0
+        double af = profile.AggressionFactor;
+        Assert.That(af, Is.EqualTo(31.0 / 11.0).Within(0.01));
+        Assert.That(Math.Abs(af - 3.0), Is.LessThan(0.2), "Converge al valor real");
+    }
+
+    [Test]
+    public void AF_IP_DatosInsuficientes_RetornaMenosUno()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesAggressiveIP = 2;
+        profile.TimesPassiveIP = 1;
+
+        Assert.That(profile.AggressionFactorIP, Is.EqualTo(-1));
+    }
+
+    [Test]
+    public void AF_IP_PassiveZero_DatosSuficientes_RetornaSmoothed()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesAggressiveIP = 5;
+        profile.TimesPassiveIP = 0;
+
+        // Laplace: (5+1)/(0+1) = 6.0
+        Assert.That(profile.AggressionFactorIP, Is.EqualTo(6.0));
+    }
+
+    [Test]
+    public void AF_OOP_PassiveZero_DatosSuficientes_RetornaSmoothed()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesAggressiveOOP = 6;
+        profile.TimesPassiveOOP = 0;
+
+        // Laplace: (6+1)/(0+1) = 7.0
+        Assert.That(profile.AggressionFactorOOP, Is.EqualTo(7.0));
+    }
+
+    [Test]
+    public void GetTypeForPosition_LaplacePrevieneFalsoAgresivo()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 15;
+        profile.TimesVoluntarilyPutMoneyIn = 3; // VPIP 20% = tight
+        profile.TimesPostflopBet = 1;
+        profile.TimesPostflopCalled = 0;
+
+        // AF Laplace = (1+1)/(0+1) = 2.0 > 1.5 → aún agresivo con 1 acción
+        // Pero con fallback a IP/OOP que retorna -1 → usa global
+        var type = profile.GetTypeForPosition(villainIsInPosition: true);
+        // AF IP = -1 (insuf), fallback AF global = 2.0 > 1.5 → TAG
+        Assert.That(type, Is.EqualTo(OpponentType.TAG));
+    }
+
+    [Test]
+    public void GetTypeForPosition_FallbackAFGlobal()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 20;
+        profile.TimesVoluntarilyPutMoneyIn = 12; // VPIP 60% = loose
+        profile.TimesPostflopBet = 1;
+        profile.TimesPostflopCalled = 5;
+        // AF global Laplace = (1+1)/(5+1) = 2/6 ≈ 0.33 < 1.5 → pasivo
+        // AF IP = -1 (datos insuficientes) → fallback a global
+
+        var type = profile.GetTypeForPosition(villainIsInPosition: true);
+        Assert.That(type, Is.EqualTo(OpponentType.LP));
     }
 }

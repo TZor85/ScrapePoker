@@ -38,7 +38,8 @@ public class OpponentProfile
     public double ThreeBetPct => HandsPlayed > 0 ? (double)TimesThreeBet / HandsPlayed * 100 : 5;
 
     /// <summary>
-    /// Aggression Factor: (bets + raises) / calls. &gt;1 = agresivo, &lt;1 = pasivo.
+    /// Aggression Factor con Laplace smoothing: (aggressive+1)/(passive+1).
+    /// Evita cliff cuando passive=0 y regresa a AF=1.0 con pocas muestras.
     /// </summary>
     public double AggressionFactor
     {
@@ -46,8 +47,7 @@ public class OpponentProfile
         {
             int aggressive = TimesPostflopBet + TimesPostflopRaised;
             int passive = TimesPostflopCalled;
-            if (passive == 0) return aggressive > 0 ? 3.0 : 1.0;
-            return (double)aggressive / passive;
+            return (double)(aggressive + 1) / (passive + 1);
         }
     }
 
@@ -59,8 +59,7 @@ public class OpponentProfile
         get
         {
             if (TimesAggressiveIP + TimesPassiveIP < 5) return -1;
-            if (TimesPassiveIP == 0) return TimesAggressiveIP > 0 ? 3.0 : 1.0;
-            return (double)TimesAggressiveIP / TimesPassiveIP;
+            return (double)(TimesAggressiveIP + 1) / (TimesPassiveIP + 1);
         }
     }
 
@@ -72,8 +71,7 @@ public class OpponentProfile
         get
         {
             if (TimesAggressiveOOP + TimesPassiveOOP < 5) return -1;
-            if (TimesPassiveOOP == 0) return TimesAggressiveOOP > 0 ? 3.0 : 1.0;
-            return (double)TimesAggressiveOOP / TimesPassiveOOP;
+            return (double)(TimesAggressiveOOP + 1) / (TimesPassiveOOP + 1);
         }
     }
 
