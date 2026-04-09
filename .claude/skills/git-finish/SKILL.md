@@ -21,11 +21,31 @@ Finaliza la rama actual mergeando a develop.
    ```
    - Si estamos en `develop` o `main`, **DETENER**: no hay rama feature para cerrar.
 
-2. Verificar que no hay cambios sin commitear:
+2. Verificar si hay cambios sin commitear:
    ```bash
    git status --porcelain
    ```
-   - Si hay cambios pendientes, **DETENER** y avisar al usuario que debe commitear o descartar antes de cerrar.
+   - Si hay cambios pendientes, **commitearlos automáticamente** antes de continuar.
+   - Analizar los cambios con `git diff` y `git status` para generar el mensaje de commit.
+   - El mensaje de commit debe seguir este formato (todo en inglés):
+     ```
+     [type/scope]: Brief description (max 50 chars)
+
+     ### Changes Made
+     - Change 1: Specific modification
+     - Change 2: Specific modification
+     - ...
+
+     ### Implemented Solution
+     Technical explanation of the fix (1-3 lines)
+
+     ### Impact
+     Problem solved and system effects
+
+     Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+     ```
+   - Types válidos: `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `perf`, `style`.
+   - Stagear los archivos relevantes (no incluir archivos sensibles como .env).
 
 3. Validar build y tests:
    ```bash
