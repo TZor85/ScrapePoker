@@ -229,4 +229,130 @@ public class ImpliedOddsCalculatorTests
     }
 
     #endregion
+
+    #region S20.3 — Bluff Risk Penalty
+
+    [Test]
+    public void BluffRisk_TurnOnePair_WithDraws_AddsPenalty()
+    {
+        var change = new BoardChangeResult(false, FlushDrawAppeared: true, false, false, false, -1, 2);
+
+        double penalty = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.Unknown, heroStack: 50m, potSize: 20m);
+
+        // Base reverse + bluff risk (0.30 × 0.55 × 20/(20+50)) ≈ 0.047
+        Assert.That(penalty, Is.GreaterThan(0),
+            "Turn OnePair con flush draw → penalty incluye bluff risk");
+    }
+
+    [Test]
+    public void BluffRisk_LAG_AmplificaPenalty()
+    {
+        var change = new BoardChangeResult(false, true, false, false, false, -1, 2);
+
+        double penaltyLAG = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m);
+        double penaltyUnknown = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.Unknown, heroStack: 50m, potSize: 20m);
+
+        Assert.That(penaltyLAG, Is.GreaterThan(penaltyUnknown),
+            "LAG amplifica bluff risk ×1.5");
+    }
+
+    [Test]
+    public void BluffRisk_TP_ReducePenalty()
+    {
+        var change = new BoardChangeResult(false, true, false, false, false, -1, 2);
+
+        double penaltyTP = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.TP, heroStack: 50m, potSize: 20m);
+        double penaltyUnknown = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.Unknown, heroStack: 50m, potSize: 20m);
+
+        Assert.That(penaltyTP, Is.LessThan(penaltyUnknown),
+            "TP reduce bluff risk ×0.5");
+    }
+
+    [Test]
+    public void BluffRisk_AllIn_NoPenalty()
+    {
+        var change = new BoardChangeResult(false, true, false, false, false, -1, 2);
+
+        double penalty = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m,
+            isAnyoneAllIn: true);
+
+        // All-in: no bluff risk (base reverse puede seguir existiendo, pero bluff risk = 0)
+        double penaltyNoAllIn = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m,
+            isAnyoneAllIn: false);
+
+        Assert.That(penalty, Is.LessThan(penaltyNoAllIn),
+            "All-in elimina bluff risk component");
+    }
+
+    [Test]
+    public void BluffRisk_ThreeOfAKind_NoPenalty()
+    {
+        var change = new BoardChangeResult(false, true, false, false, false, -1, 2);
+
+        double penalty = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.ThreeOfAKind, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m);
+
+        // ThreeOfAKind > TwoPair → no reverse implied odds (skip early)
+        Assert.That(penalty, Is.EqualTo(0),
+            "ThreeOfAKind+ no tiene reverse implied ni bluff risk");
+    }
+
+    [Test]
+    public void BluffRisk_River_NoPenalty()
+    {
+        var change = new BoardChangeResult(false, true, false, false, false, -1, 2);
+
+        double penaltyTurn = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m);
+        double penaltyRiver = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.River, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m);
+
+        // River: bluff risk no aplica (solo turn), pero base reverse sigue (×0.6)
+        Assert.That(penaltyTurn, Is.GreaterThan(penaltyRiver),
+            "Bluff risk solo en turn, river penalty menor");
+    }
+
+    [Test]
+    public void BluffRisk_NoDraw_NoPenalty()
+    {
+        // Board sin draws → no bluff risk
+        var change = BoardChangeResult.Safe;
+
+        double penalty = ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            change, HandRank.OnePair, false, BoardPosition.Turn, true, _profile,
+            heroBlocksDangerSuit: false,
+            villainType: OpponentType.LAG, heroStack: 50m, potSize: 20m);
+
+        Assert.That(penalty, Is.EqualTo(0),
+            "Sin draws en board → no reverse implied ni bluff risk");
+    }
+
+    #endregion
 }

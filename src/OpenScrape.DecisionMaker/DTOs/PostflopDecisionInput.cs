@@ -53,4 +53,6 @@ public record PostflopDecisionInput
     public bool IsAnyoneAllIn { get; init; }
     public bool IsDonkBet { get; init; }
     public OpponentProfile? VillainProfile { get; init; }
+    public TablePosition HeroPosition { get; init; }
+    public TablePosition VillainPosition { get; init; }
 }

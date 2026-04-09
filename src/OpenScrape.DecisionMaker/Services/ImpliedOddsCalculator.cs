@@ -100,7 +100,10 @@ public class ImpliedOddsCalculator : Interfaces.IImpliedOddsCalculator
         BoardPosition street, bool isFacingBet,
         StrategyProfile profile,
         PairClassification pairClassification = PairClassification.None,
-        bool heroBlocksDangerSuit = false)
+        bool heroBlocksDangerSuit = false,
+        OpponentType villainType = OpponentType.Unknown,
+        decimal heroStack = 0, decimal potSize = 0,
+        bool isAnyoneAllIn = false)
     {
         if ((street != BoardPosition.Turn && street != BoardPosition.River) || !isFacingBet || boardChange == null)
             return 0;
@@ -139,6 +142,26 @@ public class ImpliedOddsCalculator : Interfaces.IImpliedOddsCalculator
         // River: penalización reducida (no hay más cartas por venir)
         if (street == BoardPosition.River)
             penalty *= 0.6;
+
+        // S20.3: Bluff risk — penalty adicional en turn por riesgo de bluffs futuros del villain
+        // Aplica solo en turn, con OnePair, board con draws, villain no all-in
+        if (street == BoardPosition.Turn && heroHandRank <= HandRank.OnePair &&
+            !isAnyoneAllIn && (boardChange.FlushDrawAppeared || boardChange.DangerLevel >= 2))
+        {
+            double drawMissFreq = 0.55; // ~55% de los draws no completan en river
+            double potRatio = potSize > 0 && heroStack > 0
+                ? (double)(potSize / (potSize + heroStack)) : 0.3;
+            double bluffRisk = profile.BluffRiskBaseFactor * drawMissFreq * potRatio;
+
+            double villainMultiplier = villainType switch
+            {
+                OpponentType.LAG => profile.BluffRiskLAGMultiplier,
+                OpponentType.TP => profile.BluffRiskTPMultiplier,
+                _ => 1.0
+            };
+            bluffRisk *= villainMultiplier;
+            penalty += bluffRisk;
+        }
 
         return penalty;
     }

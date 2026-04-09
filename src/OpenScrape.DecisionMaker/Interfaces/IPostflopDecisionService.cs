@@ -57,5 +57,7 @@ public interface IPostflopDecisionService
         KickerStrength heroKickerStrength = KickerStrength.None,
         bool turnCalledWithFlushDanger = false, bool heroBlocksTopCard = false,
         bool heroCheckedAllStreets = false, bool isAnyoneAllIn = false,
-        bool isDonkBet = false, OpponentProfile? villainProfile = null);
+        bool isDonkBet = false, OpponentProfile? villainProfile = null,
+        TablePosition heroPosition = TablePosition.None,
+        TablePosition villainPosition = TablePosition.None);
 }
