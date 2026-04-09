@@ -426,6 +426,9 @@ public class PostflopDecisionService : IPostflopDecisionService
             effectiveEquity < adjustedFoldBelow && effectiveEquity > adjustedFoldBelow - 15)
         {
             double cbetFreq = GetCbetFrequency(street);
+            // S19.2: ajustar c-bet turn por textura del runout
+            if (street == BoardPosition.Turn && boardChange != null)
+                cbetFreq *= GetCbetTurnTextureMultiplier(boardChange);
             // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
@@ -463,7 +466,8 @@ public class PostflopDecisionService : IPostflopDecisionService
                 street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
                 heroIsAggressor, heroHandRank, totalOuts, pairClassification,
                 hasFlushDraw, hasComboDraw, heroStack, potSize,
-                boardChange, heroBlocksDangerSuit, isDonkBet, villainProfile);
+                boardChange, heroBlocksDangerSuit, isDonkBet, villainProfile,
+                situation, villainBarreling);
         }
 
         // --- NO FACING BET ---
@@ -482,6 +486,9 @@ public class PostflopDecisionService : IPostflopDecisionService
             effectiveEquity >= adjustedFoldBelow && effectiveEquity < adjustedThinValueAbove)
         {
             double cbetFreq = GetCbetFrequency(street);
+            // S19.2: ajustar c-bet turn por textura del runout
+            if (street == BoardPosition.Turn && boardChange != null)
+                cbetFreq *= GetCbetTurnTextureMultiplier(boardChange);
             // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
@@ -499,7 +506,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             boardChange, hasFlushDraw, numOpponents, pairClassification, villainType,
             heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength,
             heroBlocksDangerSuit, turnCalledWithFlushDanger, heroBlocksTopCard,
-            heroCheckedAllStreets);
+            heroCheckedAllStreets, situation);
     }
 
     /// <summary>
@@ -527,10 +534,39 @@ public class PostflopDecisionService : IPostflopDecisionService
         BoardChangeResult? boardChange = null,
         bool heroBlocksDangerSuit = false,
         bool isDonkBet = false,
-        OpponentProfile? villainProfile = null)
+        OpponentProfile? villainProfile = null,
+        HandSituation situation = HandSituation.OpenRaise,
+        bool villainBarreling = false)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
+
+        // S19.3: Defensa en 3-bet pots — lógica especial facing bet
+        bool isThreeBetPot = situation is HandSituation.ThreeBet or HandSituation.OpenRaiseVs3Bet or HandSituation.Squeeze;
+        if (isThreeBetPot)
+        {
+            // Turn: villain barrelea + hero TwoPair+ → anti-barrel CR 20% / Call 80%
+            if (!isInPosition && street == BoardPosition.Turn && villainBarreling &&
+                heroHandRank >= HandRank.TwoPair)
+            {
+                if (Random.Shared.NextDouble() < _profile.ThreeBetPotAntiBarrelCR)
+                    return new PostflopDecisionResult("Raise 3x (Value)",
+                        $"Anti-barrel CR — 3bet pot OOP ({heroHandRank})", IsCheckRaise: true);
+                return new PostflopDecisionResult("Call",
+                    $"Call — 3bet pot anti-barrel mixing ({heroHandRank})");
+            }
+
+            // IP caller: call 85% / raise 15%
+            if (isInPosition && heroHandRank >= HandRank.OnePair &&
+                equity > thresholds.ThinValueAbove)
+            {
+                if (Random.Shared.NextDouble() >= _profile.ThreeBetPotIPCallFreq)
+                    return new PostflopDecisionResult("Raise 3x (Value)",
+                        $"Raise — 3bet pot IP caller ({heroHandRank})");
+                return new PostflopDecisionResult("Call",
+                    $"Call — 3bet pot IP flat ({heroHandRank})");
+            }
+        }
 
         // S18.1: Donk bet exploitation — raise agresivo vs donk bet (señal de debilidad)
         if (isDonkBet)
@@ -732,8 +768,57 @@ public class PostflopDecisionService : IPostflopDecisionService
         bool heroBlocksDangerSuit = false,
         bool turnCalledWithFlushDanger = false,
         bool heroBlocksTopCard = false,
-        bool heroCheckedAllStreets = false)
+        bool heroCheckedAllStreets = false,
+        HandSituation situation = HandSituation.OpenRaise)
     {
+        // S19.3: Defensa especial en 3-bet pots postflop (OOP polar, no float)
+        bool isThreeBetPot = situation is HandSituation.ThreeBet or HandSituation.OpenRaiseVs3Bet or HandSituation.Squeeze;
+        if (isThreeBetPot && !isInPosition)
+        {
+            // Turn: agresor (villain) checkeó → probe bet con frecuencia 40%
+            if (street == BoardPosition.Turn && villainAggressorCheckedPreviousStreet &&
+                equity >= thresholds.ThinValueAbove)
+            {
+                if (Random.Shared.NextDouble() < _profile.ThreeBetPotProbeFreq)
+                {
+                    var probeSize = AdjustBetSizeForSPR("Bet 1/2", heroStack, potSize, street);
+                    return new PostflopDecisionResult(probeSize + " (Probe)",
+                        $"Probe bet OOP — 3bet pot, agresor checkeó ({_profile.ThreeBetPotProbeFreq:P0})");
+                }
+                return new PostflopDecisionResult("Check",
+                    "Check — 3bet pot probe mixing, check esta vez");
+            }
+
+            // Flop: check-raise mixing especial para 3-bet pots
+            if (street == BoardPosition.Flop && thresholds.CanCheckRaise &&
+                !heroIsAggressor && !isMultiway)
+            {
+                bool hasDrawForCR = (hasComboDraw || (hasFlushDraw && totalOuts >= 9));
+
+                // TwoPair+ → CR 50% / Call 50%
+                if (heroHandRank >= HandRank.TwoPair && equity > thresholds.CheckRaiseThreshold)
+                {
+                    if (Random.Shared.NextDouble() < _profile.ThreeBetPotCRFreqStrong)
+                        return new PostflopDecisionResult("Check (Check-Raise)",
+                            $"Check-raise — 3bet pot OOP ({heroHandRank})", IsCheckRaise: true);
+                    return new PostflopDecisionResult("Check",
+                        $"Check — 3bet pot CR mixing, call ({heroHandRank})");
+                }
+
+                // Combo/Flush draw → CR 35% / Fold 65% (no float OOP en 3bet)
+                if (hasDrawForCR && equity >= _profile.CheckRaiseDrawMinEquity)
+                {
+                    if (Random.Shared.NextDouble() < _profile.ThreeBetPotCRFreqDraw)
+                        return new PostflopDecisionResult("Check (Check-Raise)",
+                            $"Check-raise semi-bluff — 3bet pot draw OOP ({totalOuts} outs)",
+                            IsCheckRaise: true);
+                    if (_profile.ThreeBetPotNoFloat)
+                        return new PostflopDecisionResult("Check",
+                            "Check — 3bet pot OOP, no float sin draw fuerte");
+                }
+            }
+        }
+
         // Turn-river plan: hero calleó turn con flush danger → si river completa flush → check
         if (street == BoardPosition.River && turnCalledWithFlushDanger && boardChange != null &&
             boardChange.FlushCompleted && heroHandRank < HandRank.Flush)
@@ -784,25 +869,56 @@ public class PostflopDecisionService : IPostflopDecisionService
             equity > thresholds.CheckRaiseThreshold &&
             !heroIsAggressor && !lowSPRBlocksCheckRaise)
         {
-            // OOP: check-raise con mano fuerte o draw fuerte (prioridad)
+            // OOP: check-raise con mano fuerte o draw fuerte
             if (!isInPosition && (hasStrongMade || hasStrongDraw))
             {
-                string reason = hasStrongDraw && !hasStrongMade
-                    ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
-                    : $"Check-raise trap — {heroHandRank} OOP";
-                return new PostflopDecisionResult(
-                    "Check (Check-Raise)",
-                    reason,
-                    IsCheckRaise: true);
+                // S19.1: Check-raise mixing probabilístico
+                double crFreq = 1.0; // determinístico por defecto
+                if (_profile.CheckRaiseMixingEnabled)
+                {
+                    // OOP TopPair + FlushDraw: 35%
+                    bool isTopPairWithDraw = heroHandRank == HandRank.OnePair &&
+                        pairClassification >= PairClassification.TopPair && hasFlushDraw;
+                    if (isTopPairWithDraw)
+                        crFreq = _profile.CRMixFreqOOPTopPairDraw;
+                    // OOP draw puro (OESD sin par): 30%
+                    else if (hasStrongDraw && !hasStrongMade)
+                        crFreq = _profile.CRMixFreqOOPDraw;
+                    // OOP TwoPair+: 40%
+                    else if (hasStrongMade)
+                        crFreq = _profile.CRMixFreqOOPStrong;
+                }
+
+                if (Random.Shared.NextDouble() < crFreq)
+                {
+                    string reason = hasStrongDraw && !hasStrongMade
+                        ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
+                        : $"Check-raise trap — {heroHandRank} OOP";
+                    return new PostflopDecisionResult(
+                        "Check (Check-Raise)",
+                        reason,
+                        IsCheckRaise: true);
+                }
+                // Mixing: no check-raise esta vez → call/check
+                return new PostflopDecisionResult("Check",
+                    $"Check — CR mixing ({crFreq:P0}), call esta vez");
             }
 
             // IP: check-raise trap con TwoPair+ en board seguro
             if (ipTrap)
             {
-                return new PostflopDecisionResult(
-                    "Check (Check-Raise)",
-                    $"Check-raise IP trap — {heroHandRank}",
-                    IsCheckRaise: true);
+                double ipCrFreq = _profile.CheckRaiseMixingEnabled
+                    ? _profile.CRMixFreqIPTrap : 1.0;
+
+                if (Random.Shared.NextDouble() < ipCrFreq)
+                {
+                    return new PostflopDecisionResult(
+                        "Check (Check-Raise)",
+                        $"Check-raise IP trap — {heroHandRank}",
+                        IsCheckRaise: true);
+                }
+                return new PostflopDecisionResult("Check",
+                    $"Check — IP trap mixing ({ipCrFreq:P0}), slow play");
             }
         }
 
@@ -1567,5 +1683,44 @@ public class PostflopDecisionService : IPostflopDecisionService
             "semiwet" => BoardTextureCategory.SemiWet,
             _ => BoardTextureCategory.Dry
         };
+    }
+
+    /// <summary>
+    /// S19.2: Multiplicador de c-bet turn por textura del runout.
+    /// Múltiples cambios se acumulan multiplicativamente.
+    /// </summary>
+    private double GetCbetTurnTextureMultiplier(BoardChangeResult boardChange)
+    {
+        double multiplier = 1.0;
+        bool anyChange = false;
+
+        if (boardChange.FlushCompleted)
+        {
+            multiplier *= _profile.CbetTurnFlushCompletedMultiplier;
+            anyChange = true;
+        }
+        else if (boardChange.FlushDrawAppeared)
+        {
+            multiplier *= _profile.CbetTurnFlushDrawMultiplier;
+            anyChange = true;
+        }
+
+        if (boardChange.StraightCompleted)
+        {
+            multiplier *= _profile.CbetTurnStraightCompletedMultiplier;
+            anyChange = true;
+        }
+
+        if (boardChange.BoardPaired)
+        {
+            multiplier *= _profile.CbetTurnPairedMultiplier;
+            anyChange = true;
+        }
+
+        // Brick: ningún cambio significativo → favourable
+        if (!anyChange && !boardChange.OvercardAppeared)
+            multiplier = _profile.CbetTurnBrickMultiplier;
+
+        return multiplier;
     }
 }
