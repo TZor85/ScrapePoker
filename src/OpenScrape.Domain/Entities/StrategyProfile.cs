@@ -222,6 +222,34 @@ public class StrategyProfile
     public double SqueezeFoldBelowAdj { get; set; } = 6.0;
     public double SqueezeThinValueAdj { get; set; } = 4.0;
 
+    // S21.1 — Overcard outs por textura
+    public int OvercardOutsBase { get; set; } = 3;
+    public int OvercardOutsConnectedBoard { get; set; } = 2;
+    public int OvercardOutsPairedBoard { get; set; } = 2;
+    public double OvercardOutsBlockerBoost { get; set; } = 1.2;
+
+    // S21.2 — Multiway penalty por posición exacta
+    public double MultiwayOOPMultiplierSB { get; set; } = 0.70;
+    public double MultiwayOOPMultiplierBB { get; set; } = 0.50;
+    public double MultiwayOOPMultiplierEP { get; set; } = 0.60;
+    public double MultiwayIPAggressorAmplifier { get; set; } = 1.3;
+
+    // S21.3 — Broadway Wet
+    public double BroadwayConnectedBonus { get; set; } = 20.0;
+    public double BroadwayWetFoldBelowAdj { get; set; } = 3.0;
+    public double BroadwayWetThinValueAdj { get; set; } = 2.0;
+    public double BroadwayWetCbetMultiplier { get; set; } = 0.8;
+
+    // S21.4 — Backdoor overlap prevention
+    public double BackdoorOverlapDiscount { get; set; } = 0.5;
+
+    // S21.5 — Randomización margen variable por villain type
+    public double RandomizationMarginLAG { get; set; } = 5.0;
+    public double RandomizationMarginTAG { get; set; } = 3.0;
+    public double RandomizationMarginLP { get; set; } = 4.0;
+    public double RandomizationMarginTP { get; set; } = 2.0;
+    public double RandomizationMarginUnknown { get; set; } = 3.0;
+
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
 

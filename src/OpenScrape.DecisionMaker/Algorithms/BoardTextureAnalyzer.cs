@@ -96,13 +96,28 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
         // Straight possibility (3+ cartas consecutivas o con gap <= 2)
         bool hasStraightPossibility = HasStraightDraw(sortedRanks);
 
+        // S21.3: Detectar broadway conectadas (2+ broadway cards con gap <=2)
+        bool hasBroadwayConnected = false;
+        if (broadwayCount >= 2)
+        {
+            var broadwayRanks = sortedRanks.Where(r => r >= 10).Distinct().OrderBy(r => r).ToList();
+            for (int i = 1; i < broadwayRanks.Count; i++)
+            {
+                if (broadwayRanks[i] - broadwayRanks[i - 1] <= 2)
+                {
+                    hasBroadwayConnected = true;
+                    break;
+                }
+            }
+        }
+
         // Wetness score (0-100)
         double wetnessScore = CalculateWetnessScore(
             isMonotone, isTwoTone, isRainbow,
             isPaired, hasTrips,
             isConnected, connectedCount,
             isBroadwayHeavy, hasFlushPossibility, hasStraightPossibility,
-            ranks.Count);
+            ranks.Count, hasBroadwayConnected);
 
         // Categorizar
         var category = CategorizeBoard(wetnessScore, isPaired, hasTrips);
@@ -259,7 +274,7 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
         bool isPaired, bool hasTrips,
         bool isConnected, int connectedCount,
         bool isBroadwayHeavy, bool hasFlushPossibility, bool hasStraightPossibility,
-        int cardCount)
+        int cardCount, bool hasBroadwayConnected = false)
     {
         double score = 0;
 
@@ -277,6 +292,9 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
 
         // Broadway heavy boards son más dinámicos
         if (isBroadwayHeavy) score += PokerConstants.WetnessBroadwayScore;
+
+        // S21.3: Broadway conectadas (AKQ, KQJ, AKJ, etc.) → bonus significativo
+        if (hasBroadwayConnected) score += 20;
 
         // Paired reduce wetness (menos combinaciones de draws)
         if (isPaired) score += PokerConstants.WetnessPairedReduction;

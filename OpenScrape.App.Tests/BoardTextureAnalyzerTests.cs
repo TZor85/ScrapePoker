@@ -345,4 +345,59 @@ public class BoardTextureAnalyzerTests
         var semiWet = new BoardTextureResult(BoardTextureCategory.SemiWet, 45, false, true, false, false, true, false, false, true, true);
         Assert.That(semiWet.SimplifiedTexture, Is.EqualTo("Coordinated"));
     }
+
+    // ─── S21.3: Broadway Wet ──────────────────────────────────
+
+    [Test]
+    public void BroadwayWet_AKQ_WetnessAlta()
+    {
+        // A(14)-K(13)-Q(12) rainbow → broadway connected bonus +20
+        var result = _analyzer.Analyze(
+            new List<int> { 14, 13, 12 },
+            new List<int> { 1, 2, 3 }); // rainbow
+
+        Assert.That(result.IsBroadwayHeavy, Is.True);
+        // Con bonus broadway connected +20 + straight possibility + broadway heavy, wetness sube
+        Assert.That(result.WetnessScore, Is.GreaterThan(30),
+            "AKQ rainbow debería tener wetness alta por broadway connected");
+    }
+
+    [Test]
+    public void BroadwayWet_KQJ_TwoTone_MuyWet()
+    {
+        // K(13)-Q(12)-J(11) two-tone → broadway connected + suit bonus
+        var result = _analyzer.Analyze(
+            new List<int> { 13, 12, 11 },
+            new List<int> { 1, 2, 1 }); // two-tone
+
+        Assert.That(result.IsBroadwayHeavy, Is.True);
+        Assert.That(result.WetnessScore, Is.GreaterThan(50),
+            "KQJ two-tone: broadway + suit → muy wet");
+    }
+
+    [Test]
+    public void BroadwayWet_A72_SinBonus()
+    {
+        // A(14)-7-2 rainbow → solo 1 broadway card → sin bonus
+        var result = _analyzer.Analyze(
+            new List<int> { 14, 7, 2 },
+            new List<int> { 1, 2, 3 });
+
+        Assert.That(result.IsBroadwayHeavy, Is.False);
+        Assert.That(result.WetnessScore, Is.LessThan(20),
+            "A72 rainbow: un solo broadway → sin bonus, board seco");
+    }
+
+    [Test]
+    public void BroadwayWet_KJ5_ConectadoConGap()
+    {
+        // K(13)-J(11)-5 → 2 broadway con gap 2 (K-Q-J) → conectado
+        var result = _analyzer.Analyze(
+            new List<int> { 13, 11, 5 },
+            new List<int> { 1, 2, 3 });
+
+        // K y J tienen gap=2, son broadway connected
+        Assert.That(result.WetnessScore, Is.GreaterThan(15),
+            "KJ5: 2 broadway conectadas → bonus aplicado");
+    }
 }

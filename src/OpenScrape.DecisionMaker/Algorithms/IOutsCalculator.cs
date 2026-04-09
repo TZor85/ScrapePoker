@@ -7,5 +7,6 @@ namespace OpenScrape.DecisionMaker.Algorithms;
 /// </summary>
 public interface IOutsCalculator
 {
-    OutsCalculator.OutsResult CalculateOuts(List<CardDataOuts> myCards, List<CardDataOuts> communityCards);
+    OutsCalculator.OutsResult CalculateOuts(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
+        string boardTexture = "Dry", bool heroBlocksTopCard = false);
 }

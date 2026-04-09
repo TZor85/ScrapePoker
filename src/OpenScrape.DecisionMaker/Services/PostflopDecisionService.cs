@@ -102,7 +102,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
             input.IsAnyoneAllIn, input.IsDonkBet,
             input.VillainProfile, input.HeroPosition,
-            input.VillainPosition);
+            input.VillainPosition, input.IsBroadwayWet);
 #pragma warning restore CS0618
     }
 
@@ -149,7 +149,8 @@ public class PostflopDecisionService : IPostflopDecisionService
         bool isDonkBet = false,
         OpponentProfile? villainProfile = null,
         TablePosition heroPosition = TablePosition.None,
-        TablePosition villainPosition = TablePosition.None)
+        TablePosition villainPosition = TablePosition.None,
+        bool isBroadwayWet = false)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -278,9 +279,23 @@ public class PostflopDecisionService : IPostflopDecisionService
             }
             else
             {
-                // OOP: cuadrático con factor de amortiguación configurable
-                multiwayFoldPenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayFoldBelowOOP * _profile.MultiwayOOPQuadraticDamping;
-                multiwayValuePenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayThinValueOOP * _profile.MultiwayOOPQuadraticDamping;
+                // S21.2: OOP penalty modulado por posición exacta del hero
+                double positionDamping = heroPosition switch
+                {
+                    TablePosition.SmallBlind => _profile.MultiwayOOPMultiplierSB,
+                    TablePosition.BigBlind => _profile.MultiwayOOPMultiplierBB,
+                    TablePosition.Early => _profile.MultiwayOOPMultiplierEP,
+                    _ => _profile.MultiwayOOPQuadraticDamping
+                };
+                multiwayFoldPenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayFoldBelowOOP * positionDamping;
+                multiwayValuePenalty = extraOpponents * extraOpponents * PokerConstants.MultiwayThinValueOOP * positionDamping;
+            }
+
+            // S21.2: villain IP y agresor en multiway → amplifica penalty
+            if (!isInPosition && villainShowedAggression)
+            {
+                multiwayFoldPenalty *= _profile.MultiwayIPAggressorAmplifier;
+                multiwayValuePenalty *= _profile.MultiwayIPAggressorAmplifier;
             }
 
             adjustedFoldBelow += multiwayFoldPenalty * streetMult;
@@ -325,6 +340,13 @@ public class PostflopDecisionService : IPostflopDecisionService
         else if (heroPosition == TablePosition.BigBlind && villainPosition == TablePosition.Button)
         {
             adjustedFoldBelow += _profile.BvBBBvsBTNFoldBelowAdj;
+        }
+
+        // S21.3: Broadway Wet → villano conecta broadway combos más frecuente
+        if (isBroadwayWet)
+        {
+            adjustedFoldBelow += _profile.BroadwayWetFoldBelowAdj;
+            adjustedThinValueAbove += _profile.BroadwayWetThinValueAdj;
         }
 
         // Agresor vs caller
@@ -460,6 +482,9 @@ public class PostflopDecisionService : IPostflopDecisionService
             // S19.2: ajustar c-bet turn por textura del runout
             if (street == BoardPosition.Turn && boardChange != null)
                 cbetFreq *= GetCbetTurnTextureMultiplier(boardChange);
+            // S21.3: broadway wet → c-bet menos (board favorece caller range)
+            if (isBroadwayWet)
+                cbetFreq *= _profile.BroadwayWetCbetMultiplier;
             // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
@@ -520,6 +545,9 @@ public class PostflopDecisionService : IPostflopDecisionService
             // S19.2: ajustar c-bet turn por textura del runout
             if (street == BoardPosition.Turn && boardChange != null)
                 cbetFreq *= GetCbetTurnTextureMultiplier(boardChange);
+            // S21.3: broadway wet → c-bet menos
+            if (isBroadwayWet)
+                cbetFreq *= _profile.BroadwayWetCbetMultiplier;
             // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
@@ -1124,9 +1152,17 @@ public class PostflopDecisionService : IPostflopDecisionService
             return new PostflopDecisionResult("Check",
                 "Check — pot control, equity marginal en board volátil");
 
-        // Randomización: equity justo encima del threshold → a veces check (anti-exploit)
+        // S21.5: Randomización con margen variable por villain type
+        double randomizationMargin = villainType switch
+        {
+            OpponentType.LAG => _profile.RandomizationMarginLAG,
+            OpponentType.TAG => _profile.RandomizationMarginTAG,
+            OpponentType.LP => _profile.RandomizationMarginLP,
+            OpponentType.TP => _profile.RandomizationMarginTP,
+            _ => _profile.RandomizationMarginUnknown
+        };
         if (equity > thresholds.ThinValueAbove &&
-            equity <= thresholds.ThinValueAbove + PokerConstants.RandomizationMargin)
+            equity <= thresholds.ThinValueAbove + randomizationMargin)
         {
             // Randomización adaptativa por villain type:
             // vs LAG: bet más (él ajusta → randomizar menos, explotar su call frequency)

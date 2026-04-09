@@ -55,4 +55,5 @@ public record PostflopDecisionInput
     public OpponentProfile? VillainProfile { get; init; }
     public TablePosition HeroPosition { get; init; }
     public TablePosition VillainPosition { get; init; }
+    public bool IsBroadwayWet { get; init; }
 }
