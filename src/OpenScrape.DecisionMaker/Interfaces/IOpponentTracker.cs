@@ -20,6 +20,10 @@ public interface IOpponentTracker
     void RecordFacedCBet(string playerId, bool folded);
     double GetAdjustedFoldEquity(string playerId, double baseFoldEquity);
     double GetFoldToBetPct(string playerId);
+    void TrackShowdownResult(string playerId, bool wentToSD, bool wonSD);
+    void TrackCheckRaise(string playerId, bool didCR, bool hadOpportunity);
+    void TrackDonkBet(string playerId, bool didDonk, bool hadOpportunity);
+    void TrackBarrel(string playerId, bool didBarrel);
     void RegisterSeatAlias(string seatName, string alias);
     string? ResolveName(string seatName);
     void Reset();

@@ -51,4 +51,6 @@ public record PostflopDecisionInput
     public bool HeroBlocksTopCard { get; init; }
     public bool HeroCheckedAllStreets { get; init; }
     public bool IsAnyoneAllIn { get; init; }
+    public bool IsDonkBet { get; init; }
+    public OpponentProfile? VillainProfile { get; init; }
 }

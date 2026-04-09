@@ -100,7 +100,8 @@ public class PostflopDecisionService : IPostflopDecisionService
             input.HeroFloatedFlop, input.VillainFoldToBetPct,
             input.HeroKickerStrength, input.TurnCalledWithFlushDanger,
             input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
-            input.IsAnyoneAllIn);
+            input.IsAnyoneAllIn, input.IsDonkBet,
+            input.VillainProfile);
 #pragma warning restore CS0618
     }
 
@@ -143,7 +144,9 @@ public class PostflopDecisionService : IPostflopDecisionService
         bool turnCalledWithFlushDanger = false,
         bool heroBlocksTopCard = false,
         bool heroCheckedAllStreets = false,
-        bool isAnyoneAllIn = false)
+        bool isAnyoneAllIn = false,
+        bool isDonkBet = false,
+        OpponentProfile? villainProfile = null)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -384,6 +387,35 @@ public class PostflopDecisionService : IPostflopDecisionService
             adjustedThinValueAbove += opponentValueAdj;
         }
 
+        // S18.3: W$SD% alto → rango fuerte en showdown → más respeto facing bet river
+        if (isFacingBet && street == BoardPosition.River &&
+            villainProfile != null && villainProfile.HasReliableWSDData &&
+            villainProfile.WSDPct > 60)
+        {
+            adjustedFoldBelow += _profile.WSDFoldBelowAdjust;
+        }
+
+        // S18.2: Barrel frequency tracking → ajustar FoldBelow si villain barrelea off-frequency
+        if (isFacingBet && villainBarreling &&
+            villainProfile != null && villainProfile.HasReliableBarrelData &&
+            villainProfile.BarrelFrequency >= 0)
+        {
+            double expected = villainProfile.ExpectedBarrelFrequency;
+            if (villainProfile.BarrelFrequency > expected * _profile.BarrelFrequencyOverThreshold)
+                adjustedFoldBelow += _profile.BarrelOverAdjustment;
+            else if (villainProfile.BarrelFrequency < expected * _profile.BarrelFrequencyUnderThreshold)
+                adjustedFoldBelow += _profile.BarrelUnderAdjustment;
+        }
+
+        // S18.1: Donk bet → call más amplio (reducir FoldBelow)
+        if (isFacingBet && isDonkBet)
+            adjustedFoldBelow -= _profile.DonkBetCallBonus;
+
+        // S18.3: WTSD% alto (calling station) → value bet threshold más bajo (apostar thin value más)
+        if (!isFacingBet && villainProfile != null && villainProfile.HasReliableWTSDData &&
+            villainProfile.WTSDPct > 50)
+            adjustedThinValueAbove += _profile.WTSDValueBetBonus;
+
         // SPR-aware: ajustar thresholds por profundidad de stack (solo turn/river)
         var (sprFoldAdjust, sprValueAdjust, isPushFold) = GetSPRAdjustment(heroStack, potSize, street);
         adjustedFoldBelow += sprFoldAdjust;
@@ -394,6 +426,10 @@ public class PostflopDecisionService : IPostflopDecisionService
             effectiveEquity < adjustedFoldBelow && effectiveEquity > adjustedFoldBelow - 15)
         {
             double cbetFreq = GetCbetFrequency(street);
+            // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
+            if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
+                villainProfile.CheckRaisePct > 15)
+                cbetFreq *= _profile.CheckRaiseCbetMultiplier;
             if (cbetFreq > 0 && Random.Shared.NextDouble() < cbetFreq)
             {
                 var cbetSize = AdjustBetSizeForSPR(thresholds.BluffBetSize, heroStack, potSize, street);
@@ -409,7 +445,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             return HandleLowEquity(effectiveEquity, thresholds, isInPosition, boardTexture,
                 villainBetSize, street, potOdds, totalOuts, isFacingBet, impliedOddsFactor, isMultiway,
                 heroHandRank, boardChange, heroBlocksDangerSuit, pairClassification, foldEquity,
-                heroStack, potSize, villainType, heroBlocksTopCard);
+                heroStack, potSize, villainType, heroBlocksTopCard, villainProfile);
 
         // --- FACING BET ---
         if (isFacingBet)
@@ -427,7 +463,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                 street, potOdds, adjustedThinValueAbove, previousStreetBet, impliedOddsFactor,
                 heroIsAggressor, heroHandRank, totalOuts, pairClassification,
                 hasFlushDraw, hasComboDraw, heroStack, potSize,
-                boardChange, heroBlocksDangerSuit);
+                boardChange, heroBlocksDangerSuit, isDonkBet, villainProfile);
         }
 
         // --- NO FACING BET ---
@@ -446,6 +482,10 @@ public class PostflopDecisionService : IPostflopDecisionService
             effectiveEquity >= adjustedFoldBelow && effectiveEquity < adjustedThinValueAbove)
         {
             double cbetFreq = GetCbetFrequency(street);
+            // S18.3: villain con CheckRaise% alto → reducir c-bet frequency
+            if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
+                villainProfile.CheckRaisePct > 15)
+                cbetFreq *= _profile.CheckRaiseCbetMultiplier;
             if (cbetFreq > 0 && Random.Shared.NextDouble() >= cbetFreq)
             {
                 return new PostflopDecisionResult("Check",
@@ -485,10 +525,41 @@ public class PostflopDecisionService : IPostflopDecisionService
         decimal heroStack = 0,
         decimal potSize = 0,
         BoardChangeResult? boardChange = null,
-        bool heroBlocksDangerSuit = false)
+        bool heroBlocksDangerSuit = false,
+        bool isDonkBet = false,
+        OpponentProfile? villainProfile = null)
     {
         // Pot odds ajustadas por implied odds (factor < 1.0 = necesitas menos equity)
         double adjustedPotOdds = potOdds > 0 ? potOdds * impliedOddsFactor : 0;
+
+        // S18.1: Donk bet exploitation — raise agresivo vs donk bet (señal de debilidad)
+        if (isDonkBet)
+        {
+            // Nut hand → Raise Pot
+            if (equity > thresholds.StrongValueAbove && heroHandRank >= HandRank.TwoPair)
+            {
+                return new PostflopDecisionResult("Raise Pot (Value)",
+                    $"Raise pot — exploit donk bet weakness ({heroHandRank})");
+            }
+
+            // Mano fuerte → Raise 3.5x con frecuencia 70% (o +20% si villain donkea mucho)
+            if (equity > thresholds.ValueAbove && heroHandRank >= HandRank.OnePair)
+            {
+                double raiseFreq = _profile.DonkBetRaiseFrequency;
+                if (villainProfile != null && villainProfile.HasReliableDonkBetData &&
+                    villainProfile.DonkBetPct > 20)
+                    raiseFreq = Math.Min(1.0, raiseFreq + 0.20);
+
+                if (Random.Shared.NextDouble() < raiseFreq)
+                {
+                    string sizing = $"Raise {_profile.DonkBetRaiseSizing.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}x (Value)";
+                    return new PostflopDecisionResult(sizing,
+                        $"Raise — exploit donk bet ({heroHandRank}, freq={raiseFreq:P0})");
+                }
+                return new PostflopDecisionResult("Call",
+                    $"Call — vs donk bet, no raise esta vez ({heroHandRank})");
+            }
+        }
 
         // Board peligroso: 3+ cartas mismo palo o flush completado, hero sin blocker.
         // Flop: solo monotone (3 same suit, DangerLevel >= 3) es peligroso, no 2 same suit.
@@ -1162,7 +1233,8 @@ public class PostflopDecisionService : IPostflopDecisionService
         decimal heroStack = 0,
         decimal potSize = 0,
         OpponentType villainType = OpponentType.Unknown,
-        bool heroBlocksTopCard = false)
+        bool heroBlocksTopCard = false,
+        OpponentProfile? villainProfile = null)
     {
         // Semi-bluff con draws (solo si NO estamos facing a bet y no multiway)
         // Verificar fold equity: semi-bluff debe ser +EV considerando equity del draw como backup
@@ -1209,7 +1281,16 @@ public class PostflopDecisionService : IPostflopDecisionService
         // Verificar fold equity mínima: bluff debe ser +EV (fold equity >= breakeven threshold)
         bool canBluffHere = !isFacingBet && thresholds.CanBluff &&
             !(isMultiway && !isInPosition);
-        if (canBluffHere && ShouldBluff(thresholds, isInPosition, boardTexture, street))
+        // S18.3: WTSD% ajusta frecuencia de bluff (calling station → bluffear menos, fold happy → más)
+        double wtsdBluffMultiplier = 1.0;
+        if (villainProfile != null && villainProfile.HasReliableWTSDData)
+        {
+            if (villainProfile.WTSDPct > 50)
+                wtsdBluffMultiplier = _profile.WTSDBluffMultiplierHigh;
+            else if (villainProfile.WTSDPct < 25)
+                wtsdBluffMultiplier = _profile.WTSDBluffMultiplierLow;
+        }
+        if (canBluffHere && ShouldBluff(thresholds, isInPosition, boardTexture, street, wtsdBluffMultiplier))
         {
             double betFraction = BetStringToFraction(thresholds.BluffBetSize);
             double breakevenFoldEquity = betFraction / (1.0 + betFraction);
@@ -1340,9 +1421,9 @@ public class PostflopDecisionService : IPostflopDecisionService
         return new PostflopDecisionResult(fallback, "Equity baja vs bet");
     }
 
-    private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BoardPosition street)
+    private bool ShouldBluff(StreetThresholds thresholds, bool isInPosition, string boardTexture, BoardPosition street, double wtsdMultiplier = 1.0)
     {
-        var bluffFreq = GetBluffFrequency(street) * thresholds.BluffFrequencyMultiplier;
+        var bluffFreq = GetBluffFrequency(street) * thresholds.BluffFrequencyMultiplier * wtsdMultiplier;
 
         return thresholds.BluffCondition switch
         {

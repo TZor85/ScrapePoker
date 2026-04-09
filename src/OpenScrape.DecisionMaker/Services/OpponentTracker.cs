@@ -121,6 +121,50 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     }
 
     /// <summary>
+    /// Registra resultado de showdown (S18.3).
+    /// </summary>
+    public void TrackShowdownResult(string playerId, bool wentToSD, bool wonSD)
+    {
+        var profile = GetProfile(playerId);
+        profile.TimesReachedRiver++;
+        if (wentToSD)
+        {
+            profile.TimesWentToShowdown++;
+            if (wonSD) profile.TimesWonAtShowdown++;
+        }
+    }
+
+    /// <summary>
+    /// Registra check-raise del oponente (S18.3).
+    /// </summary>
+    public void TrackCheckRaise(string playerId, bool didCR, bool hadOpportunity)
+    {
+        var profile = GetProfile(playerId);
+        if (hadOpportunity) profile.TimesCheckRaiseOpportunity++;
+        if (didCR) profile.TimesCheckRaised++;
+    }
+
+    /// <summary>
+    /// Registra donk bet del oponente (S18.3).
+    /// </summary>
+    public void TrackDonkBet(string playerId, bool didDonk, bool hadOpportunity)
+    {
+        var profile = GetProfile(playerId);
+        if (hadOpportunity) profile.TimesDonkBetOpportunity++;
+        if (didDonk) profile.TimesDonkBet++;
+    }
+
+    /// <summary>
+    /// Registra oportunidad de barrel: villain apostó en flop y puede apostar en turn (S18.2).
+    /// </summary>
+    public void TrackBarrel(string playerId, bool didBarrel)
+    {
+        var profile = GetProfile(playerId);
+        profile.TimesBarrelOpportunity++;
+        if (didBarrel) profile.TimesBarreled++;
+    }
+
+    /// <summary>
     /// Calcula el fold equity ajustado según el perfil del oponente.
     /// Oponentes loose/pasivos foldean más → mayor fold equity.
     /// Oponentes tight/agresivos foldean menos → menor fold equity.
