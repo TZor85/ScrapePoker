@@ -1091,6 +1091,7 @@ public class PostflopDecisionServiceTests
     private static StrategyProfile CreateProfileConCheckRaise()
     {
         var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = false; // tests determinísticos de condiciones
         profile.Thresholds["Turn_OpenRaiseVs3BetAndCall"] = new StreetThresholds
         {
             FoldBelow = 40,
@@ -2895,6 +2896,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_FlushDraw_FlopOOP_DeberiaCheckRaise()
     {
         var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = false;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
             FoldBelow = 35,
@@ -3037,6 +3039,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_TwoPair_SigueFuncionando()
     {
         var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = false;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
             FoldBelow = 35,
@@ -3168,6 +3171,7 @@ public class PostflopDecisionServiceTests
     public void CheckRaise_IP_TwoPair_Dry_DeberiaCheckRaise()
     {
         var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = false;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
             FoldBelow = 35,
@@ -4451,6 +4455,529 @@ public class PostflopDecisionServiceTests
         // Sin reducción, cbet freq = 45%. Esperamos > 60 cbets en 200 intentos.
         Assert.That(cbetCount, Is.GreaterThan(50),
             $"CheckRaise% bajo no reduce c-bet, obtuvimos {cbetCount}/200 cbets");
+    }
+
+    #endregion
+
+    #region S19.1 — Check-Raise Mixing
+
+    [Test]
+    public void CRMixing_OOP_TwoPair_MixesCheckRaise()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = true;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 65, BoardPosition.Flop, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: false,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+            if (result.IsCheckRaise) crCount++;
+        }
+        // CRMixFreqOOPStrong = 0.40 → ~80 de 200
+        Assert.That(crCount, Is.InRange(40, 130),
+            $"OOP TwoPair mixing ~40%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void CRMixing_OOP_DrawPuro_30Percent()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = true;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 45, BoardPosition.Flop, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: false,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroHandRank: HandRank.HighCard, hasFlushDraw: true,
+                totalOuts: 9, heroIsAggressor: false);
+            if (result.IsCheckRaise) crCount++;
+        }
+        // CRMixFreqOOPDraw = 0.30 → ~60 de 200
+        Assert.That(crCount, Is.InRange(25, 105),
+            $"OOP draw puro mixing ~30%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void CRMixing_IP_Trap_20Percent()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = true;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+            if (result.IsCheckRaise) crCount++;
+        }
+        // CRMixFreqIPTrap = 0.20 → ~40 de 200
+        Assert.That(crCount, Is.InRange(15, 80),
+            $"IP trap mixing ~20%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void CRMixing_Disabled_100Percent()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = false;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(
+            equity: 65, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+
+        Assert.That(result.IsCheckRaise, Is.True,
+            "Mixing disabled → 100% check-raise");
+    }
+
+    [Test]
+    public void CRMixing_SPRGuard_PrevalesSobreMixing()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = true;
+        profile.CheckRaiseSPRMinThreshold = 1.5;
+        profile.CheckRaiseLowSPRMinEquity = 60.0;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        // SPR 1.0 < 1.5, equity 50 < 60 → SPR guard bloquea CR
+        var result = service.DetermineAction(
+            equity: 50, BoardPosition.Flop, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: false,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.TwoPair, heroIsAggressor: false,
+            heroStack: 10m, potSize: 10m);
+
+        Assert.That(result.IsCheckRaise, Is.False,
+            "SPR guard prevalece sobre mixing");
+    }
+
+    [Test]
+    public void CRMixing_OOP_TopPairFlushDraw_35Percent()
+    {
+        var profile = CreateDefaultProfile();
+        profile.CheckRaiseMixingEnabled = true;
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 50, BoardPosition.Flop, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: false,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroHandRank: HandRank.OnePair, hasFlushDraw: true,
+                totalOuts: 9, heroIsAggressor: false,
+                pairClassification: PairClassification.TopPair);
+            if (result.IsCheckRaise) crCount++;
+        }
+        // CRMixFreqOOPTopPairDraw = 0.35 → ~70 de 200
+        Assert.That(crCount, Is.InRange(30, 115),
+            $"OOP TopPair+FlushDraw mixing ~35%, obtuvimos {crCount}/200");
+    }
+
+    #endregion
+
+    #region S19.2 — C-Bet Turn Texture
+
+    [Test]
+    public void CbetTurn_FlushCompleted_FreqBajaDrasticamente()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        var boardChange = new BoardChangeResult(FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false, BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 0, DangerLevel: 3);
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Wet", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // 45% × 0.30 = 13.5%
+        Assert.That(cbetCount, Is.LessThan(60),
+            $"Flush completed: c-bet ~13.5%, obtuvimos {cbetCount}/200");
+    }
+
+    [Test]
+    public void CbetTurn_BoardPaired_FreqBaja()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        var boardChange = new BoardChangeResult(false, false, false, BoardPaired: true, false, -1, 1);
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Paired", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // 45% × 0.60 = 27%
+        Assert.That(cbetCount, Is.LessThan(90),
+            $"Board paired: c-bet ~27%, obtuvimos {cbetCount}/200");
+    }
+
+    [Test]
+    public void CbetTurn_Brick_FreqSube()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        var boardChange = BoardChangeResult.Safe; // Brick: sin cambios significativos
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // 45% × 1.10 = 49.5%
+        Assert.That(cbetCount, Is.GreaterThan(60),
+            $"Brick turn: c-bet ~49.5%, obtuvimos {cbetCount}/200");
+    }
+
+    [Test]
+    public void CbetTurn_MultipleChanges_Accumulate()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        var boardChange = new BoardChangeResult(false, FlushDrawAppeared: true, false, BoardPaired: true, false, -1, 2);
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Paired", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // 45% × 0.60 × 0.50 = 13.5%
+        Assert.That(cbetCount, Is.LessThan(60),
+            $"Paired+FlushDraw: c-bet ~13.5%, obtuvimos {cbetCount}/200");
+    }
+
+    [Test]
+    public void CbetFlop_NoAffectedByTurnTexture()
+    {
+        // Verificamos que el multiplier S19.2 solo aplica en Turn, no en Flop
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
+        {
+            FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanBluff = true, BluffBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        // Usar boardChange safe (sin danger) para que la equity no sea afectada
+        var boardChange = BoardChangeResult.Safe;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Flop, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // Flop: no texture multiplier → 65% base
+        Assert.That(cbetCount, Is.GreaterThan(80),
+            $"Flop c-bet no afectada por turn texture, obtuvimos {cbetCount}/200");
+    }
+
+    [Test]
+    public void CbetTurn_StraightCompleted_FreqMuyBaja()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetCount = 0;
+        var boardChange = new BoardChangeResult(false, false, StraightCompleted: true, false, false, -1, 2);
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, boardChange: boardChange);
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+        // 45% × 0.40 = 18%
+        Assert.That(cbetCount, Is.LessThan(70),
+            $"Straight completed: c-bet ~18%, obtuvimos {cbetCount}/200");
+    }
+
+    #endregion
+
+    #region S19.3 — 3-Bet Pot Defense
+
+    [Test]
+    public void ThreeBetPot_OOP_Flop_TwoPair_CRMixing50()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 45, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 50,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 70, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry", IsInPosition = false,
+                VillainBetSize = BetSizeCategory.NoBet,
+                HeroHandRank = HandRank.TwoPair
+            });
+            if (result.IsCheckRaise) crCount++;
+        }
+        // ThreeBetPotCRFreqStrong = 0.50 → ~100 de 200
+        Assert.That(crCount, Is.InRange(60, 140),
+            $"3bet pot OOP TwoPair CR ~50%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void ThreeBetPot_OOP_Flop_Draw_CROrFold()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 42, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
+                BoardTexture = "Coordinated", IsInPosition = false,
+                VillainBetSize = BetSizeCategory.NoBet,
+                HeroHandRank = HandRank.HighCard, HasFlushDraw = true,
+                HasComboDraw = true, TotalOuts = 12
+            });
+            if (result.IsCheckRaise) crCount++;
+        }
+        // ThreeBetPotCRFreqDraw = 0.35 → ~70 de 200
+        Assert.That(crCount, Is.InRange(30, 115),
+            $"3bet pot OOP draw CR ~35%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void ThreeBetPot_OOP_Flop_Weak_NoFloat()
+    {
+        var profile = CreateDefaultProfile();
+        profile.ThreeBetPotNoFloat = true;
+        profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 45, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
+            CanCheckRaise = true, CheckRaiseThreshold = 50,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        // Equity baja, sin draw significativo en 3bet pot OOP → fold, no float
+        var result = service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 20, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.HighCard
+        });
+
+        // Low equity → check (no bet path)
+        Assert.That(result.Action, Does.Not.Contain("Float"),
+            "3bet pot OOP sin draw no debe flotar");
+    }
+
+    [Test]
+    public void ThreeBetPot_Turn_ProbeWhenAggressorChecks()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Turn_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
+            CanProbeBet = true, ProbeBetMinEquity = 40, ProbeBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int probeCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry", IsInPosition = false,
+                VillainBetSize = BetSizeCategory.NoBet,
+                VillainAggressorCheckedPreviousStreet = true
+            });
+            if (result.Action.Contains("Probe")) probeCount++;
+        }
+        // ThreeBetPotProbeFreq = 0.40 → ~80 de 200
+        Assert.That(probeCount, Is.InRange(40, 130),
+            $"3bet pot turn probe ~40%, obtuvimos {probeCount}/200");
+    }
+
+    [Test]
+    public void ThreeBetPot_Turn_AntiBarrelCR()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Turn_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int crCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry", IsInPosition = false,
+                VillainBetSize = BetSizeCategory.Medium,
+                VillainBarreling = true, HeroHandRank = HandRank.TwoPair
+            });
+            if (result.IsCheckRaise) crCount++;
+        }
+        // ThreeBetPotAntiBarrelCR = 0.20 → ~40 de 200
+        Assert.That(crCount, Is.InRange(15, 80),
+            $"3bet pot anti-barrel CR ~20%, obtuvimos {crCount}/200");
+    }
+
+    [Test]
+    public void ThreeBetPot_IP_Caller_FlatCallMostly()
+    {
+        var profile = CreateDefaultProfile();
+        profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
+        {
+            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+        };
+        var service = CreateService(profile);
+
+        int callCount = 0;
+        int raiseCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 60, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.Medium,
+                HeroHandRank = HandRank.OnePair,
+                PairClassification = PairClassification.TopPair
+            });
+            if (result.Action == "Call") callCount++;
+            if (result.Action.Contains("Raise")) raiseCount++;
+        }
+        // ThreeBetPotIPCallFreq = 0.85 → ~170 calls, ~30 raises
+        Assert.That(callCount, Is.GreaterThan(120),
+            $"3bet pot IP caller ~85% call, obtuvimos {callCount}/200");
+        Assert.That(raiseCount, Is.GreaterThan(5),
+            $"3bet pot IP raise ~15%, obtuvimos {raiseCount}/200");
+    }
+
+    [Test]
+    public void ThreeBetPot_NonThreeBet_NoSpecialLogic()
+    {
+        // OpenRaise normal no activa lógica 3bet
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 60, Street = BoardPosition.Flop, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair
+        });
+
+        // Sin lógica 3bet, sigue path normal
+        Assert.That(result.Reason, Does.Not.Contain("3bet pot"),
+            "OpenRaise no activa lógica 3bet pot");
     }
 
     #endregion

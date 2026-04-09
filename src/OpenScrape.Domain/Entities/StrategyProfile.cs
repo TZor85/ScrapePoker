@@ -180,6 +180,28 @@ public class StrategyProfile
     // Check-raise con draws fuertes: equity mínima para check-raise semi-bluff en flop OOP
     public double CheckRaiseDrawMinEquity { get; set; } = 40.0;
 
+    // S19.1 — Check-Raise Mixing (probabilístico)
+    public bool CheckRaiseMixingEnabled { get; set; } = true;
+    public double CRMixFreqOOPStrong { get; set; } = 0.40;
+    public double CRMixFreqOOPTopPairDraw { get; set; } = 0.35;
+    public double CRMixFreqOOPDraw { get; set; } = 0.30;
+    public double CRMixFreqIPTrap { get; set; } = 0.20;
+
+    // S19.2 — C-Bet Turn ajustada por textura del runout
+    public double CbetTurnFlushCompletedMultiplier { get; set; } = 0.30;
+    public double CbetTurnFlushDrawMultiplier { get; set; } = 0.50;
+    public double CbetTurnPairedMultiplier { get; set; } = 0.60;
+    public double CbetTurnStraightCompletedMultiplier { get; set; } = 0.40;
+    public double CbetTurnBrickMultiplier { get; set; } = 1.10;
+
+    // S19.3 — Defensa en 3-Bet Pots postflop
+    public double ThreeBetPotCRFreqStrong { get; set; } = 0.50;
+    public double ThreeBetPotCRFreqDraw { get; set; } = 0.35;
+    public double ThreeBetPotProbeFreq { get; set; } = 0.40;
+    public double ThreeBetPotAntiBarrelCR { get; set; } = 0.20;
+    public double ThreeBetPotIPCallFreq { get; set; } = 0.85;
+    public bool ThreeBetPotNoFloat { get; set; } = true;
+
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
 
