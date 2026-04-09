@@ -1,15 +1,15 @@
 ---
 name: git-start
-description: Crea una nueva rama desde develop siguiendo git flow
+description: Crea una rama feature/ desde develop
 disable-model-invocation: true
 allowed-tools:
   - Bash(git:*)
-argument-hint: <tipo/nombre-rama> (ej: feature/bankroll, bugfix/ocr-leak, refactor/cleanup)
+argument-hint: <nombre> (ej: bankroll-dashboard, ocr-improvements)
 ---
 
-## Crear rama desde develop (git flow)
+## Crear rama feature desde develop (git flow)
 
-Crea una nueva rama `$ARGUMENTS` desde develop.
+Crea una nueva rama `feature/$ARGUMENTS` desde develop.
 
 ### Pasos
 
@@ -27,7 +27,7 @@ Crea una nueva rama `$ARGUMENTS` desde develop.
 
 3. Crear y cambiar a la nueva rama:
    ```bash
-   git checkout -b $ARGUMENTS
+   git checkout -b feature/$ARGUMENTS
    ```
 
 4. Confirmar al usuario que la rama fue creada y está lista para trabajar.
@@ -35,4 +35,4 @@ Crea una nueva rama `$ARGUMENTS` desde develop.
 ### Validaciones
 - El argumento es obligatorio. Si no se proporciona, pedir el nombre de la rama.
 - Si la rama ya existe, avisar al usuario y no sobreescribirla.
-- El nombre debe seguir el formato `tipo/nombre` (feature/, bugfix/, refactor/, hotfix/, docs/).
+- Si el argumento ya incluye el prefijo `feature/`, no duplicarlo.
