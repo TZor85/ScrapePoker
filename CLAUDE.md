@@ -172,7 +172,7 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 - **Tesseract** — OCR engine (eng.traineddata)
 - **OpenCvSharp4 / SkiaSharp** — Image processing
 - **Ardalis.Result** — Result pattern (used in Features layer)
-- **NUnit** — Testing framework (392+ tests, no mocking framework)
+- **NUnit** — Testing framework (645+ tests, no mocking framework)
 
 ## Code Style
 
@@ -185,4 +185,4 @@ JSON strategy files in `src/OpenScrape.App/Data/`: `OpenRaise.json`, `BBvsSB.jso
 
 ## Specifications (openspec/)
 
-Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Current specs: `login-sistema-licencias` (license system), `historial-sesiones-manos` (session/hand history tab), `bugfix-decision-engine` (5 bugfixes: bluff condition, danger penalty Math.Max, combo draw bonus guard, river probe bet, calibration), `refactoring-arquitectura` (8 phases completed: interfaces, DTOs, DI migration, CoordinateScaler, GameCoordinator, ScreenReaderService, TableLayoutService, thread safety), `bugfix-equity-critico` (16 issues analyzed: 10 fixed [BF1-3, H1-4, M2, M5], 3 verified non-bugs, 6 pending low priority [L1-L6]).
+Spec-driven development via `openspec/changes/`. Each change has: `proposal.md` (why/what/capabilities/impact), `design.md` (layout, data flow, DTOs), `tasks.md` (implementation steps), and `specs/*/spec.md` (BDD-style requirements with scenarios). Pending specs: `login-sistema-licencias` (license system), `bankroll-dashboard` (bankroll tracking UI). Archived specs (9) in `openspec/archived/`.
