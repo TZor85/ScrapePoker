@@ -43,7 +43,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public List<string> DrawTypes { get; set; } = [];
         }
 
-        public OutsResult CalculateOuts(List<CardDataOuts> myCards, List<CardDataOuts> communityCards)
+        public OutsResult CalculateOuts(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
+            string boardTexture = "Dry", bool heroBlocksTopCard = false)
         {
             var result = new OutsResult { DrawTypes = new List<string>() };
             var allCards = myCards.Concat(communityCards).ToList();
@@ -96,20 +97,34 @@ namespace OpenScrape.DecisionMaker.Algorithms
                     result.HasOvercards = true;
                     result.OvercardCount = overcards.Count;
 
+                    // S21.1: Overcard outs ajustados por textura del board
+                    int maxOutsPerOvercard = boardTexture switch
+                    {
+                        "Coordinated" or "Wet" => _profile.OvercardOutsConnectedBoard,
+                        "Paired" => _profile.OvercardOutsPairedBoard,
+                        _ => _profile.OvercardOutsBase
+                    };
+
                     foreach (var rank in overcards)
                     {
-                        // 3 outs por overcard (3 cartas del mismo rank en el deck)
-                        // Descontar las que ya son straight outs (gutshot)
                         var overcardCards = deck
                             .Where(c => c.Rank == rank)
                             .ToList();
 
+                        int counted = 0;
                         foreach (var oc in overcardCards)
                         {
-                            if (!straightOutCards.Contains(oc))
+                            if (!straightOutCards.Contains(oc) && counted < maxOutsPerOvercard)
+                            {
                                 overcardOuts++;
+                                counted++;
+                            }
                         }
                     }
+
+                    // S21.1: blocker boost (hero bloquea top card → outs valen más)
+                    if (heroBlocksTopCard && overcardOuts > 0)
+                        overcardOuts = (int)Math.Round(overcardOuts * _profile.OvercardOutsBlockerBoost);
 
                     if (overcardOuts > 0)
                         result.DrawTypes.Add($"Overcards ({result.OvercardCount})");
@@ -121,6 +136,17 @@ namespace OpenScrape.DecisionMaker.Algorithms
             if (communityCards.Count == 3)
             {
                 backdoorOuts = CalculateBackdoorOuts(allCards, myCards, flushOuts > 0, straightCompletingRanks.Count > 0, result);
+
+                // S21.4: Backdoor overlap prevention — si hay main flush draw y backdoor straight,
+                // descontar backdoor straight outs que comparten suit con flush draw
+                if (flushOuts > 0 && result.HasBackdoorStraightDraw && flushDrawSuit.HasValue)
+                {
+                    // Estimar cuántos backdoor straight outs overlappean con el flush suit
+                    // Cada rank de backdoor straight tiene ~25% de ser del flush suit → ~0.25 per out
+                    // Simplificado: 2 outs por backdoor straight × 0.5 discount = -1.0
+                    double overlapDiscount = PokerConstants.BackdoorStraightImpliedOuts * _profile.BackdoorOverlapDiscount;
+                    backdoorOuts = Math.Max(0, backdoorOuts - overlapDiscount);
+                }
             }
 
             // Total = flush + straight - overlap + overcards + backdoor (sin doble conteo)

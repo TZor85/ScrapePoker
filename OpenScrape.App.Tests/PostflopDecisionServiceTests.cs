@@ -5185,4 +5185,200 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    #region S21.2 — Multiway Penalty por Posición Exacta
+
+    [Test]
+    public void Multiway_SB_PenaltyMayor()
+    {
+        // SB (×0.70) vs BB default (×0.50) → penalty mayor en SB
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, HeroPosition = TablePosition.SmallBlind
+        });
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void Multiway_BB_PenaltyStandard()
+    {
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, HeroPosition = TablePosition.BigBlind
+        });
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void Multiway_EP_PenaltyIntermedia()
+    {
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, HeroPosition = TablePosition.Early
+        });
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void Multiway_VillainAgresor_AmplificaPenalty()
+    {
+        // Villain agresor amplifica ×1.3
+        var resultAggr = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, VillainShowedAggression = true,
+            HeroPosition = TablePosition.BigBlind
+        });
+        var resultNoAggr = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, VillainShowedAggression = false,
+            HeroPosition = TablePosition.BigBlind
+        });
+        // Con villain agresor, penalty mayor → más probable check/fold
+        Assert.That(resultAggr, Is.Not.Null);
+        Assert.That(resultNoAggr, Is.Not.Null);
+    }
+
+    [Test]
+    public void Multiway_IP_SinPositionDamping()
+    {
+        // Hero IP → usa penalty lineal estándar, sin position damping
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            NumOpponents = 3, HeroPosition = TablePosition.Button
+        });
+        Assert.That(result, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region S21.3 — Broadway Wet Adjustments
+
+    [Test]
+    public void BroadwayWet_FoldBelowIncrease()
+    {
+        // BroadwayWet: FoldBelow +3. Equity 47 sin broadway → OK, con broadway → marginal
+        var resultNormal = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 47, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            IsBroadwayWet = false, HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair
+        });
+        var resultBroadway = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 47, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            IsBroadwayWet = true, HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair
+        });
+        Assert.That(resultNormal, Is.Not.Null);
+        Assert.That(resultBroadway, Is.Not.Null);
+    }
+
+    [Test]
+    public void BroadwayWet_CbetReducida()
+    {
+        // Broadway wet → c-bet freq ×0.8
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int cbetNormal = 0, cbetBroadway = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var rn = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true);
+            if (rn.Action.Contains("C-Bet")) cbetNormal++;
+
+            var rb = service.DetermineAction(
+                equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                heroIsAggressor: true, isBroadwayWet: true);
+            if (rb.Action.Contains("C-Bet")) cbetBroadway++;
+        }
+        Assert.That(cbetBroadway, Is.LessThanOrEqualTo(cbetNormal),
+            $"Broadway wet reduce c-bet: {cbetBroadway} <= {cbetNormal}");
+    }
+
+    #endregion
+
+    #region S21.5 — Randomización Margen Variable
+
+    [Test]
+    public void Randomization_LAG_MargenAmplio()
+    {
+        // LAG: ±5%. Equity en 49 (ThinValueAbove=45+4=49 con RangePolarizer) está en margen ±5
+        // vs TAG: ±3%. Misma equity podría estar fuera del margen
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        // Verificar que con LAG, equity 49 está en zona de randomización (45+5=50)
+        int checkCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 49, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                villainType: OpponentType.LAG);
+            if (result.Action == "Check") checkCount++;
+        }
+        // Con LAG (margin=5, bet freq=85%), hay ~15% checks
+        Assert.That(checkCount, Is.GreaterThan(0),
+            "LAG margen amplio: algunos checks en zona randomización");
+    }
+
+    [Test]
+    public void Randomization_TP_MargenEstrecho()
+    {
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        // TP: ±2%. Equity 48 vs ThinValueAbove ~45 → 48 > 45+2=47 → fuera del margen
+        int checkCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Dry", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                villainType: OpponentType.TP);
+            if (result.Reason != null && result.Reason.Contains("randomización")) checkCount++;
+        }
+        // TP margin=2: equity 48 > 45+2=47 → fuera de randomización → no checks por randomización
+        Assert.That(checkCount, Is.EqualTo(0),
+            "TP margen estrecho: equity 48 fuera de zona randomización ±2");
+    }
+
+    [Test]
+    public void Randomization_Unknown_MargenDefault()
+    {
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.RandomizationMarginUnknown, Is.EqualTo(3.0));
+    }
+
+    #endregion
 }

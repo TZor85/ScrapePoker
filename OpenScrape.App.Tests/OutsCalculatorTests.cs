@@ -37,8 +37,8 @@ public class OutsCalculatorTests
         var result = _calculator.CalculateOuts(myCards, communityCards);
 
         Assert.That(result.HasFlushDraw, Is.True);
-        // 9 flush + 3 overcard(A, no es straight out) + 1 backdoor straight = 13
-        Assert.That(result.TotalOuts, Is.EqualTo(13));
+        // 9 flush + 3 overcard(A, no es straight out) + 0 backdoor straight (S21.4: overlap con flush) = 12
+        Assert.That(result.TotalOuts, Is.EqualTo(12));
     }
 
     [Test]
@@ -391,8 +391,8 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasFlushDraw, Is.True);
         Assert.That(result.HasOvercards, Is.True);
-        // 9 flush + 6 overcards(A=3, K=3, ambos > 7) + 1 backdoor straight = 16
-        Assert.That(result.TotalOuts, Is.EqualTo(16));
+        // 9 flush + 6 overcards(A=3, K=3, ambos > 7) + 0 backdoor straight (S21.4: overlap) = 15
+        Assert.That(result.TotalOuts, Is.EqualTo(15));
     }
 
     #region [Backdoor Draws]
@@ -795,6 +795,151 @@ public class OutsCalculatorTests
 
         Assert.That(result.HasBackdoorFlushDraw, Is.False);
         Assert.That(result.HasBackdoorStraightDraw, Is.False);
+    }
+
+    #endregion
+
+    #region S21.1 — Overcard Outs por Textura
+
+    [Test]
+    public void OvercardOuts_DryBoard_3OutsPorOvercard()
+    {
+        // K-7-2 rainbow, hero A-Q → overcard Q = 3 outs (standard)
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Queen, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Clubs),
+            C(Rank.Seven, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards, "Dry");
+        Assert.That(result.HasOvercards, Is.True);
+        // A > K → overcard, Q no es overcard (Q < K). Solo A = 1 overcard × 3 = 3 outs
+        Assert.That(result.OvercardCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void OvercardOuts_ConnectedBoard_2OutsPorOvercard()
+    {
+        // 9-8-2, hero A-Q → Q overcard = 2 outs en board Coordinated
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Queen, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Eight, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var resultDry = _calculator.CalculateOuts(myCards, communityCards, "Dry");
+        var resultConnected = _calculator.CalculateOuts(myCards, communityCards, "Coordinated");
+
+        Assert.That(resultConnected.TotalOuts, Is.LessThanOrEqualTo(resultDry.TotalOuts),
+            "Connected board: overcard outs reducidos (2 vs 3)");
+    }
+
+    [Test]
+    public void OvercardOuts_PairedBoard_2OutsPorOvercard()
+    {
+        // K-9-K, hero A-Q → overcard outs reducidos en Paired
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Queen, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.King, Suit.Clubs),
+            C(Rank.Nine, Suit.Spades),
+            C(Rank.King, Suit.Hearts)
+        };
+
+        var resultPaired = _calculator.CalculateOuts(myCards, communityCards, "Paired");
+        Assert.That(resultPaired.HasOvercards, Is.True);
+        // A es overcard (> K? No, K es top), wait A(14) > K(13) → yes
+        Assert.That(resultPaired.OvercardCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void OvercardOuts_WithBlocker_Boost()
+    {
+        // Hero bloquea top card → boost ×1.2
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Queen, Suit.Diamonds)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Nine, Suit.Clubs),
+            C(Rank.Eight, Suit.Spades),
+            C(Rank.Two, Suit.Hearts)
+        };
+
+        var resultNormal = _calculator.CalculateOuts(myCards, communityCards, "Dry", heroBlocksTopCard: false);
+        var resultBlocker = _calculator.CalculateOuts(myCards, communityCards, "Dry", heroBlocksTopCard: true);
+
+        Assert.That(resultBlocker.TotalOuts, Is.GreaterThanOrEqualTo(resultNormal.TotalOuts),
+            "Blocker boost no debe reducir outs");
+    }
+
+    #endregion
+
+    #region S21.4 — Backdoor Overlap Prevention
+
+    [Test]
+    public void BackdoorOverlap_FlushDrawConBackdoorStraight_Descuento()
+    {
+        // Hero: Ah 5h, Flop: 2h 7h Kc → flush draw + backdoor straight
+        // Con overlap: backdoor straight descontado
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+        Assert.That(result.HasFlushDraw, Is.True);
+        // Backdoor straight descontado por overlap con flush suit
+        Assert.That(result.TotalOuts, Is.EqualTo(12),
+            "Flush draw + backdoor straight overlap → total 12 (no 13)");
+    }
+
+    [Test]
+    public void BackdoorOverlap_SinFlushDraw_SinDescuento()
+    {
+        // Hero: 8s 7s, Flop: Ah 3d 5c → no flush draw, backdoor flush + backdoor straight
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Eight, Suit.Spades),
+            C(Rank.Seven, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Three, Suit.Diamonds),
+            C(Rank.Five, Suit.Clubs)
+        };
+
+        var result = _calculator.CalculateOuts(myCards, communityCards);
+        Assert.That(result.HasFlushDraw, Is.False);
+        // Sin main flush draw → sin descuento overlap
+        Assert.That(result.HasBackdoorStraightDraw || result.HasBackdoorFlushDraw, Is.True,
+            "Sin flush draw principal → backdoor draws cuentan completo");
     }
 
     #endregion

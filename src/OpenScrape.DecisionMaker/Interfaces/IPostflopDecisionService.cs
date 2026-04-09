@@ -59,5 +59,6 @@ public interface IPostflopDecisionService
         bool heroCheckedAllStreets = false, bool isAnyoneAllIn = false,
         bool isDonkBet = false, OpponentProfile? villainProfile = null,
         TablePosition heroPosition = TablePosition.None,
-        TablePosition villainPosition = TablePosition.None);
+        TablePosition villainPosition = TablePosition.None,
+        bool isBroadwayWet = false);
 }
