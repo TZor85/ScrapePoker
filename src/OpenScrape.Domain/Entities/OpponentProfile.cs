@@ -32,6 +32,23 @@ public class OpponentProfile
     public int TimesAggressiveOOP { get; set; }   // bet + raise estando OOP
     public int TimesPassiveOOP { get; set; }      // call estando OOP
 
+    // Contadores showdown (S18.3)
+    public int TimesReachedRiver { get; set; }
+    public int TimesWentToShowdown { get; set; }
+    public int TimesWonAtShowdown { get; set; }
+
+    // Contadores check-raise (S18.3)
+    public int TimesCheckRaised { get; set; }
+    public int TimesCheckRaiseOpportunity { get; set; }
+
+    // Contadores donk bet (S18.3)
+    public int TimesDonkBet { get; set; }
+    public int TimesDonkBetOpportunity { get; set; }
+
+    // Contadores barrel (S18.2)
+    public int TimesBarreled { get; set; }
+    public int TimesBarrelOpportunity { get; set; }
+
     // Estadísticas calculadas
     public double VPIP => HandsPlayed > 0 ? (double)TimesVoluntarilyPutMoneyIn / HandsPlayed * 100 : 50;
     public double PFR => HandsPlayed > 0 ? (double)TimesPreflopRaised / HandsPlayed * 100 : 15;
@@ -88,6 +105,42 @@ public class OpponentProfile
     public double CBetPct => TimesCBetOpportunity > 0
         ? (double)TimesCBet / TimesCBetOpportunity * 100
         : 50;
+
+    // Estadísticas ampliadas (S18.3)
+    public double WTSDPct => TimesReachedRiver > 0
+        ? (double)TimesWentToShowdown / TimesReachedRiver * 100 : 35;
+
+    public double WSDPct => TimesWentToShowdown > 0
+        ? (double)TimesWonAtShowdown / TimesWentToShowdown * 100 : 50;
+
+    public double CheckRaisePct => TimesCheckRaiseOpportunity > 0
+        ? (double)TimesCheckRaised / TimesCheckRaiseOpportunity * 100 : 8;
+
+    public double DonkBetPct => TimesDonkBetOpportunity > 0
+        ? (double)TimesDonkBet / TimesDonkBetOpportunity * 100 : 10;
+
+    // Barrel frequency (S18.2)
+    public double BarrelFrequency => TimesBarrelOpportunity > 0
+        ? (double)TimesBarreled / TimesBarrelOpportunity * 100 : -1;
+
+    // Reliability checks para stats ampliados
+    public bool HasReliableWTSDData => TimesReachedRiver >= 15;
+    public bool HasReliableWSDData => TimesWentToShowdown >= 10;
+    public bool HasReliableCheckRaiseData => TimesCheckRaiseOpportunity >= 10;
+    public bool HasReliableDonkBetData => TimesDonkBetOpportunity >= 8;
+    public bool HasReliableBarrelData => TimesBarrelOpportunity >= 8;
+
+    /// <summary>
+    /// Frecuencia de barrel esperada por tipo de oponente.
+    /// </summary>
+    public double ExpectedBarrelFrequency => Type switch
+    {
+        OpponentType.LAG => 60,
+        OpponentType.TAG => 30,
+        OpponentType.LP => 20,
+        OpponentType.TP => 10,
+        _ => 30
+    };
 
     /// <summary>
     /// Clasificación simple del oponente basada en VPIP y PFR.

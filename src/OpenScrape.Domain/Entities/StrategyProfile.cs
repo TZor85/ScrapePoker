@@ -193,6 +193,24 @@ public class StrategyProfile
     public double DeepStackEquityBonus { get; set; } = 1.0;
     public double BetEVThreshold { get; set; } = 5.0;
 
+    // Donk Bet Exploitation (S18.1)
+    public double DonkBetRaiseFrequency { get; set; } = 0.70;
+    public double DonkBetCallBonus { get; set; } = 3.0;
+    public double DonkBetRaiseSizing { get; set; } = 3.5;
+
+    // Barrel Frequency (S18.2)
+    public double BarrelFrequencyOverThreshold { get; set; } = 1.2;
+    public double BarrelFrequencyUnderThreshold { get; set; } = 0.8;
+    public double BarrelOverAdjustment { get; set; } = 3.0;
+    public double BarrelUnderAdjustment { get; set; } = -2.0;
+
+    // Expanded Villain Stats (S18.3)
+    public double WTSDBluffMultiplierHigh { get; set; } = 0.6;
+    public double WTSDBluffMultiplierLow { get; set; } = 1.4;
+    public double WTSDValueBetBonus { get; set; } = -3.0;
+    public double WSDFoldBelowAdjust { get; set; } = 2.0;
+    public double CheckRaiseCbetMultiplier { get; set; } = 0.7;
+
     // Bankroll Settings
     public decimal InitialBankroll { get; set; } = 100.0m;
     public decimal BuyInMax { get; set; } = 2.0m;

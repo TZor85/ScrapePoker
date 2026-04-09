@@ -378,4 +378,184 @@ public class OpponentTrackerTests
         var type = profile.GetTypeForPosition(villainIsInPosition: true);
         Assert.That(type, Is.EqualTo(OpponentType.LP));
     }
+
+    // ─── S18.3: Expanded Villain Stats ───────────────────────────
+
+    [Test]
+    public void TrackShowdownResult_WentAndWon_IncrementsBoth()
+    {
+        _tracker.TrackShowdownResult("P1", wentToSD: true, wonSD: true);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesReachedRiver, Is.EqualTo(1));
+        Assert.That(profile.TimesWentToShowdown, Is.EqualTo(1));
+        Assert.That(profile.TimesWonAtShowdown, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void TrackShowdownResult_WentButLost()
+    {
+        _tracker.TrackShowdownResult("P1", wentToSD: true, wonSD: false);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesWentToShowdown, Is.EqualTo(1));
+        Assert.That(profile.TimesWonAtShowdown, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void TrackShowdownResult_FoldedBeforeSD()
+    {
+        _tracker.TrackShowdownResult("P1", wentToSD: false, wonSD: false);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesReachedRiver, Is.EqualTo(1));
+        Assert.That(profile.TimesWentToShowdown, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void WTSDPct_CalculaCorrectamente()
+    {
+        _tracker.TrackShowdownResult("P1", true, true);
+        _tracker.TrackShowdownResult("P1", true, false);
+        _tracker.TrackShowdownResult("P1", false, false);
+
+        var profile = _tracker.GetProfile("P1");
+        // 2 WTSD / 3 rivers = 66.7%
+        Assert.That(profile.WTSDPct, Is.EqualTo(200.0 / 3.0).Within(0.1));
+        // 1 won / 2 WTSD = 50%
+        Assert.That(profile.WSDPct, Is.EqualTo(50.0).Within(0.1));
+    }
+
+    [Test]
+    public void HasReliableWTSDData_Menos15_NoFiable()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesReachedRiver = 10;
+        Assert.That(profile.HasReliableWTSDData, Is.False);
+    }
+
+    [Test]
+    public void HasReliableWTSDData_15OMas_Fiable()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesReachedRiver = 15;
+        Assert.That(profile.HasReliableWTSDData, Is.True);
+    }
+
+    [Test]
+    public void TrackCheckRaise_IncrementaContadores()
+    {
+        _tracker.TrackCheckRaise("P1", didCR: true, hadOpportunity: true);
+        _tracker.TrackCheckRaise("P1", didCR: false, hadOpportunity: true);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesCheckRaised, Is.EqualTo(1));
+        Assert.That(profile.TimesCheckRaiseOpportunity, Is.EqualTo(2));
+        Assert.That(profile.CheckRaisePct, Is.EqualTo(50.0).Within(0.1));
+    }
+
+    [Test]
+    public void HasReliableCheckRaiseData_Fiabilidad()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesCheckRaiseOpportunity = 5;
+        Assert.That(profile.HasReliableCheckRaiseData, Is.False);
+        profile.TimesCheckRaiseOpportunity = 10;
+        Assert.That(profile.HasReliableCheckRaiseData, Is.True);
+    }
+
+    [Test]
+    public void TrackDonkBet_IncrementaContadores()
+    {
+        _tracker.TrackDonkBet("P1", didDonk: true, hadOpportunity: true);
+        _tracker.TrackDonkBet("P1", didDonk: false, hadOpportunity: true);
+        _tracker.TrackDonkBet("P1", didDonk: true, hadOpportunity: true);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesDonkBet, Is.EqualTo(2));
+        Assert.That(profile.TimesDonkBetOpportunity, Is.EqualTo(3));
+        Assert.That(profile.DonkBetPct, Is.EqualTo(200.0 / 3.0).Within(0.1));
+    }
+
+    [Test]
+    public void HasReliableDonkBetData_Fiabilidad()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesDonkBetOpportunity = 5;
+        Assert.That(profile.HasReliableDonkBetData, Is.False);
+        profile.TimesDonkBetOpportunity = 8;
+        Assert.That(profile.HasReliableDonkBetData, Is.True);
+    }
+
+    // ─── S18.2: Barrel Frequency Tracking ────────────────────────
+
+    [Test]
+    public void TrackBarrel_IncrementaContadores()
+    {
+        _tracker.TrackBarrel("P1", didBarrel: true);
+        _tracker.TrackBarrel("P1", didBarrel: false);
+        _tracker.TrackBarrel("P1", didBarrel: true);
+
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.TimesBarreled, Is.EqualTo(2));
+        Assert.That(profile.TimesBarrelOpportunity, Is.EqualTo(3));
+        Assert.That(profile.BarrelFrequency, Is.EqualTo(200.0 / 3.0).Within(0.1));
+    }
+
+    [Test]
+    public void HasReliableBarrelData_Fiabilidad()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.TimesBarrelOpportunity = 5;
+        Assert.That(profile.HasReliableBarrelData, Is.False);
+        profile.TimesBarrelOpportunity = 8;
+        Assert.That(profile.HasReliableBarrelData, Is.True);
+    }
+
+    [Test]
+    public void BarrelFrequency_SinDatos_RetornaMenosUno()
+    {
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.BarrelFrequency, Is.EqualTo(-1));
+    }
+
+    [Test]
+    public void ExpectedBarrelFrequency_PorTipo()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 30;
+        profile.TimesVoluntarilyPutMoneyIn = 15; // VPIP 50% → loose
+        profile.TimesPostflopBet = 10;
+        profile.TimesPostflopRaised = 5;
+        profile.TimesPostflopCalled = 3; // AF~5 → aggressive → LAG
+
+        Assert.That(profile.ExpectedBarrelFrequency, Is.EqualTo(60));
+    }
+
+    [Test]
+    public void ExpectedBarrelFrequency_TAG()
+    {
+        var profile = _tracker.GetProfile("P1");
+        profile.HandsPlayed = 30;
+        profile.TimesVoluntarilyPutMoneyIn = 6; // VPIP 20% → tight
+        profile.TimesPostflopBet = 8;
+        profile.TimesPostflopRaised = 4;
+        profile.TimesPostflopCalled = 5; // AF ~2.4 → aggressive → TAG
+
+        Assert.That(profile.ExpectedBarrelFrequency, Is.EqualTo(30));
+    }
+
+    [Test]
+    public void DonkBetPct_SinDatos_DefaultBajo()
+    {
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.DonkBetPct, Is.EqualTo(10));
+    }
+
+    [Test]
+    public void WTSDPct_SinDatos_Default()
+    {
+        var profile = _tracker.GetProfile("P1");
+        Assert.That(profile.WTSDPct, Is.EqualTo(35));
+    }
 }

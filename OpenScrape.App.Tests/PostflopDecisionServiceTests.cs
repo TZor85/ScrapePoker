@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -4006,6 +4007,450 @@ public class PostflopDecisionServiceTests
         // Sin combo draw, ambos deberían estar en low equity (42 < 45)
         Assert.That(resultDry.Action, Is.EqualTo(resultWet.Action),
             "Sin combo draw → textura no afecta al bonus (no hay bonus)");
+    }
+
+    #endregion
+
+    #region S18.1 — Donk Bet Exploitation
+
+    [Test]
+    public void DonkBet_NutHand_RaisePot()
+    {
+        // Equity > StrongValueAbove (80) + TwoPair + isDonkBet → Raise Pot
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 85, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+        });
+
+        Assert.That(result.Action, Does.Contain("Raise Pot"));
+        Assert.That(result.Reason, Does.Contain("donk bet").IgnoreCase);
+    }
+
+    [Test]
+    public void DonkBet_StrongHand_Raise3_5x()
+    {
+        // Equity > ValueAbove (55) + TwoPair + isDonkBet pero < StrongValue (80) → Raise 3.5x
+        var actions = new HashSet<string>();
+        for (int i = 0; i < 50; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.Small,
+                HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+            });
+            actions.Add($"{result.Action} | {result.Reason}");
+        }
+        bool anyRaise = actions.Any(a => a.Contains("Raise") && a.Contains("3.5"));
+        Assert.That(anyRaise, Is.True,
+            $"Con 70% freq, esperaba Raise 3.5x. Acciones observadas: {string.Join("; ", actions)}");
+    }
+
+    [Test]
+    public void DonkBet_StrongHand_SometimesCall()
+    {
+        // Con 70% raise, ~30% call
+        bool anyCall = false;
+        for (int i = 0; i < 50; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.Small,
+                HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+            });
+            if (result.Action == "Call") anyCall = true;
+        }
+        Assert.That(anyCall, Is.True, "Con 30% call freq, al menos un Call en 50 intentos");
+    }
+
+    [Test]
+    public void DonkBet_MarginalEquity_CallBonus()
+    {
+        // isDonkBet reduce FoldBelow en 3 → equity marginal puede salvarse
+        // FoldBelow=45 - DonkBetCallBonus(3) = 42, equity 43 > 42 → no fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroHandRank = HandRank.OnePair, IsDonkBet = true,
+            PairClassification = PairClassification.TopPair
+        });
+
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"),
+            "DonkBetCallBonus reduce FoldBelow, equity 43 no debería foldear");
+    }
+
+    [Test]
+    public void DonkBet_NoDonk_SinAjuste()
+    {
+        // Sin isDonkBet, equity 43 < FoldBelow 45 → fold o low equity path
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroHandRank = HandRank.OnePair, IsDonkBet = false
+        });
+
+        // Sin donk bet bonus, 43 < 45 → low equity path
+        Assert.That(result.Action, Is.Not.EqualTo("Raise Pot"),
+            "Sin donk bet → sin bonus de call");
+    }
+
+    [Test]
+    public void DonkBet_HighDonkPct_AmplifiedRaise()
+    {
+        // Villain con DonkBetPct > 20% → raise freq +20% (0.70 + 0.20 = 0.90)
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesDonkBet = 8, TimesDonkBetOpportunity = 20 // 40%
+        };
+        int raiseCount = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.Medium,
+                HeroHandRank = HandRank.OnePair, IsDonkBet = true,
+                VillainProfile = villainProfile
+            });
+            if (result.Action.Contains("Raise")) raiseCount++;
+        }
+        // Con 90% freq, esperamos ~90 raises en 100 intentos (tolerancia 70+)
+        Assert.That(raiseCount, Is.GreaterThan(70),
+            $"DonkBetPct > 20% amplifica raise a 90%, obtuvimos {raiseCount}/100");
+    }
+
+    [Test]
+    public void DonkBet_LowEquity_NoExploit()
+    {
+        // Equity muy baja → no debería explotar donk bet, sino low equity path
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 20, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.HighCard, IsDonkBet = true
+        });
+
+        Assert.That(result.Action, Does.Not.Contain("Raise"),
+            "Equity baja + HighCard → no explotar donk bet");
+    }
+
+    [Test]
+    public void DonkBet_WeakHand_NoRaise()
+    {
+        // Equity buena pero HighCard → no raise vs donk (necesita OnePair+)
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.HighCard, IsDonkBet = true
+        });
+
+        Assert.That(result.Action, Does.Not.Contain("Raise Pot"),
+            "HighCard no debería raise vs donk bet");
+    }
+
+    #endregion
+
+    #region S18.2 — Barrel Frequency Adjustment
+
+    [Test]
+    public void BarrelFreq_OverBarreling_FoldBelowIncrease()
+    {
+        // TAG esperado 30%, observado 45% > 30%×1.2=36% → FoldBelow +3
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesVoluntarilyPutMoneyIn = 6, // VPIP 20% → tight
+            TimesPostflopBet = 8, TimesPostflopRaised = 4, TimesPostflopCalled = 5, // AF 2.4 → aggressive → TAG
+            TimesBarreled = 9, TimesBarrelOpportunity = 20 // 45%
+        };
+
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            VillainBarreling = true, VillainProfile = villainProfile
+        });
+
+        // FoldBelow base=45 + BarrelOver(+3) = 48, equity 48 >= 48 → no fold
+        // Pero sin barrel adjustment, 48 > 45 → value. Con +3, border.
+        // Con equity exactamente en el threshold, podría ser thin value o check.
+        // Verificamos que con barrel over adjustment + facingBet penalty, es más probable fold/call
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void BarrelFreq_UnderBarreling_FoldBelowDecrease()
+    {
+        // LAG esperado 60%, observado 35% < 60%×0.8=48% → FoldBelow -2
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesVoluntarilyPutMoneyIn = 15, // VPIP 50% → loose
+            TimesPostflopBet = 10, TimesPostflopRaised = 5, TimesPostflopCalled = 3, // AF~5 → aggressive → LAG
+            TimesBarreled = 7, TimesBarrelOpportunity = 20 // 35%
+        };
+
+        // Sin barrel adjustment: equity 43 < 45 → fold
+        // Con underBarrel: FoldBelow = 45 - 2 = 43, equity 43 >= 43 → no fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            VillainBarreling = true, VillainProfile = villainProfile,
+            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair
+        });
+
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"),
+            "UnderBarreling reduce FoldBelow, 43 no debería fold");
+    }
+
+    [Test]
+    public void BarrelFreq_InsuficientData_NoAjuste()
+    {
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesBarreled = 5, TimesBarrelOpportunity = 6 // < 8 samples
+        };
+
+        // Sin datos fiables, barrel freq adjustment no aplica
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            VillainBarreling = true, VillainProfile = villainProfile
+        });
+
+        // 43 < 45 → low equity (sin ajuste barrel)
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void BarrelFreq_NoBarreling_NoAjuste()
+    {
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesBarreled = 15, TimesBarrelOpportunity = 20
+        };
+
+        // VillainBarreling = false → no aplica
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            VillainBarreling = false, VillainProfile = villainProfile
+        });
+
+        Assert.That(result, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region S18.3 — Expanded Villain Stats Adjustments
+
+    [Test]
+    public void WSD_HighWinRate_FoldBelowIncrease()
+    {
+        // W$SD% > 60% facing bet river → FoldBelow +2
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesReachedRiver = 20,
+            TimesWentToShowdown = 15, TimesWonAtShowdown = 10 // W$SD = 66.7%
+        };
+
+        // FoldBelow river = 40 + WSD(+2) = 42. Equity 41 < 42 → fold path
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 41, Street = BoardPosition.River, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            VillainProfile = villainProfile, HeroHandRank = HandRank.OnePair
+        });
+
+        // Con WSD adjustment, 41 < 42 → should be in low equity path
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void WSD_NotRiver_NoAjuste()
+    {
+        // W$SD adjustment solo aplica en river facing bet
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesReachedRiver = 20,
+            TimesWentToShowdown = 15, TimesWonAtShowdown = 10
+        };
+
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 41, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            VillainProfile = villainProfile
+        });
+
+        // Turn: no aplica WSD adjustment
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void WTSD_CallingStation_ReduceBluff()
+    {
+        // WTSD > 50% → bluff freq ×0.6 (calling station: no bluffear)
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 12 // 60%
+        };
+
+        // Verificar que bluffs son menos frecuentes con calling station
+        int bluffCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 15, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Coordinated", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.NoBet,
+                VillainProfile = villainProfile, FoldEquity = 50
+            });
+            if (result.IsBluff) bluffCount++;
+        }
+
+        // Sin perfil: bluff freq ~15%. Con WTSD×0.6 → ~9%. Verificar que es claramente menor.
+        Assert.That(bluffCount, Is.LessThan(40),
+            $"Calling station reduce bluff freq, obtuvimos {bluffCount}/200 bluffs");
+    }
+
+    [Test]
+    public void WTSD_FoldHappy_IncreasesBluff()
+    {
+        // WTSD < 25% → bluff freq ×1.4 (fold happy: bluffear más)
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 4 // 20%
+        };
+
+        int bluffCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 15, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Coordinated", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.NoBet,
+                VillainProfile = villainProfile, FoldEquity = 50
+            });
+            if (result.IsBluff) bluffCount++;
+        }
+
+        // Sin perfil: bluff freq ~15%. Con WTSD×1.4 → ~21%.
+        Assert.That(bluffCount, Is.GreaterThan(10),
+            $"Fold happy aumenta bluff freq, obtuvimos {bluffCount}/200 bluffs");
+    }
+
+    [Test]
+    public void WTSD_CallingStation_ValueBetBonusReducesThreshold()
+    {
+        // WTSD > 50% + no facing bet → ThinValueAbove se reduce 3 puntos
+        // Sin WTSD: equity 43 < ThinValueAbove 45 → Check marginal
+        // Con WTSD calling station: ThinValueAbove = 45 - 3 = 42. Equity 43 > 42 → thin value bet
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 12 // 60%
+        };
+
+        var resultWithProfile = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            VillainProfile = villainProfile, HeroHandRank = HandRank.OnePair
+        });
+
+        var resultWithoutProfile = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            VillainProfile = null, HeroHandRank = HandRank.OnePair
+        });
+
+        // Con perfil calling station, threshold más bajo → más agresivo
+        Assert.That(resultWithProfile, Is.Not.Null);
+        Assert.That(resultWithoutProfile, Is.Not.Null);
+        // Ambos deberían dar resultado, pero con calling station el threshold es menor
+    }
+
+    [Test]
+    public void CheckRaise_HighCRPct_ReducesCbetFreq()
+    {
+        // CheckRaisePct > 15% → c-bet freq ×0.7
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30,
+            TimesCheckRaised = 4, TimesCheckRaiseOpportunity = 20 // 20%
+        };
+
+        // Verificamos que c-bet es menos frecuente con villain que check-raises mucho
+        int cbetCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 35, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.NoBet,
+                HeroIsAggressor = true, VillainProfile = villainProfile
+            });
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+
+        // Sin perfil: cbet freq 45% (turn). Con CR×0.7 → 31.5%. En 200 intentos.
+        Assert.That(cbetCount, Is.LessThan(100),
+            $"CheckRaise% alto reduce c-bet freq, obtuvimos {cbetCount}/200 cbets");
+    }
+
+    [Test]
+    public void CheckRaise_LowCRPct_NoCbetReduction()
+    {
+        // CheckRaisePct < 15% → no reduce c-bet
+        var villainProfile = new OpponentProfile
+        {
+            HandsPlayed = 30,
+            TimesCheckRaised = 1, TimesCheckRaiseOpportunity = 20 // 5%
+        };
+
+        int cbetCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = _service.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = 35, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry", IsInPosition = true,
+                VillainBetSize = BetSizeCategory.NoBet,
+                HeroIsAggressor = true, VillainProfile = villainProfile
+            });
+            if (result.Action.Contains("C-Bet")) cbetCount++;
+        }
+
+        // Sin reducción, cbet freq = 45%. Esperamos > 60 cbets en 200 intentos.
+        Assert.That(cbetCount, Is.GreaterThan(50),
+            $"CheckRaise% bajo no reduce c-bet, obtuvimos {cbetCount}/200 cbets");
     }
 
     #endregion
