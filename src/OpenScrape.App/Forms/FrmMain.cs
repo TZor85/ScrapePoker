@@ -306,6 +306,7 @@ namespace OpenScrape.App
             FormClosing += FrmMain_FormClosing;
 
             InitializeHistorialTab();
+            InitializeBankrollTab();
         }
 
         /// <summary>
@@ -983,53 +984,72 @@ namespace OpenScrape.App
             {
                 var stats = _bankrollTrackerService.GetBankrollStats();
 
+                // Panel Bankroll
                 lblBankrollCurrent.Text = $"Bankroll: €{stats.CurrentBankroll:N2}";
                 lblBankrollPeak.Text = $"Peak: €{stats.PeakBankroll:N2}";
-                lblBankrollMaxDD.Text = $"Max Drawdown: {stats.MaxDrawdownPercent:F1}%";
+                lblBankrollMaxDD.Text = $"Max Drawdown: -{stats.MaxDrawdownPercent:F1}%";
 
+                // Color MaxDD según spec
+                lblBankrollMaxDD.ForeColor = stats.MaxDrawdownPercent switch
+                {
+                    < 10 => AppThemeHelper.Success,
+                    < 20 => AppThemeHelper.Warning,
+                    _ => AppThemeHelper.Danger
+                };
+
+                // Panel Rendimiento
                 lblWinRate.Text = $"Win Rate: {stats.WinRateBB100:F1} BB/100";
+                lblWinRate.ForeColor = stats.WinRateBB100 switch
+                {
+                    > 5 => AppThemeHelper.Success,
+                    >= 0 => AppThemeHelper.Warning,
+                    _ => AppThemeHelper.Danger
+                };
+
                 lblStdDev.Text = $"Std Dev: {stats.StdDeviation:F1} BB/100";
 
-                var rorPercent = stats.RiskOfRuin * 100;
-                lblRiskOfRuin.Text = $"Risk of Ruin: {rorPercent:F1}%";
-
-                switch (stats.RiskLevel)
-                {
-                    case "Green":
-                        lblRiskOfRuin.ForeColor = Color.FromArgb(0, 200, 0);
-                        break;
-                    case "Yellow":
-                        lblRiskOfRuin.ForeColor = Color.Orange;
-                        break;
-                    case "Red":
-                        lblRiskOfRuin.ForeColor = Color.Red;
-                        break;
-                }
-
-                lblRecommendation.Text = stats.LimitRecommendation;
-                switch (stats.LimitRecommendation)
-                {
-                    case var r when r.StartsWith("SUBIR"):
-                        lblRecommendation.ForeColor = Color.FromArgb(0, 200, 0);
-                        break;
-                    case var r when r.StartsWith("BAJAR"):
-                        lblRecommendation.ForeColor = Color.Red;
-                        break;
-                    default:
-                        lblRecommendation.ForeColor = Color.Orange;
-                        break;
-                }
-
-                var winRate = stats.TotalSessions > 0
+                var winPct = stats.TotalSessions > 0
                     ? (double)stats.WinningSessions / stats.TotalSessions * 100
                     : 0;
-                lblTotalSessions.Text = $"Sesiones: {stats.TotalSessions} ({stats.WinningSessions} ganadas, {winRate:F0}%)";
+                lblTotalSessions.Text = $"Sesiones: {stats.TotalSessions} ({stats.WinningSessions} ganadas, {winPct:F0}%)";
                 lblTotalHands.Text = $"Manos: {stats.TotalHands}";
+                lblAvgSessionProfit.Text = $"Media: €{stats.AverageSessionProfit:N2} / sesión";
+
+                // Panel Riesgo
+                var rorPercent = stats.RiskOfRuin * 100;
+                lblRiskOfRuin.Text = $"Risk of Ruin: {rorPercent:F1}%";
+                lblRiskOfRuin.ForeColor = stats.RiskLevel switch
+                {
+                    "Green" => AppThemeHelper.Success,
+                    "Yellow" => AppThemeHelper.Warning,
+                    _ => AppThemeHelper.Danger
+                };
+
+                lblRecommendation.Text = stats.LimitRecommendation;
+                lblRecommendation.ForeColor = stats.LimitRecommendation switch
+                {
+                    var r when r.StartsWith("SUBIR") => AppThemeHelper.Success,
+                    var r when r.StartsWith("BAJAR") => AppThemeHelper.Danger,
+                    _ => AppThemeHelper.Warning
+                };
+
+                // Historial en DataGridView
+                var history = _bankrollTrackerService.GetHistory(50);
+                var displayData = history.Select(h => new
+                {
+                    Date = h.Date.ToString("dd/MM/yyyy"),
+                    h.Hands,
+                    Profit = h.Profit.ToString("+0.00;-0.00"),
+                    BBPer100 = h.BBPer100.ToString("+0.0;-0.0"),
+                    BankrollAfter = h.BankrollAfter.ToString("N2")
+                }).ToList();
+
+                dgvBankrollHistory.DataSource = displayData;
             }
-            catch (Exception ex)
+            catch
             {
                 lblBankrollCurrent.Text = "Bankroll: €0.00";
-                lblRecommendation.Text = "Error loading stats";
+                lblRecommendation.Text = "Error al cargar stats";
             }
         }
 
@@ -3775,6 +3795,9 @@ namespace OpenScrape.App
                     case "tpHistorial":
                         ApplyHistorialTabStyle(tab);
                         break;
+                    case "tpBankroll":
+                        ApplyBankrollTabStyle(tab);
+                        break;
                 }
             }
 
@@ -4031,6 +4054,44 @@ namespace OpenScrape.App
             historialTab.ResumeLayout(true);
         }
 
+        private void ApplyBankrollTabStyle(TabPage bankrollTab)
+        {
+            bankrollTab.SuspendLayout();
+
+            // Paneles con fondo blanco y borde sutil
+            foreach (var panel in new[] { pnlBankrollInfo, pnlRiskInfo, pnlPerformance })
+            {
+                panel.BackColor = AppThemeHelper.BackgroundCard;
+                panel.BorderStyle = BorderStyle.None;
+                panel.Paint += (s, e) =>
+                {
+                    using var pen = new Pen(AppThemeHelper.BorderLight, 1f);
+                    e.Graphics.DrawRectangle(pen, 0, 0, ((Panel)s!).Width - 1, ((Panel)s!).Height - 1);
+                };
+            }
+
+            // DataGridView con mismo estilo que historial
+            dgvBankrollHistory.EnableHeadersVisualStyles = false;
+            dgvBankrollHistory.BackgroundColor = AppThemeHelper.BackgroundMain;
+            dgvBankrollHistory.BorderStyle = BorderStyle.None;
+            dgvBankrollHistory.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvBankrollHistory.GridColor = AppThemeHelper.BorderLight;
+            dgvBankrollHistory.Font = new Font("Segoe UI", 9F);
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.ColumnHeadersHeight = 32;
+            dgvBankrollHistory.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+            dgvBankrollHistory.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+            dgvBankrollHistory.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvBankrollHistory.RowTemplate.Height = 26;
+            dgvBankrollHistory.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+
+            bankrollTab.ResumeLayout(true);
+        }
+
         private void tbJuego_Click(object sender, EventArgs e)
         {
 
@@ -4277,7 +4338,45 @@ namespace OpenScrape.App
         }
 
         #endregion
+
+        #region Pestaña Bankroll
+
+        private bool _bankrollLoaded;
+
+        private void InitializeBankrollTab()
+        {
+            dgvBankrollHistory.Columns.AddRange(
+                new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Fecha", DataPropertyName = "Date", Width = 100 },
+                new DataGridViewTextBoxColumn { Name = "Hands", HeaderText = "Manos", DataPropertyName = "Hands", Width = 60 },
+                new DataGridViewTextBoxColumn { Name = "Profit", HeaderText = "Profit", DataPropertyName = "Profit", Width = 80 },
+                new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 },
+                new DataGridViewTextBoxColumn { Name = "BankrollAfter", HeaderText = "Bankroll", DataPropertyName = "BankrollAfter", Width = 90 }
+            );
+
+            tpBankroll.Enter += (s, e) =>
+            {
+                if (!_bankrollLoaded)
+                {
+                    UpdateBankrollDashboard();
+                    _bankrollLoaded = true;
+                }
+            };
+
+            dgvBankrollHistory.CellFormatting += DgvBankrollHistory_CellFormatting;
+        }
+
+        private void DgvBankrollHistory_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            var colName = dgvBankrollHistory.Columns[e.ColumnIndex].Name;
+            if (colName == "Profit" && e.Value is string val)
+            {
+                if (val.StartsWith('+'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Success;
+                else if (val.StartsWith('-'))
+                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
+            }
+        }
+
+        #endregion
     }
-
-
 }
