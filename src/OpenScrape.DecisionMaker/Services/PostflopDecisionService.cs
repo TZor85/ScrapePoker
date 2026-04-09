@@ -101,7 +101,8 @@ public class PostflopDecisionService : IPostflopDecisionService
             input.HeroKickerStrength, input.TurnCalledWithFlushDanger,
             input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
             input.IsAnyoneAllIn, input.IsDonkBet,
-            input.VillainProfile);
+            input.VillainProfile, input.HeroPosition,
+            input.VillainPosition);
 #pragma warning restore CS0618
     }
 
@@ -146,7 +147,9 @@ public class PostflopDecisionService : IPostflopDecisionService
         bool heroCheckedAllStreets = false,
         bool isAnyoneAllIn = false,
         bool isDonkBet = false,
-        OpponentProfile? villainProfile = null)
+        OpponentProfile? villainProfile = null,
+        TablePosition heroPosition = TablePosition.None,
+        TablePosition villainPosition = TablePosition.None)
     {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
@@ -196,9 +199,9 @@ public class PostflopDecisionService : IPostflopDecisionService
 
         // Reverse implied odds: penalizar calls en turn con mano vulnerable en board con draws
         // All-in: desactivar reverse implied (villain no puede apostar más)
-        double reverseImpliedPenalty = isAnyoneAllIn ? 0 : CalculateReverseImpliedOdds(
-            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, pairClassification,
-            heroBlocksDangerSuit);
+        double reverseImpliedPenalty = isAnyoneAllIn ? 0 : ImpliedOddsCalculator.CalculateReverseImpliedOdds(
+            boardChange, heroHandRank, hasFlushDraw, street, isFacingBet, _profile, pairClassification,
+            heroBlocksDangerSuit, villainType, heroStack, potSize, isAnyoneAllIn);
         effectiveEquity -= reverseImpliedPenalty;
 
         // Floor: equity efectiva no puede ser negativa (evita corrupción de thresholds)
@@ -285,15 +288,43 @@ public class PostflopDecisionService : IPostflopDecisionService
         }
 
         // 3-Bet/4-Bet pot: rango villano más estrecho → umbrales más estrictos
-        if (situation is HandSituation.ThreeBet or HandSituation.OpenRaiseVs3Bet or HandSituation.Squeeze)
+        if (situation is HandSituation.ThreeBet or HandSituation.OpenRaiseVs3Bet)
         {
             adjustedFoldBelow += _profile.ThreeBetPostflopFoldIncrease;
             adjustedThinValueAbove += _profile.ThreeBetPostflopValueIncrease;
+        }
+        else if (situation == HandSituation.Squeeze || situation == HandSituation.VsSqueeze)
+        {
+            // S20.4: Squeeze pots más estrictos que 3-bet normal
+            adjustedFoldBelow += _profile.SqueezeFoldBelowAdj;
+            adjustedThinValueAbove += _profile.SqueezeThinValueAdj;
         }
         else if (situation == HandSituation.FourBet)
         {
             adjustedFoldBelow += _profile.FourBetPostflopFoldIncrease;
             adjustedThinValueAbove += _profile.FourBetPostflopValueIncrease;
+        }
+        // S20.2: Limp-Raise → rango super-premium (~3%), thresholds similares a 4-bet
+        else if (situation == HandSituation.LimpRaise)
+        {
+            adjustedFoldBelow += _profile.LimpRaiseFoldBelowAdj;
+            adjustedThinValueAbove += _profile.LimpRaiseThinValueAdj;
+        }
+
+        // S20.1: Blind vs Blind thresholds dinámicos
+        if (heroPosition == TablePosition.SmallBlind && villainPosition == TablePosition.BigBlind)
+        {
+            adjustedFoldBelow += _profile.BvBSBvsBBFoldBelowAdj;
+            adjustedThinValueAbove += _profile.BvBSBvsBBThinValueAdj;
+        }
+        else if (heroPosition == TablePosition.BigBlind && villainPosition == TablePosition.SmallBlind)
+        {
+            adjustedFoldBelow += _profile.BvBBBvsSBFoldBelowAdj;
+            adjustedThinValueAbove += _profile.BvBBBvsSBThinValueAdj;
+        }
+        else if (heroPosition == TablePosition.BigBlind && villainPosition == TablePosition.Button)
+        {
+            adjustedFoldBelow += _profile.BvBBBvsBTNFoldBelowAdj;
         }
 
         // Agresor vs caller

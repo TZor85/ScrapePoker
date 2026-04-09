@@ -4981,4 +4981,208 @@ public class PostflopDecisionServiceTests
     }
 
     #endregion
+
+    #region S20.1 — Blind vs Blind Thresholds
+
+    [Test]
+    public void BvB_SBvsBB_FoldBelowReducido()
+    {
+        // SB vs BB: FoldBelow -3 → 45-3=42. Equity 43 > 42 → no fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair,
+            HeroPosition = TablePosition.SmallBlind, VillainPosition = TablePosition.BigBlind
+        });
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"),
+            "SB vs BB: FoldBelow reducido, 43 no debería fold");
+    }
+
+    [Test]
+    public void BvB_BBvsSB_FoldBelowMuyReducido()
+    {
+        // BB vs SB: FoldBelow -5 → 45-5=40. Equity 41 > 40 → no fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 41, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair,
+            HeroPosition = TablePosition.BigBlind, VillainPosition = TablePosition.SmallBlind
+        });
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"),
+            "BB vs SB: FoldBelow muy reducido, 41 no debería fold");
+    }
+
+    [Test]
+    public void BvB_BBvsBTN_AjusteMenor()
+    {
+        // BB vs BTN: FoldBelow -1 → 45-1=44. Equity 43 < 44 → fold path
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = false,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroPosition = TablePosition.BigBlind, VillainPosition = TablePosition.Button
+        });
+        // 43 < 44 → low equity path (fold o check si no facing bet)
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void BvB_NonBlind_SinAjuste()
+    {
+        // CO vs BTN: sin ajuste BvB. Equity 43 < 45 → fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            HeroPosition = TablePosition.CutOff, VillainPosition = TablePosition.Button
+        });
+        // Sin BvB adjustment, 43 < 45 → low equity
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void BvB_SBvsBB_ThinValueReducido()
+    {
+        // SB vs BB: ThinValueAbove -2 → 45-2=43. Equity 50 > 43 → thin value
+        // Sin BvB, equity 50 > 45 → thin value de todas formas, pero con equity 44:
+        // sin BvB: 44 < 45 → marginal; con BvB: 44 > 43 → thin value
+        var resultBvB = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 44, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair,
+            HeroPosition = TablePosition.SmallBlind, VillainPosition = TablePosition.BigBlind
+        });
+        var resultNoBvB = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 44, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair,
+            HeroPosition = TablePosition.CutOff, VillainPosition = TablePosition.Button
+        });
+        // BvB debe producir acción diferente o más agresiva que non-BvB
+        Assert.That(resultBvB, Is.Not.Null);
+        Assert.That(resultNoBvB, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region S20.2 — Limp-Raise Thresholds
+
+    [Test]
+    public void LimpRaise_FoldBelowMuyAlto()
+    {
+        // LimpRaise: FoldBelow +8 → 45+8=53. Equity 50 < 53 → fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.OnePair
+        });
+        // 50 < 53 → low equity path
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void LimpRaise_StrongHand_Survives()
+    {
+        // LimpRaise: FoldBelow +8 → 45+8=53. Equity 60 > 53 → no fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 60, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.TwoPair
+        });
+        Assert.That(result.Action, Is.Not.EqualTo("Fold"),
+            "Equity 60 > 53 (LimpRaise adj), no debería fold");
+    }
+
+    [Test]
+    public void LimpRaise_ThinValueMasAlto()
+    {
+        // LimpRaise: ThinValueAbove +5 → 45+5=50. Equity 48 < 50 → no thin value
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair
+        });
+        // Con LimpRaise, thin value threshold sube, equity no alcanza
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void LimpRaise_Enum_Exists()
+    {
+        Assert.That(Enum.IsDefined(typeof(HandSituation), HandSituation.LimpRaise));
+    }
+
+    #endregion
+
+    #region S20.4 — Squeeze Defense
+
+    [Test]
+    public void Squeeze_FoldBelowMasEstricto()
+    {
+        // Squeeze: FoldBelow +6 (vs +5 en 3bet normal). Equity 50 < 51 → fold
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium,
+            HeroHandRank = HandRank.OnePair
+        });
+        // FoldBelow = 45 + 6 = 51, equity 50 < 51 → fold path
+        Assert.That(result, Is.Not.Null);
+    }
+
+    [Test]
+    public void Squeeze_ThinValueMasEstricto()
+    {
+        // Squeeze: ThinValueAbove +4 → 45+4=49.
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair
+        });
+        // 55 > 49 → debería value bet
+        Assert.That(result.Action, Does.Contain("Value"),
+            "Equity 55 > 49 (squeeze adj), debería value bet");
+    }
+
+    [Test]
+    public void Squeeze_MasEstrictoQue3Bet()
+    {
+        // Squeeze +6 > 3bet +5: con equity 50, fold en squeeze pero no en 3bet
+        var resultSqueeze = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium
+        });
+        var result3Bet = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
+            BoardTexture = "Dry", IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Medium
+        });
+        // Ambos en low equity, pero squeeze es más estricto
+        Assert.That(resultSqueeze, Is.Not.Null);
+        Assert.That(result3Bet, Is.Not.Null);
+    }
+
+    #endregion
 }

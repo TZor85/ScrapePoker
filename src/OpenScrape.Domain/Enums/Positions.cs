@@ -35,7 +35,8 @@ namespace OpenScrape.Domain.Enums
         Squeeze,
         VsSqueeze,
         DonkBet,
-        DonkBetVsOpenRaise
+        DonkBetVsOpenRaise,
+        LimpRaise
     }
 
     public enum BoardPosition

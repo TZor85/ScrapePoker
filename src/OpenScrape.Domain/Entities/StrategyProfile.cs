@@ -202,6 +202,26 @@ public class StrategyProfile
     public double ThreeBetPotIPCallFreq { get; set; } = 0.85;
     public bool ThreeBetPotNoFloat { get; set; } = true;
 
+    // S20.1 — Blind vs Blind thresholds
+    public double BvBSBvsBBFoldBelowAdj { get; set; } = -3.0;
+    public double BvBSBvsBBThinValueAdj { get; set; } = -2.0;
+    public double BvBBBvsSBFoldBelowAdj { get; set; } = -5.0;
+    public double BvBBBvsSBThinValueAdj { get; set; } = -3.0;
+    public double BvBBBvsBTNFoldBelowAdj { get; set; } = -1.0;
+
+    // S20.2 — Limp-Raise
+    public double LimpRaiseFoldBelowAdj { get; set; } = 8.0;
+    public double LimpRaiseThinValueAdj { get; set; } = 5.0;
+
+    // S20.3 — Reverse Implied Odds (bluff risk futuro)
+    public double BluffRiskBaseFactor { get; set; } = 0.30;
+    public double BluffRiskLAGMultiplier { get; set; } = 1.5;
+    public double BluffRiskTPMultiplier { get; set; } = 0.5;
+
+    // S20.4 — Squeeze Defense postflop
+    public double SqueezeFoldBelowAdj { get; set; } = 6.0;
+    public double SqueezeThinValueAdj { get; set; } = 4.0;
+
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
 
