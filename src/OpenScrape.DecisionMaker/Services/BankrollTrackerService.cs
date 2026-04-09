@@ -10,6 +10,7 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
     private readonly StrategyProfile _profile;
     private decimal _currentBankroll;
     private decimal _peakBankroll;
+    private decimal _lastBigBlind = 0.02m;
     private int MinSessionsForRecommendation => _profile.MinSessionsForRecommendation;
     private const int MaxSessionsForStats = 100;
 
@@ -50,24 +51,12 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
             stats.CurrentBankroll = sessionsOrdered.Last().EndingBankroll;
 
             if (stats.CurrentBankroll > 0)
-            {
                 _currentBankroll = stats.CurrentBankroll;
-            }
-            if (stats.CurrentBankroll > _peakBankroll || _peakBankroll == 0)
-            {
-                _peakBankroll = stats.CurrentBankroll;
-                stats.PeakBankroll = stats.CurrentBankroll;
-            }
-            else
-            {
-                stats.PeakBankroll = _peakBankroll;
-            }
 
-            stats.MaxDrawdown = _peakBankroll - stats.CurrentBankroll;
-            stats.MaxDrawdownPercent = _peakBankroll > 0
-                ? (double)(_peakBankroll - stats.CurrentBankroll) / (double)_peakBankroll * 100
-                : 0;
-
+            // Recorrer sesiones una sola vez: peak, drawdown, hands, profit
+            decimal runningPeak = 0;
+            decimal maxDrawdown = 0;
+            var runningBankroll = sessionsOrdered.First().StartingBankroll;
             var totalHands = 0;
             var totalProfit = 0m;
             var winningSessions = 0;
@@ -81,22 +70,39 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
 
                 var handCount = hands.Count;
                 var profit = hands.Sum(h => h.HeroStackEnd - h.HeroStackStart);
+
+                // Bankroll tracking
+                runningBankroll += profit;
+                if (runningBankroll > runningPeak)
+                    runningPeak = runningBankroll;
+                var dd = runningPeak - runningBankroll;
+                if (dd > maxDrawdown)
+                    maxDrawdown = dd;
+
+                // Stats
                 totalHands += handCount;
                 totalProfit += profit;
-
                 if (profit > 0)
                     winningSessions++;
-
                 if (handCount > 0 && s.BigBlind > 0)
-                {
-                    var bb100 = (double)(profit / s.BigBlind) / handCount * 100;
-                    bbPer100List.Add(bb100);
-                }
+                    bbPer100List.Add((double)(profit / s.BigBlind) / handCount * 100);
             }
+
+            stats.PeakBankroll = runningPeak;
+            _peakBankroll = runningPeak;
+            stats.MaxDrawdown = maxDrawdown;
+            stats.MaxDrawdownPercent = runningPeak > 0
+                ? (double)(maxDrawdown / runningPeak) * 100
+                : 0;
 
             stats.TotalHands = totalHands;
             stats.WinningSessions = winningSessions;
             stats.AverageSessionProfit = sessions.Count > 0 ? totalProfit / sessions.Count : 0;
+
+            // Guardar la última BigBlind para cálculos de RoR
+            var lastBB = sessionsOrdered.Last().BigBlind;
+            if (lastBB > 0)
+                _lastBigBlind = lastBB;
 
             if (bbPer100List.Count > 0)
             {
@@ -168,7 +174,7 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
         return CalculateRiskOfRuinInternal(stats);
     }
 
-    private (double riskOfRuin, string level) CalculateRiskOfRuinInternal(BankrollStats stats)
+    internal (double riskOfRuin, string level) CalculateRiskOfRuinInternal(BankrollStats stats)
     {
         if (stats.TotalSessions < MinSessionsForRecommendation)
             return (0, "Green");
@@ -176,8 +182,9 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
         if (stats.WinRateBB100 <= 0 || stats.StdDeviation <= 0)
             return (1.0, "Red");
 
-        var bb = stats.CurrentBankroll / 2m;
-        var brBb = (double)bb;
+        var brBb = _lastBigBlind > 0
+            ? (double)(stats.CurrentBankroll / _lastBigBlind)
+            : (double)stats.CurrentBankroll;
 
         if (brBb <= 0)
             return (1.0, "Red");
@@ -211,7 +218,7 @@ public class BankrollTrackerService : Interfaces.IBankrollTrackerService
         return GetLimitRecommendationInternal(stats);
     }
 
-    private string GetLimitRecommendationInternal(BankrollStats stats)
+    internal string GetLimitRecommendationInternal(BankrollStats stats)
     {
         if (stats.TotalSessions < MinSessionsForRecommendation)
             return $"DATOS: Collecting more data... ({stats.TotalSessions}/{MinSessionsForRecommendation})";
