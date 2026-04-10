@@ -48,7 +48,7 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
         StrategyProfile currentProfile)
     {
         var sessionAnalysis = exploitabilityCalculator.CalculateSessionAnalysis();
-        
+
         if (sessionAnalysis.TotalDecisions < MinDecisionsForCalibration)
         {
             return new CalibrationResult
@@ -114,7 +114,7 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
     public bool ShouldRecalibrate(IExploitabilityCalculator calculator)
     {
         var sessionAnalysis = calculator.CalculateSessionAnalysis();
-        
+
         if (sessionAnalysis.TotalDecisions < MinDecisionsForCalibration)
             return false;
 
@@ -165,7 +165,7 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
     private ParameterAdjustment? CalculateAdjustmentForLeak(LeakInfo leak, StrategyProfile currentProfile)
     {
         double adjustmentValue = Math.Min(leak.AverageExploitabilityMbb / 10, MaxAdjustmentPerCycle);
-        
+
         if (adjustmentValue < 1.0)
             return null;
 
@@ -210,11 +210,11 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
     private double CalculateEstimatedImprovement(List<ParameterAdjustment> adjustments)
     {
         double totalImprovement = 0;
-        
+
         foreach (var adjustment in adjustments)
         {
             double improvement = adjustment.NewValue - adjustment.OldValue;
-            
+
             if (adjustment.ParameterName == "FoldBelow")
             {
                 totalImprovement += Math.Abs(improvement) * 2;
