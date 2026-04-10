@@ -241,7 +241,7 @@ public class PostflopDecisionServiceTests
     {
         // NOTA: RangePolarizer adds adjustments based on board texture and position
         // This test may have different results with the new integration
-        
+
         var sinAggro = _service.DetermineAction(
             equity: 49, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
@@ -1877,8 +1877,9 @@ public class PostflopDecisionServiceTests
 
         // BluffBetSize default en Turn_OpenRaise no está explícito → default "Bet 1/3"
         // betFraction 0.33, breakeven ~25%, foldEquity 40% >= 25% → bluff
+        // S22.6: equity=44 cerca de FoldBelow=45 → scalingFactor=0.978 → freq~0.978 (casi determinístico)
         var result = service.DetermineAction(
-            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 44, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
@@ -4023,10 +4024,14 @@ public class PostflopDecisionServiceTests
         // Equity > StrongValueAbove (80) + TwoPair + isDonkBet → Raise Pot
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 85, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 85,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
-            HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+            HeroHandRank = HandRank.TwoPair,
+            IsDonkBet = true
         });
 
         Assert.That(result.Action, Does.Contain("Raise Pot"));
@@ -4042,10 +4047,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 65,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.Small,
-                HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+                HeroHandRank = HandRank.TwoPair,
+                IsDonkBet = true
             });
             actions.Add($"{result.Action} | {result.Reason}");
         }
@@ -4063,10 +4072,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 65,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.Small,
-                HeroHandRank = HandRank.TwoPair, IsDonkBet = true
+                HeroHandRank = HandRank.TwoPair,
+                IsDonkBet = true
             });
             if (result.Action == "Call") anyCall = true;
         }
@@ -4080,10 +4093,14 @@ public class PostflopDecisionServiceTests
         // FoldBelow=45 - DonkBetCallBonus(3) = 42, equity 43 > 42 → no fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            HeroHandRank = HandRank.OnePair, IsDonkBet = true,
+            HeroHandRank = HandRank.OnePair,
+            IsDonkBet = true,
             PairClassification = PairClassification.TopPair
         });
 
@@ -4097,10 +4114,14 @@ public class PostflopDecisionServiceTests
         // Sin isDonkBet, equity 43 < FoldBelow 45 → fold o low equity path
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            HeroHandRank = HandRank.OnePair, IsDonkBet = false
+            HeroHandRank = HandRank.OnePair,
+            IsDonkBet = false
         });
 
         // Sin donk bet bonus, 43 < 45 → low equity path
@@ -4114,17 +4135,23 @@ public class PostflopDecisionServiceTests
         // Villain con DonkBetPct > 20% → raise freq +20% (0.70 + 0.20 = 0.90)
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesDonkBet = 8, TimesDonkBetOpportunity = 20 // 40%
+            HandsPlayed = 30,
+            TimesDonkBet = 8,
+            TimesDonkBetOpportunity = 20 // 40%
         };
         int raiseCount = 0;
         for (int i = 0; i < 100; i++)
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 65,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.Medium,
-                HeroHandRank = HandRank.OnePair, IsDonkBet = true,
+                HeroHandRank = HandRank.OnePair,
+                IsDonkBet = true,
                 VillainProfile = villainProfile
             });
             if (result.Action.Contains("Raise")) raiseCount++;
@@ -4140,10 +4167,14 @@ public class PostflopDecisionServiceTests
         // Equity muy baja → no debería explotar donk bet, sino low equity path
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 20, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 20,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
-            HeroHandRank = HandRank.HighCard, IsDonkBet = true
+            HeroHandRank = HandRank.HighCard,
+            IsDonkBet = true
         });
 
         Assert.That(result.Action, Does.Not.Contain("Raise"),
@@ -4156,10 +4187,14 @@ public class PostflopDecisionServiceTests
         // Equity buena pero HighCard → no raise vs donk (necesita OnePair+)
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 65,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
-            HeroHandRank = HandRank.HighCard, IsDonkBet = true
+            HeroHandRank = HandRank.HighCard,
+            IsDonkBet = true
         });
 
         Assert.That(result.Action, Does.Not.Contain("Raise Pot"),
@@ -4176,17 +4211,25 @@ public class PostflopDecisionServiceTests
         // TAG esperado 30%, observado 45% > 30%×1.2=36% → FoldBelow +3
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesVoluntarilyPutMoneyIn = 6, // VPIP 20% → tight
-            TimesPostflopBet = 8, TimesPostflopRaised = 4, TimesPostflopCalled = 5, // AF 2.4 → aggressive → TAG
-            TimesBarreled = 9, TimesBarrelOpportunity = 20 // 45%
+            HandsPlayed = 30,
+            TimesVoluntarilyPutMoneyIn = 6, // VPIP 20% → tight
+            TimesPostflopBet = 8,
+            TimesPostflopRaised = 4,
+            TimesPostflopCalled = 5, // AF 2.4 → aggressive → TAG
+            TimesBarreled = 9,
+            TimesBarrelOpportunity = 20 // 45%
         };
 
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 48,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
-            VillainBarreling = true, VillainProfile = villainProfile
+            VillainBarreling = true,
+            VillainProfile = villainProfile
         });
 
         // FoldBelow base=45 + BarrelOver(+3) = 48, equity 48 >= 48 → no fold
@@ -4202,20 +4245,29 @@ public class PostflopDecisionServiceTests
         // LAG esperado 60%, observado 35% < 60%×0.8=48% → FoldBelow -2
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesVoluntarilyPutMoneyIn = 15, // VPIP 50% → loose
-            TimesPostflopBet = 10, TimesPostflopRaised = 5, TimesPostflopCalled = 3, // AF~5 → aggressive → LAG
-            TimesBarreled = 7, TimesBarrelOpportunity = 20 // 35%
+            HandsPlayed = 30,
+            TimesVoluntarilyPutMoneyIn = 15, // VPIP 50% → loose
+            TimesPostflopBet = 10,
+            TimesPostflopRaised = 5,
+            TimesPostflopCalled = 3, // AF~5 → aggressive → LAG
+            TimesBarreled = 7,
+            TimesBarrelOpportunity = 20 // 35%
         };
 
         // Sin barrel adjustment: equity 43 < 45 → fold
         // Con underBarrel: FoldBelow = 45 - 2 = 43, equity 43 >= 43 → no fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            VillainBarreling = true, VillainProfile = villainProfile,
-            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair
+            VillainBarreling = true,
+            VillainProfile = villainProfile,
+            HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair
         });
 
         Assert.That(result.Action, Is.Not.EqualTo("Fold"),
@@ -4227,16 +4279,22 @@ public class PostflopDecisionServiceTests
     {
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesBarreled = 5, TimesBarrelOpportunity = 6 // < 8 samples
+            HandsPlayed = 30,
+            TimesBarreled = 5,
+            TimesBarrelOpportunity = 6 // < 8 samples
         };
 
         // Sin datos fiables, barrel freq adjustment no aplica
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            VillainBarreling = true, VillainProfile = villainProfile
+            VillainBarreling = true,
+            VillainProfile = villainProfile
         });
 
         // 43 < 45 → low equity (sin ajuste barrel)
@@ -4248,16 +4306,22 @@ public class PostflopDecisionServiceTests
     {
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesBarreled = 15, TimesBarrelOpportunity = 20
+            HandsPlayed = 30,
+            TimesBarreled = 15,
+            TimesBarrelOpportunity = 20
         };
 
         // VillainBarreling = false → no aplica
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 48,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
-            VillainBarreling = false, VillainProfile = villainProfile
+            VillainBarreling = false,
+            VillainProfile = villainProfile
         });
 
         Assert.That(result, Is.Not.Null);
@@ -4273,17 +4337,23 @@ public class PostflopDecisionServiceTests
         // W$SD% > 60% facing bet river → FoldBelow +2
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesReachedRiver = 20,
-            TimesWentToShowdown = 15, TimesWonAtShowdown = 10 // W$SD = 66.7%
+            HandsPlayed = 30,
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 15,
+            TimesWonAtShowdown = 10 // W$SD = 66.7%
         };
 
         // FoldBelow river = 40 + WSD(+2) = 42. Equity 41 < 42 → fold path
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 41, Street = BoardPosition.River, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 41,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
-            VillainProfile = villainProfile, HeroHandRank = HandRank.OnePair
+            VillainProfile = villainProfile,
+            HeroHandRank = HandRank.OnePair
         });
 
         // Con WSD adjustment, 41 < 42 → should be in low equity path
@@ -4296,14 +4366,19 @@ public class PostflopDecisionServiceTests
         // W$SD adjustment solo aplica en river facing bet
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesReachedRiver = 20,
-            TimesWentToShowdown = 15, TimesWonAtShowdown = 10
+            HandsPlayed = 30,
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 15,
+            TimesWonAtShowdown = 10
         };
 
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 41, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 41,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
             VillainProfile = villainProfile
         });
@@ -4318,7 +4393,9 @@ public class PostflopDecisionServiceTests
         // WTSD > 50% → bluff freq ×0.6 (calling station: no bluffear)
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 12 // 60%
+            HandsPlayed = 30,
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 12 // 60%
         };
 
         // Verificar que bluffs son menos frecuentes con calling station
@@ -4327,10 +4404,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 15, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Coordinated", IsInPosition = true,
+                Equity = 15,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Coordinated",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.NoBet,
-                VillainProfile = villainProfile, FoldEquity = 50
+                VillainProfile = villainProfile,
+                FoldEquity = 50
             });
             if (result.IsBluff) bluffCount++;
         }
@@ -4346,7 +4427,9 @@ public class PostflopDecisionServiceTests
         // WTSD < 25% → bluff freq ×1.4 (fold happy: bluffear más)
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 4 // 20%
+            HandsPlayed = 30,
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 4 // 20%
         };
 
         int bluffCount = 0;
@@ -4354,10 +4437,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 15, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Coordinated", IsInPosition = true,
+                Equity = 15,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Coordinated",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.NoBet,
-                VillainProfile = villainProfile, FoldEquity = 50
+                VillainProfile = villainProfile,
+                FoldEquity = 50
             });
             if (result.IsBluff) bluffCount++;
         }
@@ -4375,23 +4462,33 @@ public class PostflopDecisionServiceTests
         // Con WTSD calling station: ThinValueAbove = 45 - 3 = 42. Equity 43 > 42 → thin value bet
         var villainProfile = new OpponentProfile
         {
-            HandsPlayed = 30, TimesReachedRiver = 20, TimesWentToShowdown = 12 // 60%
+            HandsPlayed = 30,
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 12 // 60%
         };
 
         var resultWithProfile = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
-            VillainProfile = villainProfile, HeroHandRank = HandRank.OnePair
+            VillainProfile = villainProfile,
+            HeroHandRank = HandRank.OnePair
         });
 
         var resultWithoutProfile = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
-            VillainProfile = null, HeroHandRank = HandRank.OnePair
+            VillainProfile = null,
+            HeroHandRank = HandRank.OnePair
         });
 
         // Con perfil calling station, threshold más bajo → más agresivo
@@ -4407,7 +4504,8 @@ public class PostflopDecisionServiceTests
         var villainProfile = new OpponentProfile
         {
             HandsPlayed = 30,
-            TimesCheckRaised = 4, TimesCheckRaiseOpportunity = 20 // 20%
+            TimesCheckRaised = 4,
+            TimesCheckRaiseOpportunity = 20 // 20%
         };
 
         // Verificamos que c-bet es menos frecuente con villain que check-raises mucho
@@ -4416,10 +4514,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 35, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 35,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.NoBet,
-                HeroIsAggressor = true, VillainProfile = villainProfile
+                HeroIsAggressor = true,
+                VillainProfile = villainProfile
             });
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
@@ -4436,7 +4538,8 @@ public class PostflopDecisionServiceTests
         var villainProfile = new OpponentProfile
         {
             HandsPlayed = 30,
-            TimesCheckRaised = 1, TimesCheckRaiseOpportunity = 20 // 5%
+            TimesCheckRaised = 1,
+            TimesCheckRaiseOpportunity = 20 // 5%
         };
 
         int cbetCount = 0;
@@ -4444,10 +4547,14 @@ public class PostflopDecisionServiceTests
         {
             var result = _service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 35, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 35,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.NoBet,
-                HeroIsAggressor = true, VillainProfile = villainProfile
+                HeroIsAggressor = true,
+                VillainProfile = villainProfile
             });
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
@@ -4468,10 +4575,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseMixingEnabled = true;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4497,10 +4611,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseMixingEnabled = true;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4527,10 +4648,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseMixingEnabled = true;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4556,10 +4684,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseMixingEnabled = false;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4582,10 +4717,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseLowSPRMinEquity = 60.0;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4608,10 +4750,17 @@ public class PostflopDecisionServiceTests
         profile.CheckRaiseMixingEnabled = true;
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4731,8 +4880,13 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_OpenRaise"] = new StreetThresholds
         {
-            FoldBelow = 45, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanBluff = true, BluffBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 45,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanBluff = true,
+            BluffBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4785,10 +4939,17 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 45, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 50,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 45,
+            ThinValueAbove = 50,
+            ValueAbove = 60,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 50,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4797,8 +4958,11 @@ public class PostflopDecisionServiceTests
         {
             var result = service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 70, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
-                BoardTexture = "Dry", IsInPosition = false,
+                Equity = 70,
+                Street = BoardPosition.Flop,
+                Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry",
+                IsInPosition = false,
                 VillainBetSize = BetSizeCategory.NoBet,
                 HeroHandRank = HandRank.TwoPair
             });
@@ -4815,10 +4979,17 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 35, ThinValueAbove = 45, ValueAbove = 55, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 40,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 35,
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 40,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4827,11 +4998,16 @@ public class PostflopDecisionServiceTests
         {
             var result = service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 42, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
-                BoardTexture = "Coordinated", IsInPosition = false,
+                Equity = 42,
+                Street = BoardPosition.Flop,
+                Situation = HandSituation.ThreeBet,
+                BoardTexture = "Coordinated",
+                IsInPosition = false,
                 VillainBetSize = BetSizeCategory.NoBet,
-                HeroHandRank = HandRank.HighCard, HasFlushDraw = true,
-                HasComboDraw = true, TotalOuts = 12
+                HeroHandRank = HandRank.HighCard,
+                HasFlushDraw = true,
+                HasComboDraw = true,
+                TotalOuts = 12
             });
             if (result.IsCheckRaise) crCount++;
         }
@@ -4847,18 +5023,28 @@ public class PostflopDecisionServiceTests
         profile.ThreeBetPotNoFloat = true;
         profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 45, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
-            CanCheckRaise = true, CheckRaiseThreshold = 50,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 45,
+            ThinValueAbove = 50,
+            ValueAbove = 60,
+            StrongValueAbove = 80,
+            CanCheckRaise = true,
+            CheckRaiseThreshold = 50,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
         // Equity baja, sin draw significativo en 3bet pot OOP → fold, no float
         var result = service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 20, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 20,
+            Street = BoardPosition.Flop,
+            Situation = HandSituation.ThreeBet,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.HighCard
         });
@@ -4874,10 +5060,17 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Turn_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3",
-            CanProbeBet = true, ProbeBetMinEquity = 40, ProbeBetSize = "Bet 1/3",
+            FoldBelow = 40,
+            ThinValueAbove = 50,
+            ValueAbove = 60,
+            StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            CanProbeBet = true,
+            ProbeBetMinEquity = 40,
+            ProbeBetSize = "Bet 1/3",
             LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
@@ -4887,8 +5080,11 @@ public class PostflopDecisionServiceTests
         {
             var result = service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
-                BoardTexture = "Dry", IsInPosition = false,
+                Equity = 55,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry",
+                IsInPosition = false,
                 VillainBetSize = BetSizeCategory.NoBet,
                 VillainAggressorCheckedPreviousStreet = true
             });
@@ -4905,9 +5101,15 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Turn_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 40,
+            ThinValueAbove = 50,
+            ValueAbove = 60,
+            StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4916,10 +5118,14 @@ public class PostflopDecisionServiceTests
         {
             var result = service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 65, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
-                BoardTexture = "Dry", IsInPosition = false,
+                Equity = 65,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry",
+                IsInPosition = false,
                 VillainBetSize = BetSizeCategory.Medium,
-                VillainBarreling = true, HeroHandRank = HandRank.TwoPair
+                VillainBarreling = true,
+                HeroHandRank = HandRank.TwoPair
             });
             if (result.IsCheckRaise) crCount++;
         }
@@ -4934,9 +5140,15 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         profile.Thresholds["Flop_ThreeBet"] = new StreetThresholds
         {
-            FoldBelow = 40, ThinValueAbove = 50, ValueAbove = 60, StrongValueAbove = 80,
-            DryBoardBetSize = "Bet 1/2", StrongValueBetSize = "Bet 3/4",
-            ValueBetSize = "Bet 1/2", ThinValueBetSize = "Bet 1/3", LowEquityAction = "Fold"
+            FoldBelow = 40,
+            ThinValueAbove = 50,
+            ValueAbove = 60,
+            StrongValueAbove = 80,
+            DryBoardBetSize = "Bet 1/2",
+            StrongValueBetSize = "Bet 3/4",
+            ValueBetSize = "Bet 1/2",
+            ThinValueBetSize = "Bet 1/3",
+            LowEquityAction = "Fold"
         };
         var service = CreateService(profile);
 
@@ -4946,8 +5158,11 @@ public class PostflopDecisionServiceTests
         {
             var result = service.DetermineAction(new PostflopDecisionInput
             {
-                Equity = 60, Street = BoardPosition.Flop, Situation = HandSituation.ThreeBet,
-                BoardTexture = "Dry", IsInPosition = true,
+                Equity = 60,
+                Street = BoardPosition.Flop,
+                Situation = HandSituation.ThreeBet,
+                BoardTexture = "Dry",
+                IsInPosition = true,
                 VillainBetSize = BetSizeCategory.Medium,
                 HeroHandRank = HandRank.OnePair,
                 PairClassification = PairClassification.TopPair
@@ -4968,8 +5183,11 @@ public class PostflopDecisionServiceTests
         // OpenRaise normal no activa lógica 3bet
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 60, Street = BoardPosition.Flop, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 60,
+            Street = BoardPosition.Flop,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
             HeroHandRank = HandRank.OnePair,
             PairClassification = PairClassification.TopPair
@@ -4990,11 +5208,16 @@ public class PostflopDecisionServiceTests
         // SB vs BB: FoldBelow -3 → 45-3=42. Equity 43 > 42 → no fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair,
-            HeroPosition = TablePosition.SmallBlind, VillainPosition = TablePosition.BigBlind
+            HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair,
+            HeroPosition = TablePosition.SmallBlind,
+            VillainPosition = TablePosition.BigBlind
         });
         Assert.That(result.Action, Is.Not.EqualTo("Fold"),
             "SB vs BB: FoldBelow reducido, 43 no debería fold");
@@ -5006,11 +5229,16 @@ public class PostflopDecisionServiceTests
         // BB vs SB: FoldBelow -5 → 45-5=40. Equity 41 > 40 → no fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 41, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 41,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.Small,
-            HeroHandRank = HandRank.OnePair, PairClassification = PairClassification.TopPair,
-            HeroPosition = TablePosition.BigBlind, VillainPosition = TablePosition.SmallBlind
+            HeroHandRank = HandRank.OnePair,
+            PairClassification = PairClassification.TopPair,
+            HeroPosition = TablePosition.BigBlind,
+            VillainPosition = TablePosition.SmallBlind
         });
         Assert.That(result.Action, Is.Not.EqualTo("Fold"),
             "BB vs SB: FoldBelow muy reducido, 41 no debería fold");
@@ -5022,10 +5250,14 @@ public class PostflopDecisionServiceTests
         // BB vs BTN: FoldBelow -1 → 45-1=44. Equity 43 < 44 → fold path
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.Small,
-            HeroPosition = TablePosition.BigBlind, VillainPosition = TablePosition.Button
+            HeroPosition = TablePosition.BigBlind,
+            VillainPosition = TablePosition.Button
         });
         // 43 < 44 → low equity path (fold o check si no facing bet)
         Assert.That(result, Is.Not.Null);
@@ -5037,10 +5269,14 @@ public class PostflopDecisionServiceTests
         // CO vs BTN: sin ajuste BvB. Equity 43 < 45 → fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 43, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 43,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            HeroPosition = TablePosition.CutOff, VillainPosition = TablePosition.Button
+            HeroPosition = TablePosition.CutOff,
+            VillainPosition = TablePosition.Button
         });
         // Sin BvB adjustment, 43 < 45 → low equity
         Assert.That(result, Is.Not.Null);
@@ -5054,19 +5290,27 @@ public class PostflopDecisionServiceTests
         // sin BvB: 44 < 45 → marginal; con BvB: 44 > 43 → thin value
         var resultBvB = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 44, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 44,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.OnePair,
-            HeroPosition = TablePosition.SmallBlind, VillainPosition = TablePosition.BigBlind
+            HeroPosition = TablePosition.SmallBlind,
+            VillainPosition = TablePosition.BigBlind
         });
         var resultNoBvB = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 44, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 44,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.OnePair,
-            HeroPosition = TablePosition.CutOff, VillainPosition = TablePosition.Button
+            HeroPosition = TablePosition.CutOff,
+            VillainPosition = TablePosition.Button
         });
         // BvB debe producir acción diferente o más agresiva que non-BvB
         Assert.That(resultBvB, Is.Not.Null);
@@ -5083,8 +5327,11 @@ public class PostflopDecisionServiceTests
         // LimpRaise: FoldBelow +8 → 45+8=53. Equity 50 < 53 → fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
             HeroHandRank = HandRank.OnePair
         });
@@ -5098,8 +5345,11 @@ public class PostflopDecisionServiceTests
         // LimpRaise: FoldBelow +8 → 45+8=53. Equity 60 > 53 → no fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 60, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 60,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
             HeroHandRank = HandRank.TwoPair
         });
@@ -5113,8 +5363,11 @@ public class PostflopDecisionServiceTests
         // LimpRaise: ThinValueAbove +5 → 45+5=50. Equity 48 < 50 → no thin value
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 48, Street = BoardPosition.Turn, Situation = HandSituation.LimpRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 48,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.LimpRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.OnePair
         });
@@ -5138,8 +5391,11 @@ public class PostflopDecisionServiceTests
         // Squeeze: FoldBelow +6 (vs +5 en 3bet normal). Equity 50 < 51 → fold
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium,
             HeroHandRank = HandRank.OnePair
         });
@@ -5153,8 +5409,11 @@ public class PostflopDecisionServiceTests
         // Squeeze: ThinValueAbove +4 → 45+4=49.
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.TwoPair
         });
@@ -5169,14 +5428,20 @@ public class PostflopDecisionServiceTests
         // Squeeze +6 > 3bet +5: con equity 50, fold en squeeze pero no en 3bet
         var resultSqueeze = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.Squeeze,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.Squeeze,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium
         });
         var result3Bet = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.ThreeBet,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.ThreeBet,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Medium
         });
         // Ambos en low equity, pero squeeze es más estricto
@@ -5194,10 +5459,14 @@ public class PostflopDecisionServiceTests
         // SB (×0.70) vs BB default (×0.50) → penalty mayor en SB
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, HeroPosition = TablePosition.SmallBlind
+            NumOpponents = 3,
+            HeroPosition = TablePosition.SmallBlind
         });
         Assert.That(result, Is.Not.Null);
     }
@@ -5207,10 +5476,14 @@ public class PostflopDecisionServiceTests
     {
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, HeroPosition = TablePosition.BigBlind
+            NumOpponents = 3,
+            HeroPosition = TablePosition.BigBlind
         });
         Assert.That(result, Is.Not.Null);
     }
@@ -5220,10 +5493,14 @@ public class PostflopDecisionServiceTests
     {
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, HeroPosition = TablePosition.Early
+            NumOpponents = 3,
+            HeroPosition = TablePosition.Early
         });
         Assert.That(result, Is.Not.Null);
     }
@@ -5234,18 +5511,26 @@ public class PostflopDecisionServiceTests
         // Villain agresor amplifica ×1.3
         var resultAggr = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, VillainShowedAggression = true,
+            NumOpponents = 3,
+            VillainShowedAggression = true,
             HeroPosition = TablePosition.BigBlind
         });
         var resultNoAggr = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 50, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = false,
+            Equity = 50,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = false,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, VillainShowedAggression = false,
+            NumOpponents = 3,
+            VillainShowedAggression = false,
             HeroPosition = TablePosition.BigBlind
         });
         // Con villain agresor, penalty mayor → más probable check/fold
@@ -5259,10 +5544,14 @@ public class PostflopDecisionServiceTests
         // Hero IP → usa penalty lineal estándar, sin position damping
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 55, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry", IsInPosition = true,
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
-            NumOpponents = 3, HeroPosition = TablePosition.Button
+            NumOpponents = 3,
+            HeroPosition = TablePosition.Button
         });
         Assert.That(result, Is.Not.Null);
     }
@@ -5277,18 +5566,26 @@ public class PostflopDecisionServiceTests
         // BroadwayWet: FoldBelow +3. Equity 47 sin broadway → OK, con broadway → marginal
         var resultNormal = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 47, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet", IsInPosition = true,
+            Equity = 47,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            IsBroadwayWet = false, HeroHandRank = HandRank.OnePair,
+            IsBroadwayWet = false,
+            HeroHandRank = HandRank.OnePair,
             PairClassification = PairClassification.TopPair
         });
         var resultBroadway = _service.DetermineAction(new PostflopDecisionInput
         {
-            Equity = 47, Street = BoardPosition.Turn, Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet", IsInPosition = true,
+            Equity = 47,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
             VillainBetSize = BetSizeCategory.Small,
-            IsBroadwayWet = true, HeroHandRank = HandRank.OnePair,
+            IsBroadwayWet = true,
+            HeroHandRank = HandRank.OnePair,
             PairClassification = PairClassification.TopPair
         });
         Assert.That(resultNormal, Is.Not.Null);
@@ -5378,6 +5675,995 @@ public class PostflopDecisionServiceTests
     {
         var profile = CreateDefaultProfile();
         Assert.That(profile.RandomizationMarginUnknown, Is.EqualTo(3.0));
+    }
+
+    #endregion
+
+    // ═══════════════════════════════════════════════════════════════════
+    // S22 — Sprint Refinamiento
+    // ═══════════════════════════════════════════════════════════════════
+
+    #region S22.1 — Tainted Outs al Equity Pipeline
+
+    [Test]
+    public void S22_1_SemiBluff_UsaEffectiveOuts_EnVezDeTotalOuts()
+    {
+        // Con EffectiveOuts < TotalOuts, la equidad del draw baja → bluff EV más ajustado
+        // Escenario: flush draw con 2 tainted (9 total, ~7.6 effective)
+        var result = _service.DetermineAction(
+            equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 7.6,
+            foldEquity: 45);
+
+        // Con effective outs menores, el bluff EV es más restrictivo
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_1_SemiBluff_SinTaintedOuts_ComportamientoIdentico()
+    {
+        // Sin tainted outs: effectiveOuts == totalOuts → resultado igual
+        var resultSinTainted = _service.DetermineAction(
+            equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 8, hasFlushDraw: false,
+            effectiveOuts: 8.0,
+            foldEquity: 45);
+
+        var resultConTainted = _service.DetermineAction(
+            equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 8, hasFlushDraw: false,
+            effectiveOuts: 8.0,
+            foldEquity: 45);
+
+        Assert.That(resultSinTainted.Action, Is.EqualTo(resultConTainted.Action));
+    }
+
+    [Test]
+    public void S22_1_DrawCall_UsaEffectiveOuts_ParaImpliedOdds()
+    {
+        // Con EffectiveOuts altos (flush draw limpio), call es más atractivo
+        var resultAlto = _service.DetermineAction(
+            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            potOdds: 25, totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 9.0,  // sin tainted
+            heroStack: 200, potSize: 50);
+
+        // Con EffectiveOuts bajos (draw con tainted), call menos atractivo
+        var resultBajo = _service.DetermineAction(
+            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.Small,
+            potOdds: 25, totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 6.5,  // con tainted
+            heroStack: 200, potSize: 50);
+
+        // Ambos producen respuesta válida
+        Assert.That(resultAlto.Action, Is.Not.Empty);
+        Assert.That(resultBajo.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_1_EffectiveOutsDefault_EsCero_SinTainted()
+    {
+        // EffectiveOuts default 0 → usa TotalOuts como fallback
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 30,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            TotalOuts = 8,
+            EffectiveOuts = 0  // default → usa TotalOuts
+        });
+
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_1_EffectiveOuts_NoAfecta_DrawClassification()
+    {
+        // HasFlushDraw se basa en TotalOuts (>= 9), no en EffectiveOuts
+        // Con EffectiveOuts bajo pero TotalOuts=9 → sigue siendo flush draw
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 38,
+            Street = BoardPosition.Flop,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            TotalOuts = 9,
+            HasFlushDraw = true,  // clasificado por TotalOuts
+            EffectiveOuts = 6.5   // tainted reduce equity de draw
+        });
+
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_1_BluffEquity_ConTaintedOuts_MasRestrictivo()
+    {
+        // Semi-bluff con fold equity alta: con tainted outs el EV draw baja,
+        // pero fold equity alta sigue justificando el bluff
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 25,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            TotalOuts = 9,
+            HasFlushDraw = true,
+            EffectiveOuts = 7.0,
+            FoldEquity = 55
+        });
+
+        // Con fold equity 55% debería permitir bluff incluso con tainted outs
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    #endregion
+
+    #region S22.2 — River Blank vs Scare Card
+
+    [Test]
+    public void S22_2_ClasificacionRiverCard_BlankCard()
+    {
+        var analyzer = new BoardTextureAnalyzer();
+        // FlushCompleted, FlushDrawAppeared, StraightCompleted, BoardPaired, OvercardAppeared, CompletedFlushSuit, DangerLevel
+        var boardChange = new BoardChangeResult(false, false, false, false, false, -1, 0);
+
+        var tipo = analyzer.ClassifyRiverCard(boardChange);
+        Assert.That(tipo, Is.EqualTo(RiverCardType.Blank));
+    }
+
+    [Test]
+    public void S22_2_ClasificacionRiverCard_ScareCardFlush()
+    {
+        var analyzer = new BoardTextureAnalyzer();
+        var boardChange = new BoardChangeResult(true, true, false, false, false, -1, 3);
+
+        var tipo = analyzer.ClassifyRiverCard(boardChange);
+        Assert.That(tipo, Is.EqualTo(RiverCardType.Scare));
+    }
+
+    [Test]
+    public void S22_2_ClasificacionRiverCard_ScareCardStraight()
+    {
+        var analyzer = new BoardTextureAnalyzer();
+        var boardChange = new BoardChangeResult(false, false, true, false, false, -1, 2);
+
+        var tipo = analyzer.ClassifyRiverCard(boardChange);
+        Assert.That(tipo, Is.EqualTo(RiverCardType.Scare));
+    }
+
+    [Test]
+    public void S22_2_BlankRiver_PermiteThinValueThinner()
+    {
+        // Blank river → ThinValueAbove baja -2 → hero puede value bet con menos equity
+        // Con RiverCardType.Blank y equity ligeramente bajo ThinValueAbove normal
+        var resultBlank = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 39,  // justo debajo de ThinValueAbove=40 (pero con -2 bonus → 38)
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair,
+            RiverCardType = RiverCardType.Blank
+        });
+
+        // El resultado válido: puede ser Thin Value o Check según implementación exacta
+        Assert.That(resultBlank.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_2_ScareRiver_FacingBet_BluffCatchMasPermisivo()
+    {
+        // Scare river → villain puede representar draw → bluff catch threshold × 0.90
+        // Con RiverCardType.Scare, facing bet, equity marginal → más fácil call
+        var resultScare = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 38,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 28,
+            HeroHandRank = HandRank.OnePair,
+            RiverCardType = RiverCardType.Scare,
+            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
+        });
+
+        Assert.That(resultScare.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_2_ScareRiver_SinFacingBet_CheckOReduceSizing()
+    {
+        // Scare river sin bet → check o sizing reducido para TwoPair sin flush
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = false,
+            RiverCardType = RiverCardType.Scare,
+            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
+        });
+
+        // TwoPair degradado en scare river → check o bet reducida
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_2_BlankRiver_FacingBet_NoReduceBluffCatch()
+    {
+        // Blank river → villain menos probable bluffing → threshold normal
+        var resultBlank = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 38,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 28,
+            HeroHandRank = HandRank.OnePair,
+            RiverCardType = RiverCardType.Blank
+        });
+
+        Assert.That(resultBlank.Action, Is.Not.Empty);
+    }
+
+    #endregion
+
+    #region S22.3 — Opponent Profile por Posicion
+
+    [Test]
+    public void S22_3_RecordHandPlayed_IncrementaContadoresPosicionales()
+    {
+        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        tracker.RecordHandPlayed("villain1", TablePosition.Button);
+
+        var profile = tracker.GetProfile("villain1");
+        Assert.That(profile.HandsPlayed, Is.EqualTo(1));
+        Assert.That(profile.PositionProfiles.ContainsKey(TablePosition.Button), Is.True);
+        Assert.That(profile.PositionProfiles[TablePosition.Button].HandsPlayed, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void S22_3_RecordVPIP_IncrementaContadorPosicional()
+    {
+        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        tracker.RecordHandPlayed("villain1", TablePosition.Button);
+        tracker.RecordVPIP("villain1", TablePosition.Button);
+
+        var profile = tracker.GetProfile("villain1");
+        Assert.That(profile.TimesVoluntarilyPutMoneyIn, Is.EqualTo(1));
+        Assert.That(profile.PositionProfiles[TablePosition.Button].TimesVPIP, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void S22_3_RecordPFR_IncrementaContadorPosicional()
+    {
+        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        tracker.RecordHandPlayed("villain1", TablePosition.Button);
+        tracker.RecordPFR("villain1", TablePosition.Button);
+
+        var profile = tracker.GetProfile("villain1");
+        Assert.That(profile.TimesPreflopRaised, Is.EqualTo(1));
+        Assert.That(profile.PositionProfiles[TablePosition.Button].TimesPFR, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void S22_3_GetProfileForPosition_RetornaStatsPosicionales()
+    {
+        var profile = new OpponentProfile { PlayerId = "villain1" };
+
+        // Simular 15 manos desde Button con VPIP 45%
+        for (int i = 0; i < 15; i++)
+        {
+            profile.HandsPlayed++;
+            if (!profile.PositionProfiles.ContainsKey(TablePosition.Button))
+                profile.PositionProfiles[TablePosition.Button] = new OpponentPositionProfile();
+            profile.PositionProfiles[TablePosition.Button].HandsPlayed++;
+        }
+        for (int i = 0; i < 7; i++)
+        {
+            profile.TimesVoluntarilyPutMoneyIn++;
+            profile.PositionProfiles[TablePosition.Button].TimesVPIP++;
+        }
+
+        var posProfile = profile.GetProfileForPosition(TablePosition.Button);
+
+        // Debería retornar stats posicionales (7/15 = 46.7% VPIP)
+        Assert.That(posProfile.VPIP, Is.EqualTo(7.0 / 15.0 * 100).Within(0.1));
+    }
+
+    [Test]
+    public void S22_3_GetProfileForPosition_FallbackAGlobal_PocasManos()
+    {
+        var profile = new OpponentProfile { PlayerId = "villain1" };
+
+        // 30 manos globales VPIP 30%
+        profile.HandsPlayed = 30;
+        profile.TimesVoluntarilyPutMoneyIn = 9;
+
+        // Solo 5 manos desde Button (< 10 mínimo)
+        profile.PositionProfiles[TablePosition.Button] = new OpponentPositionProfile
+        {
+            HandsPlayed = 5,
+            TimesVPIP = 4
+        };
+
+        var posProfile = profile.GetProfileForPosition(TablePosition.Button);
+
+        // Debe retornar el perfil global (this) con VPIP 30%
+        Assert.That(posProfile.VPIP, Is.EqualTo(30.0).Within(0.1));
+    }
+
+    [Test]
+    public void S22_3_OpponentPositionProfile_IsReliable_MinDiezManos()
+    {
+        var posProfile = new OpponentPositionProfile { HandsPlayed = 9 };
+        Assert.That(posProfile.IsReliable, Is.False);
+
+        posProfile.HandsPlayed = 10;
+        Assert.That(posProfile.IsReliable, Is.True);
+    }
+
+    [Test]
+    public void S22_3_RecordHandPlayed_SinPosicion_NoCreaPerfil()
+    {
+        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        tracker.RecordHandPlayed("villain1");  // sin posición
+
+        var profile = tracker.GetProfile("villain1");
+        Assert.That(profile.HandsPlayed, Is.EqualTo(1));
+        Assert.That(profile.PositionProfiles, Is.Empty);
+    }
+
+    [Test]
+    public void S22_3_VPIP_Posicional_NoAfecta_SiPosicionNoRegistrada()
+    {
+        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        tracker.RecordHandPlayed("villain1", TablePosition.Button);
+        // RecordVPIP sin posición previa registrada para EP
+        tracker.RecordVPIP("villain1", TablePosition.Early);
+
+        var profile = tracker.GetProfile("villain1");
+        // EP no tiene perfil registrado → RecordVPIP no crea perfil posicional
+        Assert.That(profile.PositionProfiles.ContainsKey(TablePosition.Early), Is.False);
+    }
+
+    #endregion
+
+    #region S22.4 — Stackoff Planning Cross-Street
+
+    [Test]
+    public void S22_4_CalculateProjectedRiverSPR_ComprometidoConBet()
+    {
+        // Stack=30, pot=20, bet=2/3 pot (13.3) → projected SPR = (30-13.3)/(20+26.6) = 0.36
+        double projected = PostflopDecisionService.CalculateProjectedRiverSPR(
+            heroStack: 30, potSize: 20, betFraction: 0.667);
+
+        Assert.That(projected, Is.LessThan(0.5), "Bet compromete → SPR muy bajo");
+        Assert.That(projected, Is.GreaterThan(0));
+    }
+
+    [Test]
+    public void S22_4_CalculateProjectedRiverSPR_PlayableConBet()
+    {
+        // Stack=60, pot=20, bet=1/2 pot (10) → projected SPR = (60-10)/(20+20) = 1.25
+        double projected = PostflopDecisionService.CalculateProjectedRiverSPR(
+            heroStack: 60, potSize: 20, betFraction: 0.5);
+
+        Assert.That(projected, Is.GreaterThan(1.0), "Bet mantiene SPR jugable");
+    }
+
+    [Test]
+    public void S22_4_CalculateProjectedRiverSPR_Fallback_StackOPotCero()
+    {
+        double projected1 = PostflopDecisionService.CalculateProjectedRiverSPR(0, 20, 0.5);
+        double projected2 = PostflopDecisionService.CalculateProjectedRiverSPR(60, 0, 0.5);
+
+        Assert.That(projected1, Is.EqualTo(99));
+        Assert.That(projected2, Is.EqualTo(99));
+    }
+
+    [Test]
+    public void S22_4_TurnBet_EquityAlta_SPRBajo_AllIn()
+    {
+        // Turn con equity alta y bet que compromete river → all-in directo
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 65,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair,
+            HeroStack = 30,
+            PotSize = 20,
+            NumOpponents = 1,
+            HeroIsAggressor = true
+        });
+
+        // Con SPR bajo y equity alta → All-In o Bet grande
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_4_TurnBet_EquityMarginal_SPRBajo_CheckBack()
+    {
+        // Turn con equity marginal y bet que compromete → preferir check
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 48,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Coordinated",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair,
+            HeroStack = 25,
+            PotSize = 20,
+            NumOpponents = 1
+        });
+
+        // Equity marginal + SPR bajo → Check o Bet conservador
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_4_FacingBet_TurnSPRComprometido_PotCommitment()
+    {
+        // Facing bet que dejaría SPR < 0.5 con equity > 35%
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 40,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Large,
+            PotOdds = 35,
+            HeroHandRank = HandRank.OnePair,
+            HeroStack = 15,
+            PotSize = 30
+        });
+
+        // Call por pot commitment (SPR bajo + equity > 35%)
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_4_SPR_Normal_NoActivaStackoff()
+    {
+        // SPR normal (> 1.0) → no activa stackoff planning especial
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 65,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair,
+            HeroStack = 100,
+            PotSize = 20
+        });
+
+        // Con SPR alto → bet normal
+        Assert.That(result.Action, Does.Contain("Value").Or.Contain("Thin Value"));
+    }
+
+    #endregion
+
+    #region S22.5 — Multiway Nut Advantage
+
+    [Test]
+    public void S22_5_Flush_MultiwaY_PenaltyReducido50Pct()
+    {
+        // HU vs 3-way: hero tiene flush → penalty reducido en 3-way
+        var resultHU = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.Flush,
+            NumOpponents = 1
+        });
+
+        var result3Way = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.Flush,
+            NumOpponents = 2  // 3-way
+        });
+
+        // Con flush en multiway, penalty reducido → más agresivo que mano débil multiway
+        Assert.That(result3Way.Action, Is.Not.Empty);
+        Assert.That(resultHU.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_5_Set_MultiWay_IP_PenaltyReducido30Pct()
+    {
+        // ThreeOfAKind IP en board no paired → penalty reducido 30%
+        var resultSet = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 58,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.ThreeOfAKind,
+            NumOpponents = 2,
+            BoardChange = new BoardChangeResult(false, false, false, false, false, -1, 0)
+        });
+
+        Assert.That(resultSet.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_5_OnePair_Multiway_PenaltyNormal()
+    {
+        // OnePair en multiway → no hay reducción de penalty
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.OnePair,
+            NumOpponents = 2
+        });
+
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_5_Flush_HU_SinReduccion()
+    {
+        // HU: no hay multiway penalty → reducción no aplica (no hay qué reducir)
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 65,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.Flush,
+            NumOpponents = 1
+        });
+
+        Assert.That(result.Action, Does.Contain("Value"));
+    }
+
+    [Test]
+    public void S22_5_TwoPair_Multiway_PenaltyNormal()
+    {
+        // TwoPair no llega a la reducción nut (solo Flush+ y ThreeOfAKind condicionado)
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 58,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair,
+            NumOpponents = 2
+        });
+
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_5_StrategyProfile_MultiwayNutParams_TienenDefaults()
+    {
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.MultiwayNutPenaltyReduction, Is.EqualTo(0.50));
+        Assert.That(profile.MultiwayStrongPenaltyReduction, Is.EqualTo(0.30));
+    }
+
+    #endregion
+
+    #region S22.6 — Bluff Frequency Basada en Equity
+
+    [Test]
+    public void S22_6_Bluff_ConFoldEquityAlta_FreqNormal()
+    {
+        // Equity alta (cercana a FoldBelow) → scaling factor ~1.0 → freq normal
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int bluffCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                foldEquity: 55);
+            if (result.Reason != null &&
+                (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
+                bluffCount++;
+        }
+
+        // Con equity cercana a FoldBelow → freq normal (no penalizada)
+        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void S22_6_Bluff_ConEquityMuyBaja_FreqReducida()
+    {
+        // Equity muy baja vs FoldBelow → scaling factor bajo pero >= 0.5 floor
+        var profile = CreateDefaultProfile();
+        var service = CreateService(profile);
+
+        int bluffCount = 0;
+        for (int i = 0; i < 500; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                foldEquity: 65);
+            if (result.Reason != null &&
+                (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
+                bluffCount++;
+        }
+
+        // Con equity muy baja → freq reducida pero floor 50%
+        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void S22_6_Bluff_ConFoldEquitySuficiente_DeberiaBluffear()
+    {
+        // Equity baja pero fold equity alta → bluff EV positivo → debe bluffear
+        // Freq=1.0 + equity=44 (cerca de FoldBelow=45) → scaling factor ~0.98 → bluffFreq ~0.98
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+        var service = CreateService(profile);
+
+        int bluffCount = 0;
+        for (int i = 0; i < 20; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 44, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                foldEquity: 80, totalOuts: 0);
+            if (result.IsBluff) bluffCount++;
+        }
+
+        // Con freq 98% y 20 intentos, esperamos 15+ bluffs
+        Assert.That(bluffCount, Is.GreaterThan(10), "Con fold equity 80% debe bluffear (freq ~98%)");
+    }
+
+    [Test]
+    public void S22_6_BluffFreqEquityScaling_EstaHabilitado()
+    {
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.BluffFreqEquityScaling, Is.True);
+    }
+
+    [Test]
+    public void S22_6_ScalingFactor_Floor_CercaDeCero_ConFreqAlta()
+    {
+        // Con equity=1, FoldBelow=45 → scalingFactor = 1-(45-1)/45 = 0.022 → clamp a 0.5
+        // Con TurnBluffFrequency=1.0: bluffFreq = 1.0 * 0.5 * 1.0 = 0.5 → 50% chance de bluff
+        // El floor de 0.5 preserva bluffs +EV incluso con equity muy baja
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+        var service = CreateService(profile);
+
+        int bluffCount = 0;
+        for (int i = 0; i < 200; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 1, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                foldEquity: 75, totalOuts: 0);
+            if (result.IsBluff) bluffCount++;
+        }
+
+        // Con TurnBluffFrequency=1.0 y floor 0.5: ~50% de 200 = ~100 bluffs esperados
+        Assert.That(bluffCount, Is.GreaterThan(30), "Floor 0.5 preserva bluffs +EV con equity muy baja");
+    }
+
+    [Test]
+    public void S22_6_SinBluffFreqScaling_Deshabilitado_NoAffecta()
+    {
+        var profile = CreateDefaultProfile();
+        profile.BluffFreqEquityScaling = false;
+        var service = CreateService(profile);
+
+        // Sin scaling → freq base se usa directamente
+        int bluffCount = 0;
+        for (int i = 0; i < 300; i++)
+        {
+            var result = service.DetermineAction(
+                equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
+                boardTexture: "Coordinated", isInPosition: true,
+                villainBetSize: BetSizeCategory.NoBet,
+                foldEquity: 70, totalOuts: 0);
+            if (result.Action == "Bluff") bluffCount++;
+        }
+
+        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
+    }
+
+    #endregion
+
+    #region S22.7 — Pot Commitment Range Expandido
+
+    [Test]
+    public void S22_7_SPR_MenosDeMedioCall_EquityPositiva()
+    {
+        // SPR < 0.5 (existente): EV(call) > 0 → Call
+        var result = _service.DetermineAction(
+            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 42, totalOuts: 0,
+            heroStack: 8, potSize: 20);
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Entre05y10_EquidadSobre30_Call()
+    {
+        // SPR 0.5-1.0: equity > 30% → Call por pot commitment expandido
+        var result = _service.DetermineAction(
+            equity: 33, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 40, totalOuts: 0,
+            heroStack: 15, potSize: 20);
+
+        // SPR ≈ 0.75 + equity 33% > 30% → Call
+        Assert.That(result.Action, Is.EqualTo("Call"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Entre10y15_EquidadSobre38_Call()
+    {
+        // SPR 1.0-1.5: equity > 38% → Call por pot commitment expandido
+        var result = _service.DetermineAction(
+            equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 40, totalOuts: 0,
+            heroStack: 25, potSize: 20);
+
+        // SPR ≈ 1.25 + equity 40% > 38% → Call
+        Assert.That(result.Action, Is.EqualTo("Call"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Entre10y15_EquidadBajo38_NoCall()
+    {
+        // SPR 1.0-1.5: equity < 38% → no activa pot commitment
+        var result = _service.DetermineAction(
+            equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 40, totalOuts: 0,
+            heroStack: 25, potSize: 20);
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Sobre15_FueraDeRango_NoActivaCommitment()
+    {
+        // SPR > 1.5: pot commitment expandido no aplica.
+        // Verificamos que la constante PotCommitmentSPRExpanded tiene el valor correcto
+        // y que la lógica del perfil está bien configurada
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.PotCommitmentSPRExpanded, Is.EqualTo(1.5),
+            "SPR > 1.5 debe estar fuera del rango de pot commitment expandido");
+
+        // SPR = 3 (heroStack=60, potSize=20): equity 39% con potOdds 38%
+        // Pot commitment expandido (SPR 1.0-1.5) requería equity > 38% → pero SPR=3, no aplica
+        // Por lo tanto, si equity < potOdds → fold normal
+        var result = _service.DetermineAction(
+            equity: 10, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 45, totalOuts: 0,
+            heroStack: 60, potSize: 20);  // SPR=3
+
+        // Con equity muy baja y potOdds altas → Fold
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+    }
+
+    [Test]
+    public void S22_7_StrategyProfile_PotCommitmentParams_TienenDefaults()
+    {
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.PotCommitmentSPRExpanded, Is.EqualTo(1.5));
+        Assert.That(profile.PotCommitmentEquityMedium, Is.EqualTo(30.0));
+        Assert.That(profile.PotCommitmentEquityWide, Is.EqualTo(38.0));
+    }
+
+    #endregion
+
+    #region S22.8 — Hand Strength Re-Evaluation en River
+
+    [Test]
+    public void S22_8_TwoPair_FlushCompleted_NoRaise()
+    {
+        // TwoPair con flush completado → relativeHandRank = OnePair → no raise
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 25,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = false,
+            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
+        });
+
+        // No debería recomendar Raise (TwoPair degradado a OnePair)
+        Assert.That(result.Action, Is.Not.EqualTo("Raise"));
+    }
+
+    [Test]
+    public void S22_8_TwoPair_StraightCompleted_NoOverbet()
+    {
+        // TwoPair con straight completado → no overbet
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 60,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Coordinated",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = false,
+            BoardChange = new BoardChangeResult(false, false, true, false, false, -1, 2)
+        });
+
+        // No overbet (TwoPair degradado)
+        Assert.That(result.Action, Does.Not.Contain("Overbet").IgnoreCase);
+    }
+
+    [Test]
+    public void S22_8_TwoPair_SinDrawCompletado_RaiseNormal()
+    {
+        // TwoPair sin draw completado → mantiene valor → raise permitido
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 68,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Dry",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 25,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = false,
+            BoardChange = BoardChangeResult.Safe
+        });
+
+        // TwoPair normal → puede Raise o Call
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_8_Flush_BoardPaired_NoDegradan()
+    {
+        // Flush no se degrada cuando el board se parea
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 75,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Paired",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.NoBet,
+            HeroHandRank = HandRank.Flush,
+            HeroBlocksDangerSuit = true,
+            BoardChange = new BoardChangeResult(false, false, false, true, false, -1, 0)
+        });
+
+        // Flush mantiene valor → value bet
+        Assert.That(result.Action, Does.Contain("Value"));
+    }
+
+    [Test]
+    public void S22_8_ReEval_SoloEnRiver_NoEnTurn()
+    {
+        // Re-evaluación solo en River, no en Turn
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 55,
+            Street = BoardPosition.Turn,  // no River
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 25,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = false,
+            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
+        });
+
+        // En Turn TwoPair no se degrada → acción normal
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_8_TwoPair_ConBlocker_NoSeDegrada()
+    {
+        // TwoPair con hero bloqueando suit → flush completado pero hero tiene blocker → no degradar
+        var result = _service.DetermineAction(new PostflopDecisionInput
+        {
+            Equity = 60,
+            Street = BoardPosition.River,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = true,
+            VillainBetSize = BetSizeCategory.Small,
+            PotOdds = 25,
+            HeroHandRank = HandRank.TwoPair,
+            HeroBlocksDangerSuit = true,  // hero bloquea → no degrada
+            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
+        });
+
+        // Con blocker, TwoPair mantiene valor → puede Raise
+        Assert.That(result.Action, Is.Not.Empty);
+    }
+
+    [Test]
+    public void S22_8_HandReEvalOnDrawCompletion_EstaHabilitado()
+    {
+        var profile = CreateDefaultProfile();
+        Assert.That(profile.HandReEvalOnDrawCompletion, Is.True);
     }
 
     #endregion

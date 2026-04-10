@@ -55,6 +55,12 @@ public class PostflopGameContext
     public bool IsAnyoneAllIn { get; set; }
 
     /// <summary>
+    /// S22.4: Turn bet comprometería el river (projected SPR < StackoffProjectedSPRThreshold).
+    /// Indica que hero debe ir all-in ahora (o check para control) en vez de tamaño intermedio.
+    /// </summary>
+    public bool TurnBetCommitsToRiver { get; set; }
+
+    /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
@@ -86,6 +92,7 @@ public class PostflopGameContext
         HeroFloatedFlop = false;
         TurnCalledWithFlushDanger = false;
         IsAnyoneAllIn = false;
+        TurnBetCommitsToRiver = false;
         VillainBetSizeFlop = BetSizeCategory.NoBet;
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;

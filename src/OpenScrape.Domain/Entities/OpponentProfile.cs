@@ -1,4 +1,44 @@
+using OpenScrape.Domain.Enums;
+
 namespace OpenScrape.Domain.Entities;
+
+/// <summary>
+/// S22.3: Estadísticas de un oponente desglosadas por posición en la mesa.
+/// Permite distinguir un villain 45/35 desde BTN de 18/14 desde EP.
+/// </summary>
+public class OpponentPositionProfile
+{
+    public int HandsPlayed { get; set; }
+    public int TimesVPIP { get; set; }
+    public int TimesPFR { get; set; }
+    public int TimesAggressiveIP { get; set; }
+    public int TimesPassiveIP { get; set; }
+    public int TimesAggressiveOOP { get; set; }
+    public int TimesPassiveOOP { get; set; }
+
+    public double VPIP => HandsPlayed > 0 ? (double)TimesVPIP / HandsPlayed * 100 : 50;
+    public double PFR => HandsPlayed > 0 ? (double)TimesPFR / HandsPlayed * 100 : 15;
+
+    public double AggressionFactorIP
+    {
+        get
+        {
+            if (TimesAggressiveIP + TimesPassiveIP < 5) return -1;
+            return (double)(TimesAggressiveIP + 1) / (TimesPassiveIP + 1);
+        }
+    }
+
+    public double AggressionFactorOOP
+    {
+        get
+        {
+            if (TimesAggressiveOOP + TimesPassiveOOP < 5) return -1;
+            return (double)(TimesAggressiveOOP + 1) / (TimesPassiveOOP + 1);
+        }
+    }
+
+    public bool IsReliable => HandsPlayed >= 10;
+}
 
 /// <summary>
 /// Perfil estadístico de un oponente acumulado durante la sesión.
@@ -186,6 +226,48 @@ public class OpponentProfile
             (false, true) => OpponentType.TAG,
             (false, false) => OpponentType.TP,
         };
+    }
+
+    /// <summary>
+    /// S22.3: Estadísticas desglosadas por posición (BTN, EP, SB, BB, etc.).
+    /// Clave: TablePosition. Fallback a stats globales si < 10 manos en esa posición.
+    /// </summary>
+    public Dictionary<TablePosition, OpponentPositionProfile> PositionProfiles { get; set; } = new();
+
+    /// <summary>
+    /// S22.3: Retorna el perfil de la posición dada, con fallback al global si hay < 10 manos.
+    /// Permite usar VPIP/AF específico de BTN en vez del global cuando hay datos fiables.
+    /// </summary>
+    public OpponentProfile GetProfileForPosition(TablePosition position)
+    {
+        if (PositionProfiles.TryGetValue(position, out var posProf) && posProf.IsReliable)
+        {
+            // Construir perfil sintético con stats posicionales + defaults globales para el resto
+            return new OpponentProfile
+            {
+                PlayerId = PlayerId,
+                HandsPlayed = posProf.HandsPlayed,
+                TimesVoluntarilyPutMoneyIn = posProf.TimesVPIP,
+                TimesPreflopRaised = posProf.TimesPFR,
+                TimesAggressiveIP = posProf.TimesAggressiveIP,
+                TimesPassiveIP = posProf.TimesPassiveIP,
+                TimesAggressiveOOP = posProf.TimesAggressiveOOP,
+                TimesPassiveOOP = posProf.TimesPassiveOOP,
+                // Copiar stats globales para campos no posicionales
+                TimesPostflopBet = TimesPostflopBet,
+                TimesPostflopRaised = TimesPostflopRaised,
+                TimesPostflopCalled = TimesPostflopCalled,
+                TimesPostflopFolded = TimesPostflopFolded,
+                TimesCBet = TimesCBet,
+                TimesCBetOpportunity = TimesCBetOpportunity,
+                TimesFoldedToCBet = TimesFoldedToCBet,
+                TimesFacedCBet = TimesFacedCBet,
+                TimesReachedRiver = TimesReachedRiver,
+                TimesWentToShowdown = TimesWentToShowdown,
+                TimesWonAtShowdown = TimesWonAtShowdown,
+            };
+        }
+        return this; // Fallback al perfil global
     }
 
     /// <summary>

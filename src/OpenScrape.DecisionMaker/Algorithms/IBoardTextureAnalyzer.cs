@@ -13,4 +13,6 @@ public interface IBoardTextureAnalyzer
     BoardChangeResult AnalyzeBoardChange(List<CardDataOuts> previousBoard, CardDataOuts newCard);
     BoardChangeResult AnalyzeInitialBoard(List<int> ranks, List<int> suits);
     BoardChangeResult AnalyzeInitialBoard(List<CardDataOuts> communityCards);
+    /// <summary>S22.2: Clasifica la river card como Blank, Neutral o Scare.</summary>
+    RiverCardType ClassifyRiverCard(BoardChangeResult boardChange);
 }

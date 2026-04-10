@@ -4,6 +4,12 @@ namespace OpenScrape.DecisionMaker.Algorithms;
 
 public enum BoardTextureCategory { Dry, SemiDry, SemiWet, Wet, Paired }
 
+/// <summary>
+/// S22.2: Clasificación de la carta de river para ajustar decisiones de bet/check/call.
+/// Blank = no cambia textura; Scare = completa draw o overcard significativo; Neutral = cambio menor.
+/// </summary>
+public enum RiverCardType { Blank, Neutral, Scare }
+
 public record BoardTextureResult(
     BoardTextureCategory Category,
     double WetnessScore,
@@ -210,6 +216,36 @@ public class BoardTextureAnalyzer : IBoardTextureAnalyzer
         var ranks = previousBoard.Select(c => (int)c.Rank).ToList();
         var suits = previousBoard.Select(c => (int)c.Suit).ToList();
         return AnalyzeBoardChange(ranks, suits, (int)newCard.Rank, (int)newCard.Suit);
+    }
+
+    /// <summary>
+    /// S22.2: Clasifica la carta de river como Blank, Neutral o Scare.
+    /// Blank = carta inofensiva (no completa draws, no overcard al board, no emparea).
+    /// Scare = completa flush/straight o es overcard significativa.
+    /// Neutral = emparea board o cambio menor.
+    /// </summary>
+    public RiverCardType ClassifyRiverCard(BoardChangeResult boardChange)
+    {
+        if (boardChange.FlushCompleted || boardChange.StraightCompleted)
+            return RiverCardType.Scare;
+
+        // Overcard significativa (nueva carta más alta que todo el board previo)
+        if (boardChange.OvercardAppeared)
+            return RiverCardType.Scare;
+
+        // Board paired → neutral (puede mejorar a villain con trips, pero no tan polarizado)
+        if (boardChange.BoardPaired)
+            return RiverCardType.Neutral;
+
+        // Sin cambio de peligro → blank
+        if (boardChange.DangerLevel == 0)
+            return RiverCardType.Blank;
+
+        // Flush draw appeared (3 del mismo palo) → neutral/scare
+        if (boardChange.FlushDrawAppeared)
+            return RiverCardType.Neutral;
+
+        return RiverCardType.Blank;
     }
 
     private static bool HasCompletedStraight(List<int> sortedUnique)

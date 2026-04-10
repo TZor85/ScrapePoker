@@ -1,5 +1,6 @@
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.DecisionMaker.Interfaces;
 
@@ -11,9 +12,9 @@ public interface IOpponentTracker
     IReadOnlyDictionary<string, OpponentProfile> AllProfiles { get; }
 
     OpponentProfile GetProfile(string playerId);
-    void RecordHandPlayed(string playerId);
-    void RecordVPIP(string playerId);
-    void RecordPFR(string playerId);
+    void RecordHandPlayed(string playerId, TablePosition position = TablePosition.None);
+    void RecordVPIP(string playerId, TablePosition position = TablePosition.None);
+    void RecordPFR(string playerId, TablePosition position = TablePosition.None);
     void RecordThreeBet(string playerId);
     void RecordPostflopAction(string playerId, PostflopAction action, bool? isVillainInPosition = null);
     void RecordCBetOpportunity(string playerId, bool didCBet);

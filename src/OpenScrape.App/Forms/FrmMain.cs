@@ -1733,14 +1733,15 @@ namespace OpenScrape.App
             // Registrar mano jugada para todos los villanos activos (opponent tracking)
             foreach (var player in _playerGameState.Players.Where(p => p.Active && !string.IsNullOrEmpty(p.Name)))
             {
-                _opponentTracker.RecordHandPlayed(player.Name!);
+                // S22.3: pasar posición para stats posicionales
+                _opponentTracker.RecordHandPlayed(player.Name!, player.Position);
                 // Si villain puso dinero preflop → VPIP
                 if (player.Bet > 0)
-                    _opponentTracker.RecordVPIP(player.Name!);
+                    _opponentTracker.RecordVPIP(player.Name!, player.Position);
                 // Si villain hizo raise (bet significativa) → PFR
                 if (player.Bet > 0 && _playerGameState.PotSize > 0 &&
                     player.Bet > _playerGameState.PotSize * 0.3m)
-                    _opponentTracker.RecordPFR(player.Name!);
+                    _opponentTracker.RecordPFR(player.Name!, player.Position);
             }
 
             // _postflopContext.Reset() se hace condicionalmente en btnCapture_Click
@@ -2070,7 +2071,7 @@ namespace OpenScrape.App
             {
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
                 LogInformation($"[SetBetPlayer] Region: {region.Name}, parsed playerNumber: {playerNumber}");
-                
+
                 if (playerNumber == null) continue;
 
                 var scaled = GetScaledRegion(region);

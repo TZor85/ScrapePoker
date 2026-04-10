@@ -62,7 +62,7 @@ public class AutoCalibrationServiceTests
     public void ShouldRecalibrate_WithManyDecisions_ShouldReturnTrue()
     {
         _service = new AutoCalibrationService();
-        
+
         for (int i = 0; i < 100; i++)
         {
             var analysis = _exploitabilityCalculator.AnalyzeDecision(
@@ -89,7 +89,7 @@ public class AutoCalibrationServiceTests
         }
 
         var shouldRecal = _service.ShouldRecalibrate(_exploitabilityCalculator);
-        
+
         Assert.That(shouldRecal, Is.True);
     }
 

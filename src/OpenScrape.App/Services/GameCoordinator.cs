@@ -379,6 +379,7 @@ public class GameCoordinator : IGameCoordinator
             VillainBetSize = betSize,
             PotOdds = flopResult.PotOddsPercentage,
             TotalOuts = flopResult.TotalOuts,
+            EffectiveOuts = flopResult.EffectiveOuts,  // S22.1
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
             HeroStack = state.HeroStack,
@@ -416,11 +417,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.Flop, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = flopResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.Flop, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = flopAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = flopResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.Flop,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = flopAnalysis.OurDecisionEV,
             BestResponseEV = flopAnalysis.BestResponseEV,
             ExploitabilityMbb = flopAnalysis.ExploitabilityMbb
         });
@@ -507,6 +514,7 @@ public class GameCoordinator : IGameCoordinator
             VillainBetSize = betSize,
             PotOdds = turnResult.PotOddsPercentage,
             TotalOuts = turnResult.TotalOuts,
+            EffectiveOuts = turnResult.EffectiveOuts,  // S22.1
             PreviousStreetBet = PostflopContext.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
@@ -550,11 +558,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.Turn, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = turnResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.Turn, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = turnAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = turnResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.Turn,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = turnAnalysis.OurDecisionEV,
             BestResponseEV = turnAnalysis.BestResponseEV,
             ExploitabilityMbb = turnAnalysis.ExploitabilityMbb
         });
@@ -647,6 +661,7 @@ public class GameCoordinator : IGameCoordinator
         var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker, riverResult.HeroHandRank);
 
         bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || PostflopContext.HeroBetFlop || PostflopContext.HeroBetTurn;
+        var riverCardType = _boardTextureAnalyzer.ClassifyRiverCard(boardChange);  // S22.2
 
         var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
         {
@@ -658,6 +673,8 @@ public class GameCoordinator : IGameCoordinator
             VillainBetSize = betSize,
             PotOdds = riverResult.PotOddsPercentage,
             TotalOuts = riverResult.TotalOuts,
+            EffectiveOuts = riverResult.EffectiveOuts,  // S22.1
+            RiverCardType = riverCardType,               // S22.2
             PreviousStreetBet = PostflopContext.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
@@ -699,11 +716,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.River, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = riverResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.River, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = riverAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = riverResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.River,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = riverAnalysis.OurDecisionEV,
             BestResponseEV = riverAnalysis.BestResponseEV,
             ExploitabilityMbb = riverAnalysis.ExploitabilityMbb
         });

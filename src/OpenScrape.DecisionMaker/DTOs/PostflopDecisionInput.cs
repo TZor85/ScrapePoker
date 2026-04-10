@@ -56,4 +56,11 @@ public record PostflopDecisionInput
     public TablePosition HeroPosition { get; init; }
     public TablePosition VillainPosition { get; init; }
     public bool IsBroadwayWet { get; init; }
+
+    // S22.1: EffectiveOuts incluye descuento por tainted outs (vs TotalOuts sin descuento)
+    // Usado en semi-bluff EV y draw calling; TotalOuts se mantiene para clasificación de draws
+    public double EffectiveOuts { get; init; }
+
+    // S22.2: Tipo de carta river (Blank/Neutral/Scare) para ajustar bet sizing y bluff catch
+    public RiverCardType RiverCardType { get; init; } = RiverCardType.Neutral;
 }
