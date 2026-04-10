@@ -2071,7 +2071,7 @@ namespace OpenScrape.App
             {
                 var playerNumber = GetPlayerNumber(region.Name, "bet");
                 LogInformation($"[SetBetPlayer] Region: {region.Name}, parsed playerNumber: {playerNumber}");
-                
+
                 if (playerNumber == null) continue;
 
                 var scaled = GetScaledRegion(region);

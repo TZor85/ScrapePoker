@@ -417,11 +417,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.Flop, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = flopResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.Flop, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = flopAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = flopResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.Flop,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = flopAnalysis.OurDecisionEV,
             BestResponseEV = flopAnalysis.BestResponseEV,
             ExploitabilityMbb = flopAnalysis.ExploitabilityMbb
         });
@@ -552,11 +558,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.Turn, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = turnResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.Turn, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = turnAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = turnResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.Turn,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = turnAnalysis.OurDecisionEV,
             BestResponseEV = turnAnalysis.BestResponseEV,
             ExploitabilityMbb = turnAnalysis.ExploitabilityMbb
         });
@@ -704,11 +716,17 @@ public class GameCoordinator : IGameCoordinator
             BoardPosition.River, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action, Equity = effectiveEquity,
-            PotOdds = riverResult.PotOddsPercentage, FoldEquity = foldEquity,
-            Street = BoardPosition.River, Situation = effectiveSituation,
-            IsInPosition = inPosition, BoardTexture = texture, PotSize = potSize,
-            VillainBetSize = betSize, OurDecisionEV = riverAnalysis.OurDecisionEV,
+            OurDecision = decision.Action,
+            Equity = effectiveEquity,
+            PotOdds = riverResult.PotOddsPercentage,
+            FoldEquity = foldEquity,
+            Street = BoardPosition.River,
+            Situation = effectiveSituation,
+            IsInPosition = inPosition,
+            BoardTexture = texture,
+            PotSize = potSize,
+            VillainBetSize = betSize,
+            OurDecisionEV = riverAnalysis.OurDecisionEV,
             BestResponseEV = riverAnalysis.BestResponseEV,
             ExploitabilityMbb = riverAnalysis.ExploitabilityMbb
         });

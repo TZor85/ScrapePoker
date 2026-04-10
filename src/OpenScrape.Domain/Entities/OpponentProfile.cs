@@ -37,7 +37,7 @@ public class OpponentPositionProfile
         }
     }
 
-        public bool IsReliable => HandsPlayed >= 10;
+    public bool IsReliable => HandsPlayed >= 10;
 }
 
 /// <summary>

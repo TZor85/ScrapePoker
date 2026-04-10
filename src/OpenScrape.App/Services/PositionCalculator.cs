@@ -75,13 +75,13 @@ public static class PositionCalculator
             return result;
 
         var activeSeats = activePlayers.Select(p => p.ValuePosition).ToList();
-        
+
         int dealerIndex;
         if (!activeSeats.Contains(dealerPosition))
         {
             if (activeSeats.Count == 0)
                 return result;
-            
+
             dealerIndex = 0;
             dealerPosition = activeSeats[0];
         }
