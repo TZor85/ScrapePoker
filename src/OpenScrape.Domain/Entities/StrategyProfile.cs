@@ -250,6 +250,30 @@ public class StrategyProfile
     public double RandomizationMarginTP { get; set; } = 2.0;
     public double RandomizationMarginUnknown { get; set; } = 3.0;
 
+    // S22.2 — River Runout Distinction (Blank vs Scare Card)
+    public double RiverBlankThinValueBonus { get; set; } = -2.0;   // threshold reducido en blank river
+    public double RiverScareBluffCatchReduction { get; set; } = 0.90; // bluff catch más fácil en scare river
+    public bool RiverScareSizingReduction { get; set; } = true;    // reducir sizing en scare river
+
+    // S22.4 — Stackoff Planning Cross-Street
+    public double StackoffProjectedSPRThreshold { get; set; } = 1.0;  // SPR proyectado que fuerza commit
+    public double StackoffCommitEquityMin { get; set; } = 35.0;        // equity mínima para commit all-in turn
+
+    // S22.5 — Multiway Nut Advantage
+    public double MultiwayNutPenaltyReduction { get; set; } = 0.50;   // Flush+: penalty ×0.50
+    public double MultiwayStrongPenaltyReduction { get; set; } = 0.30; // Set IP: penalty ×0.70 (1-0.30)
+
+    // S22.6 — Bluff Frequency basada en Equity
+    public bool BluffFreqEquityScaling { get; set; } = true;  // scaling lineal por cercanía al threshold
+
+    // S22.7 — Pot Commitment Range Expandido
+    public double PotCommitmentSPRExpanded { get; set; } = 1.5;       // SPR máximo para commitment expandido
+    public double PotCommitmentEquityMedium { get; set; } = 30.0;     // equity mínima para SPR 0.5-1.0
+    public double PotCommitmentEquityWide { get; set; } = 38.0;       // equity mínima para SPR 1.0-1.5
+
+    // S22.8 — Hand Strength Re-Evaluation en River
+    public bool HandReEvalOnDrawCompletion { get; set; } = true; // degradar TwoPair si draw completó
+
     // Board Paired c-bet reduction (reducir c-bet frequency en boards paired)
     public double BoardPairedCbetReduction { get; set; } = 8.0;
 

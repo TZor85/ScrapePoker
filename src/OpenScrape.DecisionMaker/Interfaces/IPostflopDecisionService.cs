@@ -60,5 +60,7 @@ public interface IPostflopDecisionService
         bool isDonkBet = false, OpponentProfile? villainProfile = null,
         TablePosition heroPosition = TablePosition.None,
         TablePosition villainPosition = TablePosition.None,
-        bool isBroadwayWet = false);
+        bool isBroadwayWet = false,
+        double effectiveOuts = 0,
+        RiverCardType riverCardType = RiverCardType.Neutral);
 }

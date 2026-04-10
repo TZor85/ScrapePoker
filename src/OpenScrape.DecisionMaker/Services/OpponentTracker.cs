@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
 
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
+
+// Alias explícito para resolver ambigüedad con PositionStats si aparece en otro namespace
 
 namespace OpenScrape.DecisionMaker.Services;
 
@@ -25,29 +28,45 @@ public class OpponentTracker : Interfaces.IOpponentTracker
 
     /// <summary>
     /// Registra que un jugador participó en una mano.
+    /// S22.3: Opcionalmente pasa la posición para acumular stats posicionales.
     /// </summary>
-    public void RecordHandPlayed(string playerId)
+    public void RecordHandPlayed(string playerId, TablePosition position = TablePosition.None)
     {
         var profile = GetProfile(playerId);
         profile.HandsPlayed++;
+
+        if (position != TablePosition.None)
+        {
+            if (!profile.PositionProfiles.ContainsKey(position))
+                profile.PositionProfiles[position] = new OpponentPositionProfile();
+            profile.PositionProfiles[position].HandsPlayed++;
+        }
     }
 
     /// <summary>
     /// Registra que un jugador puso dinero voluntariamente preflop (limped o raised).
+    /// S22.3: Opcionalmente pasa la posición para stats posicionales.
     /// </summary>
-    public void RecordVPIP(string playerId)
+    public void RecordVPIP(string playerId, TablePosition position = TablePosition.None)
     {
         var profile = GetProfile(playerId);
         profile.TimesVoluntarilyPutMoneyIn++;
+
+        if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
+            posStats.TimesVPIP++;
     }
 
     /// <summary>
     /// Registra que un jugador hizo raise preflop.
+    /// S22.3: Opcionalmente pasa la posición para stats posicionales.
     /// </summary>
-    public void RecordPFR(string playerId)
+    public void RecordPFR(string playerId, TablePosition position = TablePosition.None)
     {
         var profile = GetProfile(playerId);
         profile.TimesPreflopRaised++;
+
+        if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
+            posStats.TimesPFR++;
     }
 
     /// <summary>
