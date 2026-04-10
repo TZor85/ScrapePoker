@@ -31,6 +31,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public double EVWithFoldEquity { get; set; }     // EV considerando fold equity
         public List<string> DrawTypes { get; set; } = [];  // Tipos de draws
         public int TotalOuts { get; set; }               // Outs totales
+        public double EffectiveOuts { get; set; }         // Outs efectivos (tainted descontados, S22.1)
         public string Street { get; set; } = string.Empty; // Calle actual
         public string RecommendedAction { get; set; } = string.Empty; // Acción recomendada
         public double? SuggestedBetSize { get; set; }    // Tamaño de apuesta sugerido (como porcentaje del pote)
@@ -98,6 +99,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 // 3. Calcular outs y draws
                 var outsResult = _outsCalculator.CalculateOuts(playerHand, communityCards);
                 result.TotalOuts = outsResult.TotalOuts;
+                result.EffectiveOuts = outsResult.EffectiveOuts;  // S22.1: tainted descontados
                 result.DrawTypes = outsResult.DrawTypes;
                 result.HasComboDraw = outsResult.HasComboDraw;
 
