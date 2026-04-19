@@ -770,6 +770,7 @@ namespace OpenScrape.App
                 }
                 else
                 {
+                    _tableLayout.SetEmptyPlayer(_formImage.pbImage.Image, _playerGameState);
                     _tableLayout.SetActivePlayer(_formImage.pbImage.Image, _playerGameState);
                     _tableLayout.RefreshPlayerStates(_formImage.pbImage.Image, _playerGameState);
 

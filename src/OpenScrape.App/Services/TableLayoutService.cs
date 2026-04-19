@@ -226,6 +226,14 @@ public class TableLayoutService : ITableLayoutService
             heroPlayer.Active = true;
             state.Players.Add(heroPlayer);
         }
+        else
+        {
+            var existingHero = state.Players.FirstOrDefault(p => p.ValuePosition == 0);
+            if (existingHero != null)
+            {
+                existingHero.Active = true;
+            }
+        }
 
         using var bitmap = new Bitmap(screenshot);
 
@@ -239,6 +247,8 @@ public class TableLayoutService : ITableLayoutService
             var color = bitmap.GetPixel(scaled.X, scaled.Y);
             var colorMatch = IsColorMatch(color.B, _colorEmpty);
 
+            
+
             state.Players.Add(CreatePlayerData(playerNumber.Value));
 
             if (region.Name.Contains("empty") && colorMatch)
@@ -250,6 +260,8 @@ public class TableLayoutService : ITableLayoutService
                 }
             }
         }
+
+        
     }
 
     public void SetActivePlayer(Image screenshot, PlayerGameState state)
@@ -270,7 +282,9 @@ public class TableLayoutService : ITableLayoutService
             var color = bitmap.GetPixel(scaled.X, scaled.Y);
 
             var player = state.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-            if (region.Name.Contains("playing") && IsColorMatch(color.B, _colorPlaying))
+            bool isActive = region.Name.Contains("playing") && IsColorMatch(color.B, _colorPlaying);
+
+            if (isActive)
             {
                 if (player != null)
                 {
@@ -285,6 +299,8 @@ public class TableLayoutService : ITableLayoutService
                 }
             }
         }
+
+        
     }
 
     public void SetSitOutPlayer(Image screenshot, PlayerGameState state)

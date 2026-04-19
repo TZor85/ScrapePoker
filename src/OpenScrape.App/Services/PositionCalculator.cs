@@ -16,13 +16,18 @@ public static class PositionCalculator
         int dealerSeat = dealerPosition;
         int heroSeat = 0;
 
-        if (!activeSeats.Contains(dealerSeat) || !activeSeats.Contains(heroSeat))
+        if (!activeSeats.Contains(heroSeat))
+            activeSeats.Add(heroSeat);
+
+        activeSeats.Sort();
+
+        if (!activeSeats.Contains(dealerSeat))
             return TablePosition.None;
 
         int dealerIndex = activeSeats.IndexOf(dealerSeat);
         int heroIndex = activeSeats.IndexOf(heroSeat);
 
-        int distance = (heroIndex - dealerIndex + activeSeats.Count) % activeSeats.Count;
+        int distance = (dealerIndex - heroIndex + activeSeats.Count) % activeSeats.Count;
 
         return activeSeats.Count switch
         {
@@ -40,7 +45,7 @@ public static class PositionCalculator
         var result = new Dictionary<int, TablePosition>();
 
         var activePlayers = players
-            .Where(p => p != null && !p.Empty && !p.SitOut && p.ValuePosition != 0)
+            .Where(p => p != null && (p.Active || p.ValuePosition == 0) && !p.Empty && !p.SitOut && p.ValuePosition != 0)
             .OrderBy(p => p.ValuePosition)
             .ToList();
 
@@ -67,7 +72,7 @@ public static class PositionCalculator
         var result = new Dictionary<int, TablePosition>();
 
         var activePlayers = players
-            .Where(p => p != null && !p.Empty && !p.SitOut && p.ValuePosition != 0)
+            .Where(p => p != null && (p.Active || p.ValuePosition == 0) && !p.Empty && !p.SitOut && p.ValuePosition != 0)
             .OrderBy(p => p.ValuePosition)
             .ToList();
 
