@@ -1777,7 +1777,7 @@ namespace OpenScrape.App
             _folderPath = Path.Combine(
                 DEFAULT_RESOURCES_PATH,
                 "Games",
-                $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}",
+                $"{DateTime.Now:yyyyMMdd}_Game",
                 _session);
 
             if (!Directory.Exists(_folderPath))
@@ -2484,7 +2484,7 @@ namespace OpenScrape.App
 
                 string baseFolder = Path.Combine(
                     "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
-                    $"Game_{new DateOnly(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).ToString().Replace("/", "_")}");
+                    $"{DateTime.Now:yyyyMMdd}_Game");
 
                 _folderPath = Path.Combine(baseFolder, _session);
 
