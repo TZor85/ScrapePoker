@@ -3,6 +3,7 @@ using Marten;
 using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
@@ -214,6 +215,12 @@ namespace OpenScrape.App
         private readonly IScreenReaderService _screenReader;
         private readonly ITableLayoutService _tableLayout;
         private readonly PostflopGameContext _postflopContext = new();
+
+        // refactor-frmmain-coordinators Fase 6: inyectados pero solo se activan con feature flag
+        private readonly IGameLoopCoordinator _gameLoopCoordinator;
+        private readonly IUiSyncService _uiSyncService;
+        private readonly FeatureFlags _featureFlags;
+        private CancellationTokenSource? _gameLoopCts;
         #endregion
 
         /// <summary>
@@ -253,9 +260,15 @@ namespace OpenScrape.App
                         ISetPreflopActionUseCase setPreflopActionUseCase,
                         IGameCoordinator coordinator,
                         IScreenReaderService screenReader,
-                        ITableLayoutService tableLayout)
+                        ITableLayoutService tableLayout,
+                        IGameLoopCoordinator gameLoopCoordinator,
+                        IUiSyncService uiSyncService,
+                        IOptions<FeatureFlags> featureFlags)
         {
             InitializeComponent();
+            _gameLoopCoordinator = gameLoopCoordinator ?? throw new ArgumentNullException(nameof(gameLoopCoordinator));
+            _uiSyncService = uiSyncService ?? throw new ArgumentNullException(nameof(uiSyncService));
+            _featureFlags = featureFlags?.Value ?? throw new ArgumentNullException(nameof(featureFlags));
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
@@ -318,6 +331,21 @@ namespace OpenScrape.App
         {
             if (_isClosing)
                 return; // Ya estamos cerrando programáticamente
+
+            // refactor-frmmain-coordinators Fase 6: parada limpia del coordinator si estaba activo.
+            if (_gameLoopCoordinator.IsRunning)
+            {
+                try
+                {
+                    _uiSyncService.Detach();
+                    _gameLoopCts?.Cancel();
+                    await _gameLoopCoordinator.StopAsync();
+                }
+                catch (Exception ex)
+                {
+                    LogError($"Error deteniendo GameLoopCoordinator al cerrar: {ex.Message}", ex);
+                }
+            }
 
             if (_gameLoggerService.HasActiveHand || _gameLoggerService.HasActiveSession)
             {
@@ -2704,6 +2732,17 @@ namespace OpenScrape.App
 
                 if (!_backgroundExecute)
                     backgroundWorker1.RunWorkerAsync();
+
+                // refactor-frmmain-coordinators Fase 6: arranque opcional del coordinator.
+                // Feature flag en false por defecto → este bloque queda inerte en producción
+                // hasta que un cutover validado manualmente lo active.
+                if (_featureFlags.UseGameLoopCoordinator && !_gameLoopCoordinator.IsRunning)
+                {
+                    _gameLoopCts = new CancellationTokenSource();
+                    _uiSyncService.Attach(_gameLoopCoordinator, this, _frmOverlay!, tbResume);
+                    _ = _gameLoopCoordinator.StartAsync(_gameLoopCts.Token);
+                    LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
+                }
             }
             catch (Exception ex)
             {
@@ -4380,5 +4419,59 @@ namespace OpenScrape.App
         }
 
         #endregion
+
+        // ============================================================================
+        // INVENTARIO DE ESTADO MUTABLE — refactor-frmmain-coordinators (Fase 1.4)
+        // ----------------------------------------------------------------------------
+        // Este bloque documenta, antes de empezar la migración, a qué servicio debe
+        // mudarse cada campo mutable de FrmMain. Se ELIMINARÁ en la Fase 7.3 cuando
+        // el cutover al GameLoopCoordinator esté validado.
+        //
+        // Control del loop → GameLoopCoordinator (scoped, propio):
+        //   _executeCapture         (volatile bool)  → reemplazado por CancellationToken
+        //   _backgroundExecute      (volatile bool)  → reemplazado por CancellationToken
+        //   _speed                  (int)            → GameLoopOptions.CaptureIntervalMs
+        //
+        // Estado cross-street / cross-iteración → PostflopGameContext (ya scoped):
+        //   _heroStackPreRebuy      (decimal)        → PostflopGameContext.TrackHeroStackForRebuy()
+        //   _newHand                (bool)           → PostflopGameContext.NewHandDetected
+        //   _newTableHand           (long)           → PostflopGameContext.CurrentHandNumber
+        //   _tableHand              (string)         → PostflopGameContext.CurrentHandNumber (str)
+        //   _previousSBPlayerName   (string)         → PostflopGameContext.PreviousBlinds
+        //   _previousBBPlayerName   (string)         → PostflopGameContext.PreviousBlinds
+        //   _lastActivePlayerCount  (int)            → PostflopGameContext.LastActivePlayerCount
+        //   _flopResult             (Poker...Result) → GameLoopResult (por iteración)
+        //   _turnResult             (Poker...Result) → GameLoopResult
+        //   _riverResult            (Poker...Result) → GameLoopResult
+        //   _turnBoardTexture       (enum)           → GameLoopResult.BoardTexture
+        //   _riverBoardTexture      (enum)           → GameLoopResult.BoardTexture
+        //   _scrapeFlopResult       (TableScrape...) → GameLoopResult o contexto
+        //   _responseAction         (ResponseAction) → GameLoopResult.DecisionResult
+        //
+        // Lectura de mesa (mano en curso) → permanece vía IScreenReaderService /
+        // ITableLayoutService / IGameCoordinator (ya servicios scoped):
+        //   _playerGameState        (PlayerGameState) → ITableLayoutService
+        //   _handle                 (IntPtr)          → se mantiene en FrmMain (ventana)
+        //   _tableName              (string)          → ITableLayoutService
+        //   _session                (string)          → GameLoggerService (ya)
+        //   _folderPath             (string)          → se mantiene en FrmMain (Config tab)
+        //   _pathResume             (string)          → UiSyncService
+        //   _pictureUmbralBet       (int)             → IScreenReaderService config
+        //
+        // Estado puro de UI → permanece en FrmMain:
+        //   _lastChecked            (RadioButton?)
+        //   _img                    (Image?)
+        //   _isClosing              (bool)
+        //   _historialLoaded        (bool)
+        //   _bankrollLoaded         (bool)
+        //
+        // Inyección DI → se mantienen hasta Fase 7.5 (consolidación en facade):
+        //   _pokerCalculator, _betSizingService, _postflopDecisionService,
+        //   _boardTextureAnalyzer, _opponentTracker → absorbidos por IPokerDecisionFacade
+        //   _coordinator, _screenReader, _tableLayout → consumidos por
+        //     GameLoopCoordinator y eliminados de FrmMain tras cutover
+        //   Resto (*UseCase, *Service de infraestructura) → permanecen o se reasignan
+        //     a coordinator según uso real, evaluado en Fase 6.
+        // ============================================================================
     }
 }

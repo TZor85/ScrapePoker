@@ -247,7 +247,7 @@ public class TableLayoutService : ITableLayoutService
             var color = bitmap.GetPixel(scaled.X, scaled.Y);
             var colorMatch = IsColorMatch(color.B, _colorEmpty);
 
-            
+
 
             state.Players.Add(CreatePlayerData(playerNumber.Value));
 
@@ -261,7 +261,7 @@ public class TableLayoutService : ITableLayoutService
             }
         }
 
-        
+
     }
 
     public void SetActivePlayer(Image screenshot, PlayerGameState state)
@@ -300,7 +300,7 @@ public class TableLayoutService : ITableLayoutService
             }
         }
 
-        
+
     }
 
     public void SetSitOutPlayer(Image screenshot, PlayerGameState state)

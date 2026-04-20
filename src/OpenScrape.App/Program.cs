@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Marten;
 using OpenScrape.App.Aplication;
+using OpenScrape.App.Configuration;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker;
@@ -53,6 +54,10 @@ namespace OpenScrape.App
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
 
+                    // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
+                    services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
+                    services.Configure<FeatureFlags>(context.Configuration.GetSection(FeatureFlags.SectionName));
+
                     // Algoritmos: registro por clase concreta + forwarding por interfaz (misma instancia)
                     services.AddSingleton<MonteCarloSimulator>();
                     services.AddSingleton<IMonteCarloSimulator>(sp => sp.GetRequiredService<MonteCarloSimulator>());
@@ -99,6 +104,15 @@ namespace OpenScrape.App
 
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
+
+                    // Facade de decisión postflop (refactor-frmmain-coordinators Fase 2)
+                    services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
+
+                    // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
+                    services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
+
+                    // UI sync (refactor-frmmain-coordinators Fase 5)
+                    services.AddScoped<IUiSyncService, UiSyncService>();
 
                     // Fase 4: CoordinateScaler como servicio inyectable
                     services.AddSingleton<CoordinateScaler>();

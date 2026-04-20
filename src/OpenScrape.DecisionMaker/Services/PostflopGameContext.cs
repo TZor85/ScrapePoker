@@ -78,6 +78,48 @@ public class PostflopGameContext
     public bool IsVillainBarreling => VillainBetFlop && VillainBetTurn;
 
     /// <summary>
+    /// Stack del hero al inicio de la mano, antes de cualquier auto-rebuy.
+    /// Un subsiguiente aumento brusco (≥50 BB) se interpreta como rebuy
+    /// automático de la sala a 100BB y se ignora para no contaminar el
+    /// cálculo de profit por mano.
+    /// 0 indica que aún no se ha registrado el stack inicial de la mano.
+    /// </summary>
+    public decimal HeroStackPreRebuy { get; private set; }
+
+    /// <summary>
+    /// Umbral a partir del cual un aumento de stack se considera auto-rebuy.
+    /// En formato de decimal, no de BB (quien llama pasa la cantidad raw).
+    /// </summary>
+    private const decimal AutoRebuyThreshold = 50m;
+
+    /// <summary>
+    /// Registra el stack actual del hero detectando auto-rebuy. Devuelve el
+    /// stack efectivo que debe usarse para el profit tracking (ignora
+    /// incrementos bruscos que indican rebuy automático).
+    /// </summary>
+    /// <param name="currentStack">Stack leído por OCR en la iteración actual.</param>
+    /// <returns>Stack efectivo: el pre-rebuy si hubo rebuy, o el actual si no.</returns>
+    public decimal TrackHeroStackForRebuy(decimal currentStack)
+    {
+        if (HeroStackPreRebuy <= 0)
+        {
+            HeroStackPreRebuy = currentStack;
+            return currentStack;
+        }
+
+        if (currentStack > HeroStackPreRebuy &&
+            currentStack - HeroStackPreRebuy >= AutoRebuyThreshold)
+        {
+            // Rebuy detectado: preservamos el valor pre-rebuy como referencia.
+            return HeroStackPreRebuy;
+        }
+
+        // Actualización normal del stack (descenso o incremento pequeño).
+        HeroStackPreRebuy = currentStack;
+        return currentStack;
+    }
+
+    /// <summary>
     /// Reinicia el contexto para una nueva mano.
     /// </summary>
     public void Reset()
@@ -97,6 +139,7 @@ public class PostflopGameContext
         VillainBetSizeTurn = BetSizeCategory.NoBet;
         InitialBoardDanger = BoardChangeResult.Safe;
         LastBoardChange = BoardChangeResult.Safe;
+        HeroStackPreRebuy = 0;
     }
 
     /// <summary>
