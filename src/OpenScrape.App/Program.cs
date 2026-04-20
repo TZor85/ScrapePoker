@@ -114,6 +114,10 @@ namespace OpenScrape.App
                     // UI sync (refactor-frmmain-coordinators Fase 5)
                     services.AddScoped<IUiSyncService, UiSyncService>();
 
+                    // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
+                    services.AddSingleton<IActionFormatter, ActionFormatter>();
+                    services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
+
                     // Fase 4: CoordinateScaler como servicio inyectable
                     services.AddSingleton<CoordinateScaler>();
                     services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());

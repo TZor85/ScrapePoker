@@ -106,57 +106,8 @@ namespace OpenScrape.App
         private BetSizeCategory GetOpponentBetSize(decimal maxBet, decimal potSize)
             => _coordinator.GetOpponentBetSize(maxBet, potSize);
 
-        /// <summary>
-        /// Enriquece una acción preflop con multiplicador (ej: "3Bet x6") añadiendo el monto en BB.
-        /// Ejemplo: villain apuesta 2.5BB, acción "3Bet x6" → "3Bet x6 (15BB)"
-        /// </summary>
-        private string EnrichActionWithBBAmount(string action)
-        {
-            if (string.IsNullOrEmpty(action) || !action.Contains('x'))
-                return action;
-
-            // Extraer el multiplicador del string (ej: "Open Raise x2.4" → 2.4)
-            var xIndex = action.LastIndexOf('x');
-            if (xIndex < 0 || xIndex >= action.Length - 1)
-                return action;
-
-            var multiplierStr = action[(xIndex + 1)..].Trim();
-            if (!double.TryParse(multiplierStr, System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out var multiplier) || multiplier <= 0)
-                return action;
-
-            // Calcular la base: la mayor bet del villano, o el BB si es open raise
-            decimal bigBlind = _gameLoggerService.CurrentBigBlind;
-            if (bigBlind <= 0) bigBlind = 0.50m;
-
-            decimal maxVillainBet = _playerGameState.Players
-                .Where(p => p.Name != "P0" && p.Bet > 0)
-                .Select(p => p.Bet)
-                .DefaultIfEmpty(0)
-                .Max();
-
-            // Si no hay bet del villano (open raise), la base es el BB
-            decimal baseBet = maxVillainBet > 0 ? maxVillainBet : bigBlind;
-            decimal totalBet = baseBet * (decimal)multiplier;
-            decimal totalBB = bigBlind > 0 ? Math.Round(totalBet / bigBlind, 1) : 0;
-
-            if (totalBB > 0)
-                return $"{action} ({totalBB}BB)";
-
-            return action;
-        }
-
         private string GetActiveVillainId()
             => _coordinator.GetActiveVillainId(_playerGameState);
-
-        private static int? GetPlayerNumber(string regionName, string extraText = "")
-        {
-            if (string.IsNullOrEmpty(regionName))
-                return null;
-
-            var match = System.Text.RegularExpressions.Regex.Match(regionName, @$"p(\d+){extraText}");
-            return match.Success ? int.Parse(match.Groups[1].Value) : null;
-        }
 
         private OpponentType GetVillainType(bool? heroIsInPosition = null)
             => _coordinator.GetVillainType(_playerGameState, heroIsInPosition);
@@ -221,6 +172,10 @@ namespace OpenScrape.App
         private readonly IUiSyncService _uiSyncService;
         private readonly FeatureFlags _featureFlags;
         private CancellationTokenSource? _gameLoopCts;
+
+        // extract-frmmain-testable-logic Fase 2-3: helpers de lógica pura extraídos
+        private readonly IActionFormatter _actionFormatter;
+        private readonly IOverlayPositioner _overlayPositioner;
         #endregion
 
         /// <summary>
@@ -263,12 +218,16 @@ namespace OpenScrape.App
                         ITableLayoutService tableLayout,
                         IGameLoopCoordinator gameLoopCoordinator,
                         IUiSyncService uiSyncService,
-                        IOptions<FeatureFlags> featureFlags)
+                        IOptions<FeatureFlags> featureFlags,
+                        IActionFormatter actionFormatter,
+                        IOverlayPositioner overlayPositioner)
         {
             InitializeComponent();
             _gameLoopCoordinator = gameLoopCoordinator ?? throw new ArgumentNullException(nameof(gameLoopCoordinator));
             _uiSyncService = uiSyncService ?? throw new ArgumentNullException(nameof(uiSyncService));
             _featureFlags = featureFlags?.Value ?? throw new ArgumentNullException(nameof(featureFlags));
+            _actionFormatter = actionFormatter ?? throw new ArgumentNullException(nameof(actionFormatter));
+            _overlayPositioner = overlayPositioner ?? throw new ArgumentNullException(nameof(overlayPositioner));
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
@@ -1857,7 +1816,11 @@ namespace OpenScrape.App
             _frmOverlay.UpdateSituacion(lbPositionAction.Text);
 
             if (_frmOverlay != null)
-                _frmOverlay.UpdateAction(EnrichActionWithBBAmount(_responseAction?.Action ?? string.Empty));
+            {
+                var actionText = _responseAction?.Action ?? string.Empty;
+                var villains = _playerGameState.Players.Where(p => p.Name != "P0").ToList();
+                _frmOverlay.UpdateAction(_actionFormatter.EnrichActionWithBBAmount(actionText, villains, _gameLoggerService.CurrentBigBlind));
+            }
 
         }
 
@@ -1957,7 +1920,8 @@ namespace OpenScrape.App
             sb.AppendLine($"Equity preflop: {preflopEquity:F1}%");
 
             // Enriquecer acción con BB amount si tiene multiplicador (ej: "3Bet x6" → "3Bet x6 (15BB)")
-            var displayAction = EnrichActionWithBBAmount(heroAction);
+            var villainsSnapshot = _playerGameState.Players.Where(p => p.Name != "P0").ToList();
+            var displayAction = _actionFormatter.EnrichActionWithBBAmount(heroAction, villainsSnapshot, _gameLoggerService.CurrentBigBlind);
             sb.AppendLine($"▶ DECISIÓN: {displayAction}");
 
             tbResume.AppendText(sb.ToString() + Environment.NewLine);
@@ -2098,7 +2062,7 @@ namespace OpenScrape.App
 
             foreach (var region in betsRegions)
             {
-                var playerNumber = GetPlayerNumber(region.Name, "bet");
+                var playerNumber = PlayerRegionParser.GetPlayerNumber(region.Name, "bet");
                 LogInformation($"[SetBetPlayer] Region: {region.Name}, parsed playerNumber: {playerNumber}");
 
                 if (playerNumber == null) continue;
@@ -2660,21 +2624,8 @@ namespace OpenScrape.App
                 currentWidth, currentHeight);
         }
 
-        /// <summary>
-        /// Calcula la posición del overlay relativa a la ventana de poker.
-        /// Centra horizontalmente con un offset proporcional al 15% del ancho de la ventana
-        /// (desplaza a la izquierda para no tapar el centro de la mesa).
-        /// Posiciona verticalmente a 75px del borde inferior.
-        /// </summary>
-        private Point CalculateOverlayPosition(User32.RECT windowRect, int overlayWidth)
-        {
-            int windowWidth = windowRect.right - windowRect.left;
-            int horizontalOffset = (int)(windowWidth * _overlayConfig.HorizontalOffsetPercent);
-            int centerX = windowRect.left + (windowWidth / 2);
-            int x = centerX - (overlayWidth / 2) - horizontalOffset;
-            int y = windowRect.bottom - _overlayConfig.VerticalOffset;
-            return new Point(x, y);
-        }
+        // Método CalculateOverlayPosition movido a IOverlayPositioner
+        // (extract-frmmain-testable-logic Fase 3).
 
         #endregion
 
@@ -2704,7 +2655,7 @@ namespace OpenScrape.App
                     _frmOverlay = new FrmOverlay(_overlayConfig);
                     _frmOverlay.Show();
 
-                    _frmOverlay.Location = CalculateOverlayPosition(windowRect, _frmOverlay.Size.Width);
+                    _frmOverlay.Location = _overlayPositioner.Calculate(windowRect.left, windowRect.right, windowRect.bottom, _frmOverlay.Size.Width);
                 }
 
                 if (_handle != IntPtr.Zero)
@@ -2724,7 +2675,7 @@ namespace OpenScrape.App
                         {
                             if (_frmOverlay != null)
                             {
-                                _frmOverlay.Location = CalculateOverlayPosition(windowRect, _frmOverlay.Size.Width);
+                                _frmOverlay.Location = _overlayPositioner.Calculate(windowRect.left, windowRect.right, windowRect.bottom, _frmOverlay.Size.Width);
                             }
                         });
                     }
