@@ -4,6 +4,7 @@ using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
+using static OpenScrape.App.Tests.TestMakeInputHelper;
 
 namespace OpenScrape.App.Tests;
 
@@ -56,7 +57,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_DryBoard_IP_Flop_ShouldApplyLooseAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -64,7 +65,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -72,7 +73,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_WetBoard_OOP_Flop_ShouldApplyTightAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -80,7 +81,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -88,7 +89,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_PairedBoard_IP_ShouldApplyPolarizedAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 45,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -96,7 +97,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -104,7 +105,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_River_IP_ShouldApplyPolarizedAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 55,
             street: BoardPosition.River,
             situation: HandSituation.OpenRaise,
@@ -112,7 +113,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -120,7 +121,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_LowSPR_ShouldApplyCondensedAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -128,7 +129,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 200,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -136,7 +137,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_CoordinatedBoard_ShouldApplyLinearAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 45,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -144,7 +145,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -152,7 +153,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_FacingBet_ShouldCombineAdjustments()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -161,7 +162,7 @@ public class RangePolarizerIntegrationTests
             villainBetSize: BetSizeCategory.Medium,
             potOdds: 30,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -169,7 +170,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_DifferentDecisions_DryVsWet_ShouldBeDifferent()
     {
-        var dryResult = _service.DetermineAction(
+        var dryResult = _service.DetermineAction(MakeInput(
             equity: 43,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -177,9 +178,9 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
-        var wetResult = _service.DetermineAction(
+        var wetResult = _service.DetermineAction(MakeInput(
             equity: 43,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -187,7 +188,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(dryResult.Action, Is.EqualTo(wetResult.Action));
     }
@@ -195,7 +196,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_ThreeBetSituation_ShouldWork()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Flop,
             situation: HandSituation.ThreeBet,
@@ -203,7 +204,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
@@ -211,7 +212,7 @@ public class RangePolarizerIntegrationTests
     [Test]
     public void DetermineAction_MonotoneBoard_ShouldApplyWetAdjustment()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50,
             street: BoardPosition.Flop,
             situation: HandSituation.OpenRaise,
@@ -219,7 +220,7 @@ public class RangePolarizerIntegrationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 1000,
-            potSize: 100);
+            potSize: 100));
 
         Assert.That(result.Action, Is.Not.Empty);
     }
