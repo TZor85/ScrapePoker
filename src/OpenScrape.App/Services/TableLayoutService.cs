@@ -441,24 +441,24 @@ public class TableLayoutService : ITableLayoutService
 
         LogDebug($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {heroPosition}, Dealer: {dealerPosition}");
 
-        // Limpiar posiciones previas (excepto héroe P0)
-        foreach (var p in activePlayers.Where(p => p.ValuePosition != 0))
+        // Limpiar posiciones previas en todos los asientos físicos (SitOut incluido) excepto héroe
+        foreach (var p in allPlayers.Where(p => p.ValuePosition != 0))
         {
             p.Position = TablePosition.None;
         }
 
-        var villainPositions = PositionCalculator.AssignVillainPositions(heroPosition, allPlayers);
+        var villainPositions = PositionCalculator.AssignVillainPositions(dealerPosition, allPlayers);
 
         foreach (var kvp in villainPositions)
         {
-            var player = activePlayers.FirstOrDefault(p => p.ValuePosition == kvp.Key);
+            var player = allPlayers.FirstOrDefault(p => p.ValuePosition == kvp.Key);
             if (player != null)
             {
                 player.Position = kvp.Value;
             }
         }
 
-        var positionLog = string.Join(", ", activePlayers.Select(p => $"{p.Name}:{p.Position}"));
+        var positionLog = string.Join(", ", allPlayers.Where(p => !p.Empty).Select(p => $"{p.Name}:{p.Position}{(p.SitOut ? "(SitOut)" : "")}"));
         LogDebug($"Posiciones asignadas: {positionLog}");
 
         ValidatePositionAssignments(activePlayers);
