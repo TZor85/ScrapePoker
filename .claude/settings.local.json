@@ -49,7 +49,12 @@
       "Bash(git pull:*)",
       "Bash(git commit:*)",
       "Bash(git branch:*)",
-      "Bash(dotnet clean:*)"
+      "Bash(dotnet clean:*)",
+      "Bash(cp -r C:/Code/Poker/ScrapePoker/.claude/skills/git-commit C:/Users/Alberto/.claude/skills/)",
+      "Bash(cp -r C:/Code/Poker/ScrapePoker/.claude/skills/git-finish C:/Users/Alberto/.claude/skills/)",
+      "Bash(cp -r C:/Code/Poker/ScrapePoker/.claude/skills/git-start C:/Users/Alberto/.claude/skills/)",
+      "Bash(mkdir -p C:/Users/Alberto/.claude/skills/git-commit)",
+      "Bash(mv C:/Users/Alberto/.claude/skills/SKILL.md C:/Users/Alberto/.claude/skills/git-commit/SKILL.md)"
     ]
   }
 }
