@@ -61,4 +61,4 @@
 - [x] 8.2 `DecisionMatrixIntegrationTests`: dentro de la suite — verde (216 casos inalterados).
 - [ ] 8.3 *(Manual, pendiente del usuario)* Arranque manual de la app: verificar que el overlay pinta el estado cross-street como antes (barreling, check-raise, float).
 - [x] 8.4 `openspec validate postflop-context-inmutable` → "is valid".
-- [ ] 8.5 *(Pendiente cuando el usuario pida el commit)* Redactar commit message conventional: `refactor(decision): convert PostflopGameContext to immutable record with holder`.
+- [x] 8.5 Commit `127a2f5`: `refactor(decision): immutable PostflopGameContext with scoped holder`.
