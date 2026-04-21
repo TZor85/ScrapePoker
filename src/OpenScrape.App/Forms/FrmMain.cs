@@ -1,5 +1,6 @@
 ﻿using JasperFx.Core;
 using Marten;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
@@ -11,6 +12,7 @@ using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Logging;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
@@ -166,6 +168,8 @@ namespace OpenScrape.App
         private readonly IScreenReaderService _screenReader;
         private readonly ITableLayoutService _tableLayout;
         private readonly IPostflopContextHolder _contextHolder;
+        private readonly ILogger<FrmMain> _logger;
+        private readonly TextBoxLoggerProvider _textBoxLoggerProvider;
 
         // refactor-frmmain-coordinators Fase 6: inyectados pero solo se activan con feature flag
         private readonly IGameLoopCoordinator _gameLoopCoordinator;
@@ -221,7 +225,9 @@ namespace OpenScrape.App
                         IOptions<FeatureFlags> featureFlags,
                         IActionFormatter actionFormatter,
                         IOverlayPositioner overlayPositioner,
-                        IPostflopContextHolder contextHolder)
+                        IPostflopContextHolder contextHolder,
+                        ILogger<FrmMain> logger,
+                        TextBoxLoggerProvider textBoxLoggerProvider)
         {
             InitializeComponent();
             _gameLoopCoordinator = gameLoopCoordinator ?? throw new ArgumentNullException(nameof(gameLoopCoordinator));
@@ -230,6 +236,9 @@ namespace OpenScrape.App
             _actionFormatter = actionFormatter ?? throw new ArgumentNullException(nameof(actionFormatter));
             _overlayPositioner = overlayPositioner ?? throw new ArgumentNullException(nameof(overlayPositioner));
             _contextHolder = contextHolder ?? throw new ArgumentNullException(nameof(contextHolder));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _textBoxLoggerProvider = textBoxLoggerProvider ?? throw new ArgumentNullException(nameof(textBoxLoggerProvider));
+            _textBoxLoggerProvider.SetTextBoxTarget(tbResume);
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
@@ -304,7 +313,7 @@ namespace OpenScrape.App
                 }
                 catch (Exception ex)
                 {
-                    LogError($"Error deteniendo GameLoopCoordinator al cerrar: {ex.Message}", ex);
+                    _logger.LogError(ex, "Error deteniendo GameLoopCoordinator al cerrar");
                 }
             }
 
@@ -326,7 +335,7 @@ namespace OpenScrape.App
                 }
                 catch (Exception ex)
                 {
-                    LogError($"Error al guardar datos al cerrar: {ex.Message}");
+                    _logger.LogError(ex, "Error al guardar datos al cerrar");
                 }
 
                 Close(); // Ahora sí cerrar (entrará de nuevo pero _isClosing = true)
@@ -358,7 +367,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al cargar el formulario: {ex.Message}");
+                _logger.LogError(ex, "Error al cargar el formulario");
             }
         }
 
@@ -392,7 +401,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al cargar regiones: {ex.Message}");
+                _logger.LogError(ex, "Error al cargar regiones");
             }
         }
 
@@ -409,7 +418,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al cargar tablas: {ex.Message}");
+                _logger.LogError(ex, "Error al cargar tablas");
             }
         }
 
@@ -510,7 +519,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error selecting region: {ex.Message}");
+                _logger.LogError(ex, "Error selecting region");
             }
         }
 
@@ -590,7 +599,7 @@ namespace OpenScrape.App
                     !int.TryParse(tbHeight.Text, out int height) ||
                     _selectedRegion == null)
                 {
-                    LogInformation($"Error de validación: {umbral}, {inactUmbral}, {tbX.Text}, {tbY.Text}, {tbWidth.Text}, {tbHeight.Text}");
+                    _logger.LogInformation("Error de validación: umbral={Umbral}, inact={Inact}, X={X}, Y={Y}, W={W}, H={H}", umbral, inactUmbral, tbX.Text, tbY.Text, tbWidth.Text, tbHeight.Text);
                     return;
                 }
 
@@ -613,11 +622,11 @@ namespace OpenScrape.App
                 });
 
                 await LoadRegionTableMapAsync();
-                LogInformation($"Región actualizada: {_selectedRegion.Name}");
+                _logger.LogInformation("Región actualizada: {Region}", _selectedRegion.Name);
             }
             catch (Exception ex)
             {
-                LogError($"Error al guardar la región: {ex.Message}");
+                _logger.LogError(ex, "Error al guardar la región");
             }
         }
 
@@ -689,7 +698,7 @@ namespace OpenScrape.App
                         savedBoardCards = _playerGameState?.BoardCards?
                             .Where(b => b.Position != BoardPosition.Hand)
                             .ToList();
-                        LogInformation($"Guardando estado postflop antes de reset: {savedPostflopState}, BoardCards: {savedBoardCards?.Count ?? 0}");
+                        _logger.LogInformation("Guardando estado postflop antes de reset: {State}, BoardCards: {Count}", savedPostflopState, savedBoardCards?.Count ?? 0);
                     }
 
                     _frmOverlay?.ClearAll();
@@ -716,7 +725,7 @@ namespace OpenScrape.App
 
                     if (savedPostflopState.HasValue)
                     {
-                        LogInformation($"Restaurando estado postflop: {savedPostflopState}, BoardCards: {savedBoardCards?.Count ?? 0}");
+                        _logger.LogInformation("Restaurando estado postflop: {State}, BoardCards: {Count}", savedPostflopState, savedBoardCards?.Count ?? 0);
                         _gameLoopStateMachine.ForceState(savedPostflopState.Value);
                         // Restaurar board cards solo si son válidas (tienen nombres no vacíos)
                         if (savedBoardCards != null && savedBoardCards.Count > 0 &&
@@ -740,7 +749,7 @@ namespace OpenScrape.App
                         _gameLoopStateMachine.ForceState(GameState.RiverDetected);
                 }
 
-                LogInformation($"ProcessNewHand: Players.Count={_playerGameState.Players.Count()}, cbTest={cbTest.Checked}, isTestPostflop={isTestPostflop}");
+                _logger.LogInformation("ProcessNewHand: Players={PlayerCount}, cbTest={Test}, isTestPostflop={TestPostflop}", _playerGameState.Players.Count(), cbTest.Checked, isTestPostflop);
 
                 // Inicializar jugadores si:
                 // 1. No hay jugadores, O
@@ -767,7 +776,7 @@ namespace OpenScrape.App
                     bool playerCountChanged = currentActiveCount != _lastActivePlayerCount;
                     _lastActivePlayerCount = currentActiveCount;
 
-                    LogDebug($"Jugadores activos: {currentActiveCount}, Cambió: {playerCountChanged}, Posición actual: {_playerGameState.Position}");
+                    _logger.LogDebug("Jugadores activos: {Active}, Cambió: {Changed}, Posición actual: {Position}", currentActiveCount, playerCountChanged, _playerGameState.Position);
 
                     bool shouldRecalculate = _playerGameState.Position == TablePosition.None || playerCountChanged;
 
@@ -798,7 +807,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error durante la captura: {ex.Message}");
+                _logger.LogError(ex, "Error durante la captura");
             }
         }
 
@@ -1077,7 +1086,7 @@ namespace OpenScrape.App
 
                     if (!hasHoleCards)
                     {
-                        LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
+                        _logger.LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
                         return;
                     }
                 }
@@ -1106,7 +1115,7 @@ namespace OpenScrape.App
 
                     if (!hasHoleCards)
                     {
-                        LogError("HoleCards no detectadas para postflop, saltando procesamiento");
+                        _logger.LogError("HoleCards no detectadas para postflop, saltando procesamiento");
                         return;
                     }
                 }
@@ -1122,18 +1131,18 @@ namespace OpenScrape.App
         {
             if (_playerGameState.Position == TablePosition.None)
             {
-                LogError("Posición del jugador no detectada, saltando procesamiento preflop");
+                _logger.LogError("Posición del jugador no detectada, saltando procesamiento preflop");
                 return;
             }
 
             if (_preflopHeroPosition == null || !_preflopHeroPosition.ContainsKey(_playerGameState.Position))
             {
-                LogError($"PreflopHeroPosition no tiene datos para posición {_playerGameState.Position}, reconstruyendo...");
+                _logger.LogError("PreflopHeroPosition no tiene datos para posición {Position}, reconstruyendo...", _playerGameState.Position);
                 _preflopHeroPosition = GetPreflopHeroPosition();
 
                 if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
                 {
-                    LogError($"Sigue sin tener datos para posición {_playerGameState.Position}, saltando preflop");
+                    _logger.LogError("Sigue sin tener datos para posición {Position}, saltando preflop", _playerGameState.Position);
                     return;
                 }
             }
@@ -1170,7 +1179,7 @@ namespace OpenScrape.App
 
             if (playersWhoRaised.Count > 0)
             {
-                LogError($"[PREFLOP] Aggressors set: {string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}"))}");
+                _logger.LogError("[PREFLOP] Aggressors set: {Aggressors}", string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}")));
             }
         }
 
@@ -1179,7 +1188,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
         {
-            LogInformation($"ProcessPostFlopAsync: Estado actual = {_gameLoopStateMachine.CurrentState}");
+            _logger.LogInformation("ProcessPostFlopAsync: Estado actual = {State}", _gameLoopStateMachine.CurrentState);
 
             // Detectar villanos que foldearon mid-hand (actualiza Active/numOpponents)
             _tableLayout.DetectFoldedPlayers(_formImage.pbImage.Image, _playerGameState, _gameLoopStateMachine.CurrentState);
@@ -1196,7 +1205,7 @@ namespace OpenScrape.App
                     int visibleCards = CountVisibleBoardCards();
                     transitioned = _gameLoopStateMachine.TryTransition(GameState.TurnDetected, visibleCards);
                     if (!transitioned)
-                        LogInformation($"Transición a Turn bloqueada: Card4 visible pero solo {visibleCards} cartas detectadas (necesita 4)");
+                        _logger.LogInformation("Transición a Turn bloqueada: Card4 visible pero solo {Visible} cartas detectadas (necesita 4)", visibleCards);
                 }
 
                 if (!transitioned)
@@ -1224,7 +1233,7 @@ namespace OpenScrape.App
                     int visibleCards = CountVisibleBoardCards();
                     transitioned = _gameLoopStateMachine.TryTransition(GameState.RiverDetected, visibleCards);
                     if (!transitioned)
-                        LogInformation($"Transición a River bloqueada: Card5 visible pero solo {visibleCards} cartas detectadas (necesita 5)");
+                        _logger.LogInformation("Transición a River bloqueada: Card5 visible pero solo {Visible} cartas detectadas (necesita 5)", visibleCards);
                 }
 
                 if (!transitioned)
@@ -1293,7 +1302,7 @@ namespace OpenScrape.App
                 .Max();
 
             // Umbral de confianza: >80% indica carta real, <80% indica fondo de mesa
-            LogDebug($"IsBoardCardVisible({cardRegionName}): bestMatch={bestMatch:F1}%, visible={bestMatch > 80.0}");
+            _logger.LogDebug("IsBoardCardVisible({Region}): bestMatch={Match:F1}%, visible={Visible}", cardRegionName, bestMatch, bestMatch > 80.0);
             return bestMatch > 80.0;
         }
 
@@ -1329,7 +1338,7 @@ namespace OpenScrape.App
             _coordinator.SetRiverResult(_riverResult);
             var result = _coordinator.DetermineRiverAction(_playerGameState);
             _responseAction.Action = result.Action;
-            LogError(result.LogText);
+            _logger.LogError("{LogText}", result.LogText);
         }
 
         /// <summary>
@@ -1382,7 +1391,7 @@ namespace OpenScrape.App
             bool indicator7 = !string.IsNullOrEmpty(currentBBPlayerName) && currentBBPlayerName != _previousBBPlayerName;
 
             // Log indicadores para debugging
-            LogDebug($"DetectNewHand - HandChanged: {indicator1}, HoleCards: {indicator2}, PotLow: {indicator3}, BoardEmpty: {indicator4}, DealerChanged: {indicator5}, SBChanged: {indicator6}, BBChanged: {indicator7}");
+            _logger.LogDebug("DetectNewHand - HandChanged: {I1}, HoleCards: {I2}, PotLow: {I3}, BoardEmpty: {I4}, DealerChanged: {I5}, SBChanged: {I6}, BBChanged: {I7}", indicator1, indicator2, indicator3, indicator4, indicator5, indicator6, indicator7);
 
             int secondaryCount = (indicator2 ? 1 : 0) + (indicator3 ? 1 : 0) + (indicator4 ? 1 : 0) + (indicator5 ? 1 : 0) + (indicator6 ? 1 : 0) + (indicator7 ? 1 : 0);
 
@@ -1408,7 +1417,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
         {
-            LogInformation($"ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: {_gameLoopStateMachine.CurrentState}");
+            _logger.LogInformation("ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
             // Capturar cartas del flop con retry
             List<BoardData> dataBoard = null!;
@@ -1424,14 +1433,14 @@ namespace OpenScrape.App
                 });
 
                 dataBoard = flopResponse.DataBoard;
-                LogInformation($"ProcessFlopAsync: Intento {attempt + 1} - Cartas detectadas: {dataBoard.Count}, Flop cards: {dataBoard.Count(d => d.Position == BoardPosition.Flop)}");
+                _logger.LogInformation("ProcessFlopAsync: Intento {Attempt} - Cartas detectadas: {Total}, Flop cards: {FlopCount}", attempt + 1, dataBoard.Count, dataBoard.Count(d => d.Position == BoardPosition.Flop));
 
                 if (dataBoard.Count(d => d.Position == BoardPosition.Flop) >= 3)
                     break;
 
                 if (attempt < GameLoopStateMachine.MaxOcrRetries)
                 {
-                    LogError($"OCR flop: intento {attempt + 1} falló, reintentando...");
+                    _logger.LogError("OCR flop: intento {Attempt} falló, reintentando...", attempt + 1);
                     await Task.Delay(200);
                 }
             }
@@ -1461,7 +1470,7 @@ namespace OpenScrape.App
             // Verificar que hay suficientes cartas del flop tras reintentos
             if (dataBoard.Count(d => d.Position == BoardPosition.Flop) < 3)
             {
-                LogError("No se detectaron suficientes cartas del flop tras reintentos.");
+                _logger.LogError("No se detectaron suficientes cartas del flop tras reintentos.");
                 _responseAction.Action = "Error: No se pudieron detectar cartas del flop";
                 UpdateOverlayWithPotOdds(new PokerCalculationResult());
                 return;
@@ -1520,7 +1529,7 @@ namespace OpenScrape.App
             _coordinator.SetFlopResult(_flopResult);
             var result = _coordinator.DetermineFlopAction(_playerGameState);
             _responseAction.Action = result.Action;
-            LogError(result.LogText);
+            _logger.LogError("{LogText}", result.LogText);
         }
 
         /// <summary>
@@ -1538,7 +1547,7 @@ namespace OpenScrape.App
             _coordinator.TurnBoardTexture = _turnBoardTexture;
             var result = _coordinator.DetermineTurnAction(_playerGameState);
             _responseAction.Action = result.Action;
-            LogError(result.LogText);
+            _logger.LogError("{LogText}", result.LogText);
         }
 
         /// <summary>
@@ -1547,7 +1556,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessTurnAsync()
         {
-            LogInformation($"ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: {_gameLoopStateMachine.CurrentState}");
+            _logger.LogInformation("ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
             // Capturar carta del turn con retry
             List<BoardData> dataBoard = null!;
@@ -1564,21 +1573,21 @@ namespace OpenScrape.App
                 });
 
                 dataBoard = turnResponse.DataBoard;
-                LogInformation($"ProcessTurnAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}");
+                _logger.LogInformation("ProcessTurnAsync: Intento {Attempt} - Cartas totales: {Total}", attempt + 1, dataBoard.Count);
 
                 if (dataBoard.Count >= 4)
                     break;
 
                 if (attempt < GameLoopStateMachine.MaxOcrRetries)
                 {
-                    LogError($"OCR turn: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    _logger.LogError("OCR turn: intento {Attempt} falló ({Count} cartas), reintentando...", attempt + 1, dataBoard.Count);
                     await Task.Delay(200);
                 }
             }
 
             if (dataBoard.Count < 4)
             {
-                LogError("No se detectó la carta del turn tras reintentos.");
+                _logger.LogError("No se detectó la carta del turn tras reintentos.");
                 _responseAction.Action = "Error: No se pudo detectar carta del turn";
                 return;
             }
@@ -1629,7 +1638,7 @@ namespace OpenScrape.App
         /// </summary>
         private async Task ProcessRiverAsync()
         {
-            LogInformation($"ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: {_gameLoopStateMachine.CurrentState}");
+            _logger.LogInformation("ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
             // Capturar carta del river con retry
             List<BoardData> dataBoard = null!;
@@ -1648,14 +1657,14 @@ namespace OpenScrape.App
                 dataBoard = riverResponse.DataBoard;
                 // Contar solo cartas con nombre válido (no vacío)
                 int validCards = dataBoard.Count(d => !string.IsNullOrEmpty(d.Name));
-                LogInformation($"ProcessRiverAsync: Intento {attempt + 1} - Cartas totales: {dataBoard.Count}, válidas: {validCards}");
+                _logger.LogInformation("ProcessRiverAsync: Intento {Attempt} - Cartas totales: {Total}, válidas: {Valid}", attempt + 1, dataBoard.Count, validCards);
 
                 if (validCards >= 5)
                     break;
 
                 if (attempt < GameLoopStateMachine.MaxOcrRetries)
                 {
-                    LogError($"OCR river: intento {attempt + 1} falló ({dataBoard.Count} cartas), reintentando...");
+                    _logger.LogError("OCR river: intento {Attempt} falló ({Count} cartas), reintentando...", attempt + 1, dataBoard.Count);
                     await Task.Delay(200);
                 }
             }
@@ -1663,7 +1672,7 @@ namespace OpenScrape.App
             int finalValidCards = dataBoard.Count(d => !string.IsNullOrEmpty(d.Name));
             if (finalValidCards < 5)
             {
-                LogError($"No se detectó la carta del river tras reintentos (válidas={finalValidCards}/{dataBoard.Count}).");
+                _logger.LogError("No se detectó la carta del river tras reintentos (válidas={Valid}/{Total}).", finalValidCards, dataBoard.Count);
                 _responseAction.Action = "Error: No se pudo detectar carta del river";
                 return;
             }
@@ -1744,7 +1753,7 @@ namespace OpenScrape.App
 
             // _contextHolder.StartNewHand() se hace condicionalmente en btnCapture_Click
             // para no perder el contexto cuando se restaura un estado postflop guardado
-            LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {prevPot}, HoleCards: {prevHoleCards}");
+            _logger.LogInformation("Nueva mano detectada: Hand {Hand}, Pot: {Pot}, HoleCards: {HoleCards}", _tableHand, prevPot, prevHoleCards);
 
             // Asegurar que hay sesión activa e iniciar nueva mano
             if (!_gameLoggerService.HasActiveSession)
@@ -2065,7 +2074,7 @@ namespace OpenScrape.App
             using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImage.Image), _pictureUmbralBet));
             var betsRegions = _regionLookupCache.GetRegions("Bets");
 
-            LogInformation($"[SetBetPlayer] Total regions: {betsRegions?.Count ?? 0}");
+            _logger.LogInformation("[SetBetPlayer] Total regions: {Count}", betsRegions?.Count ?? 0);
 
             if (betsRegions == null || _formImage.pbImage.Image == null)
                 return;
@@ -2073,7 +2082,7 @@ namespace OpenScrape.App
             foreach (var region in betsRegions)
             {
                 var playerNumber = PlayerRegionParser.GetPlayerNumber(region.Name, "bet");
-                LogInformation($"[SetBetPlayer] Region: {region.Name}, parsed playerNumber: {playerNumber}");
+                _logger.LogInformation("[SetBetPlayer] Region: {Region}, parsed playerNumber: {PlayerNumber}", region.Name, playerNumber);
 
                 if (playerNumber == null) continue;
 
@@ -2083,7 +2092,7 @@ namespace OpenScrape.App
                     region.Umbral, region.InactiveUmbral, region.IsOnlyNumber, playerNumber);
 
                 // Log para debug de bets
-                LogInformation($"[SetBetValue] Region: {region.Name}, Player: P{playerNumber}, Value: {betValue}");
+                _logger.LogInformation("[SetBetValue] Region: {Region}, Player: P{PlayerNumber}, Value: {BetValue}", region.Name, playerNumber, betValue);
 
                 // Normalizar: detecta decimal separator perdido (593 → 5,93), artefacto "8"
                 betValue = _screenReader.NormalizeBetValue(betValue, _playerGameState.PotSize);
@@ -2138,7 +2147,7 @@ namespace OpenScrape.App
             // Si no se obtuvo valor válido, mantener el anterior
             if (stackValue <= 0 && _playerGameState.HeroStack > 0)
             {
-                LogError($"[STACK] OCR falló tras reintentos, manteniendo valor anterior: {_playerGameState.HeroStack}");
+                _logger.LogError("[STACK] OCR falló tras reintentos, manteniendo valor anterior: {HeroStack}", _playerGameState.HeroStack);
                 lbUserStack.Text = _playerGameState.HeroStack.ToString();
                 return;
             }
@@ -2152,7 +2161,7 @@ namespace OpenScrape.App
             if (isHandActive && previousStack > 0 && stackValue > maxPossibleWin + 1)
             {
                 // Auto-rebuy detectado: stack subió más de lo posible por ganar el pot
-                Console.WriteLine($"[STACK] Auto-rebuy detectado: {previousStack} → {stackValue} (pot={_playerGameState.PotSize})");
+                _logger.LogInformation("[STACK] Auto-rebuy detectado: {Previous} → {Current} (pot={Pot})", previousStack, stackValue, _playerGameState.PotSize);
                 _gameLoggerService.RegisterAutoRebuy(100);
             }
             else if (isHandActive && stackValue > 0)
@@ -2246,7 +2255,7 @@ namespace OpenScrape.App
                     else
                     {
                         // OCR no pudo parsear el hand number — comparar como texto
-                        LogDebug($"[HAND#] Parsing fallido: prev='{_tableHand}', current='{currentHand}' — comparando como texto");
+                        _logger.LogDebug("[HAND#] Parsing fallido: prev='{Prev}', current='{Current}' — comparando como texto", _tableHand, currentHand);
                         if (!string.IsNullOrEmpty(currentHand) && _tableHand != currentHand)
                             handNumberChanged = true;
                     }
@@ -2277,7 +2286,7 @@ namespace OpenScrape.App
 
                         if (suspiciousOcrChange)
                         {
-                            LogInformation($"[HAND#] Cambio sospechoso de OCR en postflop: prev='{_tableHand}', current='{currentHand}' — requiriendo más indicadores");
+                            _logger.LogInformation("[HAND#] Cambio sospechoso de OCR en postflop: prev='{Prev}', current='{Current}' — requiriendo más indicadores", _tableHand, currentHand);
                             _newHand = DetectNewHand(false, currentHand);
                         }
                         else
@@ -2301,7 +2310,7 @@ namespace OpenScrape.App
                     else if (!handNumberParseable && string.IsNullOrEmpty(currentHand))
                     {
                         // OCR falló completamente — evaluar indicadores secundarios
-                        LogDebug("[HAND#] OCR falló completamente, evaluando indicadores secundarios");
+                        _logger.LogDebug("[HAND#] OCR falló completamente, evaluando indicadores secundarios");
                         _newHand = DetectNewHand(false, currentHand);
                         if (_newHand)
                         {
@@ -2337,7 +2346,7 @@ namespace OpenScrape.App
                 var directoryInfo = new DirectoryInfo(_folderPath);
                 if (!Directory.Exists(_folderPath))
                 {
-                    LogError($"El directorio {_folderPath} no existe");
+                    _logger.LogError("El directorio {Path} no existe", _folderPath);
                     return;
                 }
 
@@ -2364,7 +2373,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al crear log de manos marcadas: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al crear log de manos marcadas");
             }
         }
 
@@ -2481,7 +2490,7 @@ namespace OpenScrape.App
             {
                 if (_handle == IntPtr.Zero)
                 {
-                    LogError("GetImageWhilePlaying: _handle es IntPtr.Zero, no se puede capturar");
+                    _logger.LogError("GetImageWhilePlaying: _handle es IntPtr.Zero, no se puede capturar");
                     return;
                 }
 
@@ -2503,7 +2512,7 @@ namespace OpenScrape.App
 
                 if (capturedBitmap.Width <= 1 || capturedBitmap.Height <= 1)
                 {
-                    LogError($"GetImageWhilePlaying: Captura inválida ({capturedBitmap.Width}x{capturedBitmap.Height})");
+                    _logger.LogError("GetImageWhilePlaying: Captura inválida ({Width}x{Height})", capturedBitmap.Width, capturedBitmap.Height);
                     return;
                 }
 
@@ -2531,7 +2540,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al obtener imagen: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al obtener imagen");
             }
         }
 
@@ -2545,7 +2554,7 @@ namespace OpenScrape.App
                 var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
                 if (!File.Exists(configPath))
                 {
-                    LogError("SaveReferenceDimensionsToConfig: appsettings.json no encontrado");
+                    _logger.LogError("SaveReferenceDimensionsToConfig: appsettings.json no encontrado");
                     return;
                 }
 
@@ -2597,11 +2606,11 @@ namespace OpenScrape.App
                 ms.Position = 0;
                 File.WriteAllText(configPath, reader.ReadToEnd());
 
-                LogInformation($"Guardadas dimensiones de referencia: {width}x{height}");
+                _logger.LogInformation("Guardadas dimensiones de referencia: {Width}x{Height}", width, height);
             }
             catch (Exception ex)
             {
-                LogError($"Error al guardar dimensiones de referencia: {ex.Message}");
+                _logger.LogError(ex, "Error al guardar dimensiones de referencia");
             }
         }
 
@@ -2702,12 +2711,12 @@ namespace OpenScrape.App
                     _gameLoopCts = new CancellationTokenSource();
                     _uiSyncService.Attach(_gameLoopCoordinator, this, _frmOverlay!, tbResume);
                     _ = _gameLoopCoordinator.StartAsync(_gameLoopCts.Token);
-                    LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
+                    _logger.LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
                 }
             }
             catch (Exception ex)
             {
-                LogError($"Error en btnWindow_Click: {ex.Message}", ex);
+                _logger.LogError(ex, "Error en btnWindow_Click");
             }
         }
 
@@ -2874,7 +2883,7 @@ namespace OpenScrape.App
             catch (Exception ex)
             {
                 _detectionLoggerService.LogDetectionError($"Error crítico en BackgroundWorker1_DoWork: {ex.Message}", ex);
-                LogError($"Error en BackgroundWorker1_DoWork: {ex.Message}", ex);
+                _logger.LogError(ex, "Error en BackgroundWorker1_DoWork");
                 e.Cancel = true;
             }
         }
@@ -3553,7 +3562,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al establecer color: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al establecer color");
             }
         }
 
@@ -3616,7 +3625,7 @@ namespace OpenScrape.App
             // Validación de región seleccionada
             if (_selectedRegion == null || _formImage.pbImage.Image == null)
             {
-                LogError("No se ha seleccionado una región o la imagen es nula.");
+                _logger.LogError("No se ha seleccionado una región o la imagen es nula.");
                 return;
             }
 
@@ -3654,7 +3663,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                LogError($"Error al probar carta: {ex.Message}", ex);
+                _logger.LogError(ex, "Error al probar carta");
             }
         }
 
@@ -3671,67 +3680,12 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Logs an error message to the output or a log file.
-        /// </summary>
-        /// <param name="message">The error message to log.</param>
-        /// <param name="exception">Optional exception details.</param>
-        private void LogError(string message, Exception? exception = null)
-        {
-            var logLine = exception != null
-                ? $"[{DateTime.Now:HH:mm:ss}] {message} | Exception: {exception.Message}"
-                : $"[{DateTime.Now:HH:mm:ss}] {message}";
-
-            Console.WriteLine(logLine);
-
-            if (tbResume != null && !tbResume.IsDisposed)
-            {
-                if (tbResume.InvokeRequired)
-                    tbResume.Invoke(() => AppendLog(logLine));
-                else
-                    AppendLog(logLine);
-            }
-        }
-
-        private void AppendLog(string line)
-        {
-            tbResume.AppendText(line + Environment.NewLine);
-            tbResume.SelectionStart = tbResume.TextLength;
-            tbResume.ScrollToCaret();
-        }
-
-        /// <summary>
         /// Formatea las cartas del hero y del board para logs legibles.
         /// Ejemplo: "Hero: [As Qc]  Board: [Qh 3h 7s] + [5d]"
         /// </summary>
         private string FormatCardsForLog(BoardPosition street)
         {
             return _coordinator.FormatCardsForLog(_playerGameState, street);
-        }
-
-        /// <summary>
-        /// Logs an informational message to the output or a log file.
-        /// </summary>
-        /// <param name="message"></param>
-        private void LogInformation(string message)
-        {
-            var logLine = $"[{DateTime.Now:HH:mm:ss}] {message}";
-            Console.WriteLine(logLine);
-
-            if (tbResume != null && !tbResume.IsDisposed)
-            {
-                if (tbResume.InvokeRequired)
-                    tbResume.Invoke(() => AppendLog(logLine));
-                else
-                    AppendLog(logLine);
-            }
-        }
-
-        /// <summary>
-        /// Solo escribe a Console (debug). No aparece en la pestaña de logs del usuario.
-        /// </summary>
-        private static void LogDebug(string message)
-        {
-            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [DEBUG] {message}");
         }
 
         #endregion
@@ -4175,7 +4129,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error cargando sesiones: {ex.Message}");
+                _logger.LogError(ex, "Error cargando sesiones");
             }
         }
 
@@ -4220,7 +4174,7 @@ namespace OpenScrape.App
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error cargando manos: {ex.Message}");
+                _logger.LogError(ex, "Error cargando manos");
             }
         }
 

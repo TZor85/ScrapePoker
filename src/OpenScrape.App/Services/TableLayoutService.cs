@@ -1,6 +1,9 @@
 using System.Drawing;
 using System.Text;
 using System.Text.RegularExpressions;
+
+using Microsoft.Extensions.Logging;
+
 using OpenScrape.App.Entities;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;
@@ -17,6 +20,7 @@ public class TableLayoutService : ITableLayoutService
     private readonly ICoordinateScaler _coordinateScaler;
     private readonly IScreenReaderService _screenReader;
     private readonly IOpponentTracker _opponentTracker;
+    private readonly ILogger<TableLayoutService> _logger;
 
     // Constantes de color para detección por canal Blue
     private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 };
@@ -31,12 +35,14 @@ public class TableLayoutService : ITableLayoutService
         RegionLookupCache regionLookupCache,
         ICoordinateScaler coordinateScaler,
         IScreenReaderService screenReader,
-        IOpponentTracker opponentTracker)
+        IOpponentTracker opponentTracker,
+        ILogger<TableLayoutService> logger)
     {
         _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
         _coordinateScaler = coordinateScaler ?? throw new ArgumentNullException(nameof(coordinateScaler));
         _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
         _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     #region [Estado dealer]
@@ -62,7 +68,7 @@ public class TableLayoutService : ITableLayoutService
         {
             SetDealerPlayer(screenshot, state);
 
-            LogDebug($"Dealer result: P{DealerValuePosition}, Position: {state.Position}, IsDealer: {state.IsDealer}, Players: {state.Players.Count}");
+            _logger.LogDebug("Dealer result: P{Dealer}, Position: {Position}, IsDealer: {IsDealer}, Players: {PlayerCount}", DealerValuePosition, state.Position, state.IsDealer, state.Players.Count);
 
             if (DealerValuePosition >= 0)
                 SetVillainPosition(state, state.Position, DealerValuePosition);
@@ -71,7 +77,7 @@ public class TableLayoutService : ITableLayoutService
         }
         catch (Exception ex)
         {
-            LogDebug($"Error en InitializePlayers: {ex.Message}");
+            _logger.LogError(ex, "Error en InitializePlayers");
             throw;
         }
     }
@@ -120,7 +126,7 @@ public class TableLayoutService : ITableLayoutService
             }
         }
 
-        LogDebug($"Dealer scan: {allColorsLog}| Detectado: {(detectedDealerPosition.HasValue ? $"P{detectedDealerPosition}" : "NINGUNO")} | Imagen: {bitmap.Width}x{bitmap.Height}");
+        _logger.LogDebug("Dealer scan: {Colors}| Detectado: {Detected} | Imagen: {Width}x{Height}", allColorsLog, detectedDealerPosition.HasValue ? $"P{detectedDealerPosition}" : "NINGUNO", bitmap.Width, bitmap.Height);
 
         if (detectedDealerPosition.HasValue)
         {
@@ -161,17 +167,17 @@ public class TableLayoutService : ITableLayoutService
             player.Dealer = true;
         }
 
-        LogDebug($"Dealer assigned to player P{playerNumber}");
+        _logger.LogDebug("Dealer assigned to player P{PlayerNumber}", playerNumber);
 
         var p0Pos = DetermineP0Position(state, playerNumber);
-        LogDebug($"DetermineP0Position resultado: {p0Pos}, dealer: {playerNumber}, emptyPositions: [{string.Join(",", emptyPositions)}]");
+        _logger.LogDebug("DetermineP0Position resultado: {P0Pos}, dealer: {Dealer}, emptyPositions: [{Empty}]", p0Pos, playerNumber, string.Join(",", emptyPositions));
         state.Position = p0Pos;
 
         var heroPlayer = state.Players.FirstOrDefault(p => p.ValuePosition == 0);
         if (heroPlayer != null)
         {
             heroPlayer.Position = p0Pos;
-            LogDebug($"Héroe P0 position establecida: {p0Pos}");
+            _logger.LogDebug("Héroe P0 position establecida: {P0Pos}", p0Pos);
         }
 
         PreviousDealerPlayerName = DealerPosition;
@@ -367,7 +373,7 @@ public class TableLayoutService : ITableLayoutService
             {
                 player.HasFolded = true;
                 player.Active = false;
-                LogDebug($"[FOLD] {player.Name} ({player.Alias ?? "?"}) foldeó mid-hand");
+                _logger.LogDebug("[FOLD] {Name} ({Alias}) foldeó mid-hand", player.Name, player.Alias ?? "?");
             }
         }
     }
@@ -398,7 +404,7 @@ public class TableLayoutService : ITableLayoutService
                 player.Empty = true;
                 player.Active = false;
                 player.SitOut = false;
-                LogDebug($"[LEFT] {player.Name} ({player.Alias ?? "?"}) dejó la mesa mid-session");
+                _logger.LogDebug("[LEFT] {Name} ({Alias}) dejó la mesa mid-session", player.Name, player.Alias ?? "?");
             }
         }
     }
@@ -416,7 +422,7 @@ public class TableLayoutService : ITableLayoutService
 
             if (player.Active && player.Stack == 0 && player.Bet == 0 && !player.HasFolded)
             {
-                LogDebug($"[WARNING] {player.Name} activo pero stack=0, bet=0 — posible detección incorrecta");
+                _logger.LogWarning("{Name} activo pero stack=0, bet=0 — posible detección incorrecta", player.Name);
             }
         }
     }
@@ -439,7 +445,7 @@ public class TableLayoutService : ITableLayoutService
         if (!activePlayers.Any())
             return;
 
-        LogDebug($"SetVillainPosition - Jugadores activos: {string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})"))}, Posición héroe: {heroPosition}, Dealer: {dealerPosition}");
+        _logger.LogDebug("SetVillainPosition - Jugadores activos: {Active}, Posición héroe: {HeroPos}, Dealer: {Dealer}", string.Join(", ", activePlayers.Select(p => $"{p.Name}(VP:{p.ValuePosition},Empty:{p.Empty},SitOut:{p.SitOut})")), heroPosition, dealerPosition);
 
         // Limpiar posiciones previas en todos los asientos físicos (SitOut incluido) excepto héroe
         foreach (var p in allPlayers.Where(p => p.ValuePosition != 0))
@@ -459,7 +465,7 @@ public class TableLayoutService : ITableLayoutService
         }
 
         var positionLog = string.Join(", ", allPlayers.Where(p => !p.Empty).Select(p => $"{p.Name}:{p.Position}{(p.SitOut ? "(SitOut)" : "")}"));
-        LogDebug($"Posiciones asignadas: {positionLog}");
+        _logger.LogDebug("Posiciones asignadas: {Positions}", positionLog);
 
         ValidatePositionAssignments(activePlayers);
     }
@@ -598,7 +604,7 @@ public class TableLayoutService : ITableLayoutService
         var dealers = players.Where(p => p.Dealer).ToList();
         if (dealers.Count != 1)
         {
-            LogDebug($"Advertencia: Se encontraron {dealers.Count} dealers. Debe haber exactamente 1.");
+            _logger.LogWarning("Se encontraron {DealerCount} dealers. Debe haber exactamente 1.", dealers.Count);
         }
 
         var assignedPositions = players.Where(p => p.Position != TablePosition.None)
@@ -608,7 +614,7 @@ public class TableLayoutService : ITableLayoutService
                                        .ToList();
         if (assignedPositions.Any())
         {
-            LogDebug($"Advertencia: Posiciones duplicadas: {string.Join(", ", assignedPositions)}");
+            _logger.LogWarning("Posiciones duplicadas: {Positions}", string.Join(", ", assignedPositions));
         }
 
         if (players.Count >= 2)
@@ -617,7 +623,7 @@ public class TableLayoutService : ITableLayoutService
             var hasBigBlind = players.Any(p => p.Position == TablePosition.BigBlind);
             if (!hasSmallBlind || !hasBigBlind)
             {
-                LogDebug("Advertencia: Faltan asignar SmallBlind o BigBlind.");
+                _logger.LogWarning("Faltan asignar SmallBlind o BigBlind.");
             }
         }
 
@@ -626,14 +632,9 @@ public class TableLayoutService : ITableLayoutService
             var hasButton = players.Any(p => p.Position == TablePosition.Button);
             if (!hasButton)
             {
-                LogDebug("Advertencia: Falta asignar Button.");
+                _logger.LogWarning("Falta asignar Button.");
             }
         }
-    }
-
-    private static void LogDebug(string message)
-    {
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [DEBUG] {message}");
     }
 
     #endregion

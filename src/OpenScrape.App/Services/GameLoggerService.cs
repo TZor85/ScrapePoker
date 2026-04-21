@@ -18,6 +18,8 @@ public class GameLoggerService
     private readonly SemaphoreSlim _dbWriteLock = new(1, 1);
     private GameSession? _currentSession;
     private HandRecord? _currentHand;
+    private IDisposable? _sessionScope;
+    private IDisposable? _handScope;
 
     // Acumuladores de sesión: necesarios porque la lista Hands en memoria está truncada
     private int _sessionTotalHands;
@@ -60,6 +62,14 @@ public class GameLoggerService
         _sessionTotalHands = 0;
         _sessionTotalProfit = 0;
 
+        // Correlation scope: todos los logs siguientes incluirán SessionId y TableName.
+        _sessionScope?.Dispose();
+        _sessionScope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["SessionId"] = sessionId,
+            ["TableName"] = tableName
+        });
+
         _logger.LogInformation(
             "Sesión iniciada: {SessionId} en {TableName}",
             sessionId, tableName);
@@ -97,6 +107,13 @@ public class GameLoggerService
             NumOpponents = numOpponents,
             BlindPosted = blindPosted
         };
+
+        // Correlation scope: HandNumber se propaga hasta FinalizeAndPersistHandAsync.
+        _handScope?.Dispose();
+        _handScope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["HandNumber"] = handNumber
+        });
 
         _logger.LogInformation(
             "Nueva mano iniciada: Hand #{HandNumber}",
@@ -213,6 +230,8 @@ public class GameLoggerService
         }
 
         _currentHand = null;
+        _handScope?.Dispose();
+        _handScope = null;
     }
 
     /// <summary>

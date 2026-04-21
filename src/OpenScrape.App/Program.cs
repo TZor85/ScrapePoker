@@ -1,12 +1,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Marten;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Logging;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;
@@ -39,6 +41,10 @@ namespace OpenScrape.App
 
             var builder = Host.CreateDefaultBuilder()
                 .UseEnvironment(environment)
+                .ConfigureLogging((context, lb) =>
+                {
+                    lb.AddTextBoxLogger();
+                })
                 .ConfigureServices((context, services) =>
                 {
                     // Agregar configuraci�n de base de datos
