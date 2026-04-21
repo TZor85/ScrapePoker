@@ -53,10 +53,11 @@ public class PokerDecisionFacadeTests
         out IOpponentTracker opponentTracker)
     {
         calculator = new FakePokerCalculator();
-        var profile = Options.Create(new StrategyProfile());
+        var profile = Options.Create(new StrategyProfile().FillMissingThresholds());
         var betSizing = new BetSizingService(profile);
         var rangePolarizer = new RangePolarizer();
-        decisionService = new PostflopDecisionService(profile, betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(profile);
+        decisionService = new PostflopDecisionService(profile, betSizing, rangePolarizer, registry);
         var boardAnalyzer = new BoardTextureAnalyzer();
         opponentTracker = new OpponentTracker();
         return new PokerDecisionFacade(

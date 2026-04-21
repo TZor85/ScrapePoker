@@ -65,7 +65,8 @@ public class DecisionMatrixIntegrationTests
         var options = Options.Create(_profile);
         var betSizing = new BetSizingService(options);
         var rangePolarizer = new RangePolarizer();
-        _service = new PostflopDecisionService(options, betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(options);
+        _service = new PostflopDecisionService(options, betSizing, rangePolarizer, registry);
     }
 
     // ─── Generador de la matriz ────────────────────────────────────────────

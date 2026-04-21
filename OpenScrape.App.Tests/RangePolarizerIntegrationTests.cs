@@ -17,10 +17,11 @@ public class RangePolarizerIntegrationTests
     [SetUp]
     public void Setup()
     {
-        _profile = CreateTestProfile();
+        _profile = CreateTestProfile().FillMissingThresholds();
         var betSizingService = new BetSizingService(Options.Create(_profile));
         var rangePolarizer = new RangePolarizer();
-        _service = new PostflopDecisionService(Options.Create(_profile), betSizingService, rangePolarizer);
+        var registry = new ThresholdsRegistry(Options.Create(_profile));
+        _service = new PostflopDecisionService(Options.Create(_profile), betSizingService, rangePolarizer, registry);
     }
 
     private StrategyProfile CreateTestProfile()

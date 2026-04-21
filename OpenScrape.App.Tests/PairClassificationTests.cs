@@ -169,11 +169,12 @@ public class PairClassificationTests
 
     private static PostflopDecisionService CreateService()
     {
-        var profile = new StrategyProfile();
+        var profile = new StrategyProfile().FillMissingThresholds();
         var options = Options.Create(profile);
         var betSizing = new BetSizingService(options);
         var rangePolarizer = new RangePolarizer();
-        return new PostflopDecisionService(options, betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(options);
+        return new PostflopDecisionService(options, betSizing, rangePolarizer, registry);
     }
 
     [Test]

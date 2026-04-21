@@ -20,9 +20,12 @@ public class DecisionIntegrationTests
     private MonteCarloSimulator _simulator;
     private OutsCalculator _outsCalculator;
     private HandEvaluator _handEvaluator;
-    private StrategyProfileService _strategyService;
+    private ThresholdsRegistry _registry;
 
     private static CardDataOuts C(Rank rank, Suit suit) => new(suit, rank);
+
+    private StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
+        => _registry.Get(new ThresholdKey(street, situation));
 
     [SetUp]
     public void Setup()
@@ -32,7 +35,7 @@ public class DecisionIntegrationTests
         _handEvaluator = new HandEvaluator();
 
         var profile = CreateDefaultProfile();
-        _strategyService = new StrategyProfileService(Options.Create(profile));
+        _registry = new ThresholdsRegistry(Options.Create(profile));
     }
 
     [Test]
@@ -52,7 +55,7 @@ public class DecisionIntegrationTests
         };
 
         var equityResult = _simulator.CalculateEquity(myCards, community, 1, 3000);
-        var thresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         // AA en flop seco debería tener equity > 80%
         Assert.That(equityResult.Equity * 100, Is.GreaterThan(thresholds.StrongValueAbove));
@@ -75,7 +78,7 @@ public class DecisionIntegrationTests
         };
 
         var equityResult = _simulator.CalculateEquity(myCards, community, 1, 3000);
-        var thresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         // 27o en board KQJ debería tener equity < fold threshold
         Assert.That(equityResult.Equity * 100, Is.LessThan(thresholds.FoldBelow));
@@ -100,7 +103,7 @@ public class DecisionIntegrationTests
 
         var equityResult = _simulator.CalculateEquity(myCards, community, 1, 3000);
         var outsResult = _outsCalculator.CalculateOuts(myCards, community);
-        var thresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.Call);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.Call);
 
         // Flush draw en turn con Ace → equity media, debería tener outs
         Assert.That(outsResult.HasFlushDraw, Is.True);
@@ -126,7 +129,7 @@ public class DecisionIntegrationTests
         };
 
         var equityResult = _simulator.CalculateEquity(myCards, community, 1, 1000);
-        var thresholds = _strategyService.GetThresholds(BoardPosition.River, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.River, HandSituation.OpenRaise);
 
         // Quads en river → equity ~100% → strong value
         Assert.That(equityResult.Equity * 100, Is.GreaterThan(thresholds.StrongValueAbove));
@@ -150,7 +153,7 @@ public class DecisionIntegrationTests
         };
 
         var equityResult = _simulator.CalculateEquity(myCards, community, 1, 3000);
-        var thresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.ThreeBet);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.ThreeBet);
         var equityPct = equityResult.Equity * 100;
 
         // QQ en board bajo → equity > ValueAbove (55) o > ThinValueAbove (45)
@@ -161,7 +164,7 @@ public class DecisionIntegrationTests
     public void FlujoCompleto_Vs3BetAndCall_LowEquity_DeberiaUsarCallComoFallback()
     {
         // Verificar que la configuración de Vs3BetAndCall usa "Call" en vez de "Fold"
-        var thresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall);
 
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"));
     }
@@ -203,8 +206,8 @@ public class DecisionIntegrationTests
     public void FlujoCompleto_ThresholdsCoherentes_TurnMasEstrictoQueRiver()
     {
         // Verificar coherencia: Turn_OpenRaise.FoldBelow (45) >= River_OpenRaise.FoldBelow (40)
-        var turnThresholds = _strategyService.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
-        var riverThresholds = _strategyService.GetThresholds(BoardPosition.River, HandSituation.OpenRaise);
+        var turnThresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var riverThresholds = GetThresholds(BoardPosition.River, HandSituation.OpenRaise);
 
         Assert.That(turnThresholds.FoldBelow, Is.GreaterThanOrEqualTo(riverThresholds.FoldBelow));
     }

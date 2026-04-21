@@ -292,21 +292,28 @@ public class PostflopDecisionServiceTests
     }
 
     [Test]
-    public void GetThresholds_Existente_DeberiaRetornarConfig()
+    public void Registry_ClaveExistente_DeberiaRetornarConfig()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        // CreateDefaultProfile define Turn_OpenRaise con FoldBelow=45, StrongValueAbove=80.
+        // Construimos el registry SIN rellenar defaults para verificar el lookup directo.
+        var profile = CreateDefaultProfile();
+        var registry = new ThresholdsRegistry(Options.Create(profile));
+
+        var thresholds = registry.Get(new ThresholdKey(BoardPosition.Turn, HandSituation.OpenRaise));
 
         Assert.That(thresholds.FoldBelow, Is.EqualTo(45));
         Assert.That(thresholds.StrongValueAbove, Is.EqualTo(80));
     }
 
     [Test]
-    public void GetThresholds_NoExistente_DeberiaRetornarFallback()
+    public void Registry_ClaveInexistente_DeberiaLanzarKeyNotFoundException()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Flop, HandSituation.OpenRaise);
+        // CreateDefaultProfile no define Flop_OpenRaise. Sin FillMissingThresholds, el registry lanza.
+        var profile = CreateDefaultProfile();
+        var registry = new ThresholdsRegistry(Options.Create(profile));
 
-        Assert.That(thresholds.FoldBelow, Is.EqualTo(40));
-        Assert.That(thresholds.CanBluff, Is.False);
+        Assert.Throws<KeyNotFoundException>(() =>
+            registry.Get(new ThresholdKey(BoardPosition.Flop, HandSituation.OpenRaise)));
     }
 
     // --- Tests de cartas peligrosas / danger penalty ---
@@ -626,9 +633,11 @@ public class PostflopDecisionServiceTests
 
     private static PostflopDecisionService CreateService(StrategyProfile profile)
     {
+        profile.FillMissingThresholds();
         var betSizing = new BetSizingService(Options.Create(profile));
         var rangePolarizer = new RangePolarizer();
-        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(Options.Create(profile));
+        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer, registry);
     }
 
     private static StrategyProfile CreateDefaultProfile()
@@ -2071,9 +2080,9 @@ public class PostflopDecisionServiceTests
             CanCheckRaise = true,
             CheckRaiseThreshold = 75
         };
-        var service = CreateService(profile);
+        var registry = new ThresholdsRegistry(Options.Create(profile));
 
-        var thresholds = service.GetThresholds(BoardPosition.Flop, HandSituation.DonkBet);
+        var thresholds = registry.Get(new ThresholdKey(BoardPosition.Flop, HandSituation.DonkBet));
         Assert.That(thresholds.FoldBelow, Is.EqualTo(32),
             "Flop_DonkBet debería usar config específica, no fallback genérico");
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"),

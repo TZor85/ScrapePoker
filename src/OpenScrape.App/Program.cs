@@ -12,6 +12,7 @@ using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Exceptions;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
@@ -53,6 +54,8 @@ namespace OpenScrape.App
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
+                    services.AddSingleton<ThresholdsRegistry>();
+                    services.AddSingleton<IThresholdsRegistry>(sp => sp.GetRequiredService<ThresholdsRegistry>());
 
                     // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
                     services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
@@ -165,6 +168,20 @@ namespace OpenScrape.App
 
             Configuration = host.Services.GetRequiredService<IConfiguration>();
 
+            // Validación fail-fast del StrategyProfile: abortar antes de mostrar FrmMain
+            // si faltan claves, hay claves inválidas, o tiers incoherentes.
+            try
+            {
+                var profileOptions = host.Services.GetRequiredService<IOptions<StrategyProfile>>();
+                StrategyProfileValidator.Validate(profileOptions.Value);
+            }
+            catch (StrategyProfileValidationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error de configuración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1);
+                return;
+            }
+
             // Inicializar CoordinateScaler desde configuración
             var captureSettings = Configuration.GetSection("CaptureSettings");
             if (captureSettings["IsReferenceSet"] == "true" &&
@@ -176,11 +193,19 @@ namespace OpenScrape.App
                 scaler.Initialize(refWidth, refHeight);
             }
 
-            // Obtener el formulario principal desde un scope para resolver dependencias scoped
-            using var scope = host.Services.CreateScope();
-            var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
-
-            Application.Run(form);
+            // Obtener el formulario principal desde un scope async para resolver dependencias scoped.
+            // CreateAsyncScope es necesario porque algunos servicios (p. ej. GameLoopCoordinator) sólo
+            // implementan IAsyncDisposable; usar un scope síncrono los rompería al cerrar la app.
+            var scope = host.Services.CreateAsyncScope();
+            try
+            {
+                var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
+                Application.Run(form);
+            }
+            finally
+            {
+                scope.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
         }
     }
 }

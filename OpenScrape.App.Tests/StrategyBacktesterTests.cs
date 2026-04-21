@@ -15,11 +15,12 @@ public class StrategyBacktesterTests
     [SetUp]
     public void Setup()
     {
-        var profile = new StrategyProfile();
+        var profile = new StrategyProfile().FillMissingThresholds();
         var options = Options.Create(profile);
         var betSizing = new BetSizingService(options);
         var rangePolarizer = new RangePolarizer();
-        var service = new PostflopDecisionService(options, betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(options);
+        var service = new PostflopDecisionService(options, betSizing, rangePolarizer, registry);
         _backtester = new StrategyBacktester(service);
     }
 

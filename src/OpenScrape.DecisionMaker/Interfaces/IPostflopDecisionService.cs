@@ -12,8 +12,6 @@ namespace OpenScrape.DecisionMaker.Interfaces;
 /// </summary>
 public interface IPostflopDecisionService
 {
-    StreetThresholds GetThresholds(BoardPosition street, HandSituation situation);
-
     double CalculateDangerPenalty(
         double rawEquity, BoardChangeResult boardChange,
         bool heroBlocksDangerSuit, bool isFacingBet,

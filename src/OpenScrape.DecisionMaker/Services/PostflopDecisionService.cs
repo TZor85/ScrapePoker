@@ -24,38 +24,22 @@ public class PostflopDecisionService : IPostflopDecisionService
     private readonly StrategyProfile _profile;
     private readonly BetSizingService _betSizingService;
     private readonly RangePolarizer _rangePolarizer;
+    private readonly IThresholdsRegistry _thresholdsRegistry;
 
-    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService, RangePolarizer rangePolarizer)
+    public PostflopDecisionService(
+        IOptions<StrategyProfile> profileOptions,
+        BetSizingService betSizingService,
+        RangePolarizer rangePolarizer,
+        IThresholdsRegistry thresholdsRegistry)
     {
         _profile = profileOptions.Value;
         _betSizingService = betSizingService;
         _rangePolarizer = rangePolarizer;
+        _thresholdsRegistry = thresholdsRegistry;
     }
 
-    /// <summary>
-    /// Obtiene los thresholds para una combinación de street y situación.
-    /// </summary>
-    public StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
-    {
-        var key = $"{street}_{situation}";
-        if (_profile.Thresholds.TryGetValue(key, out var thresholds))
-            return thresholds;
-
-        // Fallback: loguear warning para detectar configuración faltante
-        Console.WriteLine($"[WARNING] Threshold no encontrado: '{key}'. Usando fallback genérico.");
-
-        return new StreetThresholds
-        {
-            FoldBelow = 40,
-            ThinValueAbove = 45,
-            ValueAbove = 55,
-            StrongValueAbove = 75,
-            CanBluff = false,
-            LowEquityAction = "Fold",
-            ThinValueIPOnly = true,
-            ThinValueOOPFallback = "CheckFold"
-        };
-    }
+    private StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
+        => _thresholdsRegistry.Get(new ThresholdKey(street, situation));
 
     /// <summary>
     /// Calcula la penalización de equity por carta peligrosa en el board.
