@@ -24,7 +24,6 @@ public record GameDecisionResult(
 /// </summary>
 public interface IGameCoordinator
 {
-    PostflopGameContext PostflopContext { get; }
     PokerCalculationResult? FlopResult { get; }
     PokerCalculationResult? TurnResult { get; }
     PokerCalculationResult? RiverResult { get; }

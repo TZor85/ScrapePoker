@@ -151,6 +151,10 @@ namespace OpenScrape.App
                     services.AddScoped<TableLayoutService>();
                     services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
 
+                    // Postflop context holder (scoped: una instancia por sesión de juego)
+                    services.AddScoped<PostflopContextHolder>();
+                    services.AddScoped<IPostflopContextHolder>(sp => sp.GetRequiredService<PostflopContextHolder>());
+
                     // Game coordinator
                     services.AddScoped<GameCoordinator>();
                     services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());

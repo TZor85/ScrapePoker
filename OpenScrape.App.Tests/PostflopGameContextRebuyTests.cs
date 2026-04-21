@@ -3,80 +3,75 @@ using OpenScrape.DecisionMaker.Services;
 namespace OpenScrape.App.Tests;
 
 /// <summary>
-/// Tests del tracking de auto-rebuy en PostflopGameContext
-/// (refactor-frmmain-coordinators Fase 4.3).
+/// Tests del tracking de auto-rebuy en <see cref="PostflopGameContext"/> (record inmutable).
+/// La API antigua <c>TrackHeroStackForRebuy</c> mutaba y devolvía decimal;
+/// la nueva <c>TrackHeroStack</c> devuelve <c>(NewContext, EffectiveStack)</c> sin mutar.
 /// </summary>
 [TestFixture]
 public class PostflopGameContextRebuyTests
 {
     [Test]
-    public void TrackHeroStackForRebuy_PrimeraLectura_RegistraStackActual()
+    public void TrackHeroStack_PrimeraLectura_RegistraStackActual()
     {
-        var ctx = new PostflopGameContext();
+        var ctx = PostflopGameContext.NewHand();
 
-        var effective = ctx.TrackHeroStackForRebuy(80m);
+        var (next, effective) = ctx.TrackHeroStack(80m);
 
         Assert.That(effective, Is.EqualTo(80m));
-        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(80m));
+        Assert.That(next.HeroStackPreRebuy, Is.EqualTo(80m));
+        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(0m), "El contexto original no debe mutar");
     }
 
     [Test]
-    public void TrackHeroStackForRebuy_DescensoNormal_ActualizaStack()
+    public void TrackHeroStack_DescensoNormal_ActualizaStack()
     {
-        var ctx = new PostflopGameContext();
-        ctx.TrackHeroStackForRebuy(80m);
+        var (ctx, _) = PostflopGameContext.NewHand().TrackHeroStack(80m);
 
-        var effective = ctx.TrackHeroStackForRebuy(60m);
+        var (next, effective) = ctx.TrackHeroStack(60m);
 
         Assert.That(effective, Is.EqualTo(60m));
-        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(60m));
+        Assert.That(next.HeroStackPreRebuy, Is.EqualTo(60m));
     }
 
     [Test]
-    public void TrackHeroStackForRebuy_IncrementoPequeno_ActualizaStack()
+    public void TrackHeroStack_IncrementoPequeno_ActualizaStack()
     {
-        var ctx = new PostflopGameContext();
-        ctx.TrackHeroStackForRebuy(80m);
+        var (ctx, _) = PostflopGameContext.NewHand().TrackHeroStack(80m);
 
-        var effective = ctx.TrackHeroStackForRebuy(90m); // +10, pequeño (típico de win de bote)
+        var (next, effective) = ctx.TrackHeroStack(90m); // +10, típico win de bote
 
         Assert.That(effective, Is.EqualTo(90m));
-        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(90m));
+        Assert.That(next.HeroStackPreRebuy, Is.EqualTo(90m));
     }
 
     [Test]
-    public void TrackHeroStackForRebuy_IncrementoMasivo_DetectaRebuyYConservaPrevio()
+    public void TrackHeroStack_IncrementoMasivo_DetectaRebuyYConservaPrevio()
     {
-        var ctx = new PostflopGameContext();
-        ctx.TrackHeroStackForRebuy(20m); // hero bajó tras perder
+        var (ctx, _) = PostflopGameContext.NewHand().TrackHeroStack(20m); // hero bajó tras perder
 
-        var effective = ctx.TrackHeroStackForRebuy(100m); // auto-rebuy a 100BB
+        var (next, effective) = ctx.TrackHeroStack(100m); // auto-rebuy a 100BB
 
         Assert.That(effective, Is.EqualTo(20m),
             "Debe devolver el stack pre-rebuy para no contaminar el profit");
-        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(20m),
+        Assert.That(next.HeroStackPreRebuy, Is.EqualTo(20m),
             "El stack pre-rebuy se conserva intacto tras detectar rebuy");
     }
 
     [Test]
-    public void TrackHeroStackForRebuy_IncrementoJustoEnUmbral_CuentaComoRebuy()
+    public void TrackHeroStack_IncrementoJustoEnUmbral_CuentaComoRebuy()
     {
-        var ctx = new PostflopGameContext();
-        ctx.TrackHeroStackForRebuy(40m);
+        var (ctx, _) = PostflopGameContext.NewHand().TrackHeroStack(40m);
 
-        var effective = ctx.TrackHeroStackForRebuy(90m); // +50 exacto
+        var (next, effective) = ctx.TrackHeroStack(90m); // +50 exacto
 
         Assert.That(effective, Is.EqualTo(40m));
-        Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(40m));
+        Assert.That(next.HeroStackPreRebuy, Is.EqualTo(40m));
     }
 
     [Test]
-    public void Reset_LimpiaHeroStackPreRebuy()
+    public void NewHand_InicializaHeroStackPreRebuyAZero()
     {
-        var ctx = new PostflopGameContext();
-        ctx.TrackHeroStackForRebuy(80m);
-
-        ctx.Reset();
+        var ctx = PostflopGameContext.NewHand();
 
         Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(0m));
     }

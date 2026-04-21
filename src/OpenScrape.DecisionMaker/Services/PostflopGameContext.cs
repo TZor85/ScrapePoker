@@ -1,46 +1,48 @@
 using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.DecisionMaker.Services;
 
 /// <summary>
-/// Contexto de estado cross-street para decisiones postflop.
-/// Mantiene el estado que persiste entre flop → turn → river dentro de una mano.
+/// Contexto de estado cross-street para decisiones postflop. Record inmutable:
+/// cada transición produce una instancia nueva vía <c>with</c> o helpers
+/// <c>WithFlopState</c>/<c>WithTurnState</c>/<c>TrackHeroStack</c>. El contexto
+/// vive en <see cref="OpenScrape.App.Services.IPostflopContextHolder"/> como
+/// único poseedor durante la mano.
 /// </summary>
-public class PostflopGameContext
+public sealed record PostflopGameContext
 {
     // === Estado cross-street: quién apostó en qué calle ===
-    public bool VillainBetFlop { get; set; }
-    public bool VillainBetTurn { get; set; }
-    public bool HeroBetFlop { get; set; }
-    public bool HeroBetTurn { get; set; }
-    public bool PreviousStreetWasBet { get; set; }
+    public bool VillainBetFlop { get; init; }
+    public bool VillainBetTurn { get; init; }
+    public bool HeroBetFlop { get; init; }
+    public bool HeroBetTurn { get; init; }
+    public bool PreviousStreetWasBet { get; init; }
 
     // === Tamaño de apuesta del villano por street (sizing tells) ===
-    public BetSizeCategory VillainBetSizeFlop { get; set; } = BetSizeCategory.NoBet;
-    public BetSizeCategory VillainBetSizeTurn { get; set; } = BetSizeCategory.NoBet;
+    public BetSizeCategory VillainBetSizeFlop { get; init; } = BetSizeCategory.NoBet;
+    public BetSizeCategory VillainBetSizeTurn { get; init; } = BetSizeCategory.NoBet;
 
     /// <summary>
     /// El agresor preflop checkeó en el flop → señal de debilidad para probe bet.
     /// </summary>
-    public bool VillainAggressorCheckedFlop { get; set; }
+    public bool VillainAggressorCheckedFlop { get; init; }
 
     /// <summary>
     /// El villano apostó en flop pero checkeó en turn → patrón bet-check-bet si apuesta en river.
     /// Indica debilidad (draw fallido que reintenta) vs barrel real (rango fuerte).
     /// </summary>
-    public bool VillainCheckedMiddleStreet { get; set; }
+    public bool VillainCheckedMiddleStreet { get; init; }
 
     /// <summary>
     /// Hero floateó en flop (call con aire + posición) → en turn debe apostar si villano chequea.
     /// </summary>
-    public bool HeroFloatedFlop { get; set; }
+    public bool HeroFloatedFlop { get; init; }
 
     /// <summary>
     /// Hero calleó turn con flush draw peligroso en board (3+ same suit).
     /// Si river completa el flush → check automático.
     /// </summary>
-    public bool TurnCalledWithFlushDanger { get; set; }
+    public bool TurnCalledWithFlushDanger { get; init; }
 
     /// <summary>
     /// Hero no apostó en ninguna calle previa (flop check, turn check).
@@ -52,25 +54,25 @@ public class PostflopGameContext
     /// Algún oponente ya comprometió todo su stack (all-in).
     /// Desactiva fold equity y reverse implied odds para ese jugador.
     /// </summary>
-    public bool IsAnyoneAllIn { get; set; }
+    public bool IsAnyoneAllIn { get; init; }
 
     /// <summary>
     /// S22.4: Turn bet comprometería el river (projected SPR < StackoffProjectedSPRThreshold).
     /// Indica que hero debe ir all-in ahora (o check para control) en vez de tamaño intermedio.
     /// </summary>
-    public bool TurnBetCommitsToRiver { get; set; }
+    public bool TurnBetCommitsToRiver { get; init; }
 
     /// <summary>
     /// Estado base de peligro del flop (flush draw presence, paired, connected).
     /// Se combina con boardChange del turn via CombineBoardChanges().
     /// </summary>
-    public BoardChangeResult InitialBoardDanger { get; set; } = BoardChangeResult.Safe;
+    public BoardChangeResult InitialBoardDanger { get; init; } = BoardChangeResult.Safe;
 
     /// <summary>
     /// Resultado del análisis de cambio de board (peligro de turn/river card).
     /// Se propaga entre streets para acumular peligro.
     /// </summary>
-    public BoardChangeResult LastBoardChange { get; set; } = BoardChangeResult.Safe;
+    public BoardChangeResult LastBoardChange { get; init; } = BoardChangeResult.Safe;
 
     /// <summary>
     /// Detecta si el villano está barreling (apostó en 2+ calles consecutivas).
@@ -84,85 +86,64 @@ public class PostflopGameContext
     /// cálculo de profit por mano.
     /// 0 indica que aún no se ha registrado el stack inicial de la mano.
     /// </summary>
-    public decimal HeroStackPreRebuy { get; private set; }
+    public decimal HeroStackPreRebuy { get; init; }
 
     /// <summary>
     /// Umbral a partir del cual un aumento de stack se considera auto-rebuy.
-    /// En formato de decimal, no de BB (quien llama pasa la cantidad raw).
     /// </summary>
     private const decimal AutoRebuyThreshold = 50m;
 
     /// <summary>
-    /// Registra el stack actual del hero detectando auto-rebuy. Devuelve el
-    /// stack efectivo que debe usarse para el profit tracking (ignora
-    /// incrementos bruscos que indican rebuy automático).
+    /// Factory que devuelve un contexto en estado inicial para una nueva mano.
+    /// Sustituye al antiguo <c>Reset()</c>.
     /// </summary>
-    /// <param name="currentStack">Stack leído por OCR en la iteración actual.</param>
-    /// <returns>Stack efectivo: el pre-rebuy si hubo rebuy, o el actual si no.</returns>
-    public decimal TrackHeroStackForRebuy(decimal currentStack)
+    public static PostflopGameContext NewHand() => new();
+
+    /// <summary>
+    /// Devuelve un contexto nuevo con el estado actualizado al finalizar el flop.
+    /// Centraliza las derivaciones para mantener invariantes coherentes.
+    /// </summary>
+    public PostflopGameContext WithFlopState(bool heroBet, bool villainBet, bool isPreflopAggressor) => this with
+    {
+        HeroBetFlop = heroBet,
+        VillainBetFlop = villainBet,
+        PreviousStreetWasBet = heroBet,
+        VillainAggressorCheckedFlop = !isPreflopAggressor && !villainBet
+    };
+
+    /// <summary>
+    /// Devuelve un contexto nuevo con el estado actualizado al finalizar el turn.
+    /// Deriva <c>VillainCheckedMiddleStreet</c> a partir del estado de flop.
+    /// </summary>
+    public PostflopGameContext WithTurnState(bool heroBet, bool villainBet) => this with
+    {
+        HeroBetTurn = heroBet,
+        VillainBetTurn = villainBet,
+        PreviousStreetWasBet = heroBet,
+        VillainCheckedMiddleStreet = VillainBetFlop && !villainBet
+    };
+
+    /// <summary>
+    /// Detecta auto-rebuy sin mutar el receptor. Devuelve:
+    /// <list type="bullet">
+    /// <item><c>NewContext</c> con <c>HeroStackPreRebuy</c> actualizado según reglas.</item>
+    /// <item><c>EffectiveStack</c>: el stack a usar para profit tracking (pre-rebuy si hubo rebuy, actual si no).</item>
+    /// </list>
+    /// </summary>
+    public (PostflopGameContext NewContext, decimal EffectiveStack) TrackHeroStack(decimal currentStack)
     {
         if (HeroStackPreRebuy <= 0)
-        {
-            HeroStackPreRebuy = currentStack;
-            return currentStack;
-        }
+            return (this with { HeroStackPreRebuy = currentStack }, currentStack);
 
         if (currentStack > HeroStackPreRebuy &&
             currentStack - HeroStackPreRebuy >= AutoRebuyThreshold)
         {
-            // Rebuy detectado: preservamos el valor pre-rebuy como referencia.
-            return HeroStackPreRebuy;
+            // Rebuy detectado: preservar pre-rebuy, devolver su valor como efectivo.
+            return (this, HeroStackPreRebuy);
         }
 
-        // Actualización normal del stack (descenso o incremento pequeño).
-        HeroStackPreRebuy = currentStack;
-        return currentStack;
-    }
-
-    /// <summary>
-    /// Reinicia el contexto para una nueva mano.
-    /// </summary>
-    public void Reset()
-    {
-        VillainBetFlop = false;
-        VillainBetTurn = false;
-        HeroBetFlop = false;
-        HeroBetTurn = false;
-        PreviousStreetWasBet = false;
-        VillainAggressorCheckedFlop = false;
-        VillainCheckedMiddleStreet = false;
-        HeroFloatedFlop = false;
-        TurnCalledWithFlushDanger = false;
-        IsAnyoneAllIn = false;
-        TurnBetCommitsToRiver = false;
-        VillainBetSizeFlop = BetSizeCategory.NoBet;
-        VillainBetSizeTurn = BetSizeCategory.NoBet;
-        InitialBoardDanger = BoardChangeResult.Safe;
-        LastBoardChange = BoardChangeResult.Safe;
-        HeroStackPreRebuy = 0;
-    }
-
-    /// <summary>
-    /// Actualiza el estado al finalizar una calle del flop.
-    /// </summary>
-    public void UpdateFlopState(bool heroBet, bool villainBet, bool isPreflopAggressor)
-    {
-        HeroBetFlop = heroBet;
-        VillainBetFlop = villainBet;
-        PreviousStreetWasBet = heroBet;
-        VillainAggressorCheckedFlop = !isPreflopAggressor && !villainBet;
-    }
-
-    /// <summary>
-    /// Actualiza el estado al finalizar el turn.
-    /// </summary>
-    public void UpdateTurnState(bool heroBet, bool villainBet)
-    {
-        // Detectar patrón bet-check: villain apostó en flop pero no en turn
-        VillainCheckedMiddleStreet = VillainBetFlop && !villainBet;
-        HeroBetTurn = heroBet;
-        VillainBetTurn = villainBet;
-        PreviousStreetWasBet = heroBet;
+        // Actualización normal (descenso o incremento pequeño).
+        return (this with { HeroStackPreRebuy = currentStack }, currentStack);
     }
 
     /// <summary>

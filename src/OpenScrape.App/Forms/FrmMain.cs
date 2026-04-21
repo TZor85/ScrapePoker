@@ -165,7 +165,7 @@ namespace OpenScrape.App
         private readonly IGameCoordinator _coordinator;
         private readonly IScreenReaderService _screenReader;
         private readonly ITableLayoutService _tableLayout;
-        private readonly PostflopGameContext _postflopContext = new();
+        private readonly IPostflopContextHolder _contextHolder;
 
         // refactor-frmmain-coordinators Fase 6: inyectados pero solo se activan con feature flag
         private readonly IGameLoopCoordinator _gameLoopCoordinator;
@@ -220,7 +220,8 @@ namespace OpenScrape.App
                         IUiSyncService uiSyncService,
                         IOptions<FeatureFlags> featureFlags,
                         IActionFormatter actionFormatter,
-                        IOverlayPositioner overlayPositioner)
+                        IOverlayPositioner overlayPositioner,
+                        IPostflopContextHolder contextHolder)
         {
             InitializeComponent();
             _gameLoopCoordinator = gameLoopCoordinator ?? throw new ArgumentNullException(nameof(gameLoopCoordinator));
@@ -228,6 +229,7 @@ namespace OpenScrape.App
             _featureFlags = featureFlags?.Value ?? throw new ArgumentNullException(nameof(featureFlags));
             _actionFormatter = actionFormatter ?? throw new ArgumentNullException(nameof(actionFormatter));
             _overlayPositioner = overlayPositioner ?? throw new ArgumentNullException(nameof(overlayPositioner));
+            _contextHolder = contextHolder ?? throw new ArgumentNullException(nameof(contextHolder));
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
@@ -710,7 +712,7 @@ namespace OpenScrape.App
                     // Usar ForceState porque HandDetected → FlopDetected/TurnDetected/RiverDetected
                     // no son transiciones válidas en la máquina de estados.
                     // Siempre resetear contexto postflop para evitar state bleed entre manos
-                    _postflopContext.Reset();
+                    _contextHolder.StartNewHand();
 
                     if (savedPostflopState.HasValue)
                     {
@@ -1202,8 +1204,12 @@ namespace OpenScrape.App
                     // Misma calle, reprocessar flop con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
                     var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
-                    _postflopContext.VillainBetSizeFlop = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
-                    _postflopContext.VillainBetFlop = reprocessMaxBet > 0;
+                    var reprocessFlopBetSize = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
+                    _contextHolder.Update(c => c with
+                    {
+                        VillainBetSizeFlop = reprocessFlopBetSize,
+                        VillainBetFlop = reprocessMaxBet > 0
+                    });
                     await ProcessFlopAsync(potOddsResult);
                 }
             }
@@ -1226,8 +1232,12 @@ namespace OpenScrape.App
                     // Misma calle, reprocessar turn con info actualizada (pot y bets pueden haber cambiado)
                     SetPotValue();
                     var reprocessMaxBet = _playerGameState.Players.Max(m => m.Bet);
-                    _postflopContext.VillainBetSizeTurn = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
-                    _postflopContext.VillainBetTurn = reprocessMaxBet > 0;
+                    var reprocessTurnBetSize = GetOpponentBetSize(reprocessMaxBet, _playerGameState.PotSize);
+                    _contextHolder.Update(c => c with
+                    {
+                        VillainBetSizeTurn = reprocessTurnBetSize,
+                        VillainBetTurn = reprocessMaxBet > 0
+                    });
                     await ProcessTurnAsync();
                 }
             }
@@ -1732,7 +1742,7 @@ namespace OpenScrape.App
                     _opponentTracker.RecordPFR(player.Name!, player.Position);
             }
 
-            // _postflopContext.Reset() se hace condicionalmente en btnCapture_Click
+            // _contextHolder.StartNewHand() se hace condicionalmente en btnCapture_Click
             // para no perder el contexto cuando se restaura un estado postflop guardado
             LogError($"Nueva mano detectada: Hand {_tableHand}, Pot: {prevPot}, HoleCards: {prevHoleCards}");
 
@@ -4384,7 +4394,7 @@ namespace OpenScrape.App
         //   _speed                  (int)            → GameLoopOptions.CaptureIntervalMs
         //
         // Estado cross-street / cross-iteración → PostflopGameContext (ya scoped):
-        //   _heroStackPreRebuy      (decimal)        → PostflopGameContext.TrackHeroStackForRebuy()
+        //   _heroStackPreRebuy      (decimal)        → PostflopGameContext.TrackHeroStack()
         //   _newHand                (bool)           → PostflopGameContext.NewHandDetected
         //   _newTableHand           (long)           → PostflopGameContext.CurrentHandNumber
         //   _tableHand              (string)         → PostflopGameContext.CurrentHandNumber (str)
