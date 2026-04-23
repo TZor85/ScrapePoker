@@ -40,7 +40,8 @@ public class HistogramTests
             h.Add(TimeSpan.FromMilliseconds(10));
 
         var p50 = h.GetPercentile(0.5).TotalMilliseconds;
-        // Tolerancia 12% por granularidad de buckets logarítmicos
+        // Bucket logarítmico: la muestra 10ms cae en el bucket que la contiene.
+        // El rango 9-12.5 cubre la posición del upper bound del bucket correspondiente.
         Assert.That(p50, Is.InRange(9.0, 12.5));
     }
 

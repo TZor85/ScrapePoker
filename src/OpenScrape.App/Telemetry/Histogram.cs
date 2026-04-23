@@ -1,9 +1,11 @@
 namespace OpenScrape.App.Telemetry;
 
 /// <summary>
-/// Histograma logarítmico de 30 buckets que cubre de 10μs a ~30s.
+/// Histograma logarítmico de 30 buckets que cubre de 10μs a ~6.3s.
 /// Zero-allocation en <c>Add</c>, percentiles en O(buckets).
-/// Precisión de percentiles: ±12% por la granularidad logarítmica.
+/// Precisión de percentiles: sobreestima hasta ~37% (nunca subestima) por el
+/// ancho logarítmico del bucket (step = 10^0.2). Aceptable para telemetría
+/// operacional; no apto para SLOs milimétricos.
 /// </summary>
 /// <remarks>
 /// No es thread-safe; la sincronización vive en <see cref="MetricsCollector"/>,
@@ -25,10 +27,11 @@ public sealed class Histogram
 
     public void Add(TimeSpan elapsed)
     {
-        if (elapsed > _max) _max = elapsed;
-
         long ticks = elapsed.Ticks;
         if (ticks < 0) ticks = 0;
+
+        var clamped = TimeSpan.FromTicks(ticks);
+        if (clamped > _max) _max = clamped;
 
         int idx = FindBucket(ticks);
         _buckets[idx]++;
@@ -73,7 +76,7 @@ public sealed class Histogram
     {
         // bucket[i] upper bound (segundos) = 1e-5 * 10^(i * 0.2)
         // bucket[0]  ≈ 10μs
-        // bucket[29] ≈ 10μs * 10^5.8 ≈ 63s
+        // bucket[29] ≈ 10μs * 10^5.8 ≈ 6.3s
         var bounds = new long[BucketCount];
         for (int i = 0; i < BucketCount; i++)
         {
