@@ -105,6 +105,13 @@ public class HandRecord
     public int NumOpponents { get; set; }
     public HandResult Result { get; set; } = HandResult.Unknown;
     public HandSituation Situation { get; set; } = HandSituation.None;
+
+    /// <summary>
+    /// Agregado de telemetría de rendimiento de esta mano. Null en manos persistidas
+    /// antes de activar telemetría. No contiene <c>Persistence.SaveHand</c> por diseño
+    /// (esa medida se captura después del snapshot y solo existe en agregado de sesión).
+    /// </summary>
+    public TelemetryAggregate? Telemetry { get; set; }
 }
 
 public enum HandResult
