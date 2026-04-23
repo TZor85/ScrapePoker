@@ -19,6 +19,7 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App
 {
@@ -130,6 +131,9 @@ namespace OpenScrape.App
                     // Fase 4: CoordinateScaler como servicio inyectable
                     services.AddSingleton<CoordinateScaler>();
                     services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
+
+                    // Telemetría de rendimiento (singleton: snapshot compartido entre scopes y UI)
+                    services.AddSingleton<IMetricsCollector, MetricsCollector>();
 
                     // Fase 3: Servicios antes creados con new
                     services.AddSingleton<OcrService>();
