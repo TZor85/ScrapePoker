@@ -56,9 +56,9 @@ Persistimos `{p50, p95, max, count}` por fase dentro de cada `HandRecord`. Evita
 
 ### D2 — Histograma logarítmico 30 buckets, no sort/reservoir
 
-30 buckets desde 10μs hasta ~30s, cada bucket = `10μs × 10^(i × 0.2)`. Error relativo ≤ 12% en percentiles. Zero-allocation en hot path, `Record` en O(1), `GetPercentile` en O(buckets).
+30 buckets desde 10μs hasta ~6.3s, cada bucket = `10μs × 10^(i × 0.2)`. `GetPercentile` devuelve el upper bound del bucket que contiene el target → **sobreestima hasta ~37% (nunca subestima)**. Zero-allocation en hot path, `Record` en O(1), `GetPercentile` en O(buckets).
 
-**Trade-off**: precisión de percentiles limitada al ancho de bucket. Aceptable para telemetría operacional; no aceptable para SLOs milimétricos (no es el caso).
+**Trade-off**: precisión de percentiles limitada al ancho de bucket (factor 10^0.2 ≈ 1.585 entre consecutivos). Aceptable para telemetría operacional; no apto para SLOs milimétricos (no es el caso). Rango máximo 6.3s — valores mayores quedan truncados a ese upper bound (pero `Max` sigue capturando el valor real).
 
 ### D3 — `double` ms en persistencia, no `TimeSpan`
 
@@ -158,7 +158,7 @@ public readonly struct ScopedMeasurement : IDisposable { /* ... */ }
 
 ### `Histogram`
 
-- 30 buckets, bounds precomputados: `bounds[i] = 10μs × 10^(i × 0.2)` hasta `bucket[29] ≈ 30s`.
+- 30 buckets, bounds precomputados: `bounds[i] = 10μs × 10^(i × 0.2)` hasta `bucket[29] ≈ 6.3s`.
 - Campos: `long[] _buckets`, `long _count`, `TimeSpan _max`.
 - `Add(TimeSpan)`:
   - `if (elapsed > _max) _max = elapsed;`
@@ -170,7 +170,7 @@ public readonly struct ScopedMeasurement : IDisposable { /* ... */ }
   - Devuelve `bounds[i]` del bucket encontrado.
 - `Reset()` → todos los arrays/campos a cero.
 
-**Precisión documentada**: ±12% por el ancho logarítmico de bucket. Tests verifican esta tolerancia explícitamente.
+**Precisión documentada**: sobreestima hasta ~37% (el upper bound del bucket siempre es ≥ muestra real). Tests verifican el comportamiento sobre distribución bimodal y muestras idénticas.
 
 ### DTOs
 
@@ -392,7 +392,7 @@ Categorías no enumeradas (ampliaciones futuras) se muestran al final del grid.
 
 **Tests unitarios (~23):**
 
-- `HistogramTests` (~9) — precisión percentiles, max, count, reset, edge cases bucket extremos, tolerancia ±12% documentada.
+- `HistogramTests` (~9) — precisión percentiles, max, count, reset, edge cases bucket extremos, distribución bimodal.
 - `MetricsCollectorTests` (~8) — `Measure`/`Record`, thread safety (`Parallel.For`), ciclo `StartHand`/`EndHand`, warning en `StartHand` sin `EndHand`, `SnapshotSession`, `ResetSession`.
 - `CategoryStatsMappingTests` (~3) — mapeo `Histogram → CategoryStats`, count sin truncar.
 - Fake time vía `TimeProvider` (.NET 10).
