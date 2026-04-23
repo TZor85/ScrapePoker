@@ -3,7 +3,7 @@
 - **Fecha**: 2026-04-23
 - **Autor**: Alberto (con asistencia Claude)
 - **Rama de trabajo**: `feature/positions` (rama donde se propone)
-- **Estado**: Diseño aprobado, pendiente plan de implementación
+- **Estado**: En revisión (pendiente aprobación usuario antes de generar plan)
 
 ## Contexto y motivación
 
@@ -33,7 +33,7 @@ Añadir un subsistema de telemetría de rendimiento que:
 - Nuevo namespace `OpenScrape.App.Telemetry` con `IMetricsCollector`, `MetricsCollector`, `Histogram`, `MetricsSnapshot`.
 - DTOs persistidos `TelemetryAggregate` y `CategoryStats` en `OpenScrape.Domain.ValueObjects`.
 - Campo nuevo `HandRecord.Telemetry` (nullable, compat retroactiva).
-- Instrumentación de 14 categorías cubriendo capture, OCR, layout, decisión, render, persistencia.
+- Instrumentación de 17 categorías cubriendo capture, OCR, layout, decisión, render, persistencia.
 - Pestaña "Métricas" en `FrmMain` con `DataGridView`, botón Reset, refresco por timer 1 s solo cuando visible.
 - Borrado de `DecisionResult.PhaseTimings` (reemplazado por categorías `Decision.*`).
 - ~26 tests nuevos.
@@ -131,16 +131,18 @@ namespace OpenScrape.App.Telemetry;
 
 public interface IMetricsCollector
 {
-    IDisposable Measure(string category);
+    ScopedMeasurement Measure(string category);
     void Record(string category, TimeSpan elapsed);
     void StartHand(string handId);
     TelemetryAggregate EndHand();
     MetricsSnapshot SnapshotSession();
     void ResetSession();
 }
+
+public readonly struct ScopedMeasurement : IDisposable { /* ... */ }
 ```
 
-- `Measure` devuelve `struct ScopedMeasurement` (no heap allocation vía `using`).
+- `Measure` devuelve `ScopedMeasurement` concreto (no `IDisposable` — evita boxing del struct). `using var _ = metrics.Measure(...)` funciona porque el patrón `using` de C# 8+ no requiere que el tipo implemente `IDisposable`, solo tener `Dispose()`; aún así lo implementamos por compatibilidad.
 - `Record` para tests o casos sin `using` posible.
 - `StartHand(handId)` reinicia el bucket `_lastHand` de cada categoría. Si hay un `_lastHand` sin `EndHand` previo, se descarta con `LogWarning`.
 - `EndHand()` devuelve snapshot de la última mano + fusiona en `_session` + limpia `_lastHand`.
@@ -213,7 +215,7 @@ Singleton — el snapshot global se comparte entre servicios scoped y UI.
 
 ## Puntos de instrumentación
 
-14 categorías estables. Las cadenas son contrato: no se renombran sin migración.
+17 categorías estables. Las cadenas son contrato: no se renombran sin migración. Definidas como constantes en `TelemetryCategories` static class para evitar drift.
 
 | Categoría | Servicio | Frecuencia/ciclo |
 |---|---|---|
@@ -233,9 +235,17 @@ Singleton — el snapshot global se comparte entre servicios scoped y UI.
 | `Decision.DecisionService` | idem | 0–1 |
 | `Decision.Sizing` | idem | 0–1 |
 | `Overlay.Render` | `FrmMain` | 1 |
-| `Persistence.SaveHand` | `GameLoggerService` | 1/mano |
+| `Persistence.SaveHand` | `GameLoggerService` | 1/mano (ver nota abajo) |
 
-**Memoria**: 15 categorías × 2 histogramas × 30 buckets × 8 bytes ≈ 7.2 KB. Negligible.
+**Nota sobre `Persistence.SaveHand`**: se acumula **solo en `_session`**, no en `_lastHand`. Motivo: la medida del save ocurre *después* del snapshot `EndHand()` de esa mano, así que nunca podría llegar a `HandRecord.Telemetry` de su propia mano (paradoja temporal). Como consecuencia:
+
+- Columna "Última mano" de la UI → siempre `—` para `Persistence.SaveHand`.
+- Columna "Sesión" → muestra percentiles normales.
+- `HandRecord.Telemetry.Phases` → no contiene `Persistence.SaveHand`.
+
+Implementación: `IMetricsCollector.Record` recibe un flag interno o hay un método `RecordSessionOnly(category, elapsed)` usado por la instrumentación del save.
+
+**Memoria**: 17 categorías × 2 histogramas × 30 buckets × 8 bytes ≈ 8.2 KB. Negligible.
 
 ### Cambio en `OcrService`
 
@@ -303,10 +313,11 @@ Nueva mano detectada (cambio de _tableHand):
 └─ GameLoggerService.StartNewHandAsync(...)
 
 Cierre de mano (GameLoggerService.EndHand):
-├─ using metrics.Measure("Persistence.SaveHand")
 ├─ var agg = metrics.EndHand()        → snapshot + fusión a _session + reset _lastHand
 ├─ handRecord.Telemetry = agg
-└─ session save → Marten
+├─ var sw = Stopwatch.StartNew()
+├─ session save → Marten
+└─ metrics.RecordSessionOnly("Persistence.SaveHand", sw.Elapsed)  → solo en _session
 ```
 
 **Casos especiales:**
@@ -319,7 +330,7 @@ Cierre de mano (GameLoggerService.EndHand):
 ```
 _metricsRefreshTimer.Tick (1s, solo con pestaña Métricas visible):
 ├─ var snap = metrics.SnapshotSession()   (copia inmutable)
-├─ RenderMetricsGrid(snap)                (14-15 filas fijas)
+├─ RenderMetricsGrid(snap)                (17 filas fijas)
 └─ lblLastUpdate.Text = DateTime.Now
 ```
 
@@ -339,7 +350,7 @@ Nueva `TabPage tabMetrics` en el `TabControl` existente, entre Logs e Historial.
 
 **Controles:**
 
-- `DataGridView dgvMetrics` — read-only, 14-15 filas fijas, columnas:
+- `DataGridView dgvMetrics` — read-only, 17 filas fijas, columnas:
   - `Fase` (string, 180 px)
   - `LastP50`, `LastP95`, `LastMax`, `LastCount`
   - `SessionP50`, `SessionP95`, `SessionMax`, `SessionCount`
@@ -369,7 +380,7 @@ Categorías no enumeradas (ampliaciones futuras) se muestran al final del grid.
 
 - `HandRecord.Telemetry` es nullable → manos antiguas sin migración.
 - `TelemetryAggregate` serializa como jsonb dentro del doc `HandRecord`.
-- Tamaño adicional por mano: ~560 bytes (14-15 categorías × ~40 bytes JSON cada). Negligible vs el tamaño actual (`List<StreetDecision>` ~200-500 bytes por decisión).
+- Tamaño adicional por mano: ~640 bytes (16 categorías persistidas × ~40 bytes JSON cada; `Persistence.SaveHand` no se persiste por mano). Negligible vs el tamaño actual (`List<StreetDecision>` ~200-500 bytes por decisión).
 - Queries viables sin índices extra. Si en el futuro se vuelve lento filtrar por `Telemetry.Phases["Cycle.Total"].P95Ms > X`, se añade calculated index.
 
 **No se persiste:**
@@ -399,14 +410,14 @@ Categorías no enumeradas (ampliaciones futuras) se muestran al final del grid.
 **Smoke test manual** (en `tasks.md` del plan de implementación):
 
 - Pestaña Métricas existe y refresca cada 1 s.
-- Cambiar de pestaña para el timer.
+- Cambiar de pestaña detiene el timer.
 - Botón Reset limpia sin afectar mano en curso.
 - Cierre de mano persiste `HandRecord.Telemetry`.
 
 **Tests deliberadamente omitidos:**
 
 - Microbenchmark del collector (~50 ns por `Record`, no aporta).
-- UI refresh performance (14 filas × 1 Hz).
+- UI refresh performance (17 filas × 1 Hz).
 - Placeholders para categorías no instrumentadas.
 
 ## Plan de despliegue y migración
@@ -423,17 +434,17 @@ Categorías no enumeradas (ampliaciones futuras) se muestran al final del grid.
 | Contención de lock en escenarios multithread | Baja | Medio | `lock` por categoría (no global); medidas duran μs. Test `Parallel.For` × 100 verifica. |
 | `TimeProvider` inyectado no disponible en .NET 10 | Ninguna | N/A | Confirmado en .NET 8+. Proyecto ya en .NET 10. |
 | Renombrar categorías rompe tests y UI | Baja | Alto (contrato) | Cadenas como constantes en `TelemetryCategories` static class. Revisión al tocar. |
-| Marten serializer maneja mal `IReadOnlyDictionary` | Baja | Alto | Validar tanto System.Text.Json como Newtonsoft al arrancar. Test de roundtrip en persistence tests. |
-| UI repintado demasiado frecuente | Ninguna | Bajo | Timer solo activo con pestaña visible. 14 filas × 1 Hz nunca es problema. |
+| Marten serializer maneja mal `IReadOnlyDictionary` | Baja | Alto | Verificar serializer configurado en `OpenScrape.Infrastructure/Services.cs` y añadir test de roundtrip `HandRecord.Telemetry` usando el serializer real de Marten. |
+| UI repintado demasiado frecuente | Ninguna | Bajo | Timer solo activo con pestaña visible. 17 filas × 1 Hz nunca es problema. |
 | `Telemetry = null` en manos antiguas rompe `FrmHandDetail` | Baja | Medio | `FrmHandDetail` no lee `Telemetry` en fase 1. Cuando se cablee, null-check obligatorio. |
 
 ## Criterios de aceptación
 
 - [ ] Al jugar/capturar, la pestaña Métricas muestra valores no-cero en `Cycle.Total`, `Capture.Screenshot`, `OCR.*`, `Layout.*`, `Overlay.Render`.
-- [ ] Al cerrar una mano postflop, `Decision.*` y `Persistence.SaveHand` aparecen con `Count ≥ 1`.
+- [ ] Al cerrar una mano postflop, `Decision.*` aparecen con `Count ≥ 1` en `HandRecord.Telemetry`. `Persistence.SaveHand` aparece solo en el acumulado de sesión (nunca en una mano individual por su naturaleza temporal).
 - [ ] `HandRecord.Telemetry` persistido en Marten y recuperable con el mismo contenido.
 - [ ] Botón Reset limpia el acumulado sin afectar a la mano en curso.
-- [ ] Cambiar de pestaña para el timer (verificable con log debug o monitoreo CPU).
+- [ ] Cambiar de pestaña detiene el timer de refresco (verificable con log debug o monitoreo CPU).
 - [ ] `dotnet test` pasa los ~664 tests (638 existentes + 26 nuevos).
 - [ ] `dotnet format --verify-no-changes` limpio.
 - [ ] Sin nuevas dependencias en `.csproj`.
