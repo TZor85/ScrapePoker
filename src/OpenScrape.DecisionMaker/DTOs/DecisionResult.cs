@@ -44,11 +44,4 @@ public sealed record DecisionResult
     /// Se expone como opaque para no filtrar implementación.
     /// </summary>
     public object? CalculationDetail { get; init; }
-
-    /// <summary>
-    /// Latencia de cada fase del pipeline: "equity", "texture", "profile",
-    /// "decision", "sizing". Útil para detectar regresiones.
-    /// </summary>
-    public IReadOnlyDictionary<string, TimeSpan> PhaseTimings { get; init; }
-        = new Dictionary<string, TimeSpan>();
 }

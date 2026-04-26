@@ -1,7 +1,10 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Services;
+using OpenScrape.App.Telemetry;
+using OpenScrape.Domain.ValueObjects;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
@@ -20,6 +23,8 @@ namespace OpenScrape.App.Tests;
 public class PokerDecisionFacadeTests
 {
     private static CardDataOuts C(Rank rank, Suit suit) => new(suit, rank);
+
+    
 
     private sealed class FakePokerCalculator : IPokerCalculator
     {
@@ -50,7 +55,8 @@ public class PokerDecisionFacadeTests
     private static PokerDecisionFacade CreateFacade(
         out FakePokerCalculator calculator,
         out IPostflopDecisionService decisionService,
-        out IOpponentTracker opponentTracker)
+        out IOpponentTracker opponentTracker,
+        out MetricsCollector metrics)
     {
         calculator = new FakePokerCalculator();
         var profile = Options.Create(new StrategyProfile().FillMissingThresholds());
@@ -60,9 +66,16 @@ public class PokerDecisionFacadeTests
         decisionService = new PostflopDecisionService(profile, betSizing, rangePolarizer, registry);
         var boardAnalyzer = new BoardTextureAnalyzer();
         opponentTracker = new OpponentTracker();
+        metrics = new MetricsCollector(NullLogger<MetricsCollector>.Instance);
         return new PokerDecisionFacade(
-            calculator, decisionService, betSizing, boardAnalyzer, opponentTracker);
+            calculator, decisionService, betSizing, boardAnalyzer, opponentTracker, metrics);
     }
+
+    private static PokerDecisionFacade CreateFacade(
+        out FakePokerCalculator calculator,
+        out IPostflopDecisionService decisionService,
+        out IOpponentTracker opponentTracker)
+        => CreateFacade(out calculator, out decisionService, out opponentTracker, out _);
 
     private static DecisionRequest MakeFlopRequest(double equityPct)
     {
@@ -201,12 +214,13 @@ public class PokerDecisionFacadeTests
         Assert.That(result.Reason, Is.Not.Empty);
     }
 
-    // ─── PhaseTimings poblado ──────────────────────────────────────────────
+    // ─── Telemetría instrumentada ─────────────────────────────────────────
 
     [Test]
-    public async Task EvaluateAsync_PhaseTimings_ContieneTodasLasFases()
+    public async Task EvaluateAsync_InstrumentaMetricsCollector_CategoriasEsperadas()
     {
-        var facade = CreateFacade(out var calc, out _, out _);
+        var facade = CreateFacade(out var calc, out _, out _, out var metrics);
+        metrics.StartHand("hand-1");
         calc.NextResult = new PokerCalculationResult
         {
             EquityPercentage = 50,
@@ -214,13 +228,23 @@ public class PokerDecisionFacadeTests
             DrawTypes = [],
         };
 
-        var result = await facade.EvaluateAsync(MakeFlopRequest(50));
+        _ = await facade.EvaluateAsync(MakeFlopRequest(50));
 
-        Assert.That(result.PhaseTimings.Keys, Is.EquivalentTo(
-            new[] { "equity", "texture", "profile", "decision", "sizing" }));
-        foreach (var kv in result.PhaseTimings)
-            Assert.That(kv.Value, Is.GreaterThanOrEqualTo(TimeSpan.Zero),
-                $"Timing de '{kv.Key}' debe ser >= 0");
+        var snapshot = metrics.SnapshotSession();
+        Assert.That(snapshot.LastHand.Keys, Is.EquivalentTo(new[]
+        {
+            TelemetryCategories.DecisionTotal,
+            TelemetryCategories.DecisionEquity,
+            TelemetryCategories.DecisionTexture,
+            TelemetryCategories.DecisionProfile,
+            TelemetryCategories.DecisionDecisionService,
+            TelemetryCategories.DecisionSizing,
+        }));
+        foreach (var (category, stats) in snapshot.LastHand)
+        {
+            Assert.That(stats.Count, Is.EqualTo(1), $"Categoria {category} debe tener 1 medicion");
+            Assert.That(stats.MaxMs, Is.GreaterThanOrEqualTo(0), $"Categoria {category} max debe ser >= 0");
+        }
     }
 
     // ─── Cancelación ───────────────────────────────────────────────────────

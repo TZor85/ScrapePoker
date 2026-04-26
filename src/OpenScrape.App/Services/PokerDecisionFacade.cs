@@ -1,5 +1,5 @@
-using System.Diagnostics;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
@@ -23,132 +23,148 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
     private readonly IBetSizingService _betSizingService;
     private readonly IBoardTextureAnalyzer _boardTextureAnalyzer;
     private readonly IOpponentTracker _opponentTracker;
+    private readonly IMetricsCollector _metrics;
 
     public PokerDecisionFacade(
         IPokerCalculator calculator,
         IPostflopDecisionService decisionService,
         IBetSizingService betSizingService,
         IBoardTextureAnalyzer boardTextureAnalyzer,
-        IOpponentTracker opponentTracker)
+        IOpponentTracker opponentTracker,
+        IMetricsCollector metrics)
     {
         _calculator = calculator;
         _decisionService = decisionService;
         _betSizingService = betSizingService;
         _boardTextureAnalyzer = boardTextureAnalyzer;
         _opponentTracker = opponentTracker;
+        _metrics = metrics;
     }
 
     public Task<DecisionResult> EvaluateAsync(DecisionRequest request, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var timings = new Dictionary<string, TimeSpan>(capacity: 5);
-        var sw = new Stopwatch();
+        using var _totalTimer = _metrics.Measure(TelemetryCategories.DecisionTotal);
 
         // --- Fase 1: equity y outs (Monte Carlo / enumeración) ---
-        sw.Restart();
-        var profile = ResolveVillainProfile(request);
-        var calculation = _calculator.Calculate(
-            playerHand: [.. request.HeroCards],
-            communityCards: [.. request.CommunityCards],
-            currentPotSize: request.PotSize,
-            betToCall: request.BetToCall,
-            numOpponents: request.NumOpponents,
-            monteCarloIterations: request.MonteCarloIterations,
-            isInPosition: request.IsInPosition,
-            heroStack: request.HeroStack,
-            villainStack: request.VillainStack,
-            handSituation: request.HandSituationTag ?? request.Situation.ToString(),
-            villainPosition: request.VillainPosition,
-            opponentProfile: profile);
-        timings["equity"] = sw.Elapsed;
+        PokerCalculationResult calculation;
+        OpponentProfile? profile;
+        using (_ = _metrics.Measure(TelemetryCategories.DecisionEquity))
+        {
+            profile = ResolveVillainProfile(request);
+            calculation = _calculator.Calculate(
+                playerHand: [.. request.HeroCards],
+                communityCards: [.. request.CommunityCards],
+                currentPotSize: request.PotSize,
+                betToCall: request.BetToCall,
+                numOpponents: request.NumOpponents,
+                monteCarloIterations: request.MonteCarloIterations,
+                isInPosition: request.IsInPosition,
+                heroStack: request.HeroStack,
+                villainStack: request.VillainStack,
+                handSituation: request.HandSituationTag ?? request.Situation.ToString(),
+                villainPosition: request.VillainPosition,
+                opponentProfile: profile);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // --- Fase 2: textura del board y board change ---
-        sw.Restart();
-        var textureResult = _boardTextureAnalyzer.Analyze([.. request.CommunityCards]);
-        var boardChange = ComputeBoardChange(request);
-        var riverCardType = request.Street == BoardPosition.River && boardChange != null
-            ? _boardTextureAnalyzer.ClassifyRiverCard(boardChange)
-            : RiverCardType.Neutral;
-        timings["texture"] = sw.Elapsed;
+        BoardTextureResult textureResult;
+        BoardChangeResult? boardChange;
+        RiverCardType riverCardType;
+        using (_ = _metrics.Measure(TelemetryCategories.DecisionTexture))
+        {
+            textureResult = _boardTextureAnalyzer.Analyze([.. request.CommunityCards]);
+            boardChange = ComputeBoardChange(request);
+            riverCardType = request.Street == BoardPosition.River && boardChange != null
+                ? _boardTextureAnalyzer.ClassifyRiverCard(boardChange)
+                : RiverCardType.Neutral;
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // --- Fase 3: perfil del oponente ---
-        sw.Restart();
-        var villainType = profile?.HasReliablePreflopData == true
-            ? (request.IsInPosition ? profile.GetTypeForPosition(false) : profile.GetTypeForPosition(true))
-            : OpponentType.Unknown;
-        var villainFoldToBetPct = profile?.HasReliableFoldData == true
-            ? _opponentTracker.GetFoldToBetPct(request.VillainId)
-            : -1.0;
-        timings["profile"] = sw.Elapsed;
+        OpponentType villainType;
+        double villainFoldToBetPct;
+        using (_ = _metrics.Measure(TelemetryCategories.DecisionProfile))
+        {
+            villainType = profile?.HasReliablePreflopData == true
+                ? (request.IsInPosition ? profile.GetTypeForPosition(false) : profile.GetTypeForPosition(true))
+                : OpponentType.Unknown;
+            villainFoldToBetPct = profile?.HasReliableFoldData == true
+                ? _opponentTracker.GetFoldToBetPct(request.VillainId)
+                : -1.0;
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // --- Fase 4: decisión postflop ---
-        sw.Restart();
-        var hasFlushDraw = calculation.DrawTypes?.Any(d =>
-            d.Contains("Flush", StringComparison.OrdinalIgnoreCase) &&
-            !d.Contains("Backdoor", StringComparison.OrdinalIgnoreCase)) ?? false;
-
-        var input = new PostflopDecisionInput
+        PostflopDecisionResult decision;
+        using (_ = _metrics.Measure(TelemetryCategories.DecisionDecisionService))
         {
-            Equity = calculation.EquityPercentage,
-            Street = request.Street,
-            Situation = request.Situation,
-            BoardTexture = textureResult.SimplifiedTexture,
-            IsInPosition = request.IsInPosition,
-            VillainBetSize = request.VillainBetSize,
-            PotOdds = calculation.PotOddsPercentage,
-            TotalOuts = calculation.TotalOuts,
-            PreviousStreetBet = request.PreviousStreetBet,
-            VillainShowedAggression = request.VillainShowedAggression,
-            BoardChange = boardChange,
-            HeroBlocksDangerSuit = request.HeroBlocksDangerSuit,
-            HeroStack = request.HeroStack,
-            PotSize = request.PotSize,
-            HasFlushDraw = hasFlushDraw,
-            NumOpponents = request.NumOpponents,
-            HeroIsAggressor = request.HeroIsAggressor,
-            HeroHandRank = calculation.HeroHandRank,
-            HasComboDraw = calculation.HasComboDraw,
-            VillainAggressorCheckedPreviousStreet = request.VillainAggressorCheckedPreviousStreet,
-            VillainBarreling = request.VillainBarreling,
-            VillainType = villainType,
-            PairClassification = calculation.PairType,
-            FoldEquity = calculation.FoldEquity,
-            VillainBetSizeFlop = request.VillainBetSizeFlop,
-            VillainBetSizeTurn = request.VillainBetSizeTurn,
-            VillainCheckedMiddleStreet = request.VillainCheckedMiddleStreet,
-            HeroHasNutBlocker = request.HeroHasNutBlocker,
-            HeroFloatedFlop = request.HeroFloatedFlop,
-            VillainFoldToBetPct = villainFoldToBetPct,
-            HeroKickerStrength = calculation.HeroKickerStrength,
-            TurnCalledWithFlushDanger = request.TurnCalledWithFlushDanger,
-            HeroBlocksTopCard = request.HeroBlocksTopCard,
-            HeroCheckedAllStreets = request.HeroCheckedAllStreets,
-            IsAnyoneAllIn = request.IsAnyoneAllIn,
-            IsDonkBet = request.IsDonkBet,
-            VillainProfile = profile,
-            HeroPosition = request.HeroPosition,
-            VillainPosition = request.VillainPosition,
-            IsBroadwayWet = request.IsBroadwayWet,
-            EffectiveOuts = calculation.EffectiveOuts,
-            RiverCardType = riverCardType,
-        };
+            var hasFlushDraw = calculation.DrawTypes?.Any(d =>
+                d.Contains("Flush", StringComparison.OrdinalIgnoreCase) &&
+                !d.Contains("Backdoor", StringComparison.OrdinalIgnoreCase)) ?? false;
 
-        var decision = _decisionService.DetermineAction(input);
-        timings["decision"] = sw.Elapsed;
+            var input = new PostflopDecisionInput
+            {
+                Equity = calculation.EquityPercentage,
+                Street = request.Street,
+                Situation = request.Situation,
+                BoardTexture = textureResult.SimplifiedTexture,
+                IsInPosition = request.IsInPosition,
+                VillainBetSize = request.VillainBetSize,
+                PotOdds = calculation.PotOddsPercentage,
+                TotalOuts = calculation.TotalOuts,
+                PreviousStreetBet = request.PreviousStreetBet,
+                VillainShowedAggression = request.VillainShowedAggression,
+                BoardChange = boardChange,
+                HeroBlocksDangerSuit = request.HeroBlocksDangerSuit,
+                HeroStack = request.HeroStack,
+                PotSize = request.PotSize,
+                HasFlushDraw = hasFlushDraw,
+                NumOpponents = request.NumOpponents,
+                HeroIsAggressor = request.HeroIsAggressor,
+                HeroHandRank = calculation.HeroHandRank,
+                HasComboDraw = calculation.HasComboDraw,
+                VillainAggressorCheckedPreviousStreet = request.VillainAggressorCheckedPreviousStreet,
+                VillainBarreling = request.VillainBarreling,
+                VillainType = villainType,
+                PairClassification = calculation.PairType,
+                FoldEquity = calculation.FoldEquity,
+                VillainBetSizeFlop = request.VillainBetSizeFlop,
+                VillainBetSizeTurn = request.VillainBetSizeTurn,
+                VillainCheckedMiddleStreet = request.VillainCheckedMiddleStreet,
+                HeroHasNutBlocker = request.HeroHasNutBlocker,
+                HeroFloatedFlop = request.HeroFloatedFlop,
+                VillainFoldToBetPct = villainFoldToBetPct,
+                HeroKickerStrength = calculation.HeroKickerStrength,
+                TurnCalledWithFlushDanger = request.TurnCalledWithFlushDanger,
+                HeroBlocksTopCard = request.HeroBlocksTopCard,
+                HeroCheckedAllStreets = request.HeroCheckedAllStreets,
+                IsAnyoneAllIn = request.IsAnyoneAllIn,
+                IsDonkBet = request.IsDonkBet,
+                VillainProfile = profile,
+                HeroPosition = request.HeroPosition,
+                VillainPosition = request.VillainPosition,
+                IsBroadwayWet = request.IsBroadwayWet,
+                EffectiveOuts = calculation.EffectiveOuts,
+                RiverCardType = riverCardType,
+            };
+
+            decision = _decisionService.DetermineAction(input);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         // --- Fase 5: sizing (extracción del string de acción) ---
-        sw.Restart();
-        double? betSize = ExtractBetSize(decision.Action);
-        timings["sizing"] = sw.Elapsed;
+        double? betSize;
+        using (_ = _metrics.Measure(TelemetryCategories.DecisionSizing))
+        {
+            betSize = ExtractBetSize(decision.Action);
+        }
 
         return Task.FromResult(new DecisionResult
         {
@@ -164,7 +180,6 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
             IsCheckRaise = decision.IsCheckRaise,
             IsFloating = decision.IsFloating,
             CalculationDetail = calculation,
-            PhaseTimings = timings,
         });
     }
 
