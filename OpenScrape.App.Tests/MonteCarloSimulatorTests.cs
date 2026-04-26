@@ -394,6 +394,71 @@ public class MonteCarloSimulatorTests
         var total = result.WinProbability + result.TieProbability + result.LoseProbability;
         Assert.That(total, Is.InRange(0.99, 1.01));
     }
+
+    [Test]
+    public void CalculateEquity_RangoConAltoBloqueo_MarcaComoNoConfiable()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Ace, Suit.Diamonds),
+            C(Rank.King, Suit.Spades)
+        };
+
+        var range = VillainRange.GetForSituation(HandSituation.FourBet);
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1, 5000, range);
+
+        Assert.That(result.BlockedComboPercentage, Is.GreaterThan(0));
+        Assert.That(result.IsReliable, Is.False);
+    }
+
+    [Test]
+    public void CalculateEquity_SinRango_EsConfiable()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Queen, Suit.Hearts),
+            C(Rank.Jack, Suit.Diamonds),
+            C(Rank.Ten, Suit.Spades)
+        };
+
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1, 3000, null);
+
+        Assert.That(result.IsReliable, Is.True);
+        Assert.That(result.BlockedComboPercentage, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void CalculateEquity_RangoSinBloqueo_EsConfiable()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Spades),
+            C(Rank.Three, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.Five, Suit.Diamonds),
+            C(Rank.Two, Suit.Spades)
+        };
+
+        var range = VillainRange.GetForSituation(HandSituation.OpenRaise);
+        var result = _simulator.CalculateEquity(myCards, communityCards, 1, 5000, range);
+
+        Assert.That(result.BlockedComboPercentage, Is.LessThan(0.20));
+        Assert.That(result.IsReliable, Is.True);
+    }
 }
 
 // ─── Tests de HandScore struct ───────────────────────────────
