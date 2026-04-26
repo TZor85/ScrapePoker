@@ -6,6 +6,7 @@ using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
+using static OpenScrape.App.Tests.TestMakeInputHelper;
 
 namespace OpenScrape.App.Tests;
 
@@ -24,9 +25,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_StrongValue_DeberiaRecomendarValueBet()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("Value"));
         Assert.That(result.Reason, Does.Contain("strong value").IgnoreCase);
@@ -35,9 +36,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_ValueBet_DeberiaRecomendarValue()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("Value"));
     }
@@ -46,9 +47,9 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_ThinValue_IP_DeberiaRecomendarThinValue()
     {
         // Equity fuera del margen de randomización (ThinValueAbove=45, +3 margin = 48)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("Thin Value"));
     }
@@ -56,9 +57,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_ThinValue_OOP_DeberiaUsarFallback()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.Small);
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.Small));
 
         // ThinValueIPOnly = true, OOP fallback = "CheckFold" → "Fold"
         Assert.That(result.Action, Is.EqualTo("Fold"));
@@ -67,9 +68,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_LowEquity_DeberiaRecomendarFold()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
@@ -77,9 +78,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_LowEquity_NoBet_DeberiaRecomendarCheck()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Is.EqualTo("Check"));
     }
@@ -87,9 +88,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_LowEquityAction_Call_DeberiaRecomendarCall()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
@@ -98,11 +99,11 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_SemiBluff_SinFacingBet_DeberiaRecomendarSemiBluff()
     {
         // Sin facing bet → semi-bluff (apostar con draws) con fold equity suficiente
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 9,
-            foldEquity: 50);
+            foldEquity: 50));
 
         Assert.That(result.Action, Does.Contain("Semi-Bluff"));
         Assert.That(result.IsBluff, Is.True);
@@ -113,11 +114,11 @@ public class PostflopDecisionServiceTests
     {
         // Facing bet con draw en stacks profundos (SPR=5) → implied odds reducen pot odds requeridas
         // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 25 * ~0.65 ≈ 16.25 → 19.53 >= 16.25 → Call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Small,
             potOdds: 25, totalOuts: 9,
-            heroStack: 500, potSize: 100);
+            heroStack: 500, potSize: 100));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("implied odds").IgnoreCase);
@@ -129,9 +130,9 @@ public class PostflopDecisionServiceTests
         // Equity marginal en river sin apuesta, debajo de ThinValueAbove → check (showdown value)
         // River_OpenRaise: FoldBelow=40, ThinValueAbove=40 → equity 39 está debajo de ambos
         // Pero sin outs en river, y NoBet → check
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 39, BoardPosition.River, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Is.EqualTo("Check"));
     }
@@ -140,10 +141,10 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_PotOddsFavorables_DeberiaCall()
     {
         // Equity marginal pero pot odds buenos → call (via pot odds marginales en HandleLowEquity)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            potOdds: 35);
+            potOdds: 35));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("pot odds").IgnoreCase);
@@ -152,9 +153,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_SimplifiedMode_IP_StrongValue()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.RaiseOverLimper,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("Value"));
     }
@@ -162,9 +163,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_SimplifiedMode_OOP_LowEquity()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.RaiseOverLimper,
-            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("Check"));
     }
@@ -172,10 +173,10 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_Barrel_River_StrongValue_DeberiaMarcarBarrel()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            previousStreetBet: true);
+            previousStreetBet: true));
 
         Assert.That(result.IsBarrel, Is.True);
     }
@@ -184,9 +185,9 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_FacingBet_ValueEquity_DeberiaCall_NoRaise()
     {
         // Facing bet con equity buena → call (no raise, villano mostró fuerza)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
@@ -195,10 +196,10 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_FacingBet_StrongValue_DeberiaRaise()
     {
         // Facing bet con equity muy alta y mano fuerte (TwoPair+) → raise for value
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroHandRank: HandRank.ThreeOfAKind);
+            heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("Raise"));
         Assert.That(result.Action, Does.Contain("Value"));
@@ -208,10 +209,10 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_FacingBet_StrongEquity_OnePair_DeberiaCall()
     {
         // Facing bet con equity alta pero solo OnePair → call (no hinchar pote con mano vulnerable)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("vulnerable"));
@@ -221,13 +222,13 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_FacingLargeBet_NecesitaMasEquity()
     {
         // Equity 47: sin facing bet pasaría el FoldBelow=45, pero con Large bet (+8) → 45+8=53 > 47 → fold
-        var resultNoBet = _service.DetermineAction(
+        var resultNoBet = _service.DetermineAction(MakeInput(
             equity: 47, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet));
 
-        var resultLargeBet = _service.DetermineAction(
+        var resultLargeBet = _service.DetermineAction(MakeInput(
             equity: 47, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Large);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Large));
 
         // Sin bet: equity 47 > FoldBelow 45 → thin value o check
         Assert.That(resultNoBet.Action, Is.Not.EqualTo("Fold"));
@@ -242,15 +243,15 @@ public class PostflopDecisionServiceTests
         // NOTA: RangePolarizer adds adjustments based on board texture and position
         // This test may have different results with the new integration
 
-        var sinAggro = _service.DetermineAction(
+        var sinAggro = _service.DetermineAction(MakeInput(
             equity: 49, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            villainShowedAggression: false);
+            villainShowedAggression: false));
 
-        var conAggro = _service.DetermineAction(
+        var conAggro = _service.DetermineAction(MakeInput(
             equity: 49, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            villainShowedAggression: true);
+            villainShowedAggression: true));
 
         // Both should produce valid actions (the exact difference may vary with RangePolarizer)
         Assert.That(sinAggro.Action, Is.Not.Empty);
@@ -261,9 +262,9 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_FacingBet_ShowdownValue_River_SmallBet_DeberiaCall()
     {
         // River con bet pequeña y equity en FoldBelow → call por showdown value
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 44, BoardPosition.River, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small));
 
         // adjustedFoldBelow = 40 + 1 + 2(callerVsCbet) = 43, equity 44 > 43 → pasa
         // 44 > adjustedThinValueAbove (45 + 0.5 = 45.5)? No → HandleFacingBet → showdown value river small
@@ -273,9 +274,9 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_SimplifiedMode_FacingBet_StrongValue_DeberiaRaise()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.RaiseOverLimper,
-            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium);
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium));
 
         Assert.That(result.Action, Does.Contain("Raise"));
     }
@@ -283,29 +284,36 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DetermineAction_SimplifiedMode_FacingBet_LowEquity_DeberiaFold()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.RaiseOverLimper,
-            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.Medium);
+            boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.Medium));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
 
     [Test]
-    public void GetThresholds_Existente_DeberiaRetornarConfig()
+    public void Registry_ClaveExistente_DeberiaRetornarConfig()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        // CreateDefaultProfile define Turn_OpenRaise con FoldBelow=45, StrongValueAbove=80.
+        // Construimos el registry SIN rellenar defaults para verificar el lookup directo.
+        var profile = CreateDefaultProfile();
+        var registry = new ThresholdsRegistry(Options.Create(profile));
+
+        var thresholds = registry.Get(new ThresholdKey(BoardPosition.Turn, HandSituation.OpenRaise));
 
         Assert.That(thresholds.FoldBelow, Is.EqualTo(45));
         Assert.That(thresholds.StrongValueAbove, Is.EqualTo(80));
     }
 
     [Test]
-    public void GetThresholds_NoExistente_DeberiaRetornarFallback()
+    public void Registry_ClaveInexistente_DeberiaLanzarKeyNotFoundException()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Flop, HandSituation.OpenRaise);
+        // CreateDefaultProfile no define Flop_OpenRaise. Sin FillMissingThresholds, el registry lanza.
+        var profile = CreateDefaultProfile();
+        var registry = new ThresholdsRegistry(Options.Create(profile));
 
-        Assert.That(thresholds.FoldBelow, Is.EqualTo(40));
-        Assert.That(thresholds.CanBluff, Is.False);
+        Assert.Throws<KeyNotFoundException>(() =>
+            registry.Get(new ThresholdKey(BoardPosition.Flop, HandSituation.OpenRaise)));
     }
 
     // --- Tests de cartas peligrosas / danger penalty ---
@@ -319,10 +327,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: flushBoard, heroBlocksDangerSuit: false);
+            boardChange: flushBoard, heroBlocksDangerSuit: false));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
@@ -337,10 +345,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 80, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: flushBoard, heroBlocksDangerSuit: true);
+            boardChange: flushBoard, heroBlocksDangerSuit: true));
 
         Assert.That(result.Action, Is.Not.EqualTo("Fold"));
     }
@@ -354,10 +362,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            boardChange: flushBoard, heroBlocksDangerSuit: false);
+            boardChange: flushBoard, heroBlocksDangerSuit: false));
 
         // effectiveEquity = 45, ThinValueAbove = 45 → check (no strong/value bet)
         Assert.That(result.Action, Does.Not.Contain("Value").Or.Contain("Thin Value"));
@@ -372,10 +380,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: false, FlushDrawAppeared: false, StraightCompleted: true,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 3);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 55, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: straightBoard, heroBlocksDangerSuit: false);
+            boardChange: straightBoard, heroBlocksDangerSuit: false));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
@@ -384,10 +392,10 @@ public class PostflopDecisionServiceTests
     public void DetermineAction_SafeBoard_NoPenalty()
     {
         // BoardChangeResult.Safe → no penalty
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            boardChange: BoardChangeResult.Safe, heroBlocksDangerSuit: false);
+            boardChange: BoardChangeResult.Safe, heroBlocksDangerSuit: false));
 
         Assert.That(result.Action, Does.Contain("Value"));
     }
@@ -402,10 +410,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 94, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            boardChange: flushBoard, heroBlocksDangerSuit: true);
+            boardChange: flushBoard, heroBlocksDangerSuit: true));
 
         Assert.That(result.Action, Does.Not.Contain("Raise"));
         Assert.That(result.Action, Is.EqualTo("Call"));
@@ -423,10 +431,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 99, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            boardChange: flushPersisted, heroBlocksDangerSuit: false);
+            boardChange: flushPersisted, heroBlocksDangerSuit: false));
 
         // Capped a 45 → no value bet fuerte, como mucho thin value o check
         Assert.That(result.Action, Does.Not.Contain("Pot"));
@@ -441,10 +449,10 @@ public class PostflopDecisionServiceTests
             FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false,
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 1, DangerLevel: 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 80, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            boardChange: flushBoard, heroBlocksDangerSuit: true);
+            boardChange: flushBoard, heroBlocksDangerSuit: true));
 
         // Con blocker: penalty = 80*0.25*0.5 = 10 → effEquity = 70, cap NO aplica
         // 70 > ValueAbove(55) → Value bet
@@ -585,11 +593,11 @@ public class PostflopDecisionServiceTests
         // SPR shallow (1.0): implied odds casi neutro (~0.90)
         // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 30 * 0.90 ≈ 27 → 19.53 < 27 → no draw call
         // Marginal: equity 20 < potOdds 30 * 0.80 * 0.90 ≈ 21.66 → no marginal → Fold
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false, villainBetSize: BetSizeCategory.Small,
             potOdds: 30, totalOuts: 9,
-            heroStack: 100, potSize: 100);
+            heroStack: 100, potSize: 100));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
@@ -599,11 +607,11 @@ public class PostflopDecisionServiceTests
     {
         // SPR deep (5.0): implied odds ≈ 0.62
         // drawEquity = 9 * 2.17 = 19.53, adjustedPotOdds = 30 * 0.62 ≈ 18.5 → 19.53 >= 18.5 → Call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false, villainBetSize: BetSizeCategory.Small,
             potOdds: 30, totalOuts: 9,
-            heroStack: 500, potSize: 100);
+            heroStack: 500, potSize: 100));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("implied odds").IgnoreCase);
@@ -614,20 +622,22 @@ public class PostflopDecisionServiceTests
     {
         // Equity 38, potOdds 42 → sin implied: 38 < 42 * 0.80 = 33.6 → Call marginal
         // Con SPR deep: adjustedMarginal = 42 * 0.80 * 0.65 = 21.8 → 38 >= 21.8 → Call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
             potOdds: 42, totalOuts: 0,
-            heroStack: 500, potSize: 100);
+            heroStack: 500, potSize: 100));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
 
     private static PostflopDecisionService CreateService(StrategyProfile profile)
     {
+        profile.FillMissingThresholds();
         var betSizing = new BetSizingService(Options.Create(profile));
         var rangePolarizer = new RangePolarizer();
-        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(Options.Create(profile));
+        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer, registry);
     }
 
     private static StrategyProfile CreateDefaultProfile()
@@ -702,15 +712,15 @@ public class PostflopDecisionServiceTests
     {
         // NOTA: Con RangePolarizer, IP+Dry = -4, el threshold baja
         // Los resultados pueden variar según los ajustes combinados
-        var result1 = _service.DetermineAction(
+        var result1 = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 1);
+            numOpponents: 1));
 
-        var result3 = _service.DetermineAction(
+        var result3 = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         // Ambas acciones deberían ser válidas
         Assert.That(result1.Action, Is.Not.Empty);
@@ -721,10 +731,10 @@ public class PostflopDecisionServiceTests
     public void Multiway_NoBluffConMultiplesOponentes()
     {
         // Con 3 oponentes, no debería bluffear
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         Assert.That(result.IsBluff, Is.False);
     }
@@ -733,10 +743,10 @@ public class PostflopDecisionServiceTests
     public void Multiway_NoSemiBluffConMultiplesOponentes()
     {
         // Equity baja con draws + multiway → no semi-bluff (sin facing bet)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 9, numOpponents: 3);
+            totalOuts: 9, numOpponents: 3));
 
         // Con multiway no debería semi-bluffear
         Assert.That(result.IsBluff, Is.False);
@@ -746,11 +756,11 @@ public class PostflopDecisionServiceTests
     public void Multiway_HeadsUp_SiPermiteBluff()
     {
         // Heads-up con outs + fold equity → sí puede semi-bluff
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 9, numOpponents: 1,
-            foldEquity: 50);
+            foldEquity: 50));
 
         Assert.That(result.Action, Does.Contain("Semi-Bluff"));
     }
@@ -759,15 +769,15 @@ public class PostflopDecisionServiceTests
     public void Multiway_FacingBet_NecesitaMasEquity()
     {
         // Facing medium bet + 3 oponentes, Turn_OpenRaise FoldBelow=45
-        var resultHU = _service.DetermineAction(
+        var resultHU = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            numOpponents: 1);
+            numOpponents: 1));
 
-        var resultMW = _service.DetermineAction(
+        var resultMW = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            numOpponents: 3);
+            numOpponents: 3));
 
         // HU: FoldBelow = 45 + 4(medium) + 2(callerVsCbet) = 51, equity 52 > 51 → call
         Assert.That(resultHU.Action, Does.Not.Contain("Fold"));
@@ -783,10 +793,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("Check-Raise"));
         Assert.That(result.IsCheckRaise, Is.True);
@@ -799,10 +809,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.IsCheckRaise, Is.True,
             "IP ThreeOfAKind Dry → check-raise IP trap");
@@ -815,10 +825,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: false, heroHandRank: HandRank.OnePair);
+            heroIsAggressor: false, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.IsCheckRaise, Is.False);
     }
@@ -829,10 +839,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.IsCheckRaise, Is.False);
     }
@@ -843,10 +853,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConCheckRaise();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 82, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind, numOpponents: 3);
+            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind, numOpponents: 3));
 
         Assert.That(result.IsCheckRaise, Is.False);
     }
@@ -857,10 +867,10 @@ public class PostflopDecisionServiceTests
     public void AgresorVsDonk_FacingBet_ManoFuerte_DeberiaRaise()
     {
         // Hero agresor con TwoPair+, equity buena (> ValueAbove) → raise vs donk
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroIsAggressor: true, heroHandRank: HandRank.TwoPair);
+            heroIsAggressor: true, heroHandRank: HandRank.TwoPair));
 
         Assert.That(result.Action, Does.Contain("Raise"));
         Assert.That(result.Reason, Does.Contain("donk"));
@@ -870,10 +880,10 @@ public class PostflopDecisionServiceTests
     public void AgresorVsDonk_FacingBet_OnePair_DeberiaCall()
     {
         // Hero agresor con OnePair, equity buena → call (no raise con mano vulnerable)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroIsAggressor: true, heroHandRank: HandRank.OnePair);
+            heroIsAggressor: true, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
@@ -883,10 +893,10 @@ public class PostflopDecisionServiceTests
     {
         // Hero agresor reduce FoldBelow: 45 + 4(medium) - 5(agresor) = 44
         // adjustedThinValueAbove: 45 + 2 - 3 = 44. Equity 45 > 44 → thin value call
-        var resultAgresor = _service.DetermineAction(
+        var resultAgresor = _service.DetermineAction(MakeInput(
             equity: 45, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroIsAggressor: true);
+            heroIsAggressor: true));
 
         Assert.That(resultAgresor.Action, Does.Not.Contain("Fold"));
     }
@@ -896,10 +906,10 @@ public class PostflopDecisionServiceTests
     {
         // Hero caller: 45 + 4(medium) + 2(callerVsCbet) = 51
         // NOTA: Con RangePolarizer, IP+Dry = -4, el threshold puede reducirse
-        var resultCaller = _service.DetermineAction(
+        var resultCaller = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         // La acción debería ser válida
         Assert.That(resultCaller.Action, Is.Not.Empty);
@@ -914,10 +924,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 14 outs en flop, sin facing bet → semi-bluff agresivo (3/4 pot)
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14);
+            totalOuts: 14));
 
         Assert.That(result.Action, Does.Contain("3/4"));
         Assert.That(result.Reason, Does.Contain("combo draw"));
@@ -931,10 +941,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 9 outs en flop → sizing normal
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 9);
+            totalOuts: 9));
 
         Assert.That(result.Action, Does.Contain("1/3"));
         Assert.That(result.IsBluff, Is.True);
@@ -947,10 +957,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 14 outs en turn → no es combo draw agresivo (solo en flop)
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14);
+            totalOuts: 14));
 
         Assert.That(result.Action, Does.Contain("1/3"));
     }
@@ -963,10 +973,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConOverbet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("1.25x Pot"));
         Assert.That(result.Reason, Does.Contain("Overbet"));
@@ -978,10 +988,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConOverbet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Not.Contain("1.25x Pot"));
     }
@@ -993,10 +1003,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // River con TwoPair+ en board seco → overbet por máximo valor
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: true, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("1.25x Pot"));
         Assert.That(result.Reason, Does.Contain("river"));
@@ -1009,10 +1019,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // River con OnePair → no overbet (mano vulnerable)
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true, heroHandRank: HandRank.OnePair);
+            heroIsAggressor: true, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Not.Contain("1.25x Pot"));
     }
@@ -1023,10 +1033,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConOverbet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind);
+            heroIsAggressor: false, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Not.Contain("1.25x Pot"));
     }
@@ -1038,10 +1048,10 @@ public class PostflopDecisionServiceTests
     {
         // Set (ThreeOfAKind) → vulnerability adjustment = -4, adjStrongValue = 80-4 = 76
         // Equity 78 > 76 → strong value bet. Sin HandRank, 78 < 80 → solo value bet.
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 78, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.ThreeOfAKind);
+            heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("Value"));
         Assert.That(result.Reason, Does.Contain("strong value"));
@@ -1052,10 +1062,10 @@ public class PostflopDecisionServiceTests
     {
         // OnePair → vulnerability adjustment = +2, adjStrongValue = 80+2 = 82
         // Equity 81 < 82 → no strong value (solo value bet)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 81, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Reason, Does.Not.Contain("strong value"));
     }
@@ -1064,10 +1074,10 @@ public class PostflopDecisionServiceTests
     public void HandStrength_Nuts_IncreaseBetSize()
     {
         // ThreeOfAKind con strong value → IncreaseBetSize del StrongValueBetSize
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 90, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.FourOfAKind);
+            heroHandRank: HandRank.FourOfAKind));
 
         // StrongValueBetSize = "Bet 3/4" → IncreaseBetSize → "Bet Pot"
         Assert.That(result.Action, Does.Contain("Pot"));
@@ -1078,10 +1088,10 @@ public class PostflopDecisionServiceTests
     {
         // TwoPair en Coordinated → adjustment = +3, adjValue = 55+3 = 58
         // Equity 57 < 58 → thin value (no value bet)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.TwoPair);
+            heroHandRank: HandRank.TwoPair));
 
         Assert.That(result.Action, Does.Contain("Thin Value"));
     }
@@ -1164,16 +1174,16 @@ public class PostflopDecisionServiceTests
     {
         // Turn_OpenRaise: FoldBelow=45
         // Equity 42 sin combo draw: < 45 → HandleLowEquity → semi-bluff
-        var sinCombo = _service.DetermineAction(
+        var sinCombo = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14, hasComboDraw: false);
+            totalOuts: 14, hasComboDraw: false));
 
         // Equity 42 + combo draw bonus (+6) = 48 > 45 → sale de HandleLowEquity
-        var conCombo = _service.DetermineAction(
+        var conCombo = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14, hasComboDraw: true);
+            totalOuts: 14, hasComboDraw: true));
 
         Assert.That(sinCombo.IsBluff, Is.True); // Semi-bluff en HandleLowEquity
         Assert.That(conCombo.IsBluff, Is.False); // Sale de HandleLowEquity con bonus
@@ -1184,10 +1194,10 @@ public class PostflopDecisionServiceTests
     {
         // River_OpenRaise: FoldBelow=40. En river no hay bonus de combo draw
         // Equity 38 < 40 → HandleLowEquity → check (sin facing bet, river)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 38, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 0, hasComboDraw: true);
+            totalOuts: 0, hasComboDraw: true));
 
         Assert.That(result.Action, Does.Contain("Check"));
     }
@@ -1202,10 +1212,10 @@ public class PostflopDecisionServiceTests
 
         // Equity 42 > FoldBelow(40) → llega a HandleNoBet → probe bet (equity > ProbeBetMinEquity 25)
         // NOTA: OOP + Dry = +3 (Linear), el threshold cambia pero con equity alto debe haber acción
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: true);
+            villainAggressorCheckedPreviousStreet: true));
 
         // Con equity alto y probe bet enabled, debería hacer algo (no Fold)
         Assert.That(result.Action, Is.Not.EqualTo("Fold"));
@@ -1217,10 +1227,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConProbeBet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: false);
+            villainAggressorCheckedPreviousStreet: false));
 
         Assert.That(result.Action, Does.Not.Contain("Probe"));
     }
@@ -1231,10 +1241,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConProbeBet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: true);
+            villainAggressorCheckedPreviousStreet: true));
 
         // IP + Dry = Polarized (-4), threshold más bajo, debería hacer algo (no Fold)
         Assert.That(result.Action, Is.Not.EqualTo("Fold"));
@@ -1247,10 +1257,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // Equity 15 < ProbeBetMinEquity(25) → no probe
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 15, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: true);
+            villainAggressorCheckedPreviousStreet: true));
 
         Assert.That(result.Action, Does.Not.Contain("Probe"));
     }
@@ -1280,10 +1290,10 @@ public class PostflopDecisionServiceTests
         // Turn_OpenRaise FoldBelow=45, medium +4, callerVsCbet +2 = 51
         // + villain barrel +5 = 56. Equity 54 < 56 → fold
         // NOTA: Con RangePolarizer, Dry+IP ajusta -4, entonces el threshold cambia
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 54, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            villainBarreling: true);
+            villainBarreling: true));
 
         // Con RangePolarizer, IP+Dry es más loose, puede ser Call o Fold dependiendo del ajuste total
         Assert.That(result.Action, Is.Not.Empty);
@@ -1293,10 +1303,10 @@ public class PostflopDecisionServiceTests
     public void VillainBarreling_EquityAlta_DeberiaCall()
     {
         // Equity 60 supera barrel penalty → call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            villainBarreling: true);
+            villainBarreling: true));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"));
     }
@@ -1305,10 +1315,10 @@ public class PostflopDecisionServiceTests
     public void VillainBarreling_NoBet_NoAfecta()
     {
         // Sin facing bet el barrel flag no afecta
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            villainBarreling: true);
+            villainBarreling: true));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"));
     }
@@ -1317,10 +1327,10 @@ public class PostflopDecisionServiceTests
     public void HeroBarrel_Turn_DeberiaMarcarIsBarrel()
     {
         // Hero bet flop + bet turn = IsBarrel
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            previousStreetBet: true, heroHandRank: HandRank.ThreeOfAKind);
+            previousStreetBet: true, heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.IsBarrel, Is.True);
     }
@@ -1331,10 +1341,10 @@ public class PostflopDecisionServiceTests
     public void SPRCorto_FacingBet_DeberiaAllIn()
     {
         // SPR 0.8 < 1.0 (mitad inferior push/fold), equity 60, OnePair → All-In
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Contain("All-In"));
     }
@@ -1343,10 +1353,10 @@ public class PostflopDecisionServiceTests
     public void SPRCorto_NoBet_DeberiaAllIn()
     {
         // SPR 0.8, sin facing bet, equity > ValueAbove → All-In push
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Contain("All-In"));
     }
@@ -1356,10 +1366,10 @@ public class PostflopDecisionServiceTests
     {
         // SPR 0.8, equity 60% → EV positivo → All-In
         // S8.1: push/fold ahora basado en EV, no en HandRank
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 8, potSize: 10, heroHandRank: HandRank.HighCard);
+            heroStack: 8, potSize: 10, heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Does.Contain("All-In"),
             "SPR corto con EV positivo → all-in aunque sea HighCard");
@@ -1372,10 +1382,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConSemiBluffAgresivo();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair);
+            heroStack: 15, potSize: 10, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Not.Contain("All-In"));
     }
@@ -1386,10 +1396,10 @@ public class PostflopDecisionServiceTests
         // SPR 5 > 4.0, FoldBelow +3 = 48 + medium(4) + caller(2) = 54
         // Equity 53 < 54 → fold (vs sin SPR deep que sería 51 → 53 pasa)
         // NOTA: Con RangePolarizer, IP+Dry = -4, así que el threshold total cambia
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            heroStack: 500, potSize: 100);
+            heroStack: 500, potSize: 100));
 
         // El ajuste de RangePolarizer puede cambiar el threshold
         Assert.That(result.Action, Is.Not.Empty);
@@ -1403,10 +1413,10 @@ public class PostflopDecisionServiceTests
         // SPR 1.5, equity 50 con OnePair → EV positivo → All-In (S8.1: EV-based push)
         // Para probar sizing dinámico sin push, usar SPR > 2 (no push) con SPR < deep
         // NOTA: Con RangePolarizer, IP+Dry = Polarized, el resultado puede variar
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 50, potSize: 20, heroHandRank: HandRank.TwoPair);
+            heroStack: 50, potSize: 20, heroHandRank: HandRank.TwoPair));
 
         // SPR 2.5 → no push/fold territory, debería tomar alguna acción
         Assert.That(result.Action, Is.Not.Empty);
@@ -1416,10 +1426,10 @@ public class PostflopDecisionServiceTests
     public void BetSizing_SPRNormal_SinCambio()
     {
         // SPR 2.5, sin ajuste
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            heroStack: 50, potSize: 20, heroHandRank: HandRank.TwoPair);
+            heroStack: 50, potSize: 20, heroHandRank: HandRank.TwoPair));
 
         Assert.That(result.Action, Does.Contain("1/2"));
     }
@@ -1431,10 +1441,10 @@ public class PostflopDecisionServiceTests
     {
         // Turn_OpenRaise: FoldBelow=45, ThinValueAbove=45, ValueAbove=55
         // Equity 50: > ThinValueAbove(45) + RandomizationMargin(3), < ValueAbove(55) → thin value con IsBarrel
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            previousStreetBet: true, heroIsAggressor: true);
+            previousStreetBet: true, heroIsAggressor: true));
 
         Assert.That(result.IsBarrel, Is.True,
             $"Esperado barrel pero fue: {result.Action} — {result.Reason}");
@@ -1443,10 +1453,10 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DoubleBarrel_SinPreviousBet_NoBarrel()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            previousStreetBet: false, heroIsAggressor: true);
+            previousStreetBet: false, heroIsAggressor: true));
 
         Assert.That(result.IsBarrel, Is.False);
     }
@@ -1454,10 +1464,10 @@ public class PostflopDecisionServiceTests
     [Test]
     public void DoubleBarrel_NoCaller_NoBarrel()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.ThreeBet,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            previousStreetBet: true, heroIsAggressor: false);
+            previousStreetBet: true, heroIsAggressor: false));
 
         Assert.That(result.IsBarrel, Is.False);
     }
@@ -1473,10 +1483,10 @@ public class PostflopDecisionServiceTests
 
         // Equity 52, penalty = 4.0 * 1.5 (OnePair) = 6.0 → effectiveEquity = 46
         // + medium(4) + callerVsCbet(2) = adjustedFoldBelow 51. 46 < 51 → fold
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair);
+            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Contain("Fold"));
     }
@@ -1489,10 +1499,10 @@ public class PostflopDecisionServiceTests
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 2);
 
         // Flush+ no se penaliza por reverse implied odds → no foldea
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: flushDrawBoard, heroHandRank: HandRank.Flush);
+            boardChange: flushDrawBoard, heroHandRank: HandRank.Flush));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"));
     }
@@ -1505,10 +1515,10 @@ public class PostflopDecisionServiceTests
             BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: -1, DangerLevel: 2);
 
         // En river no aplica reverse implied odds → no penaliza extra
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true, villainBetSize: BetSizeCategory.Medium,
-            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair);
+            boardChange: flushDrawBoard, heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"));
     }
@@ -1520,10 +1530,10 @@ public class PostflopDecisionServiceTests
     {
         // River_OpenRaise FoldBelow=40. Equity 35 < 40, pero 35 >= 40*0.85=34 → bluff catch
         // OnePair + small/medium bet → call para atrapar bluffs
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Action, Does.Contain("Call"));
         Assert.That(result.Reason, Does.Contain("bluff catch"));
@@ -1533,10 +1543,10 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_River_LargeBet_NoBluffCatch()
     {
         // Large bet → no bluff catch (villano probablemente tiene valor)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Large,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
     }
@@ -1545,10 +1555,10 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_River_HighCard_NoBluffCatch()
     {
         // HighCard → no bluff catch (necesita al menos OnePair)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
     }
@@ -1557,10 +1567,10 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_Turn_NoAplica()
     {
         // Bluff catching solo en river
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.Small,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
     }
@@ -1571,19 +1581,19 @@ public class PostflopDecisionServiceTests
     public void ComboDrawBonus_NoAplicaSiHeroCompletoStraight()
     {
         // Hero tiene Straight (draw completado) → bonus no debe aplicarse
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             hasComboDraw: true,
-            heroHandRank: HandRank.Straight);
+            heroHandRank: HandRank.Straight));
 
-        var resultSinCombo = _service.DetermineAction(
+        var resultSinCombo = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             hasComboDraw: false,
-            heroHandRank: HandRank.Straight);
+            heroHandRank: HandRank.Straight));
 
         // Con draw completado, hasComboDraw no debería cambiar la decisión
         Assert.That(result.Action, Is.EqualTo(resultSinCombo.Action),
@@ -1593,19 +1603,19 @@ public class PostflopDecisionServiceTests
     [Test]
     public void ComboDrawBonus_SiAplicaConDrawPendiente()
     {
-        var conCombo = _service.DetermineAction(
+        var conCombo = _service.DetermineAction(MakeInput(
             equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             hasComboDraw: true,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
-        var sinCombo = _service.DetermineAction(
+        var sinCombo = _service.DetermineAction(MakeInput(
             equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             hasComboDraw: false,
-            heroHandRank: HandRank.OnePair);
+            heroHandRank: HandRank.OnePair));
 
         // Con draw pendiente (OnePair < Straight), combo bonus debería hacer diferencia
         // No podemos garantizar acción diferente siempre, pero equity efectiva sube
@@ -1624,12 +1634,12 @@ public class PostflopDecisionServiceTests
         bool bluffOccurred = false;
         for (int i = 0; i < 10; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
                 heroHandRank: HandRank.HighCard,
-                foldEquity: 40); // fold equity suficiente para que el bluff sea +EV
+                foldEquity: 40)); // fold equity suficiente para que el bluff sea +EV
 
             if (result.IsBluff)
             {
@@ -1652,11 +1662,11 @@ public class PostflopDecisionServiceTests
         bool bluffOccurred = false;
         for (int i = 0; i < 10; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: false,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroHandRank: HandRank.HighCard);
+                heroHandRank: HandRank.HighCard));
 
             if (result.IsBluff)
             {
@@ -1673,12 +1683,12 @@ public class PostflopDecisionServiceTests
     public void FloatingIP_Equity22_NoDeberiaActivarse()
     {
         // FloatingIPMinEquity ahora es 25% → 22% no debería flotar
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 22, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.HighCard,
-            totalOuts: 5);
+            totalOuts: 5));
 
         Assert.That(result.IsFloating, Is.False,
             "22% equity no debería activar floating con FloatingIPMinEquity=25%");
@@ -1698,15 +1708,15 @@ public class PostflopDecisionServiceTests
         // River penalty = 8.0 × 1.30 = 10.4 → adjustedFB = 50.4
         // Equity 51: turn → 51 < 54.2 (low equity). River → 51 > 50.4 (no low equity).
 
-        var turnResult = _service.DetermineAction(
+        var turnResult = _service.DetermineAction(MakeInput(
             equity: 51, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large);
+            villainBetSize: BetSizeCategory.Large));
 
-        var riverResult = _service.DetermineAction(
+        var riverResult = _service.DetermineAction(MakeInput(
             equity: 51, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large);
+            villainBetSize: BetSizeCategory.Large));
 
         // Turn adjustedFoldBelow=54.2, equity 51 < 54.2 → HandleLowEquity path
         // River adjustedFoldBelow=50.4, equity 51 > 50.4 → no HandleLowEquity
@@ -1720,10 +1730,10 @@ public class PostflopDecisionServiceTests
     {
         // River FoldBelow=40, Large penalty=8×1.30=10.4, adjustedFB=50.4
         // Equity 49 < 50.4 → low equity path
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 49, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large);
+            villainBetSize: BetSizeCategory.Large));
 
         Assert.That(result.Action, Does.Not.Contain("Value"),
             "River large bet penalty (8 × 1.3 = 10.4) → equity 49 no debería ser value");
@@ -1738,12 +1748,12 @@ public class PostflopDecisionServiceTests
     {
         // Turn, facing Small bet, MiddlePair, equity >= FoldBelow × 0.90
         // FoldBelow=45, threshold=45*0.90=40.5, equity=42 >= 40.5 → call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.MiddlePair);
+            pairClassification: PairClassification.MiddlePair));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
         Assert.That(result.Reason, Does.Contain("bluff catch turn"));
@@ -1753,12 +1763,12 @@ public class PostflopDecisionServiceTests
     public void BluffCatchTurn_BottomPair_NoDeberiaCall()
     {
         // Turn, BottomPair → skip bluff catch (demasiado débil con 1 calle por venir)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.BottomPair);
+            pairClassification: PairClassification.BottomPair));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch turn"),
             "BottomPair en turn no debería hacer bluff catch");
@@ -1768,12 +1778,12 @@ public class PostflopDecisionServiceTests
     public void BluffCatchTurn_MediumBet_NoDeberiaCall()
     {
         // Turn, Medium bet → no bluff catch (solo Small en turn)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Medium,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.MiddlePair);
+            pairClassification: PairClassification.MiddlePair));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch turn"),
             "Medium bet en turn no debería activar bluff catch");
@@ -1798,13 +1808,13 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 4 outs (overcards), sin flush draw ni combo draw, 4 < FloatingIPMinOuts(6) → no float
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.HighCard,
             totalOuts: 4,
-            hasFlushDraw: false, hasComboDraw: false);
+            hasFlushDraw: false, hasComboDraw: false));
 
         Assert.That(result.IsFloating, Is.False,
             "4 outs sin draw real no debería activar floating");
@@ -1825,13 +1835,13 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 9 outs (flush draw) + hasFlushDraw = true → float
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.HighCard,
             totalOuts: 9,
-            hasFlushDraw: true);
+            hasFlushDraw: true));
 
         Assert.That(result.IsFloating, Is.True,
             "Con flush draw debería activar floating");
@@ -1852,13 +1862,13 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // 8 outs (OESD), sin flush/combo pero 8 >= FloatingIPMinOuts(6) → float
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 28, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.HighCard,
             totalOuts: 8,
-            hasFlushDraw: false, hasComboDraw: false);
+            hasFlushDraw: false, hasComboDraw: false));
 
         Assert.That(result.IsFloating, Is.True,
             "8 outs >= FloatingIPMinOuts(6) → draw real → debería flotar");
@@ -1878,12 +1888,12 @@ public class PostflopDecisionServiceTests
         // BluffBetSize default en Turn_OpenRaise no está explícito → default "Bet 1/3"
         // betFraction 0.33, breakeven ~25%, foldEquity 40% >= 25% → bluff
         // S22.6: equity=44 cerca de FoldBelow=45 → scalingFactor=0.978 → freq~0.978 (casi determinístico)
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 44, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            foldEquity: 40);
+            foldEquity: 40));
 
         Assert.That(result.IsBluff, Is.True,
             "Fold equity 40% >= breakeven 25% (Bet 1/3) → debería bluffear");
@@ -1897,12 +1907,12 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // foldEquity 15% < breakeven 25% → no bluff
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            foldEquity: 15);
+            foldEquity: 15));
 
         Assert.That(result.IsBluff, Is.False,
             "Fold equity 15% < breakeven 25% → no debería bluffear");
@@ -1918,11 +1928,11 @@ public class PostflopDecisionServiceTests
     {
         // Board Monotone con equity suficiente para thin value → sizing "Bet 1/4"
         // S12.2: con heroIsAggressor para evitar pot control check
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Monotone", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true);
+            heroIsAggressor: true));
 
         Assert.That(result.Action, Does.Contain("1/4").Or.Contain("Value"),
             "Board Monotone debería usar sizing reducido (Bet 1/4 base)");
@@ -1940,11 +1950,11 @@ public class PostflopDecisionServiceTests
         // Turn: villain escaló de Small (flop) a Large (turn)
         // adjustedFoldBelow base=45 + facingBet Large=8×1.15=9.2 + sizingEscalation=4 = 58.2
         // equity 57 < 58.2 → low equity path (no value)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
-            villainBetSizeFlop: BetSizeCategory.Small);
+            villainBetSizeFlop: BetSizeCategory.Small));
 
         Assert.That(result.Action, Does.Not.Contain("Value"),
             "Villain escaló Small→Large → penalty +4 debería subir FoldBelow");
@@ -1956,11 +1966,11 @@ public class PostflopDecisionServiceTests
         // Turn: villain mantuvo Large→Large (no escaló)
         // adjustedFoldBelow base=45 + facingBet Large=9.2 = 54.2 (sin sizing penalty)
         // equity 57 > 54.2 → no es low equity
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
-            villainBetSizeFlop: BetSizeCategory.Large);
+            villainBetSizeFlop: BetSizeCategory.Large));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"),
             "Villain mantuvo Large→Large → sin sizing penalty extra");
@@ -1970,11 +1980,11 @@ public class PostflopDecisionServiceTests
     public void SizingTell_NoBetEnFlop_SinReferencia_SinPenalty()
     {
         // Turn: villain no apostó en flop → sin referencia → sin penalty
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 57, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
-            villainBetSizeFlop: BetSizeCategory.NoBet);
+            villainBetSizeFlop: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"),
             "Sin bet en flop → sin referencia → no aplica sizing penalty");
@@ -1992,17 +2002,17 @@ public class PostflopDecisionServiceTests
         // 3 oponentes (extraOpponents=2). OOP penalty = 2×6=12, IP penalty = 2×2=4.
         // FoldBelow base=45. OOP: 45+12=57. IP: 45+4=49.
         // Equity 53: IP → 53>49 (no low equity). OOP → 53<57 (low equity).
-        var resultIP = _service.DetermineAction(
+        var resultIP = _service.DetermineAction(MakeInput(
             equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
-        var resultOOP = _service.DetermineAction(
+        var resultOOP = _service.DetermineAction(MakeInput(
             equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         // IP debería poder value bet, OOP debería check (low equity)
         Assert.That(resultIP.Action, Does.Not.Contain("Check").IgnoreCase.Or.Contain("Value"),
@@ -2019,13 +2029,13 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // Multiway OOP → no bluff
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             numOpponents: 2,
             heroHandRank: HandRank.HighCard,
-            foldEquity: 40);
+            foldEquity: 40));
 
         Assert.That(result.IsBluff, Is.False,
             "OOP multiway → no bluff (demasiados oponentes sin posición)");
@@ -2040,11 +2050,11 @@ public class PostflopDecisionServiceTests
     public void HandleNoBet_WetBoard_DeberiaBet13()
     {
         // S12.2: con heroIsAggressor para evitar pot control check
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroIsAggressor: true);
+            heroIsAggressor: true));
 
         Assert.That(result.Action, Does.Contain("1/3").Or.Contain("Value"),
             "Board Wet debería usar sizing reducido (Bet 1/3 base)");
@@ -2070,9 +2080,9 @@ public class PostflopDecisionServiceTests
             CanCheckRaise = true,
             CheckRaiseThreshold = 75
         };
-        var service = CreateService(profile);
+        var registry = new ThresholdsRegistry(Options.Create(profile));
 
-        var thresholds = service.GetThresholds(BoardPosition.Flop, HandSituation.DonkBet);
+        var thresholds = registry.Get(new ThresholdKey(BoardPosition.Flop, HandSituation.DonkBet));
         Assert.That(thresholds.FoldBelow, Is.EqualTo(32),
             "Flop_DonkBet debería usar config específica, no fallback genérico");
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"),
@@ -2093,19 +2103,19 @@ public class PostflopDecisionServiceTests
         // Equity 52: con barrel (45+5+9.2=59.2) → fold. Con bet-check-bet (45+2+9.2=56.2) → fold.
         // Equity 55: con barrel → fold. Con bet-check-bet (56.2) → fold.
         // Equity 58: con barrel (59.2) → fold. Con bet-check-bet (56.2) → no fold.
-        var resultBarrel = _service.DetermineAction(
+        var resultBarrel = _service.DetermineAction(MakeInput(
             equity: 58, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             villainBarreling: true,
-            villainCheckedMiddleStreet: false);
+            villainCheckedMiddleStreet: false));
 
-        var resultBCB = _service.DetermineAction(
+        var resultBCB = _service.DetermineAction(MakeInput(
             equity: 58, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             villainBarreling: true,
-            villainCheckedMiddleStreet: true);
+            villainCheckedMiddleStreet: true));
 
         // BCB penalty (2) < barrel penalty (5) → BCB menos restrictivo con misma equity
         // Si ambos fold, al menos BCB debería tener adjustedFoldBelow menor
@@ -2126,10 +2136,10 @@ public class PostflopDecisionServiceTests
         var profile = CreateProfileConProbeBet();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: true);
+            villainAggressorCheckedPreviousStreet: true));
 
         Assert.That(result.Action, Does.Contain("Probe"));
         Assert.That(result.Action, Does.Contain("1/2"),
@@ -2143,10 +2153,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // NOTA: OOP + Dry = Linear (+3), threshold más alto, resultado puede variar
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaiseVs3BetAndCall,
             boardTexture: "Dry", isInPosition: false, villainBetSize: BetSizeCategory.NoBet,
-            villainAggressorCheckedPreviousStreet: true);
+            villainAggressorCheckedPreviousStreet: true));
 
         // Con equity relativamente alta, debería hacer algo (no Fold)
         Assert.That(result.Action, Is.Not.EqualTo("Fold"));
@@ -2159,13 +2169,13 @@ public class PostflopDecisionServiceTests
     [Test]
     public void SlowplayTurn_OOP_LAG_DeberiaCheck()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.ThreeOfAKind,
             heroIsAggressor: false,
-            villainType: OpponentType.LAG);
+            villainType: OpponentType.LAG));
 
         Assert.That(result.Action, Is.EqualTo("Check"));
         Assert.That(result.Reason, Does.Contain("Slow play").And.Contain("turn"));
@@ -2175,13 +2185,13 @@ public class PostflopDecisionServiceTests
     public void SlowplayTurn_IP_NoSlowplay()
     {
         // IP en turn → no slowplay (hero debe value bet con posición)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.ThreeOfAKind,
             heroIsAggressor: false,
-            villainType: OpponentType.LAG);
+            villainType: OpponentType.LAG));
 
         Assert.That(result.Reason, Does.Not.Contain("Slow play"),
             "IP en turn → no slowplay, value bet");
@@ -2191,13 +2201,13 @@ public class PostflopDecisionServiceTests
     public void SlowplayTurn_TP_NoSlowplay()
     {
         // Turn vs TP (nit) → no slowplay (nit no apuesta, slowplay pierde valor)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.ThreeOfAKind,
             heroIsAggressor: false,
-            villainType: OpponentType.TP);
+            villainType: OpponentType.TP));
 
         Assert.That(result.Reason, Does.Not.Contain("Slow play"),
             "Turn vs TP → no slowplay");
@@ -2216,10 +2226,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // RaiseOverLimper (IsSimplified) en Monotone → sizing "Bet 1/4"
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 80, BoardPosition.Turn, HandSituation.RaiseOverLimper,
             boardTexture: "Monotone", isInPosition: false,
-            villainBetSize: BetSizeCategory.NoBet);
+            villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Contain("1/4"),
             "Simplified + Monotone → sizing reducido Bet 1/4");
@@ -2232,10 +2242,10 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // RaiseOverLimper en Dry → sizing default
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 80, BoardPosition.Turn, HandSituation.RaiseOverLimper,
             boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.NoBet);
+            villainBetSize: BetSizeCategory.NoBet));
 
         Assert.That(result.Action, Does.Not.Contain("1/4"),
             "Simplified + Dry → sizing default (no 1/4)");
@@ -2252,12 +2262,12 @@ public class PostflopDecisionServiceTests
     {
         // SPR 0.6, equity 42%, pot 100, stack 60 → EV positivo → All-In
         // NOTA: Con RangePolarizer, threshold puede variar
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 60, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         // Con SPR muy bajo, debería tomar acción
         Assert.That(result.Action, Is.Not.Empty);
@@ -2267,12 +2277,12 @@ public class PostflopDecisionServiceTests
     public void PushFold_EVNegativo_NoDeberiaAllIn()
     {
         // SPR 1.2, equity 15%, pot 100, stack 120 → EV = 0.15×340 - 0.85×120 = -51
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 120, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Does.Not.Contain("All-In"),
             "SPR 1.2, equity 15% → EV negativo, no debería all-in");
@@ -2283,12 +2293,12 @@ public class PostflopDecisionServiceTests
     {
         // SPR 0.8, equity 50%, facing bet → EV positivo
         // NOTA: Con RangePolarizer, IP+River=Dry → Polarized (-4), threshold cambia
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             heroStack: 80, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         // Con SPR muy bajo (0.8), debería hacer algo (no check/fold)
         Assert.That(result.Action, Is.Not.EqualTo("Check"));
@@ -2298,12 +2308,12 @@ public class PostflopDecisionServiceTests
     public void PushFold_SPRNormal_NoAllIn()
     {
         // SPR 3.0 → no es push/fold, no debería all-in con equity marginal
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroStack: 300, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Does.Not.Contain("All-In"),
             "SPR 3.0 → no push/fold");
@@ -2317,13 +2327,13 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_VsLAG_DeberiaCallMasAmplio()
     {
         // River, facing small bet, OnePair con equity marginal vs LAG → bluff catch
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 28, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.MiddlePair,
-            villainType: OpponentType.LAG);
+            villainType: OpponentType.LAG));
 
         Assert.That(result.Action, Is.EqualTo("Call"),
             "Bluff catch vs LAG debería call con equity 28%");
@@ -2333,13 +2343,13 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_VsTP_DeberiaFoldMas()
     {
         // Misma situación vs TP → fold (nit casi nunca bluffea)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 28, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.MiddlePair,
-            villainType: OpponentType.TP);
+            villainType: OpponentType.TP));
 
         Assert.That(result.Reason, Does.Not.Contain("bluff catch"),
             "Bluff catch vs TP debería ser más estricto");
@@ -2352,12 +2362,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void Underbet_ConEquityBuena_DeberiaRaise()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Underbet,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.TopPair);
+            pairClassification: PairClassification.TopPair));
 
         Assert.That(result.Action, Does.Contain("Raise"),
             "Facing underbet con equity buena → Raise para explotar debilidad");
@@ -2366,11 +2376,11 @@ public class PostflopDecisionServiceTests
     [Test]
     public void Underbet_ConEquityBaja_NoDeberiaRaise()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Underbet,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Does.Not.Contain("Raise"),
             "Facing underbet con equity baja → no raise");
@@ -2382,13 +2392,13 @@ public class PostflopDecisionServiceTests
         // Underbet no debería subir FoldBelow (penalty = 0)
         // FoldBelow=45, caller vs cbet +2=47. Con equity 48 → no fold
         // Si fuera Small (+1 → 48), quedaría justo; underbet (+0 → 47) → pasa
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Underbet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.MiddlePair,
-            heroIsAggressor: true);
+            heroIsAggressor: true));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"),
             "Underbet penalty=0 → no sube FoldBelow");
@@ -2424,13 +2434,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             previousStreetBet: true,
             heroIsAggressor: true,
-            boardChange: brickChange);
+            boardChange: brickChange));
 
         Assert.That(result.Action, Does.Contain("Barrel"),
             "Brick → debería barrelear");
@@ -2460,13 +2470,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             previousStreetBet: true,
             heroIsAggressor: true,
-            boardChange: overcardChange);
+            boardChange: overcardChange));
 
         Assert.That(result.Action, Does.Not.Contain("Barrel"),
             "Overcard → bad runout, no barrelear");
@@ -2496,13 +2506,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             previousStreetBet: true,
             heroIsAggressor: true,
-            boardChange: flushChange);
+            boardChange: flushChange));
 
         Assert.That(result.Action, Does.Not.Contain("Barrel"),
             "Flush completado → bad runout, no barrelear");
@@ -2517,12 +2527,12 @@ public class PostflopDecisionServiceTests
     {
         var flushDone = new BoardChangeResult(true, false, false, false, false, 1, 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            boardChange: flushDone);
+            boardChange: flushDone));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "River con flush completado y hero sin flush → check, no thin value");
@@ -2535,14 +2545,14 @@ public class PostflopDecisionServiceTests
 
         // Hero tiene flush → heroHasCompletedDraw = true → no aplica cap ni thin value block
         // heroBlocksDangerSuit = true → reduce danger penalty
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 55, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.Flush,
             boardChange: flushDone,
             hasFlushDraw: true,
-            heroBlocksDangerSuit: true);
+            heroBlocksDangerSuit: true));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "River con flush completado y hero tiene flush → bet value");
@@ -2554,12 +2564,12 @@ public class PostflopDecisionServiceTests
         // La restricción solo aplica en river
         var flushDone = new BoardChangeResult(true, false, false, false, false, 1, 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            boardChange: flushDone);
+            boardChange: flushDone));
 
         Assert.That(result.Reason, Does.Not.Contain("draw completado"),
             "Turn → thin value no bloqueado por draw completado");
@@ -2573,12 +2583,12 @@ public class PostflopDecisionServiceTests
     public void FloatExit_TurnVillainCheck_DeberiaBet()
     {
         // Equity >= FoldBelow (45) para que llegue a HandleNoBet
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 46, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            heroFloatedFlop: true);
+            heroFloatedFlop: true));
 
         Assert.That(result.Action, Does.Contain("Float Exit"),
             "Hero floateó flop, villain check en turn → bet float exit");
@@ -2587,12 +2597,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void FloatExit_SinFloat_NoDeberiaBetEspecial()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 46, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            heroFloatedFlop: false);
+            heroFloatedFlop: false));
 
         Assert.That(result.Action, Does.Not.Contain("Float Exit"),
             "Sin float previo → no float exit");
@@ -2601,13 +2611,13 @@ public class PostflopDecisionServiceTests
     [Test]
     public void FloatExit_Multiway_NoDeberiaFloatExit()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 46, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
             heroFloatedFlop: true,
-            numOpponents: 3);
+            numOpponents: 3));
 
         Assert.That(result.Action, Does.Not.Contain("Float Exit"),
             "Float exit multiway → demasiado arriesgado");
@@ -2616,12 +2626,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void FloatExit_FacingBet_NoDeberiaFloatExit()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 46, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.HighCard,
-            heroFloatedFlop: true);
+            heroFloatedFlop: true));
 
         Assert.That(result.Action, Does.Not.Contain("Float Exit"),
             "Villain apuesta en turn → no float exit (facing bet)");
@@ -2635,12 +2645,12 @@ public class PostflopDecisionServiceTests
     public void PotCommitted_EVPositivo_DeberiaCall()
     {
         // SPR 0.3, equity 30%, pot 100 → EV(call) = 0.30×130 - 0.70×30 = 18 > 0
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             heroStack: 30, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Is.EqualTo("Call"),
             "Pot committed con EV positivo → call");
@@ -2651,12 +2661,12 @@ public class PostflopDecisionServiceTests
     public void PotCommitted_EVNegativo_DeberiaFold()
     {
         // SPR 0.3, equity 10%, pot 100 → EV(call) = 0.10×130 - 0.90×30 = -14 < 0
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 10, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             heroStack: 30, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Action, Does.Not.Contain("pot committed").IgnoreCase,
             "Pot committed con EV negativo → fold");
@@ -2666,12 +2676,12 @@ public class PostflopDecisionServiceTests
     public void PotCommitted_SPRNormal_NoAplica()
     {
         // SPR 2.0 → no pot committed
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             heroStack: 200, potSize: 100,
-            heroHandRank: HandRank.HighCard);
+            heroHandRank: HandRank.HighCard));
 
         Assert.That(result.Reason, Does.Not.Contain("pot committed"),
             "SPR normal → pot commitment no aplica");
@@ -2688,12 +2698,12 @@ public class PostflopDecisionServiceTests
     {
         // villainFoldToBetPct 70% → adjustedFoldBelow -5
         // Equity 42 < FoldBelow(45) sin ajuste → fold. Con -5 → FoldBelow=40 → no fold.
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            villainFoldToBetPct: 70);
+            villainFoldToBetPct: 70));
 
         Assert.That(result.Action, Does.Not.Contain("Fold"),
             "Villain foldea 70% → FoldBelow baja, no debería foldear");
@@ -2704,12 +2714,12 @@ public class PostflopDecisionServiceTests
     {
         // villainFoldToBetPct 25% → adjustedFoldBelow +4
         // NOTA: Con RangePolarizer, IP+Dry = -4, el ajuste puede compensarse
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            villainFoldToBetPct: 25);
+            villainFoldToBetPct: 25));
 
         // La acción debería ser válida (el ajuste de RangePolarizer puede cambiar el resultado)
         Assert.That(result.Action, Is.Not.Empty);
@@ -2719,14 +2729,14 @@ public class PostflopDecisionServiceTests
     public void FoldEquityStats_NoDisponible_UsaFallback()
     {
         // villainFoldToBetPct -1 + villainType LAG facing bet → fallback -5
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
             villainType: OpponentType.LAG,
-            villainFoldToBetPct: -1);
+            villainFoldToBetPct: -1));
 
         // Con LAG facing bet → FoldBelow -5, equity 42 debería pasar
         Assert.That(result.Action, Does.Not.Contain("Fold"),
@@ -2801,13 +2811,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 9,
             hasFlushDraw: true,
-            foldEquity: 40);
+            foldEquity: 40));
 
         Assert.That(result.Action, Does.Contain("Semi-Bluff"),
             "9 outs + fold equity 40% → semi-bluff +EV");
@@ -2840,13 +2850,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 8,
             hasFlushDraw: false,
-            foldEquity: 0);
+            foldEquity: 0));
 
         Assert.That(result.Action, Does.Not.Contain("Semi-Bluff"),
             "8 outs turn + fold equity 0% + bet 3/4 → no semi-bluff");
@@ -2877,13 +2887,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 15,
             hasComboDraw: true,
-            foldEquity: 5);
+            foldEquity: 5));
 
         Assert.That(result.Action, Does.Contain("Semi-Bluff"),
             "15 outs combo draw → siempre semi-bluff (draw equity compensa)");
@@ -2916,14 +2926,14 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 45, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
             hasFlushDraw: true,
             totalOuts: 9,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.True,
             "Flush draw flop OOP con equity 45% → check-raise semi-bluff");
@@ -2952,14 +2962,14 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 45, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
             hasFlushDraw: true,
             totalOuts: 9,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "Check-raise draw solo en flop, no turn");
@@ -2987,14 +2997,14 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 45, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
             hasFlushDraw: true,
             totalOuts: 9,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "Check-raise draw requiere OOP, no IP");
@@ -3023,14 +3033,14 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
             hasFlushDraw: true,
             totalOuts: 9,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "Equity 42% < CheckRaiseDrawMinEquity 45% → no check-raise draw");
@@ -3059,12 +3069,12 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.True,
             "TwoPair+ sigue haciendo check-raise normalmente");
@@ -3084,14 +3094,14 @@ public class PostflopDecisionServiceTests
         // Equity 30 >= 28.7 → call
         var brickChange = new BoardChangeResult(false, false, false, false, false, -1, 0);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.MiddlePair,
             boardChange: brickChange,
-            villainType: OpponentType.Unknown);
+            villainType: OpponentType.Unknown));
 
         Assert.That(result.Action, Is.EqualTo("Call"),
             "Brick river → bluff catch más amplio");
@@ -3103,14 +3113,14 @@ public class PostflopDecisionServiceTests
         // River completa flush → villain puede tenerlo → bluff catch más estrecho
         var flushChange = new BoardChangeResult(true, false, false, false, false, 1, 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 25, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.MiddlePair,
             boardChange: flushChange,
-            villainType: OpponentType.Unknown);
+            villainType: OpponentType.Unknown));
 
         // Con scare card multiplier ×1.15, threshold sube → menos probable call
         Assert.That(result.Reason, Does.Not.Contain("bluff catch"),
@@ -3191,12 +3201,12 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.True,
             "IP TwoPair Dry → check-raise IP trap");
@@ -3225,12 +3235,12 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 55, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "IP OnePair → no check-raise (requiere TwoPair+)");
@@ -3259,12 +3269,12 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "IP TwoPair Wet → no check-raise (board peligroso)");
@@ -3292,13 +3302,13 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
             heroIsAggressor: false,
-            numOpponents: 3);
+            numOpponents: 3));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "IP multiway → no check-raise");
@@ -3314,13 +3324,13 @@ public class PostflopDecisionServiceTests
     public void ThinValue_TPTK_DeberiaBet()
     {
         // OnePair con Strong kicker → bet thin value con sizing mayor
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroKickerStrength: KickerStrength.Strong);
+            heroKickerStrength: KickerStrength.Strong));
 
         Assert.That(result.Action, Does.Contain("Thin Value"),
             "TPTK → bet thin value");
@@ -3333,13 +3343,13 @@ public class PostflopDecisionServiceTests
     {
         // OnePair con Weak kicker OOP → check (showdown value, no inflar pot)
         // Equity fuera del margen de randomización (45 + 3 = 48) → usar 52
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroKickerStrength: KickerStrength.Weak);
+            heroKickerStrength: KickerStrength.Weak));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "TPWK OOP → check, kicker débil");
@@ -3351,13 +3361,13 @@ public class PostflopDecisionServiceTests
     {
         // OnePair con Weak kicker pero IP → aún puede bet thin value
         // Equity 50: > ThinValueAbove(45) + RandomizationMargin(3) para evitar zona random
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroKickerStrength: KickerStrength.Weak);
+            heroKickerStrength: KickerStrength.Weak));
 
         Assert.That(result.Action, Does.Contain("Thin Value"),
             "TPWK IP → bet thin value (IP compensa kicker débil)");
@@ -3367,12 +3377,12 @@ public class PostflopDecisionServiceTests
     public void ThinValue_TwoPair_KickerNoAfecta()
     {
         // TwoPair+ → kicker irrelevante, siempre bet value
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
-            heroKickerStrength: KickerStrength.Weak);
+            heroKickerStrength: KickerStrength.Weak));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "TwoPair+ → kicker no afecta, siempre value bet");
@@ -3382,13 +3392,13 @@ public class PostflopDecisionServiceTests
     public void ThinValue_TPTK_SizingMayor()
     {
         // Strong kicker → sizing un nivel más alto que base ThinValueBetSize
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 52, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroKickerStrength: KickerStrength.Strong);
+            heroKickerStrength: KickerStrength.Strong));
 
         // ThinValueBetSize default "Bet 1/3" + IncreaseBetSize → "Bet 1/2"
         Assert.That(result.Action, Does.Contain("1/2"),
@@ -3405,12 +3415,12 @@ public class PostflopDecisionServiceTests
     public void River_OnePair_SizingMerged()
     {
         // River con OnePair equity > ValueAbove (55) → value bet con merged sizing
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 62, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.TopPair);
+            pairClassification: PairClassification.TopPair));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "River OnePair → value bet con sizing merged");
@@ -3422,11 +3432,11 @@ public class PostflopDecisionServiceTests
     public void River_ThreeOfAKind_SizingNormal()
     {
         // River con ThreeOfAKind → sizing normal/polarizado
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.ThreeOfAKind);
+            heroHandRank: HandRank.ThreeOfAKind));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "River ThreeOfAKind → value bet normal");
@@ -3443,13 +3453,13 @@ public class PostflopDecisionServiceTests
     {
         var flushCompleted = new BoardChangeResult(true, false, false, false, false, 1, 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             boardChange: flushCompleted,
-            turnCalledWithFlushDanger: true);
+            turnCalledWithFlushDanger: true));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "Flush completó en river tras call turn con peligro → check");
@@ -3461,13 +3471,13 @@ public class PostflopDecisionServiceTests
     {
         var brick = new BoardChangeResult(false, true, false, false, false, -1, 1);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             boardChange: brick,
-            turnCalledWithFlushDanger: true);
+            turnCalledWithFlushDanger: true));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "Brick river → bet value normal aunque turn tenía peligro");
@@ -3478,13 +3488,13 @@ public class PostflopDecisionServiceTests
     {
         var flushCompleted = new BoardChangeResult(true, false, false, false, false, 1, 4);
 
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             boardChange: flushCompleted,
-            turnCalledWithFlushDanger: false);
+            turnCalledWithFlushDanger: false));
 
         // Sin flag de turn danger → usa lógica normal (thin value check por draw completado)
         Assert.That(result.Action, Is.EqualTo("Check"),
@@ -3546,13 +3556,13 @@ public class PostflopDecisionServiceTests
     public void BluffCatch_ConBlockerTopCard_CallMasAmplio()
     {
         // River bluff catch con heroBlocksTopCard → threshold ×0.90
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 29, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroBlocksTopCard: true);
+            heroBlocksTopCard: true));
 
         Assert.That(result.Action, Is.EqualTo("Call"),
             "Hero bloquea top card → bluff catch más amplio");
@@ -3565,12 +3575,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void PotControl_TurnMarginalCoordinated_DeberiaCheck()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "Turn equity marginal Coordinated no agresor → pot control check");
@@ -3580,12 +3590,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void PotControl_TurnMarginalDry_DeberiaBet()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.Action, Does.Not.Contain("pot control"),
             "Turn Dry → no pot control, bet normal");
@@ -3594,12 +3604,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void PotControl_TurnHighEquity_DeberiaBet()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 62, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            heroIsAggressor: false);
+            heroIsAggressor: false));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "Turn equity alta Coordinated → bet value, no pot control");
@@ -3612,12 +3622,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void TurnVulnerable_OnePairWet_SizingMenor()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.TopPair);
+            pairClassification: PairClassification.TopPair));
 
         Assert.That(result.Reason, Does.Contain("sizing protectivo"),
             "Turn OnePair Wet → sizing protectivo");
@@ -3626,11 +3636,11 @@ public class PostflopDecisionServiceTests
     [Test]
     public void TurnVulnerable_TwoPairWet_SizingNormal()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.TwoPair);
+            heroHandRank: HandRank.TwoPair));
 
         Assert.That(result.Reason, Does.Not.Contain("sizing protectivo"),
             "Turn TwoPair Wet → sizing normal");
@@ -3643,13 +3653,13 @@ public class PostflopDecisionServiceTests
     [Test]
     public void RiverDelayedValue_CheckCheck_TopPair_DeberiaBet()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroCheckedAllStreets: true);
+            heroCheckedAllStreets: true));
 
         Assert.That(result.Action, Does.Contain("Value"),
             "River tras check-check con TopPair → delayed value bet");
@@ -3659,13 +3669,13 @@ public class PostflopDecisionServiceTests
     [Test]
     public void RiverDelayedValue_PreviousBet_LogicaNormal()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
             pairClassification: PairClassification.TopPair,
-            heroCheckedAllStreets: false);
+            heroCheckedAllStreets: false));
 
         Assert.That(result.Reason, Does.Not.Contain("delayed value"),
             "Hero apostó previamente → lógica normal");
@@ -3674,12 +3684,12 @@ public class PostflopDecisionServiceTests
     [Test]
     public void RiverDelayedValue_HighCard_NoDeberiaBet()
     {
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.HighCard,
-            heroCheckedAllStreets: true);
+            heroCheckedAllStreets: true));
 
         Assert.That(result.Reason, Does.Not.Contain("delayed value"),
             "HighCard → no delayed value");
@@ -3696,13 +3706,13 @@ public class PostflopDecisionServiceTests
     {
         // Villain apostó flop + turn (2 calles) → rango estrecho → FoldBelow sube
         // Con equity marginal facing bet → debería fold más que sin narrowing
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Medium,
             heroHandRank: HandRank.OnePair,
             villainBetSizeFlop: BetSizeCategory.Small,
-            villainBetSizeTurn: BetSizeCategory.Medium);
+            villainBetSizeTurn: BetSizeCategory.Medium));
 
         // FoldBelow base 45 + facing bet + range narrowing (+3) → ~52+
         // Equity 50 puede ser insuficiente con narrowing
@@ -3737,11 +3747,11 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.River, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.Flush);
+            heroHandRank: HandRank.Flush));
 
         Assert.That(result.Action, Does.Contain("Pot").Or.Contain("Overbet"),
             "River Flush Coordinated → overbet (no solo en Dry)");
@@ -3770,12 +3780,12 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 85, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair,
-            heroIsAggressor: true);
+            heroIsAggressor: true));
 
         Assert.That(result.Action, Does.Not.Contain("Pot"),
             "Flop Coordinated → no overbet (solo Dry en flop/turn)");
@@ -3868,11 +3878,11 @@ public class PostflopDecisionServiceTests
         var profile = CreateDefaultProfile();
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "Default 0.5: OOP 3-way penalty sube FoldBelow a 57 → Check");
@@ -3895,17 +3905,17 @@ public class PostflopDecisionServiceTests
         // equity 60, 4 oponentes (3 extra)
         // Damping 0: OOP penalty = 3²×6×0 = 0, adjustedFB = 45
         // Damping 1: OOP penalty = 3²×6×1×1.2 = 64.8, adjustedFB = 109.8
-        var resultZero = serviceZero.DetermineAction(
+        var resultZero = serviceZero.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 4);
+            numOpponents: 4));
 
-        var resultMax = serviceMax.DetermineAction(
+        var resultMax = serviceMax.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 4);
+            numOpponents: 4));
 
         // Con penalty 0, equity 60 > FoldBelow 45 → alguna acción de valor
         // Con penalty máximo, equity 60 < FoldBelow 109 → Check/Fold
@@ -3922,11 +3932,11 @@ public class PostflopDecisionServiceTests
         profile.MultiwayOOPQuadraticDamping = 0.7;
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 60, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         Assert.That(result.Action, Is.EqualTo("Check"),
             "Damping 0.7: penalty mayor fuerza Check incluso con equity 60");
@@ -3940,11 +3950,11 @@ public class PostflopDecisionServiceTests
         profile.MultiwayOOPQuadraticDamping = 0.1; // valor extremo
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 53, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
-            numOpponents: 3);
+            numOpponents: 3));
 
         // IP: 2 extra × 2.0 = 4, adjustedFB = 45+4 = 49. 53 > 49 → value
         Assert.That(result.Action, Does.Not.EqualTo("Check"),
@@ -3960,10 +3970,10 @@ public class PostflopDecisionServiceTests
     {
         // En Dry board, combo draw bonus = 6.0 × 1.2 = 7.2
         // equity 40 + 7.2 = 47.2 > FoldBelow 45 → sale de low equity
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14, hasComboDraw: true);
+            totalOuts: 14, hasComboDraw: true));
 
         Assert.That(result.IsBluff, Is.False,
             "Dry board: bonus 7.2 saca de low equity (40+7.2=47.2 > 45)");
@@ -3980,15 +3990,15 @@ public class PostflopDecisionServiceTests
         // equity 40, FoldBelow 45
         // Dry: 40 + 7.2 = 47.2 → sobre umbral
         // Monotone: 40 + 3.0 = 43.0 → bajo umbral
-        var resultDry = service.DetermineAction(
+        var resultDry = service.DetermineAction(MakeInput(
             equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14, hasComboDraw: true);
+            totalOuts: 14, hasComboDraw: true));
 
-        var resultMonotone = service.DetermineAction(
+        var resultMonotone = service.DetermineAction(MakeInput(
             equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Monotone", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 14, hasComboDraw: true);
+            totalOuts: 14, hasComboDraw: true));
 
         // Dry debería tener acción más agresiva que Monotone
         Assert.That(resultDry.Action, Is.Not.EqualTo(resultMonotone.Action),
@@ -3999,15 +4009,15 @@ public class PostflopDecisionServiceTests
     public void ComboDraw_SinComboDraw_TexturaNoAfecta()
     {
         // hasComboDraw = false → sin bonus, textura no importa
-        var resultDry = _service.DetermineAction(
+        var resultDry = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 0, hasComboDraw: false);
+            totalOuts: 0, hasComboDraw: false));
 
-        var resultWet = _service.DetermineAction(
+        var resultWet = _service.DetermineAction(MakeInput(
             equity: 42, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
-            totalOuts: 0, hasComboDraw: false);
+            totalOuts: 0, hasComboDraw: false));
 
         // Sin combo draw, ambos deberían estar en low equity (42 < 45)
         Assert.That(resultDry.Action, Is.EqualTo(resultWet.Action),
@@ -4592,11 +4602,11 @@ public class PostflopDecisionServiceTests
         int crCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 65, BoardPosition.Flop, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: false,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+                heroHandRank: HandRank.TwoPair, heroIsAggressor: false));
             if (result.IsCheckRaise) crCount++;
         }
         // CRMixFreqOOPStrong = 0.40 → ~80 de 200
@@ -4628,12 +4638,12 @@ public class PostflopDecisionServiceTests
         int crCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 45, BoardPosition.Flop, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: false,
                 villainBetSize: BetSizeCategory.NoBet,
                 heroHandRank: HandRank.HighCard, hasFlushDraw: true,
-                totalOuts: 9, heroIsAggressor: false);
+                totalOuts: 9, heroIsAggressor: false));
             if (result.IsCheckRaise) crCount++;
         }
         // CRMixFreqOOPDraw = 0.30 → ~60 de 200
@@ -4665,11 +4675,11 @@ public class PostflopDecisionServiceTests
         int crCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 70, BoardPosition.Flop, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+                heroHandRank: HandRank.TwoPair, heroIsAggressor: false));
             if (result.IsCheckRaise) crCount++;
         }
         // CRMixFreqIPTrap = 0.20 → ~40 de 200
@@ -4698,11 +4708,11 @@ public class PostflopDecisionServiceTests
         };
         var service = CreateService(profile);
 
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 65, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
-            heroHandRank: HandRank.TwoPair, heroIsAggressor: false);
+            heroHandRank: HandRank.TwoPair, heroIsAggressor: false));
 
         Assert.That(result.IsCheckRaise, Is.True,
             "Mixing disabled → 100% check-raise");
@@ -4732,12 +4742,12 @@ public class PostflopDecisionServiceTests
         var service = CreateService(profile);
 
         // SPR 1.0 < 1.5, equity 50 < 60 → SPR guard bloquea CR
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 50, BoardPosition.Flop, HandSituation.OpenRaise,
             boardTexture: "Coordinated", isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.TwoPair, heroIsAggressor: false,
-            heroStack: 10m, potSize: 10m);
+            heroStack: 10m, potSize: 10m));
 
         Assert.That(result.IsCheckRaise, Is.False,
             "SPR guard prevalece sobre mixing");
@@ -4767,13 +4777,13 @@ public class PostflopDecisionServiceTests
         int crCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 50, BoardPosition.Flop, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: false,
                 villainBetSize: BetSizeCategory.NoBet,
                 heroHandRank: HandRank.OnePair, hasFlushDraw: true,
                 totalOuts: 9, heroIsAggressor: false,
-                pairClassification: PairClassification.TopPair);
+                pairClassification: PairClassification.TopPair));
             if (result.IsCheckRaise) crCount++;
         }
         // CRMixFreqOOPTopPairDraw = 0.35 → ~70 de 200
@@ -4795,11 +4805,11 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(FlushCompleted: true, FlushDrawAppeared: false, StraightCompleted: false, BoardPaired: false, OvercardAppeared: false, CompletedFlushSuit: 0, DangerLevel: 3);
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Wet", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // 45% × 0.30 = 13.5%
@@ -4817,11 +4827,11 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(false, false, false, BoardPaired: true, false, -1, 1);
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Paired", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // 45% × 0.60 = 27%
@@ -4839,11 +4849,11 @@ public class PostflopDecisionServiceTests
         var boardChange = BoardChangeResult.Safe; // Brick: sin cambios significativos
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // 45% × 1.10 = 49.5%
@@ -4861,11 +4871,11 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(false, FlushDrawAppeared: true, false, BoardPaired: true, false, -1, 2);
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Paired", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // 45% × 0.60 × 0.50 = 13.5%
@@ -4895,11 +4905,11 @@ public class PostflopDecisionServiceTests
         var boardChange = BoardChangeResult.Safe;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Flop, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // Flop: no texture multiplier → 65% base
@@ -4917,11 +4927,11 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(false, false, StraightCompleted: true, false, false, -1, 2);
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, boardChange: boardChange);
+                heroIsAggressor: true, boardChange: boardChange));
             if (result.Action.Contains("C-Bet")) cbetCount++;
         }
         // 45% × 0.40 = 18%
@@ -5602,18 +5612,18 @@ public class PostflopDecisionServiceTests
         int cbetNormal = 0, cbetBroadway = 0;
         for (int i = 0; i < 200; i++)
         {
-            var rn = service.DetermineAction(
+            var rn = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true);
+                heroIsAggressor: true));
             if (rn.Action.Contains("C-Bet")) cbetNormal++;
 
-            var rb = service.DetermineAction(
+            var rb = service.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                heroIsAggressor: true, isBroadwayWet: true);
+                heroIsAggressor: true, isBroadwayWet: true));
             if (rb.Action.Contains("C-Bet")) cbetBroadway++;
         }
         Assert.That(cbetBroadway, Is.LessThanOrEqualTo(cbetNormal),
@@ -5636,11 +5646,11 @@ public class PostflopDecisionServiceTests
         int checkCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 49, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                villainType: OpponentType.LAG);
+                villainType: OpponentType.LAG));
             if (result.Action == "Check") checkCount++;
         }
         // Con LAG (margin=5, bet freq=85%), hay ~15% checks
@@ -5658,11 +5668,11 @@ public class PostflopDecisionServiceTests
         int checkCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 48, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                villainType: OpponentType.TP);
+                villainType: OpponentType.TP));
             if (result.Reason != null && result.Reason.Contains("randomización")) checkCount++;
         }
         // TP margin=2: equity 48 > 45+2=47 → fuera de randomización → no checks por randomización
@@ -5690,13 +5700,13 @@ public class PostflopDecisionServiceTests
     {
         // Con EffectiveOuts < TotalOuts, la equidad del draw baja → bluff EV más ajustado
         // Escenario: flush draw con 2 tainted (9 total, ~7.6 effective)
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 9, hasFlushDraw: true,
             effectiveOuts: 7.6,
-            foldEquity: 45);
+            foldEquity: 45));
 
         // Con effective outs menores, el bluff EV es más restrictivo
         Assert.That(result.Action, Is.Not.Empty);
@@ -5706,21 +5716,21 @@ public class PostflopDecisionServiceTests
     public void S22_1_SemiBluff_SinTaintedOuts_ComportamientoIdentico()
     {
         // Sin tainted outs: effectiveOuts == totalOuts → resultado igual
-        var resultSinTainted = _service.DetermineAction(
+        var resultSinTainted = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 8, hasFlushDraw: false,
             effectiveOuts: 8.0,
-            foldEquity: 45);
+            foldEquity: 45));
 
-        var resultConTainted = _service.DetermineAction(
+        var resultConTainted = _service.DetermineAction(MakeInput(
             equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 8, hasFlushDraw: false,
             effectiveOuts: 8.0,
-            foldEquity: 45);
+            foldEquity: 45));
 
         Assert.That(resultSinTainted.Action, Is.EqualTo(resultConTainted.Action));
     }
@@ -5729,22 +5739,22 @@ public class PostflopDecisionServiceTests
     public void S22_1_DrawCall_UsaEffectiveOuts_ParaImpliedOdds()
     {
         // Con EffectiveOuts altos (flush draw limpio), call es más atractivo
-        var resultAlto = _service.DetermineAction(
+        var resultAlto = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             potOdds: 25, totalOuts: 9, hasFlushDraw: true,
             effectiveOuts: 9.0,  // sin tainted
-            heroStack: 200, potSize: 50);
+            heroStack: 200, potSize: 50));
 
         // Con EffectiveOuts bajos (draw con tainted), call menos atractivo
-        var resultBajo = _service.DetermineAction(
+        var resultBajo = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             potOdds: 25, totalOuts: 9, hasFlushDraw: true,
             effectiveOuts: 6.5,  // con tainted
-            heroStack: 200, potSize: 50);
+            heroStack: 200, potSize: 50));
 
         // Ambos producen respuesta válida
         Assert.That(resultAlto.Action, Is.Not.Empty);
@@ -6314,11 +6324,11 @@ public class PostflopDecisionServiceTests
         int bluffCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 55);
+                foldEquity: 55));
             if (result.Reason != null &&
                 (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
                 bluffCount++;
@@ -6338,11 +6348,11 @@ public class PostflopDecisionServiceTests
         int bluffCount = 0;
         for (int i = 0; i < 500; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 65);
+                foldEquity: 65));
             if (result.Reason != null &&
                 (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
                 bluffCount++;
@@ -6364,11 +6374,11 @@ public class PostflopDecisionServiceTests
         int bluffCount = 0;
         for (int i = 0; i < 20; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 44, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 80, totalOuts: 0);
+                foldEquity: 80, totalOuts: 0));
             if (result.IsBluff) bluffCount++;
         }
 
@@ -6396,11 +6406,11 @@ public class PostflopDecisionServiceTests
         int bluffCount = 0;
         for (int i = 0; i < 200; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 1, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 75, totalOuts: 0);
+                foldEquity: 75, totalOuts: 0));
             if (result.IsBluff) bluffCount++;
         }
 
@@ -6419,11 +6429,11 @@ public class PostflopDecisionServiceTests
         int bluffCount = 0;
         for (int i = 0; i < 300; i++)
         {
-            var result = service.DetermineAction(
+            var result = service.DetermineAction(MakeInput(
                 equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 70, totalOuts: 0);
+                foldEquity: 70, totalOuts: 0));
             if (result.Action == "Bluff") bluffCount++;
         }
 
@@ -6438,12 +6448,12 @@ public class PostflopDecisionServiceTests
     public void S22_7_SPR_MenosDeMedioCall_EquityPositiva()
     {
         // SPR < 0.5 (existente): EV(call) > 0 → Call
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             potOdds: 42, totalOuts: 0,
-            heroStack: 8, potSize: 20);
+            heroStack: 8, potSize: 20));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
@@ -6452,12 +6462,12 @@ public class PostflopDecisionServiceTests
     public void S22_7_SPR_Entre05y10_EquidadSobre30_Call()
     {
         // SPR 0.5-1.0: equity > 30% → Call por pot commitment expandido
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 33, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             potOdds: 40, totalOuts: 0,
-            heroStack: 15, potSize: 20);
+            heroStack: 15, potSize: 20));
 
         // SPR ≈ 0.75 + equity 33% > 30% → Call
         Assert.That(result.Action, Is.EqualTo("Call"));
@@ -6467,12 +6477,12 @@ public class PostflopDecisionServiceTests
     public void S22_7_SPR_Entre10y15_EquidadSobre38_Call()
     {
         // SPR 1.0-1.5: equity > 38% → Call por pot commitment expandido
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             potOdds: 40, totalOuts: 0,
-            heroStack: 25, potSize: 20);
+            heroStack: 25, potSize: 20));
 
         // SPR ≈ 1.25 + equity 40% > 38% → Call
         Assert.That(result.Action, Is.EqualTo("Call"));
@@ -6482,12 +6492,12 @@ public class PostflopDecisionServiceTests
     public void S22_7_SPR_Entre10y15_EquidadBajo38_NoCall()
     {
         // SPR 1.0-1.5: equity < 38% → no activa pot commitment
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             potOdds: 40, totalOuts: 0,
-            heroStack: 25, potSize: 20);
+            heroStack: 25, potSize: 20));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
     }
@@ -6505,12 +6515,12 @@ public class PostflopDecisionServiceTests
         // SPR = 3 (heroStack=60, potSize=20): equity 39% con potOdds 38%
         // Pot commitment expandido (SPR 1.0-1.5) requería equity > 38% → pero SPR=3, no aplica
         // Por lo tanto, si equity < potOdds → fold normal
-        var result = _service.DetermineAction(
+        var result = _service.DetermineAction(MakeInput(
             equity: 10, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Dry", isInPosition: true,
             villainBetSize: BetSizeCategory.Large,
             potOdds: 45, totalOuts: 0,
-            heroStack: 60, potSize: 20);  // SPR=3
+            heroStack: 60, potSize: 20));  // SPR=3
 
         // Con equity muy baja y potOdds altas → Fold
         Assert.That(result.Action, Is.EqualTo("Fold"));

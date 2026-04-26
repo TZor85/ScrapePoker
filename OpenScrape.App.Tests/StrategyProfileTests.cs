@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 
 using OpenScrape.App.Services;
+using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -11,6 +12,7 @@ namespace OpenScrape.App.Tests;
 public class StrategyProfileTests
 {
     private StrategyProfileService _service;
+    private ThresholdsRegistry _registry;
     private StrategyProfile _profile;
 
     [SetUp]
@@ -71,12 +73,16 @@ public class StrategyProfileTests
         };
 
         _service = new StrategyProfileService(Options.Create(_profile));
+        _registry = new ThresholdsRegistry(Options.Create(_profile));
     }
+
+    private StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
+        => _registry.Get(new ThresholdKey(street, situation));
 
     [Test]
     public void GetThresholds_ExistingKey_DeberiaRetornarConfigCorrecta()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.FoldBelow, Is.EqualTo(45));
         Assert.That(thresholds.StrongValueAbove, Is.EqualTo(80));
@@ -85,18 +91,18 @@ public class StrategyProfileTests
     }
 
     [Test]
-    public void GetThresholds_KeyInexistente_DeberiaRetornarFallback()
+    public void GetThresholds_KeyInexistente_DeberiaLanzarKeyNotFoundException()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Flop, HandSituation.FourBet);
-
-        Assert.That(thresholds.FoldBelow, Is.EqualTo(40));
-        Assert.That(thresholds.StrongValueAbove, Is.EqualTo(75));
+        // El perfil de test sólo define Turn_OpenRaise, River_OpenRaiseVs3BetAndCall
+        // y Turn_RaiseOverLimper. Flop_FourBet no está → el registry debe lanzar.
+        Assert.Throws<KeyNotFoundException>(() =>
+            GetThresholds(BoardPosition.Flop, HandSituation.FourBet));
     }
 
     [Test]
     public void GetThresholds_BoardTextureSizing_DeberiaSerCorrecta()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.DryBoardBetSize, Is.EqualTo("Bet 1/2"));
         Assert.That(thresholds.CoordinatedBoardBetSize, Is.EqualTo("Bet 1/2"));
@@ -106,7 +112,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_BluffConfig_DeberiaSerCorrecta()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.CanBluff, Is.True);
         Assert.That(thresholds.BluffCondition, Is.EqualTo(BluffConditionType.IPCoordinatedSmallOnly));
@@ -115,7 +121,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_LowEquityAction_FoldPorDefecto()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Fold"));
     }
@@ -123,7 +129,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_LowEquityAction_CallParaVs3BetAndCall()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.River, HandSituation.OpenRaiseVs3BetAndCall);
+        var thresholds = GetThresholds(BoardPosition.River, HandSituation.OpenRaiseVs3BetAndCall);
 
         Assert.That(thresholds.LowEquityAction, Is.EqualTo("Call"));
     }
@@ -131,7 +137,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_Simplified_RaiseOverLimper()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.RaiseOverLimper);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.RaiseOverLimper);
 
         Assert.That(thresholds.IsSimplified, Is.True);
         Assert.That(thresholds.SimplifiedIPStrongBet, Is.EqualTo("Bet 1/2 (Value)"));
@@ -165,7 +171,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_ThinValueIPOnly_DeberiaRespetarConfig()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
+        var thresholds = GetThresholds(BoardPosition.Turn, HandSituation.OpenRaise);
 
         Assert.That(thresholds.ThinValueIPOnly, Is.True);
         Assert.That(thresholds.ThinValueOOPFallback, Is.EqualTo("CheckFold"));
@@ -174,7 +180,7 @@ public class StrategyProfileTests
     [Test]
     public void GetThresholds_ThinValueOOPFallback_CheckCallParaVs3BetAndCall()
     {
-        var thresholds = _service.GetThresholds(BoardPosition.River, HandSituation.OpenRaiseVs3BetAndCall);
+        var thresholds = GetThresholds(BoardPosition.River, HandSituation.OpenRaiseVs3BetAndCall);
 
         Assert.That(thresholds.ThinValueOOPFallback, Is.EqualTo("CheckCall"));
     }

@@ -24,38 +24,22 @@ public class PostflopDecisionService : IPostflopDecisionService
     private readonly StrategyProfile _profile;
     private readonly BetSizingService _betSizingService;
     private readonly RangePolarizer _rangePolarizer;
+    private readonly IThresholdsRegistry _thresholdsRegistry;
 
-    public PostflopDecisionService(IOptions<StrategyProfile> profileOptions, BetSizingService betSizingService, RangePolarizer rangePolarizer)
+    public PostflopDecisionService(
+        IOptions<StrategyProfile> profileOptions,
+        BetSizingService betSizingService,
+        RangePolarizer rangePolarizer,
+        IThresholdsRegistry thresholdsRegistry)
     {
         _profile = profileOptions.Value;
         _betSizingService = betSizingService;
         _rangePolarizer = rangePolarizer;
+        _thresholdsRegistry = thresholdsRegistry;
     }
 
-    /// <summary>
-    /// Obtiene los thresholds para una combinación de street y situación.
-    /// </summary>
-    public StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
-    {
-        var key = $"{street}_{situation}";
-        if (_profile.Thresholds.TryGetValue(key, out var thresholds))
-            return thresholds;
-
-        // Fallback: loguear warning para detectar configuración faltante
-        Console.WriteLine($"[WARNING] Threshold no encontrado: '{key}'. Usando fallback genérico.");
-
-        return new StreetThresholds
-        {
-            FoldBelow = 40,
-            ThinValueAbove = 45,
-            ValueAbove = 55,
-            StrongValueAbove = 75,
-            CanBluff = false,
-            LowEquityAction = "Fold",
-            ThinValueIPOnly = true,
-            ThinValueOOPFallback = "CheckFold"
-        };
-    }
+    private StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
+        => _thresholdsRegistry.Get(new ThresholdKey(street, situation));
 
     /// <summary>
     /// Calcula la penalización de equity por carta peligrosa en el board.
@@ -78,84 +62,57 @@ public class PostflopDecisionService : IPostflopDecisionService
             street, isInPosition, hasFlushDraw, heroStack, potSize, _profile, numOpponents);
 
     /// <summary>
-    /// Determina la acción postflop a partir de un objeto de contexto inmutable.
+    /// Determina la acción postflop a partir de un objeto de contexto inmutable
+    /// que encapsula todo el estado necesario (equity, street, situation, stacks,
+    /// flags cross-street, perfil villano, etc.). Único punto de entrada soportado.
     /// </summary>
     public PostflopDecisionResult DetermineAction(PostflopDecisionInput input)
     {
-#pragma warning disable CS0618 // Suppress obsolete warning for internal delegation
-        return DetermineAction(
-            input.Equity, input.Street, input.Situation,
-            input.BoardTexture, input.IsInPosition, input.VillainBetSize,
-            input.PotOdds, input.TotalOuts,
-            input.PreviousStreetBet, input.VillainShowedAggression,
-            input.BoardChange, input.HeroBlocksDangerSuit,
-            input.HeroStack, input.PotSize,
-            input.HasFlushDraw, input.NumOpponents,
-            input.HeroIsAggressor, input.HeroHandRank,
-            input.HasComboDraw, input.VillainAggressorCheckedPreviousStreet,
-            input.VillainBarreling, input.VillainType,
-            input.PairClassification, input.FoldEquity,
-            input.VillainBetSizeFlop, input.VillainBetSizeTurn,
-            input.VillainCheckedMiddleStreet, input.HeroHasNutBlocker,
-            input.HeroFloatedFlop, input.VillainFoldToBetPct,
-            input.HeroKickerStrength, input.TurnCalledWithFlushDanger,
-            input.HeroBlocksTopCard, input.HeroCheckedAllStreets,
-            input.IsAnyoneAllIn, input.IsDonkBet,
-            input.VillainProfile, input.HeroPosition,
-            input.VillainPosition, input.IsBroadwayWet,
-            effectiveOuts: input.EffectiveOuts > 0 ? input.EffectiveOuts : input.TotalOuts,
-            riverCardType: input.RiverCardType);
-#pragma warning restore CS0618
-    }
+        // Locales para preservar el cuerpo legacy sin reescribir referencias.
+        var equity = input.Equity;
+        var street = input.Street;
+        var situation = input.Situation;
+        var boardTexture = input.BoardTexture;
+        var isInPosition = input.IsInPosition;
+        var villainBetSize = input.VillainBetSize;
+        var potOdds = input.PotOdds;
+        var totalOuts = input.TotalOuts;
+        var previousStreetBet = input.PreviousStreetBet;
+        var villainShowedAggression = input.VillainShowedAggression;
+        var boardChange = input.BoardChange;
+        var heroBlocksDangerSuit = input.HeroBlocksDangerSuit;
+        var heroStack = input.HeroStack;
+        var potSize = input.PotSize;
+        var hasFlushDraw = input.HasFlushDraw;
+        var numOpponents = input.NumOpponents;
+        var heroIsAggressor = input.HeroIsAggressor;
+        var heroHandRank = input.HeroHandRank;
+        var hasComboDraw = input.HasComboDraw;
+        var villainAggressorCheckedPreviousStreet = input.VillainAggressorCheckedPreviousStreet;
+        var villainBarreling = input.VillainBarreling;
+        var villainType = input.VillainType;
+        var pairClassification = input.PairClassification;
+        var foldEquity = input.FoldEquity;
+        var villainBetSizeFlop = input.VillainBetSizeFlop;
+        var villainBetSizeTurn = input.VillainBetSizeTurn;
+        var villainCheckedMiddleStreet = input.VillainCheckedMiddleStreet;
+        var heroHasNutBlocker = input.HeroHasNutBlocker;
+        var heroFloatedFlop = input.HeroFloatedFlop;
+        var villainFoldToBetPct = input.VillainFoldToBetPct;
+        var heroKickerStrength = input.HeroKickerStrength;
+        var turnCalledWithFlushDanger = input.TurnCalledWithFlushDanger;
+        var heroBlocksTopCard = input.HeroBlocksTopCard;
+        var heroCheckedAllStreets = input.HeroCheckedAllStreets;
+        var isAnyoneAllIn = input.IsAnyoneAllIn;
+        var isDonkBet = input.IsDonkBet;
+        var villainProfile = input.VillainProfile;
+        var heroPosition = input.HeroPosition;
+        var villainPosition = input.VillainPosition;
+        var isBroadwayWet = input.IsBroadwayWet;
+        var riverCardType = input.RiverCardType;
+        // Fallback legacy preservado: si no se proporciona EffectiveOuts, usar TotalOuts.
+        var effectiveOuts = input.EffectiveOuts > 0 ? input.EffectiveOuts : input.TotalOuts;
 
-    /// <summary>
-    /// Determina la acción postflop con contexto completo: facing bet, pot odds, outs, posición, agresión, implied odds.
-    /// </summary>
-    [Obsolete("Usar DetermineAction(PostflopDecisionInput) en su lugar")]
-    public PostflopDecisionResult DetermineAction(
-        double equity,
-        BoardPosition street,
-        HandSituation situation,
-        string boardTexture,
-        bool isInPosition,
-        BetSizeCategory villainBetSize,
-        double potOdds = 0,
-        int totalOuts = 0,
-        bool previousStreetBet = false,
-        bool villainShowedAggression = false,
-        BoardChangeResult? boardChange = null,
-        bool heroBlocksDangerSuit = false,
-        decimal heroStack = 0,
-        decimal potSize = 0,
-        bool hasFlushDraw = false,
-        int numOpponents = 1,
-        bool heroIsAggressor = false,
-        HandRank heroHandRank = HandRank.HighCard,
-        bool hasComboDraw = false,
-        bool villainAggressorCheckedPreviousStreet = false,
-        bool villainBarreling = false,
-        OpponentType villainType = OpponentType.Unknown,
-        PairClassification pairClassification = PairClassification.None,
-        double foldEquity = 0,
-        BetSizeCategory villainBetSizeFlop = BetSizeCategory.NoBet,
-        BetSizeCategory villainBetSizeTurn = BetSizeCategory.NoBet,
-        bool villainCheckedMiddleStreet = false,
-        bool heroHasNutBlocker = false,
-        bool heroFloatedFlop = false,
-        double villainFoldToBetPct = -1,
-        KickerStrength heroKickerStrength = KickerStrength.None,
-        bool turnCalledWithFlushDanger = false,
-        bool heroBlocksTopCard = false,
-        bool heroCheckedAllStreets = false,
-        bool isAnyoneAllIn = false,
-        bool isDonkBet = false,
-        OpponentProfile? villainProfile = null,
-        TablePosition heroPosition = TablePosition.None,
-        TablePosition villainPosition = TablePosition.None,
-        bool isBroadwayWet = false,
-        double effectiveOuts = 0,
-        RiverCardType riverCardType = RiverCardType.Neutral)
-    {
         var thresholds = GetThresholds(street, situation);
         bool isFacingBet = villainBetSize != BetSizeCategory.NoBet;
         bool isMultiway = numOpponents >= 2;

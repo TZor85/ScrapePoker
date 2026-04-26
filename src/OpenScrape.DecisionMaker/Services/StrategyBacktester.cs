@@ -1,3 +1,4 @@
+using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -87,20 +88,22 @@ public class StrategyBacktester(IPostflopDecisionService decisionService) : Inte
     {
         try
         {
-            return decisionService.DetermineAction(
-                equity: original.EquityPercent,
-                street: original.Street,
-                situation: original.Situation,
-                boardTexture: original.BoardTexture ?? "Dry",
-                isInPosition: original.IsInPosition,
-                villainBetSize: original.BetSize > 0
+            return decisionService.DetermineAction(new PostflopDecisionInput
+            {
+                Equity = original.EquityPercent,
+                Street = original.Street,
+                Situation = original.Situation,
+                BoardTexture = original.BoardTexture ?? "Dry",
+                IsInPosition = original.IsInPosition,
+                VillainBetSize = original.BetSize > 0
                     ? CategorizeBet(original.BetSize, original.PotSizeAtDecision)
                     : BetSizeCategory.NoBet,
-                potOdds: original.PotOddsPercent,
-                totalOuts: original.TotalOuts,
-                heroStack: hand.HeroStackStart,
-                potSize: original.PotSizeAtDecision,
-                numOpponents: Math.Max(1, hand.NumOpponents));
+                PotOdds = original.PotOddsPercent,
+                TotalOuts = original.TotalOuts,
+                HeroStack = hand.HeroStackStart,
+                PotSize = original.PotSizeAtDecision,
+                NumOpponents = Math.Max(1, hand.NumOpponents),
+            });
         }
         catch
         {

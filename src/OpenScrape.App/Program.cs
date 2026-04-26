@@ -1,20 +1,25 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Marten;
 using OpenScrape.App.Aplication;
+using OpenScrape.App.Configuration;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Logging;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Exceptions;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App
 {
@@ -37,6 +42,10 @@ namespace OpenScrape.App
 
             var builder = Host.CreateDefaultBuilder()
                 .UseEnvironment(environment)
+                .ConfigureLogging((context, lb) =>
+                {
+                    lb.AddTextBoxLogger();
+                })
                 .ConfigureServices((context, services) =>
                 {
                     // Agregar configuraci�n de base de datos
@@ -52,6 +61,12 @@ namespace OpenScrape.App
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
+                    services.AddSingleton<ThresholdsRegistry>();
+                    services.AddSingleton<IThresholdsRegistry>(sp => sp.GetRequiredService<ThresholdsRegistry>());
+
+                    // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
+                    services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
+                    services.Configure<FeatureFlags>(context.Configuration.GetSection(FeatureFlags.SectionName));
 
                     // Algoritmos: registro por clase concreta + forwarding por interfaz (misma instancia)
                     services.AddSingleton<MonteCarloSimulator>();
@@ -100,9 +115,25 @@ namespace OpenScrape.App
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
 
+                    // Facade de decisión postflop (refactor-frmmain-coordinators Fase 2)
+                    services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
+
+                    // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
+                    services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
+
+                    // UI sync (refactor-frmmain-coordinators Fase 5)
+                    services.AddScoped<IUiSyncService, UiSyncService>();
+
+                    // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
+                    services.AddSingleton<IActionFormatter, ActionFormatter>();
+                    services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
+
                     // Fase 4: CoordinateScaler como servicio inyectable
                     services.AddSingleton<CoordinateScaler>();
                     services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
+
+                    // Telemetría de rendimiento (singleton: snapshot compartido entre scopes y UI)
+                    services.AddSingleton<IMetricsCollector, MetricsCollector>();
 
                     // Fase 3: Servicios antes creados con new
                     services.AddSingleton<OcrService>();
@@ -130,6 +161,10 @@ namespace OpenScrape.App
                     services.AddScoped<TableLayoutService>();
                     services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
 
+                    // Postflop context holder (scoped: una instancia por sesión de juego)
+                    services.AddScoped<PostflopContextHolder>();
+                    services.AddScoped<IPostflopContextHolder>(sp => sp.GetRequiredService<PostflopContextHolder>());
+
                     // Game coordinator
                     services.AddScoped<GameCoordinator>();
                     services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());
@@ -147,6 +182,20 @@ namespace OpenScrape.App
 
             Configuration = host.Services.GetRequiredService<IConfiguration>();
 
+            // Validación fail-fast del StrategyProfile: abortar antes de mostrar FrmMain
+            // si faltan claves, hay claves inválidas, o tiers incoherentes.
+            try
+            {
+                var profileOptions = host.Services.GetRequiredService<IOptions<StrategyProfile>>();
+                StrategyProfileValidator.Validate(profileOptions.Value);
+            }
+            catch (StrategyProfileValidationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error de configuración", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1);
+                return;
+            }
+
             // Inicializar CoordinateScaler desde configuración
             var captureSettings = Configuration.GetSection("CaptureSettings");
             if (captureSettings["IsReferenceSet"] == "true" &&
@@ -158,11 +207,19 @@ namespace OpenScrape.App
                 scaler.Initialize(refWidth, refHeight);
             }
 
-            // Obtener el formulario principal desde un scope para resolver dependencias scoped
-            using var scope = host.Services.CreateScope();
-            var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
-
-            Application.Run(form);
+            // Obtener el formulario principal desde un scope async para resolver dependencias scoped.
+            // CreateAsyncScope es necesario porque algunos servicios (p. ej. GameLoopCoordinator) sólo
+            // implementan IAsyncDisposable; usar un scope síncrono los rompería al cerrar la app.
+            var scope = host.Services.CreateAsyncScope();
+            try
+            {
+                var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
+                Application.Run(form);
+            }
+            finally
+            {
+                scope.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
         }
     }
 }

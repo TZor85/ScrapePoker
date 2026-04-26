@@ -3,6 +3,8 @@ using System.Drawing.Imaging;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using Microsoft.Extensions.Logging;
+
 namespace OpenScrape.App.Services;
 
 /// <summary>
@@ -12,10 +14,12 @@ namespace OpenScrape.App.Services;
 public class ScreenReaderService : IScreenReaderService
 {
     private readonly OcrService _ocrService;
+    private readonly ILogger<ScreenReaderService> _logger;
 
-    public ScreenReaderService(OcrService ocrService)
+    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger)
     {
         _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     #region [Métodos públicos]
@@ -87,19 +91,19 @@ public class ScreenReaderService : IScreenReaderService
             var clean2 = CleanOcrNumericText(secondOcr.Text);
             var clean3 = CleanOcrNumericText(thirdOcr.Text);
 
-            LogDebug($"[SetBetValue DEBUG] Region p{playerNum}bet - Raw: '{firstOcr.Text}' | '{secondOcr.Text}' | '{thirdOcr.Text}' => Clean: '{clean1}' | '{clean2}' | '{clean3}'");
+            _logger.LogDebug("[SetBetValue DEBUG] Region p{PlayerNum}bet - Raw: '{R1}' | '{R2}' | '{R3}' => Clean: '{C1}' | '{C2}' | '{C3}'", playerNum, firstOcr.Text, secondOcr.Text, thirdOcr.Text, clean1, clean2, clean3);
 
             decimal.TryParse(clean1, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr1);
             decimal.TryParse(clean2, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr2);
             decimal.TryParse(clean3, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr3);
 
             decimal best = 0;
-            LogDebug($"[SetBetValue CONSENSUS] ocr1={ocr1}, ocr2={ocr2}, ocr3={ocr3}");
+            _logger.LogDebug("[SetBetValue CONSENSUS] ocr1={Ocr1}, ocr2={Ocr2}, ocr3={Ocr3}", ocr1, ocr2, ocr3);
 
             // Priorizar ocr3 (lectura directa) cuando tiene valor
             if (ocr3 != 0m)
             {
-                LogDebug($"[SetBetValue] Usando ocr3={ocr3} (lectura directa)");
+                _logger.LogDebug("[SetBetValue] Usando ocr3={Ocr3} (lectura directa)", ocr3);
                 best = ocr3;
             }
             else if (ocr1 == ocr2)
@@ -109,7 +113,7 @@ public class ScreenReaderService : IScreenReaderService
             else if (ocr2 != 0m)
                 best = ocr2;
 
-            LogDebug($"[SetBetValue] RETURN best={best}");
+            _logger.LogDebug("[SetBetValue] RETURN best={Best}", best);
             return best;
         }
         finally
@@ -174,7 +178,7 @@ public class ScreenReaderService : IScreenReaderService
 
             result = best.ToString();
 
-            LogDebug($"[STACK] OCR lecturas: '{firstOcr.Text}'→{ocr1}, '{secondOcr.Text}'→{ocr2}, '{thirdOcr.Text}'→{ocr3}, best={best}");
+            _logger.LogDebug("[STACK] OCR lecturas: '{R1}'→{Ocr1}, '{R2}'→{Ocr2}, '{R3}'→{Ocr3}, best={Best}", firstOcr.Text, ocr1, secondOcr.Text, ocr2, thirdOcr.Text, ocr3, best);
         }
 
         firstOcr?.Dispose();
@@ -232,7 +236,7 @@ public class ScreenReaderService : IScreenReaderService
         else
             best = clean3; // Sin consenso → preferir lectura directa
 
-        LogDebug($"[HAND#] OCR lecturas: '{firstOcr.Text}'→{clean1}, '{secondOcr.Text}'→{clean2}, '{thirdOcr.Text}'→{clean3}, best={best}");
+        _logger.LogDebug("[HAND#] OCR lecturas: '{R1}'→{C1}, '{R2}'→{C2}, '{R3}'→{C3}, best={Best}", firstOcr.Text, clean1, secondOcr.Text, clean2, thirdOcr.Text, clean3, best);
 
         firstOcr?.Dispose();
         secondOcr?.Dispose();
@@ -302,7 +306,7 @@ public class ScreenReaderService : IScreenReaderService
                 if (decimal.TryParse(corrected, NumberStyles.Any,
                     CultureInfo.CurrentCulture, out var correctedValue))
                 {
-                    Console.WriteLine($"[BET] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                    _logger.LogDebug("[BET] OCR artefacto '8' corregido: {Raw} → {Corrected}", rawStr, corrected);
                     return correctedValue;
                 }
             }
@@ -318,7 +322,7 @@ public class ScreenReaderService : IScreenReaderService
             if (decimal.TryParse(corrected, NumberStyles.Any,
                 CultureInfo.CurrentCulture, out var correctedValue))
             {
-                Console.WriteLine($"[BET] OCR separador decimal perdido corregido: {rawStr} → {corrected} (pot={potSize})");
+                _logger.LogDebug("[BET] OCR separador decimal perdido corregido: {Raw} → {Corrected} (pot={Pot})", rawStr, corrected, potSize);
                 return correctedValue;
             }
         }
@@ -347,7 +351,7 @@ public class ScreenReaderService : IScreenReaderService
                 if (decimal.TryParse(corrected, NumberStyles.Any,
                     CultureInfo.CurrentCulture, out var correctedValue))
                 {
-                    LogDebug($"[STACK] OCR artefacto '8' corregido: {rawStr} → {corrected}");
+                    _logger.LogDebug("[STACK] OCR artefacto '8' corregido: {Raw} → {Corrected}", rawStr, corrected);
                     return correctedValue;
                 }
             }
@@ -360,7 +364,7 @@ public class ScreenReaderService : IScreenReaderService
             if (decimal.TryParse(corrected, NumberStyles.Any,
                 CultureInfo.CurrentCulture, out var correctedValue))
             {
-                LogDebug($"[STACK] OCR separador decimal perdido corregido: {rawStr} → {corrected}");
+                _logger.LogDebug("[STACK] OCR separador decimal perdido corregido: {Raw} → {Corrected}", rawStr, corrected);
                 return correctedValue;
             }
         }
@@ -480,15 +484,6 @@ public class ScreenReaderService : IScreenReaderService
 
         var cleaned = new string(ocrText.Where(char.IsDigit).ToArray());
         return cleaned;
-    }
-
-    #endregion
-
-    #region [Logging]
-
-    private static void LogDebug(string message)
-    {
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] [DEBUG] {message}");
     }
 
     #endregion

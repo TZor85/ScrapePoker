@@ -6,6 +6,7 @@ using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
+using static OpenScrape.App.Tests.TestMakeInputHelper;
 
 namespace OpenScrape.App.Tests;
 
@@ -168,11 +169,12 @@ public class PairClassificationTests
 
     private static PostflopDecisionService CreateService()
     {
-        var profile = new StrategyProfile();
+        var profile = new StrategyProfile().FillMissingThresholds();
         var options = Options.Create(profile);
         var betSizing = new BetSizingService(options);
         var rangePolarizer = new RangePolarizer();
-        return new PostflopDecisionService(options, betSizing, rangePolarizer);
+        var registry = new ThresholdsRegistry(options);
+        return new PostflopDecisionService(options, betSizing, rangePolarizer, registry);
     }
 
     [Test]
@@ -184,7 +186,7 @@ public class PairClassificationTests
         // (ThinValueIPOnly=true por defecto: thin value solo se apuesta IP)
         var service = CreateService();
 
-        var resultOverpair = service.DetermineAction(
+        var resultOverpair = service.DetermineAction(MakeInput(
             equity: 57.0,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -192,9 +194,9 @@ public class PairClassificationTests
             isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.Overpair);
+            pairClassification: PairClassification.Overpair));
 
-        var resultBottomPair = service.DetermineAction(
+        var resultBottomPair = service.DetermineAction(MakeInput(
             equity: 57.0,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -202,7 +204,7 @@ public class PairClassificationTests
             isInPosition: false,
             villainBetSize: BetSizeCategory.NoBet,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.BottomPair);
+            pairClassification: PairClassification.BottomPair));
 
         // Overpair con equity 57 supera adjValue (55.8) → apuesta en value
         Assert.That(resultOverpair.Action, Does.Contain("Value"),
@@ -218,7 +220,7 @@ public class PairClassificationTests
         var service = CreateService();
 
         // Overpair facing bet con equity muy alta → debe poder raise
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 80.0,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -226,7 +228,7 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Medium,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.Overpair);
+            pairClassification: PairClassification.Overpair));
 
         Assert.That(result.Action, Does.Contain("Raise"),
             "Overpair con equity muy alta facing bet debería poder raise");
@@ -238,7 +240,7 @@ public class PairClassificationTests
         var service = CreateService();
 
         // BottomPair facing bet con equity alta → solo call, nunca raise
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 80.0,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -246,7 +248,7 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Medium,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.BottomPair);
+            pairClassification: PairClassification.BottomPair));
 
         Assert.That(result.Action, Is.Not.Contains("Raise"),
             "BottomPair no debería raise aunque equity sea alta");
@@ -260,7 +262,7 @@ public class PairClassificationTests
         var service = CreateService();
 
         // TopPair facing bet con equity muy alta → puede raise (igual que Overpair)
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 80.0,
             street: BoardPosition.Turn,
             situation: HandSituation.OpenRaise,
@@ -268,7 +270,7 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Medium,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.TopPair);
+            pairClassification: PairClassification.TopPair));
 
         Assert.That(result.Action, Does.Contain("Raise"),
             "TopPair con equity muy alta facing bet debería poder raise");
@@ -280,7 +282,7 @@ public class PairClassificationTests
         var service = CreateService();
 
         // BoardPaired en river facing bet: hero no tiene par real → no bluff catch
-        var result = service.DetermineAction(
+        var result = service.DetermineAction(MakeInput(
             equity: 35.0,  // Por debajo del FoldBelow normal
             street: BoardPosition.River,
             situation: HandSituation.OpenRaise,
@@ -288,7 +290,7 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.BoardPaired);
+            pairClassification: PairClassification.BoardPaired));
 
         Assert.That(result.Action, Is.EqualTo("Fold"),
             "BoardPaired en river no debe hacer bluff catch");
@@ -300,7 +302,7 @@ public class PairClassificationTests
         var service = CreateService();
         // Equity marginal en river: Overpair puede bluff catch, BoardPaired no
 
-        var resultOverpair = service.DetermineAction(
+        var resultOverpair = service.DetermineAction(MakeInput(
             equity: 36.0,
             street: BoardPosition.River,
             situation: HandSituation.OpenRaise,
@@ -308,9 +310,9 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.Overpair);
+            pairClassification: PairClassification.Overpair));
 
-        var resultBoardPaired = service.DetermineAction(
+        var resultBoardPaired = service.DetermineAction(MakeInput(
             equity: 36.0,
             street: BoardPosition.River,
             situation: HandSituation.OpenRaise,
@@ -318,7 +320,7 @@ public class PairClassificationTests
             isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
             heroHandRank: HandRank.OnePair,
-            pairClassification: PairClassification.BoardPaired);
+            pairClassification: PairClassification.BoardPaired));
 
         // Overpair puede call (bluff catch), BoardPaired debe fold
         Assert.That(resultBoardPaired.Action, Is.EqualTo("Fold"),

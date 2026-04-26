@@ -25,8 +25,8 @@ public class GameCoordinator : IGameCoordinator
     private readonly GameLoopStateMachine _gameLoopStateMachine;
     private readonly GameLoggerService _gameLoggerService;
     private readonly StrategyProfileService _strategyProfileService;
+    private readonly IPostflopContextHolder _contextHolder;
 
-    public PostflopGameContext PostflopContext { get; } = new();
     public PokerCalculationResult? FlopResult { get; private set; }
     public PokerCalculationResult? TurnResult { get; private set; }
     public PokerCalculationResult? RiverResult { get; private set; }
@@ -41,7 +41,8 @@ public class GameCoordinator : IGameCoordinator
         IExploitabilityCalculator exploitabilityCalculator,
         GameLoopStateMachine gameLoopStateMachine,
         GameLoggerService gameLoggerService,
-        StrategyProfileService strategyProfileService)
+        StrategyProfileService strategyProfileService,
+        IPostflopContextHolder contextHolder)
     {
         _postflopDecisionService = postflopDecisionService;
         _opponentTracker = opponentTracker;
@@ -51,11 +52,12 @@ public class GameCoordinator : IGameCoordinator
         _gameLoopStateMachine = gameLoopStateMachine;
         _gameLoggerService = gameLoggerService;
         _strategyProfileService = strategyProfileService;
+        _contextHolder = contextHolder;
     }
 
     public void ResetContext()
     {
-        PostflopContext.Reset();
+        _contextHolder.StartNewHand();
         FlopResult = null;
         TurnResult = null;
         RiverResult = null;
@@ -187,8 +189,8 @@ public class GameCoordinator : IGameCoordinator
             .Any(p => p.Active && p.WasPreflopAggressor && p.ValuePosition != 0);
 
         bool heroWasPreviousStreetAggressor =
-            (_gameLoopStateMachine.IsTurn && PostflopContext.HeroBetFlop) ||
-            (_gameLoopStateMachine.IsRiver && PostflopContext.HeroBetTurn);
+            (_gameLoopStateMachine.IsTurn && _contextHolder.Current.HeroBetFlop) ||
+            (_gameLoopStateMachine.IsRiver && _contextHolder.Current.HeroBetTurn);
 
         // Hero es agresor si: raiseó preflop (WasPreflopAggressor en P0) O apostó calle anterior
         var heroPlayer = state.Players.FirstOrDefault(p => p.ValuePosition == 0);
@@ -350,7 +352,7 @@ public class GameCoordinator : IGameCoordinator
         var boardTexture = _boardTextureAnalyzer.Analyze(flopRanks, flopSuits);
         string texture = boardTexture.Category.ToString();
         var initialDanger = _boardTextureAnalyzer.AnalyzeInitialBoard(flopRanks, flopSuits);
-        PostflopContext.InitialBoardDanger = initialDanger;
+        _contextHolder.Update(c => c with { InitialBoardDanger = initialDanger });
         var boardChange = AnalyzeBoardChange(state.BoardCards, 0);
 
         var effectiveSituation = state.HandSituation;
@@ -395,20 +397,24 @@ public class GameCoordinator : IGameCoordinator
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
             HeroKickerStrength = flopResult.HeroKickerStrength,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
-            IsAnyoneAllIn = PostflopContext.IsAnyoneAllIn
+            IsAnyoneAllIn = _contextHolder.Current.IsAnyoneAllIn
         });
 
         TrackVillainPostflopAction(state, maxBet, isPreflopAggressor, inPosition);
 
         // Actualizar contexto cross-street
         string action = decision.Action;
-        PostflopContext.PreviousStreetWasBet = maxBet > 0;
-        PostflopContext.HeroBetFlop = action.StartsWith("Bet") || action.StartsWith("Raise");
-        PostflopContext.VillainBetFlop = maxBet > 0;
-        PostflopContext.VillainBetSizeFlop = betSize;
-        PostflopContext.HeroFloatedFlop = maxBet > 0 && action.StartsWith("Call");
-        if (!isPreflopAggressor && maxBet == 0)
-            PostflopContext.VillainAggressorCheckedFlop = true;
+        bool heroBet = action.StartsWith("Bet") || action.StartsWith("Raise");
+        bool villainBet = maxBet > 0;
+        _contextHolder.Update(c => c with
+        {
+            PreviousStreetWasBet = villainBet,
+            HeroBetFlop = heroBet,
+            VillainBetFlop = villainBet,
+            VillainBetSizeFlop = betSize,
+            HeroFloatedFlop = villainBet && action.StartsWith("Call"),
+            VillainAggressorCheckedFlop = (!isPreflopAggressor && !villainBet) || c.VillainAggressorCheckedFlop
+        });
 
         // Exploitabilidad
         var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), flopResult.FoldEquity);
@@ -492,7 +498,7 @@ public class GameCoordinator : IGameCoordinator
         }
 
         var boardChange = AnalyzeBoardChange(state.BoardCards, 3);
-        var combinedBoardChange = PostflopGameContext.CombineBoardChanges(PostflopContext.InitialBoardDanger, boardChange);
+        var combinedBoardChange = PostflopGameContext.CombineBoardChanges(_contextHolder.Current.InitialBoardDanger, boardChange);
         var texture = TurnBoardTexture.ToString();
         bool heroBlocks = state.BoardCards.Any(b => b.Position != BoardPosition.Hand &&
             (b.Suit == state.HoleCard1Suit || b.Suit == state.HoleCard2Suit));
@@ -500,9 +506,10 @@ public class GameCoordinator : IGameCoordinator
 
         double equity = turnResult.EquityPercentage;
         var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, maxBet > 0, BoardPosition.Turn, heroHasNutBlocker, turnResult.HeroHandRank);
-        PostflopContext.LastBoardChange = combinedBoardChange;
+        _contextHolder.Update(c => c with { LastBoardChange = combinedBoardChange });
 
-        bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || PostflopContext.HeroBetFlop;
+        var turnCtx = _contextHolder.Current;
+        bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || turnCtx.HeroBetFlop;
 
         var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
         {
@@ -515,7 +522,7 @@ public class GameCoordinator : IGameCoordinator
             PotOdds = turnResult.PotOddsPercentage,
             TotalOuts = turnResult.TotalOuts,
             EffectiveOuts = turnResult.EffectiveOuts,  // S22.1
-            PreviousStreetBet = PostflopContext.PreviousStreetWasBet,
+            PreviousStreetBet = turnCtx.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
             HeroBlocksDangerSuit = heroBlocks,
@@ -526,29 +533,34 @@ public class GameCoordinator : IGameCoordinator
             HeroIsAggressor = turnIsAggressor,
             HeroHandRank = turnResult.HeroHandRank,
             HasComboDraw = turnResult.HasComboDraw,
-            VillainAggressorCheckedPreviousStreet = PostflopContext.VillainAggressorCheckedFlop,
-            VillainBarreling = PostflopContext.VillainBetFlop && maxBet > 0,
+            VillainAggressorCheckedPreviousStreet = turnCtx.VillainAggressorCheckedFlop,
+            VillainBarreling = turnCtx.VillainBetFlop && maxBet > 0,
             PairClassification = turnResult.PairType,
             FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), turnResult.FoldEquity),
-            VillainBetSizeFlop = PostflopContext.VillainBetSizeFlop,
+            VillainBetSizeFlop = turnCtx.VillainBetSizeFlop,
             VillainType = GetVillainType(state, inPosition),
-            HeroFloatedFlop = PostflopContext.HeroFloatedFlop,
+            HeroFloatedFlop = turnCtx.HeroFloatedFlop,
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
             HeroKickerStrength = turnResult.HeroKickerStrength,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
-            IsAnyoneAllIn = PostflopContext.IsAnyoneAllIn
+            IsAnyoneAllIn = turnCtx.IsAnyoneAllIn
         });
 
         TrackVillainPostflopAction(state, maxBet, turnIsAggressor, inPosition);
 
         // Actualizar contexto cross-street
         string action = decision.Action;
-        PostflopContext.PreviousStreetWasBet = maxBet > 0;
-        PostflopContext.HeroBetTurn = action.StartsWith("Bet") || action.StartsWith("Raise");
-        PostflopContext.VillainBetTurn = maxBet > 0;
-        PostflopContext.VillainBetSizeTurn = betSize;
-        if (maxBet > 0 && action.StartsWith("Call") && boardChange.FlushDrawAppeared)
-            PostflopContext.TurnCalledWithFlushDanger = true;
+        bool heroBetTurn = action.StartsWith("Bet") || action.StartsWith("Raise");
+        bool villainBetTurn = maxBet > 0;
+        bool newFlushDanger = maxBet > 0 && action.StartsWith("Call") && boardChange.FlushDrawAppeared;
+        _contextHolder.Update(c => c with
+        {
+            PreviousStreetWasBet = villainBetTurn,
+            HeroBetTurn = heroBetTurn,
+            VillainBetTurn = villainBetTurn,
+            VillainBetSizeTurn = betSize,
+            TurnCalledWithFlushDanger = newFlushDanger || c.TurnCalledWithFlushDanger
+        });
 
         // Exploitabilidad
         double effectiveEquity = equity - dangerPenalty;
@@ -633,7 +645,7 @@ public class GameCoordinator : IGameCoordinator
 
         // All-in detection
         if (villainStack <= 0)
-            PostflopContext.IsAnyoneAllIn = true;
+            _contextHolder.Update(c => c with { IsAnyoneAllIn = true });
 
         var betSize = GetOpponentBetSize(maxBet, potSize);
         bool villainAggro = maxBet > 0;
@@ -649,8 +661,8 @@ public class GameCoordinator : IGameCoordinator
         }
 
         var boardChange = AnalyzeBoardChange(state.BoardCards, 4);
-        var combinedBoardChange = PostflopGameContext.CombineBoardChanges(PostflopContext.LastBoardChange ?? BoardChangeResult.Safe, boardChange);
-        PostflopContext.LastBoardChange = combinedBoardChange;
+        var combinedBoardChange = PostflopGameContext.CombineBoardChanges(_contextHolder.Current.LastBoardChange ?? BoardChangeResult.Safe, boardChange);
+        _contextHolder.Update(c => c with { LastBoardChange = combinedBoardChange });
 
         bool heroBlocks = state.BoardCards.Any(b => b.Position != BoardPosition.Hand &&
             (b.Suit == state.HoleCard1Suit || b.Suit == state.HoleCard2Suit));
@@ -660,7 +672,8 @@ public class GameCoordinator : IGameCoordinator
         double equity = riverResult.EquityPercentage;
         var dangerPenalty = _postflopDecisionService.CalculateDangerPenalty(equity, boardChange, heroBlocks, isFacingBet, BoardPosition.River, heroHasNutBlocker, riverResult.HeroHandRank);
 
-        bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || PostflopContext.HeroBetFlop || PostflopContext.HeroBetTurn;
+        var riverCtx = _contextHolder.Current;
+        bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || riverCtx.HeroBetFlop || riverCtx.HeroBetTurn;
         var riverCardType = _boardTextureAnalyzer.ClassifyRiverCard(boardChange);  // S22.2
 
         var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
@@ -675,7 +688,7 @@ public class GameCoordinator : IGameCoordinator
             TotalOuts = riverResult.TotalOuts,
             EffectiveOuts = riverResult.EffectiveOuts,  // S22.1
             RiverCardType = riverCardType,               // S22.2
-            PreviousStreetBet = PostflopContext.PreviousStreetWasBet,
+            PreviousStreetBet = riverCtx.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
             HeroBlocksDangerSuit = heroBlocks,
@@ -686,19 +699,19 @@ public class GameCoordinator : IGameCoordinator
             HeroIsAggressor = riverIsAggressor,
             HeroHandRank = riverResult.HeroHandRank,
             HasComboDraw = riverResult.HasComboDraw,
-            VillainAggressorCheckedPreviousStreet = !PostflopContext.VillainBetTurn && !riverIsAggressor,
-            VillainBarreling = PostflopContext.VillainBetTurn && maxBet > 0,
+            VillainAggressorCheckedPreviousStreet = !riverCtx.VillainBetTurn && !riverIsAggressor,
+            VillainBarreling = riverCtx.VillainBetTurn && maxBet > 0,
             PairClassification = riverResult.PairType,
             FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), riverResult.FoldEquity),
-            VillainBetSizeTurn = PostflopContext.VillainBetSizeTurn,
-            VillainCheckedMiddleStreet = PostflopContext.VillainCheckedMiddleStreet,
+            VillainBetSizeTurn = riverCtx.VillainBetSizeTurn,
+            VillainCheckedMiddleStreet = riverCtx.VillainCheckedMiddleStreet,
             VillainType = GetVillainType(state, inPosition),
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
             HeroKickerStrength = riverResult.HeroKickerStrength,
-            TurnCalledWithFlushDanger = PostflopContext.TurnCalledWithFlushDanger,
+            TurnCalledWithFlushDanger = riverCtx.TurnCalledWithFlushDanger,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
-            HeroCheckedAllStreets = PostflopContext.HeroCheckedAllStreets,
-            IsAnyoneAllIn = PostflopContext.IsAnyoneAllIn
+            HeroCheckedAllStreets = riverCtx.HeroCheckedAllStreets,
+            IsAnyoneAllIn = riverCtx.IsAnyoneAllIn
         });
 
         if (maxBet > 0)
@@ -706,7 +719,7 @@ public class GameCoordinator : IGameCoordinator
 
         // Actualizar contexto
         string action = decision.Action;
-        PostflopContext.PreviousStreetWasBet = maxBet > 0;
+        _contextHolder.Update(c => c with { PreviousStreetWasBet = maxBet > 0 });
 
         // Exploitabilidad
         double effectiveEquity = equity - dangerPenalty;

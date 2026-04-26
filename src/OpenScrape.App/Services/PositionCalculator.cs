@@ -7,179 +7,108 @@ public static class PositionCalculator
 {
     public static TablePosition DetermineP0Position(int dealerPosition, List<Player> players)
     {
-        var activeSeats = players
-            .Where(p => !p.Empty && !p.SitOut)
-            .Select(p => p.ValuePosition)
-            .OrderBy(s => s)
-            .ToList();
-
-        int dealerSeat = dealerPosition;
-        int heroSeat = 0;
-
-        if (!activeSeats.Contains(dealerSeat) || !activeSeats.Contains(heroSeat))
-            return TablePosition.None;
-
-        int dealerIndex = activeSeats.IndexOf(dealerSeat);
-        int heroIndex = activeSeats.IndexOf(heroSeat);
-
-        int distance = (heroIndex - dealerIndex + activeSeats.Count) % activeSeats.Count;
-
-        return activeSeats.Count switch
-        {
-            2 => distance switch { 0 => TablePosition.SmallBlind, _ => TablePosition.BigBlind },
-            3 => distance switch { 0 => TablePosition.Button, 1 => TablePosition.SmallBlind, _ => TablePosition.BigBlind },
-            4 => distance switch { 0 => TablePosition.Button, 1 => TablePosition.SmallBlind, 2 => TablePosition.BigBlind, _ => TablePosition.CutOff },
-            5 => distance switch { 0 => TablePosition.Button, 1 => TablePosition.SmallBlind, 2 => TablePosition.BigBlind, 3 => TablePosition.Middle, _ => TablePosition.CutOff },
-            6 => distance switch { 0 => TablePosition.Button, 1 => TablePosition.SmallBlind, 2 => TablePosition.BigBlind, 3 => TablePosition.Early, 4 => TablePosition.Middle, _ => TablePosition.CutOff },
-            _ => distance switch { 0 => TablePosition.Button, 1 => TablePosition.SmallBlind, 2 => TablePosition.BigBlind, 3 => TablePosition.Early, 4 => TablePosition.Middle, _ => TablePosition.CutOff }
-        };
+        var all = AssignAllPositions(dealerPosition, players);
+        return all.TryGetValue(0, out var pos) ? pos : TablePosition.None;
     }
 
-    public static Dictionary<int, TablePosition> AssignVillainPositions(TablePosition heroPosition, List<Player> players)
+    public static Dictionary<int, TablePosition> AssignVillainPositions(int dealerPosition, List<Player> players)
+    {
+        var all = AssignAllPositions(dealerPosition, players);
+        all.Remove(0);
+        return all;
+    }
+
+    // Asigna posición a cada asiento !Empty. Los SitOut ocupan asiento físico, pero
+    // tanto SB como BB saltan el tramo consecutivo de SitOut a su izquierda para
+    // encontrar al siguiente jugador activo (moving blinds). Los SitOut "consumidos"
+    // por el salto de ciegas quedan sin posición (asiento muerto esa mano).
+    public static Dictionary<int, TablePosition> AssignAllPositions(int dealerPosition, List<Player> players)
     {
         var result = new Dictionary<int, TablePosition>();
 
-        var activePlayers = players
-            .Where(p => p != null && !p.Empty && !p.SitOut && p.ValuePosition != 0)
+        var ring = players
+            .Where(p => p != null && !p.Empty)
             .OrderBy(p => p.ValuePosition)
             .ToList();
 
-        if (!activePlayers.Any())
+        if (ring.Count < 2)
             return result;
 
-        var positionsOrder = GetPositionsOrder(heroPosition, activePlayers.Count);
+        int dealerIdx = ring.FindIndex(p => p.ValuePosition == dealerPosition);
+        if (dealerIdx < 0)
+            return result;
 
-        int positionIndex = 0;
-        foreach (var player in activePlayers)
+        int count = ring.Count;
+
+        // Heads-up: el dealer es la SB, el otro es la BB
+        if (count == 2)
         {
-            if (positionIndex < positionsOrder.Count)
+            result[ring[dealerIdx].ValuePosition] = TablePosition.SmallBlind;
+            int otherIdx = (dealerIdx + 1) % 2;
+            result[ring[otherIdx].ValuePosition] = TablePosition.BigBlind;
+            return result;
+        }
+
+        // SB: primer asiento !SitOut a la izquierda del dealer
+        int sbIdx = -1;
+        for (int step = 1; step < count; step++)
+        {
+            int idx = (dealerIdx + step) % count;
+            if (!ring[idx].SitOut)
             {
-                result[player.ValuePosition] = positionsOrder[positionIndex];
-                positionIndex++;
+                sbIdx = idx;
+                break;
             }
         }
-
-        return result;
-    }
-
-    public static Dictionary<int, TablePosition> AssignVillainPositionsWithDealer(int dealerPosition, List<Player> players)
-    {
-        var result = new Dictionary<int, TablePosition>();
-
-        var activePlayers = players
-            .Where(p => p != null && !p.Empty && !p.SitOut && p.ValuePosition != 0)
-            .OrderBy(p => p.ValuePosition)
-            .ToList();
-
-        if (!activePlayers.Any())
+        if (sbIdx < 0)
             return result;
 
-        var activeSeats = activePlayers.Select(p => p.ValuePosition).ToList();
-
-        int dealerIndex;
-        if (!activeSeats.Contains(dealerPosition))
+        // BB: primer asiento !SitOut a la izquierda de la SB, sin rebasar al dealer
+        int bbIdx = -1;
+        for (int step = 1; step < count; step++)
         {
-            if (activeSeats.Count == 0)
-                return result;
-
-            dealerIndex = 0;
-            dealerPosition = activeSeats[0];
-        }
-        else
-        {
-            dealerIndex = activeSeats.IndexOf(dealerPosition);
-        }
-
-        int playerCount = activePlayers.Count;
-
-        for (int i = 0; i < activePlayers.Count; i++)
-        {
-            var player = activePlayers[i];
-            int positionFromDealer = (i - dealerIndex + playerCount) % playerCount;
-
-            TablePosition position = positionFromDealer switch
+            int idx = (sbIdx + step) % count;
+            if (idx == dealerIdx)
+                break;
+            if (!ring[idx].SitOut)
             {
-                1 => TablePosition.SmallBlind,
-                2 => TablePosition.BigBlind,
-                _ => GetPositionFromOrder(positionFromDealer, playerCount)
-            };
+                bbIdx = idx;
+                break;
+            }
+        }
+        if (bbIdx < 0)
+            return result;
 
-            result[player.ValuePosition] = position;
+        result[ring[dealerIdx].ValuePosition] = TablePosition.Button;
+        result[ring[sbIdx].ValuePosition] = TablePosition.SmallBlind;
+        result[ring[bbIdx].ValuePosition] = TablePosition.BigBlind;
+
+        // Los SitOut saltados (tramo dealer→SB y SB→BB) no reciben etiqueta.
+        // El "effectiveCount" determina el set de labels del resto (Early/Middle/CutOff).
+        int skippedForSB = (sbIdx - dealerIdx - 1 + count) % count;
+        int skippedForBB = (bbIdx - sbIdx - 1 + count) % count;
+        int effectiveCount = count - skippedForSB - skippedForBB;
+
+        var labels = GetRemainingLabels(effectiveCount);
+        int cursor = (bbIdx + 1) % count;
+        int labelIndex = 0;
+        while (cursor != dealerIdx && labelIndex < labels.Count)
+        {
+            result[ring[cursor].ValuePosition] = labels[labelIndex];
+            cursor = (cursor + 1) % count;
+            labelIndex++;
         }
 
         return result;
     }
 
-    private static TablePosition GetPositionFromOrder(int positionFromDealer, int playerCount)
-    {
-        if (playerCount <= 3)
-            return TablePosition.Button;
-
-        return positionFromDealer switch
+    // Etiquetas para los asientos entre la BB y el dealer (sin incluirlos), yendo a la izquierda.
+    private static List<TablePosition> GetRemainingLabels(int ringCount) =>
+        ringCount switch
         {
-            0 => TablePosition.Button,
-            3 when playerCount >= 5 => TablePosition.CutOff,
-            3 => TablePosition.Button,
-            4 when playerCount >= 6 => TablePosition.Middle,
-            4 when playerCount == 5 => TablePosition.CutOff,
-            5 when playerCount >= 6 => TablePosition.Early,
-            _ => TablePosition.CutOff
+            3 => new List<TablePosition>(),
+            4 => new List<TablePosition> { TablePosition.CutOff },
+            5 => new List<TablePosition> { TablePosition.Middle, TablePosition.CutOff },
+            _ => new List<TablePosition> { TablePosition.Early, TablePosition.Middle, TablePosition.CutOff }
         };
-    }
-
-    private static List<TablePosition> GetPositionsOrder(TablePosition heroPosition, int playerCount)
-    {
-        var baseOrder = heroPosition switch
-        {
-            TablePosition.BigBlind => new List<TablePosition>
-            {
-                TablePosition.SmallBlind, TablePosition.Button, TablePosition.CutOff,
-                TablePosition.Middle, TablePosition.Early
-            },
-            TablePosition.SmallBlind => new List<TablePosition>
-            {
-                TablePosition.BigBlind, TablePosition.Early, TablePosition.Middle,
-                TablePosition.CutOff, TablePosition.Button
-            },
-            TablePosition.Button => new List<TablePosition>
-            {
-                TablePosition.SmallBlind, TablePosition.BigBlind, TablePosition.Early,
-                TablePosition.Middle, TablePosition.CutOff
-            },
-            TablePosition.CutOff => new List<TablePosition>
-            {
-                TablePosition.Button, TablePosition.SmallBlind, TablePosition.BigBlind,
-                TablePosition.Early, TablePosition.Middle
-            },
-            TablePosition.Early => new List<TablePosition>
-            {
-                TablePosition.Middle, TablePosition.CutOff, TablePosition.Button,
-                TablePosition.SmallBlind, TablePosition.BigBlind
-            },
-            TablePosition.Middle => new List<TablePosition>
-            {
-                TablePosition.CutOff, TablePosition.Button, TablePosition.SmallBlind,
-                TablePosition.BigBlind, TablePosition.Early
-            },
-            _ => new List<TablePosition>()
-        };
-
-        if (playerCount == 2)
-        {
-            baseOrder.Remove(TablePosition.Middle);
-            baseOrder.Remove(TablePosition.Early);
-            baseOrder.Remove(TablePosition.CutOff);
-        }
-        else if (playerCount == 3)
-        {
-            baseOrder.Remove(TablePosition.Middle);
-            baseOrder.Remove(TablePosition.Early);
-        }
-        else if (playerCount == 4)
-        {
-            baseOrder.Remove(TablePosition.Middle);
-        }
-
-        return baseOrder;
-    }
 }

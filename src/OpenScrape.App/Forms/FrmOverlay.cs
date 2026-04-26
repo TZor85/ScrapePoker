@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -7,7 +8,7 @@ using System.Drawing.Drawing2D;
 
 namespace OpenScrape.App.Forms
 {
-    public partial class FrmOverlay : Form
+    public partial class FrmOverlay : Form, IFrmOverlay
     {
         private const int WM_NCLBUTTONDOWN = 0xA1;
         private const int HTCAPTION = 0x2;

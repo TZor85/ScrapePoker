@@ -354,3 +354,6 @@ resources/Games
 # Archivos de configuración con secretos
 appsettings.Development.json
 appsettings.Production.json
+
+# Worktrees
+.worktrees/
