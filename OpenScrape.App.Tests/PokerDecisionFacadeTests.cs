@@ -24,7 +24,7 @@ public class PokerDecisionFacadeTests
 {
     private static CardDataOuts C(Rank rank, Suit suit) => new(suit, rank);
 
-    
+
 
     private sealed class FakePokerCalculator : IPokerCalculator
     {

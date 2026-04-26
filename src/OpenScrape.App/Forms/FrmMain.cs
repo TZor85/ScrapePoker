@@ -13,6 +13,7 @@ using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Logging;
+using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
@@ -227,9 +228,11 @@ namespace OpenScrape.App
                         IOverlayPositioner overlayPositioner,
                         IPostflopContextHolder contextHolder,
                         ILogger<FrmMain> logger,
-                        TextBoxLoggerProvider textBoxLoggerProvider)
+                        TextBoxLoggerProvider textBoxLoggerProvider,
+                        IMetricsCollector metrics)
         {
             InitializeComponent();
+            _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             _gameLoopCoordinator = gameLoopCoordinator ?? throw new ArgumentNullException(nameof(gameLoopCoordinator));
             _uiSyncService = uiSyncService ?? throw new ArgumentNullException(nameof(uiSyncService));
             _featureFlags = featureFlags?.Value ?? throw new ArgumentNullException(nameof(featureFlags));
@@ -290,6 +293,7 @@ namespace OpenScrape.App
 
             InitializeHistorialTab();
             InitializeBankrollTab();
+            InitializeMetricsTab();
         }
 
         /// <summary>
@@ -658,6 +662,9 @@ namespace OpenScrape.App
 
                     await GetImageWhilePlaying();
                     _formImage.WindowState = FormWindowState.Minimized;
+
+                    // Telemetry: medir captura de pantalla
+                    _metrics?.Record(TelemetryCategories.CaptureScreenshot, stopwatch.Elapsed);
                 }
 
                 if (cbTest.Checked)
@@ -799,11 +806,25 @@ namespace OpenScrape.App
                 // Actualizar la interfaz con los resultados
                 UpdateUIWithResults(potOddsResult);
 
+                // Telemetry: medir render del overlay
+                var renderSw = Stopwatch.StartNew();
+
                 stopwatch.Stop();
                 if (cbTest.Checked)
                 {
                     tbResume.Text += $"\nProcessing time: {stopwatch.ElapsedMilliseconds} ms";
                 }
+
+                // Telemetry: registrear ciclo total y capturar resultado
+                _metrics?.Record(TelemetryCategories.CycleTotal, stopwatch.Elapsed);
+                var telemetry = _metrics?.EndHand();
+                if (telemetry != null)
+                {
+                    _gameLoggerService.SetTelemetry(telemetry);
+                }
+
+                renderSw.Stop();
+                _metrics?.Record(TelemetryCategories.OverlayRender, renderSw.Elapsed);
             }
             catch (Exception ex)
             {
@@ -2228,6 +2249,8 @@ namespace OpenScrape.App
                         scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     _newHand = true;
+                    _metrics?.StartHand(_tableHand);
+                    _cycleCounter++;
                 }
                 else
                 {
@@ -4331,6 +4354,105 @@ namespace OpenScrape.App
                 else if (val.StartsWith('-'))
                     e.CellStyle.ForeColor = AppThemeHelper.Danger;
             }
+        }
+
+        #endregion
+
+        #region Pestaña Métricas
+
+        private System.Windows.Forms.Timer? _metricsRefreshTimer;
+        private int _cycleCounter;
+        private IMetricsCollector? _metrics;
+
+        private void InitializeMetricsTab()
+        {
+            dgvMetrics.Columns.Clear();
+            dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "Fase",
+                HeaderText = "Fase",
+                FillWeight = 180f,
+                ReadOnly = true,
+            });
+            foreach (var prefix in new[] { "Last", "Session" })
+                foreach (var suffix in new[] { "P50", "P95", "Max", "Count" })
+                {
+                    dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        Name = $"{prefix}{suffix}",
+                        HeaderText = prefix == "Last" ? $"Últ. {suffix}" : $"Ses. {suffix}",
+                        FillWeight = 60f,
+                        ReadOnly = true,
+                        DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight },
+                    });
+                }
+
+            foreach (var cat in TelemetryCategories.DisplayOrder)
+            {
+                int rowIdx = dgvMetrics.Rows.Add(cat, "—", "—", "—", "0", "—", "—", "—", "0");
+                dgvMetrics.Rows[rowIdx].Tag = cat;
+            }
+
+            _metricsRefreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+            _metricsRefreshTimer.Tick += (s, e) => RefreshMetricsGrid();
+
+            tbControl.Selected += TabControl_Selected;
+            btnResetMetrics.Click += BtnResetMetrics_Click;
+        }
+
+        private void TabControl_Selected(object? sender, TabControlEventArgs e)
+        {
+            if (e.TabPage == tabMetrics)
+            {
+                RefreshMetricsGrid();
+                _metricsRefreshTimer?.Start();
+            }
+            else
+            {
+                _metricsRefreshTimer?.Stop();
+            }
+        }
+
+        private void RefreshMetricsGrid()
+        {
+            if (_metrics == null) return;
+
+            var snap = _metrics.SnapshotSession();
+
+            lblCurrentHand.Text = $"Mano actual: {snap.CurrentHandId ?? "—"}";
+            lblCycleCount.Text = $"Ciclos: {_cycleCounter:N0}";
+            lblLastUpdate.Text = $"Actualizado: {DateTime.Now:HH:mm:ss}";
+
+            foreach (DataGridViewRow row in dgvMetrics.Rows)
+            {
+                if (row.Tag is not string category) continue;
+
+                FillCells(row, 1, snap.LastHand.TryGetValue(category, out var last) ? last : null);
+                FillCells(row, 5, snap.Session.TryGetValue(category, out var session) ? session : null);
+            }
+        }
+
+        private static void FillCells(DataGridViewRow row, int startCol, CategoryStats? stats)
+        {
+            if (stats is null)
+            {
+                row.Cells[startCol + 0].Value = "—";
+                row.Cells[startCol + 1].Value = "—";
+                row.Cells[startCol + 2].Value = "—";
+                row.Cells[startCol + 3].Value = "0";
+                return;
+            }
+            row.Cells[startCol + 0].Value = stats.P50Ms.ToString("N0");
+            row.Cells[startCol + 1].Value = stats.P95Ms.ToString("N0");
+            row.Cells[startCol + 2].Value = stats.MaxMs.ToString("N0");
+            row.Cells[startCol + 3].Value = stats.Count.ToString("N0");
+        }
+
+        private void BtnResetMetrics_Click(object? sender, EventArgs e)
+        {
+            _metrics?.ResetSession();
+            RefreshMetricsGrid();
+            _logger.LogInformation("Telemetría: sesión reseteada por el usuario");
         }
 
         #endregion

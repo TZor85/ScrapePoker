@@ -164,6 +164,12 @@
             lblRecommendation = new Label();
             lblTotalSessions = new Label();
             lblTotalHands = new Label();
+            tabMetrics = new TabPage();
+            dgvMetrics = new DataGridView();
+            btnResetMetrics = new Button();
+            lblCurrentHand = new Label();
+            lblCycleCount = new Label();
+            lblLastUpdate = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
             pnlUserStack.SuspendLayout();
@@ -206,6 +212,7 @@
             ((System.ComponentModel.ISupportInitialize)dgvHands).BeginInit();
             tbLogs.SuspendLayout();
             tpHistorial.SuspendLayout();
+            tabMetrics.SuspendLayout();
             pnlBankrollInfo.SuspendLayout();
             pnlRiskInfo.SuspendLayout();
             pnlPerformance.SuspendLayout();
@@ -227,6 +234,7 @@
             tbControl.Controls.Add(tbConfig);
             tbControl.Controls.Add(tbTables);
             tbControl.Controls.Add(tbLogs);
+            tbControl.Controls.Add(tabMetrics);
             tbControl.Controls.Add(tpHistorial);
             tbControl.Controls.Add(tpBankroll);
             tbControl.Dock = DockStyle.Fill;
@@ -1387,6 +1395,68 @@
             tbResume.Size = new Size(563, 386);
             tbResume.TabIndex = 1;
             // 
+            // tabMetrics
+            // 
+            tabMetrics.Controls.Add(btnResetMetrics);
+            tabMetrics.Controls.Add(lblCurrentHand);
+            tabMetrics.Controls.Add(lblCycleCount);
+            tabMetrics.Controls.Add(lblLastUpdate);
+            tabMetrics.Controls.Add(dgvMetrics);
+            tabMetrics.Location = new Point(4, 24);
+            tabMetrics.Name = "tabMetrics";
+            tabMetrics.Padding = new Padding(3);
+            tabMetrics.Size = new Size(569, 392);
+            tabMetrics.TabIndex = 3;
+            tabMetrics.Text = "Métricas";
+            tabMetrics.UseVisualStyleBackColor = true;
+            // 
+            // dgvMetrics
+            // 
+            dgvMetrics.AllowUserToAddRows = false;
+            dgvMetrics.AllowUserToDeleteRows = false;
+            dgvMetrics.AllowUserToResizeRows = false;
+            dgvMetrics.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvMetrics.Dock = DockStyle.Fill;
+            dgvMetrics.Location = new Point(3, 40);
+            dgvMetrics.Name = "dgvMetrics";
+            dgvMetrics.ReadOnly = true;
+            dgvMetrics.RowHeadersVisible = false;
+            dgvMetrics.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvMetrics.Size = new Size(563, 346);
+            dgvMetrics.TabIndex = 1;
+            // 
+            // btnResetMetrics
+            // 
+            btnResetMetrics.Location = new Point(10, 10);
+            btnResetMetrics.Name = "btnResetMetrics";
+            btnResetMetrics.Size = new Size(120, 28);
+            btnResetMetrics.TabIndex = 2;
+            btnResetMetrics.Text = "Reset sesión";
+            // 
+            // lblCurrentHand
+            // 
+            lblCurrentHand.Location = new Point(150, 14);
+            lblCurrentHand.Name = "lblCurrentHand";
+            lblCurrentHand.Size = new Size(250, 20);
+            lblCurrentHand.TabIndex = 3;
+            lblCurrentHand.Text = "Mano actual: —";
+            // 
+            // lblCycleCount
+            // 
+            lblCycleCount.Location = new Point(410, 14);
+            lblCycleCount.Name = "lblCycleCount";
+            lblCycleCount.Size = new Size(200, 20);
+            lblCycleCount.TabIndex = 4;
+            lblCycleCount.Text = "Ciclos: 0";
+            // 
+            // lblLastUpdate
+            // 
+            lblLastUpdate.Location = new Point(620, 14);
+            lblLastUpdate.Name = "lblLastUpdate";
+            lblLastUpdate.Size = new Size(200, 20);
+            lblLastUpdate.TabIndex = 5;
+            lblLastUpdate.Text = "Actualizado: —";
+            // 
             // tpHistorial
             // 
             tpHistorial.Controls.Add(splitHistorialLeft);
@@ -1563,8 +1633,9 @@
             ((System.ComponentModel.ISupportInitialize)pbRegionColor).EndInit();
             tbTables.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvHands).EndInit();
-            tbLogs.ResumeLayout(false);
+tbLogs.ResumeLayout(false);
             tbLogs.PerformLayout();
+            tabMetrics.ResumeLayout(false);
             //
             // tpBankroll
             //
@@ -1886,5 +1957,11 @@
         private Label lblTotalHands;
         private Label lblAvgSessionProfit;
         private DataGridView dgvBankrollHistory;
+        private TabPage tabMetrics;
+        private DataGridView dgvMetrics;
+        private Button btnResetMetrics;
+        private Label lblCurrentHand;
+        private Label lblCycleCount;
+        private Label lblLastUpdate;
     }
 }

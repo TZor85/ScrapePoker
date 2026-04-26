@@ -167,6 +167,17 @@ public class GameLoggerService
     }
 
     /// <summary>
+    /// Asigna telemetría a la mano actual para persistirla con SaveHandAsync.
+    /// </summary>
+    public void SetTelemetry(TelemetryAggregate telemetry)
+    {
+        if (_currentHand != null)
+        {
+            _currentHand.Telemetry = telemetry;
+        }
+    }
+
+    /// <summary>
     /// Finaliza la mano registrando el stack final y calculando el resultado.
     /// </summary>
     public void EndHand(decimal heroStackEnd)
