@@ -526,6 +526,13 @@ public class TableLayoutService : ITableLayoutService
                 var cleanName = _screenReader.ReadPlayerName(screenshot,
                     scaled.X, scaled.Y, scaled.Width, scaled.Height,
                     nameUmbral, region.InactiveUmbral ?? 0.30);
+
+                if (!IsValidPlayerName(cleanName))
+                {
+                    _logger.LogWarning("[ALIAS] Nombre OCR inválido para {Player}: {Name}", player.Name, cleanName ?? "(null)");
+                    continue;
+                }
+
                 player.Alias = cleanName;
 
                 if (!string.IsNullOrEmpty(cleanName) && !string.IsNullOrEmpty(player.Name))
@@ -561,6 +568,16 @@ public class TableLayoutService : ITableLayoutService
     }
 
     #endregion
+
+    private static readonly Regex ValidNamePattern = new(@"^[a-zA-Z0-9\s]+$", RegexOptions.Compiled);
+
+    private static bool IsValidPlayerName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        return ValidNamePattern.IsMatch(name);
+    }
 
     #region [Helpers privados]
 

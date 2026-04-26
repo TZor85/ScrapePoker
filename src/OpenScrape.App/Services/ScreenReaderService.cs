@@ -13,6 +13,8 @@ namespace OpenScrape.App.Services;
 /// </summary>
 public class ScreenReaderService : IScreenReaderService
 {
+    private static readonly Regex NumericPattern = new(@"^\d+[.,]?\d*$", RegexOptions.Compiled);
+
     private readonly OcrService _ocrService;
     private readonly ILogger<ScreenReaderService> _logger;
 
@@ -292,6 +294,12 @@ public class ScreenReaderService : IScreenReaderService
             return 0;
 
         var rawStr = rawValue.ToString();
+
+        if (!IsValidNumericInput(rawStr))
+        {
+            _logger.LogWarning("[BET] Input OCR inválido, caracteres no numéricos: {Raw}", rawStr);
+            return 0;
+        }
         bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
 
         // Artefacto OCR: "8" espurio al inicio (ej: "850" → "50", "815,50" → "15,50")
@@ -336,6 +344,13 @@ public class ScreenReaderService : IScreenReaderService
             return 0;
 
         var rawStr = rawValue.ToString();
+
+        if (!IsValidNumericInput(rawStr))
+        {
+            _logger.LogWarning("[STACK] Input OCR inválido, caracteres no numéricos: {Raw}", rawStr);
+            return 0;
+        }
+
         bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
 
         // Solo corregir artefacto "8" cuando ya tiene separador decimal
@@ -370,6 +385,14 @@ public class ScreenReaderService : IScreenReaderService
         }
 
         return rawValue;
+    }
+
+    private static bool IsValidNumericInput(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+
+        return NumericPattern.IsMatch(input);
     }
 
     #endregion
