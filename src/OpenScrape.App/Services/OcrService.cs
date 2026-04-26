@@ -5,7 +5,7 @@ using Tesseract;
 
 namespace OpenScrape.App.Services;
 
-public class OcrService
+public class OcrService : IDisposable
 {
     private readonly string _tessdataPath;
     public event Action<string> OnDebugImageGenerated;
@@ -24,7 +24,7 @@ public class OcrService
         {
             _engine.Dispose();
         }
-        _engine = new TesseractEngine(@"./tessdata", "spa", EngineMode.Default);
+        _engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default);
     }
 
     public OcrService()
@@ -436,6 +436,12 @@ public class OcrService
             bitmap.Dispose();
         }
         _bitmapCache.Clear();
+    }
+
+    public void Dispose()
+    {
+        _engine?.Dispose();
+        _engine = null;
     }
 }
 
