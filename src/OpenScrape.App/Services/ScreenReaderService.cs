@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
+using OpenScrape.App.Telemetry;
+
 namespace OpenScrape.App.Services;
 
 /// <summary>
@@ -17,17 +19,20 @@ public class ScreenReaderService : IScreenReaderService
 
     private readonly OcrService _ocrService;
     private readonly ILogger<ScreenReaderService> _logger;
+    private readonly IMetricsCollector _metrics;
 
-    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger)
+    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger, IMetricsCollector metrics)
     {
         _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     }
 
     #region [Métodos públicos]
 
     public string ReadPlayerName(Image screenshot, int x, int y, int w, int h, double umbral, double inactiveUmbral)
     {
+        using var _ = _metrics.Measure("OcrPlayerNames");
         if (screenshot == null) return string.Empty;
 
         // Lectura 1: umbral estándar
@@ -61,6 +66,7 @@ public class ScreenReaderService : IScreenReaderService
     public decimal ReadBetValue(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber, int? playerNum = null)
     {
+        using var _ = _metrics.Measure("OcrBets");
         if (screenshot == null) return 0;
 
         OcrResult? firstOcr = null;
@@ -128,6 +134,7 @@ public class ScreenReaderService : IScreenReaderService
     public decimal ReadStackValue(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
     {
+        using var _ = _metrics.Measure("OcrStacks");
         if (screenshot == null) return 0;
 
         OcrResult? firstOcr = null;
@@ -195,6 +202,7 @@ public class ScreenReaderService : IScreenReaderService
     public string ReadHandNumber(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
     {
+        using var _ = _metrics.Measure("OcrHandNumber");
         if (screenshot == null) return string.Empty;
 
         OcrResult? firstOcr = null;
