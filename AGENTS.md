@@ -303,5 +303,26 @@ dotnet run --project BenchmarkSuite1/BenchmarkSuite1.csproj
 - Create feature branches for new developments.
 - Never commit build artifacts or sensitive files.
 
+## Pre-Merge Checkpoints
+
+Antes del merge a develop, ejecutar los checkpoints de verificación:
+
+### Script Automatizado
+```powershell
+.\scripts\verify-pre-merge.ps1 -SkipSmoke
+```
+
+### Checklist Manual
+Consultar `docs/pre-merge-checklist.md` para verificación paso a paso.
+
+### Checkpoints
+1. **Build Debug**: `dotnet build OpenScrape.sln` → Exit code 0
+2. **Build Release**: `dotnet build OpenScrape.sln --configuration Release` → Exit code 0
+3. **Format**: `dotnet format --verify-no-changes` → Sin cambios
+4. **Tests**: `dotnet test` → ≥ 1173 tests pasando
+5. **Warnings**: ≤ 75 warnings
+6. **csproj**: Sin cambios en archivos .csproj
+7. **Smoke Test**: Manual (8 pasos)
+
 This document should be updated as the codebase evolves. When adding new patterns or changing existing guidelines, update this file accordingly.</content>
 <parameter name="filePath">C:\Code\Poker\ScrapePoker\AGENTS.md
