@@ -641,7 +641,8 @@ namespace OpenScrape.App
         /// </summary>
         private async void btnCapture_Click(object sender, EventArgs e)
         {
-            var stopwatch = Stopwatch.StartNew();
+            using var _cycleTimer = _metrics?.Measure(TelemetryCategories.CycleTotal);
+            Interlocked.Increment(ref _cycleCounter);
             try
             {
                 lbAction.Text = string.Empty;
@@ -660,11 +661,9 @@ namespace OpenScrape.App
                     if (cbMark.Checked)
                         CreateLogWithMarkedHands();
 
+                    using var _captureTimer = _metrics?.Measure(TelemetryCategories.CaptureScreenshot);
                     await GetImageWhilePlaying();
                     _formImage.WindowState = FormWindowState.Minimized;
-
-                    // Telemetry: medir captura de pantalla
-                    _metrics?.Record(TelemetryCategories.CaptureScreenshot, stopwatch.Elapsed);
                 }
 
                 if (cbTest.Checked)
@@ -807,24 +806,13 @@ namespace OpenScrape.App
                 UpdateUIWithResults(potOddsResult);
 
                 // Telemetry: medir render del overlay
-                var renderSw = Stopwatch.StartNew();
+                using var _overlayTimer = _metrics?.Measure(TelemetryCategories.OverlayRender);
 
-                stopwatch.Stop();
-                if (cbTest.Checked)
-                {
-                    tbResume.Text += $"\nProcessing time: {stopwatch.ElapsedMilliseconds} ms";
-                }
-
-                // Telemetry: registrear ciclo total y capturar resultado
-                _metrics?.Record(TelemetryCategories.CycleTotal, stopwatch.Elapsed);
                 var telemetry = _metrics?.EndHand();
                 if (telemetry != null)
                 {
                     _gameLoggerService.SetTelemetry(telemetry);
                 }
-
-                renderSw.Stop();
-                _metrics?.Record(TelemetryCategories.OverlayRender, renderSw.Elapsed);
             }
             catch (Exception ex)
             {
