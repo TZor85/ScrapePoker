@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 using OpenScrape.App.Entities;
+using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;
 
@@ -21,6 +22,7 @@ public class TableLayoutService : ITableLayoutService
     private readonly IScreenReaderService _screenReader;
     private readonly IOpponentTracker _opponentTracker;
     private readonly ILogger<TableLayoutService> _logger;
+    private readonly IMetricsCollector _metrics;
 
     // Constantes de color para detección por canal Blue
     private readonly List<int> _colorEmpty = new() { 14, 15, 53, 59, 74 };
@@ -36,13 +38,15 @@ public class TableLayoutService : ITableLayoutService
         ICoordinateScaler coordinateScaler,
         IScreenReaderService screenReader,
         IOpponentTracker opponentTracker,
-        ILogger<TableLayoutService> logger)
+        ILogger<TableLayoutService> logger,
+        IMetricsCollector metrics)
     {
         _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
         _coordinateScaler = coordinateScaler ?? throw new ArgumentNullException(nameof(coordinateScaler));
         _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
         _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     }
 
     #region [Estado dealer]
@@ -88,6 +92,7 @@ public class TableLayoutService : ITableLayoutService
 
     public void SetDealerPlayer(Image screenshot, PlayerGameState state)
     {
+        using var _ = _metrics.Measure("LayoutDealer");
         if (state.Players.Count == 0)
             return;
 
@@ -433,6 +438,7 @@ public class TableLayoutService : ITableLayoutService
 
     public void SetVillainPosition(PlayerGameState state, TablePosition heroPosition, int dealerPosition)
     {
+        using var _ = _metrics.Measure("LayoutPositions");
         var allPlayers = state.Players.ToList();
         if (allPlayers.Count == 0)
             return;
