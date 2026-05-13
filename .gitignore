@@ -350,6 +350,8 @@ MigrationBackup/
 .ionide/
 resources/Game
 resources/Games
+output/samples/games/
+output/samples/resume_*.txt
 
 # Archivos de configuración con secretos
 appsettings.Development.json

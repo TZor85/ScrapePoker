@@ -8,7 +8,7 @@ namespace OpenScrape.App.Aplication.UseCases
         public void Execute(SaveTableMapUseCaseRequest request)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.InitialDirectory = @"C:\Code\ScrapePoker\resources\Games";
+            saveFileDialog.InitialDirectory = @"C:\Code\Poker\ScrapePoker\output\samples\games";
             saveFileDialog.Filter = "Text|*.txt";
             saveFileDialog.Title = "Save an Text File";
 

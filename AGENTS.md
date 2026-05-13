@@ -44,24 +44,24 @@ dotnet test OpenScrape.sln
 
 ### Run Tests with Coverage
 ```bash
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --collect:"XPlat Code Coverage"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
 ### Run Single Test
 ```bash
 # Run specific test method
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests.TestHacenEscalera"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests.TestHacenEscalera"
 
 # Run all tests in a class
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "FullyQualifiedName~OpenScrape.App.Tests.Tests"
 
 # Run tests by name pattern
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~TestHacenEscalera"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~TestHacenEscalera"
 ```
 
 ### Run Tests in Watch Mode
 ```bash
-dotnet watch test OpenScrape.App.Tests
+dotnet watch test test/OpenScrape.App.Tests
 ```
 
 ## Lint/Format Commands
@@ -221,9 +221,18 @@ src/
 │   └── ActionScenario/       # Action scenario features
 ├── OpenScrape.Infrastructure/# External dependencies
 │   └── Services/             # Infrastructure services
-└── OpenScrape.DecisionMaker/ # Poker decision algorithms
-    ├── Services/             # Poker calculation services
-    └── Algorithms/           # Core poker algorithms
+├── OpenScrape.DecisionMaker/ # Poker decision algorithms
+│   ├── Services/             # Poker calculation services
+│   └── Algorithms/           # Core poker algorithms
+└── Tools/                    # Auxiliary tools and benchmarks
+    ├── BenchmarkSuite1/
+    └── ExtractorTablas/
+
+test/
+└── OpenScrape.App.Tests/     # NUnit test suite
+
+docs/resources/              # Static documentation resources
+output/samples/              # Sample/generated poker captures and text data
 ```
 
 ### File Naming
@@ -264,7 +273,7 @@ public class TableService
 
 ### Run Benchmarks
 ```bash
-dotnet run --project BenchmarkSuite1/BenchmarkSuite1.csproj
+dotnet run --project src/Tools/BenchmarkSuite1/BenchmarkSuite1.csproj
 ```
 
 ## Debugging Guidelines

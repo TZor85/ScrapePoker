@@ -48,7 +48,8 @@ namespace OpenScrape.App
     public partial class FrmMain : Form, IDisposable
     {
         #region [Constants]
-        private static readonly string DEFAULT_RESOURCES_PATH = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources");
+        private static readonly string DEFAULT_SAMPLES_PATH = Path.Combine(
+            "C:", "Code", "Poker", "ScrapePoker", "output", "samples");
         #endregion
 
         #region [Enums]
@@ -286,7 +287,7 @@ namespace OpenScrape.App
             _session = GenerateRandomNumbers();
             _lastChecked = new RadioButton();
 
-            _pathResume = Path.Combine(DEFAULT_RESOURCES_PATH,
+            _pathResume = Path.Combine(DEFAULT_SAMPLES_PATH,
                 $"resume_{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}.txt");
 
             FormClosing += FrmMain_FormClosing;
@@ -1791,8 +1792,8 @@ namespace OpenScrape.App
             }
 
             _folderPath = Path.Combine(
-                DEFAULT_RESOURCES_PATH,
-                "Games",
+                DEFAULT_SAMPLES_PATH,
+                "games",
                 $"{DateTime.Now:yyyyMMdd}_Game",
                 _session);
 
@@ -2506,7 +2507,7 @@ namespace OpenScrape.App
                 }
 
                 string baseFolder = Path.Combine(
-                    "C:", "Code", "Poker", "ScrapePoker", "resources", "Games",
+                    "C:", "Code", "Poker", "ScrapePoker", "output", "samples", "games",
                     $"{DateTime.Now:yyyyMMdd}_Game");
 
                 _folderPath = Path.Combine(baseFolder, _session);

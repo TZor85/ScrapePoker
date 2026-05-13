@@ -16,20 +16,20 @@ dotnet clean OpenScrape.sln && dotnet build OpenScrape.sln
 
 # Tests
 dotnet test OpenScrape.sln
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj
 
 # Single test by name
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~TestHacenEscalera"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --filter "Name~TestHacenEscalera"
 
 # Tests with coverage
-dotnet test OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --collect:"XPlat Code Coverage"
+dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj --collect:"XPlat Code Coverage"
 
 # Format
 dotnet format OpenScrape.sln
 dotnet format --verify-no-changes OpenScrape.sln
 
 # Benchmarks
-dotnet run --project BenchmarkSuite1/BenchmarkSuite1.csproj
+dotnet run --project src/Tools/BenchmarkSuite1/BenchmarkSuite1.csproj
 
 # Publish
 dotnet publish src/OpenScrape.App/OpenScrape.App.csproj --configuration Release --runtime win-x64 --self-contained
