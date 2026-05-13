@@ -11,13 +11,13 @@
 - [x] Tests: 6 tests (semi-bluff con tainted, draw call, clasificacion, sin tainted)
 
 ### S22.2: River Runout Distinction
-- [ ] Crear enum `RiverCardType { Blank, Scare, Neutral }` en Domain
-- [ ] Agregar metodo `ClassifyRiverCard()` en `BoardTextureAnalyzer.cs`
-- [ ] Agregar campo `RiverCardType` a `PostflopDecisionInput.cs`
-- [ ] Modificar `HandleNoBet()`: blank → thin value bonus -2, scare → ReduceBetSize + check marginal
-- [ ] Modificar `HandleFacingBet()`: scare → bluff catch threshold ×0.90
-- [ ] Agregar parametros a `StrategyProfile.cs`: RiverBlankThinValueBonus, RiverScareBluffCatchReduction, etc.
-- [ ] Tests: 8 tests (clasificacion, value/check adjustments, bluff catch)
+- [x] Crear enum `RiverCardType { Blank, Scare, Neutral }` en Domain
+- [x] Agregar metodo `ClassifyRiverCard()` en `BoardTextureAnalyzer.cs`
+- [x] Agregar campo `RiverCardType` a `PostflopDecisionInput.cs`
+- [x] Modificar `HandleNoBet()`: blank → thin value bonus -2, scare → ReduceBetSize + check marginal
+- [x] Modificar `HandleFacingBet()`: scare → bluff catch threshold ×0.90
+- [x] Agregar parametros a `StrategyProfile.cs`: RiverBlankThinValueBonus, RiverScareBluffCatchReduction, etc.
+- [x] Tests: 8 tests (clasificacion, value/check adjustments, bluff catch)
 
 ### S22.3: Opponent Profile por Posicion
 - [ ] Crear record `PositionStats { HandsPlayed, VPIP, PFR, AF }` en `OpponentProfile.cs`

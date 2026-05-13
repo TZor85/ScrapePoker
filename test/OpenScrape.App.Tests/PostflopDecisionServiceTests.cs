@@ -5836,13 +5836,20 @@ public class PostflopDecisionServiceTests
     #region S22.2 — River Blank vs Scare Card
 
     [Test]
+    public void S22_2_RiverCardType_ViveEnDomainEnums()
+    {
+        Assert.That(typeof(OpenScrape.Domain.Enums.RiverCardType).Namespace,
+            Is.EqualTo("OpenScrape.Domain.Enums"));
+    }
+
+    [Test]
     public void S22_2_ClasificacionRiverCard_BlankCard()
     {
         var analyzer = new BoardTextureAnalyzer();
-        // FlushCompleted, FlushDrawAppeared, StraightCompleted, BoardPaired, OvercardAppeared, CompletedFlushSuit, DangerLevel
         var boardChange = new BoardChangeResult(false, false, false, false, false, -1, 0);
 
         var tipo = analyzer.ClassifyRiverCard(boardChange);
+
         Assert.That(tipo, Is.EqualTo(RiverCardType.Blank));
     }
 
@@ -5853,6 +5860,7 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(true, true, false, false, false, -1, 3);
 
         var tipo = analyzer.ClassifyRiverCard(boardChange);
+
         Assert.That(tipo, Is.EqualTo(RiverCardType.Scare));
     }
 
@@ -5863,93 +5871,135 @@ public class PostflopDecisionServiceTests
         var boardChange = new BoardChangeResult(false, false, true, false, false, -1, 2);
 
         var tipo = analyzer.ClassifyRiverCard(boardChange);
+
         Assert.That(tipo, Is.EqualTo(RiverCardType.Scare));
+    }
+
+    [Test]
+    public void S22_2_ClasificacionRiverCard_BoardPaired_Neutral()
+    {
+        var analyzer = new BoardTextureAnalyzer();
+        var boardChange = new BoardChangeResult(false, false, false, true, false, -1, 1);
+
+        var tipo = analyzer.ClassifyRiverCard(boardChange);
+
+        Assert.That(tipo, Is.EqualTo(RiverCardType.Neutral));
     }
 
     [Test]
     public void S22_2_BlankRiver_PermiteThinValueThinner()
     {
-        // Blank river → ThinValueAbove baja -2 → hero puede value bet con menos equity
-        // Con RiverCardType.Blank y equity ligeramente bajo ThinValueAbove normal
-        var resultBlank = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 39,  // justo debajo de ThinValueAbove=40 (pero con -2 bonus → 38)
-            Street = BoardPosition.River,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.OnePair,
-            RiverCardType = RiverCardType.Blank
-        });
+        var profile = CreateDefaultProfile();
+        profile.RandomizationMarginUnknown = 0;
+        var service = CreateService(profile);
 
-        // El resultado válido: puede ser Thin Value o Check según implementación exacta
-        Assert.That(resultBlank.Action, Is.Not.Empty);
+        var result = service.DetermineAction(S22_2_RiverInput(
+            equity: 39,
+            villainBetSize: BetSizeCategory.NoBet,
+            riverCardType: RiverCardType.Blank));
+
+        Assert.That(result.Action, Does.Contain("Thin Value"));
+        Assert.That(result.Reason, Does.Contain("thin value"));
+    }
+
+    [Test]
+    public void S22_2_NeutralRiver_NoAplicaThinValueBonus()
+    {
+        var profile = CreateDefaultProfile();
+        profile.RandomizationMarginUnknown = 0;
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(S22_2_RiverInput(
+            equity: 39,
+            villainBetSize: BetSizeCategory.NoBet,
+            riverCardType: RiverCardType.Neutral));
+
+        Assert.That(result.Action, Is.EqualTo("Check"));
+        Assert.That(result.Reason, Does.Contain("showdown value"));
+    }
+
+    [Test]
+    public void S22_2_ScareRiver_SinFacingBet_CheckeaDrawCompletado()
+    {
+        var result = _service.DetermineAction(S22_2_RiverInput(
+            equity: 55,
+            villainBetSize: BetSizeCategory.NoBet,
+            riverCardType: RiverCardType.Scare,
+            heroHandRank: HandRank.TwoPair,
+            boardTexture: "Wet"));
+
+        Assert.That(result.Action, Is.EqualTo("Check"));
+        Assert.That(result.Reason, Does.Contain("scare river"));
     }
 
     [Test]
     public void S22_2_ScareRiver_FacingBet_BluffCatchMasPermisivo()
     {
-        // Scare river → villain puede representar draw → bluff catch threshold × 0.90
-        // Con RiverCardType.Scare, facing bet, equity marginal → más fácil call
-        var resultScare = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 38,
-            Street = BoardPosition.River,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.Small,
-            PotOdds = 28,
-            HeroHandRank = HandRank.OnePair,
-            RiverCardType = RiverCardType.Scare,
-            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
-        });
+        var profile = CreateDefaultProfile();
+        profile.RiverScareBluffCatchReduction = 0.50;
+        var service = CreateService(profile);
 
-        Assert.That(resultScare.Action, Is.Not.Empty);
+        var result = service.DetermineAction(S22_2_RiverInput(
+            equity: 20,
+            villainBetSize: BetSizeCategory.Small,
+            riverCardType: RiverCardType.Scare,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            boardTexture: "Wet"));
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("bluff catch river"));
     }
 
     [Test]
-    public void S22_2_ScareRiver_SinFacingBet_CheckOReduceSizing()
+    public void S22_2_ScareRiver_SinReduccion_NoLlegaABluffCatch()
     {
-        // Scare river sin bet → check o sizing reducido para TwoPair sin flush
-        var result = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 55,
-            Street = BoardPosition.River,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.TwoPair,
-            HeroBlocksDangerSuit = false,
-            RiverCardType = RiverCardType.Scare,
-            BoardChange = new BoardChangeResult(true, true, false, false, false, -1, 3)
-        });
+        var profile = CreateDefaultProfile();
+        profile.RiverScareBluffCatchReduction = 1.0;
+        var service = CreateService(profile);
 
-        // TwoPair degradado en scare river → check o bet reducida
-        Assert.That(result.Action, Is.Not.Empty);
+        var result = service.DetermineAction(S22_2_RiverInput(
+            equity: 20,
+            villainBetSize: BetSizeCategory.Small,
+            riverCardType: RiverCardType.Scare,
+            heroHandRank: HandRank.OnePair,
+            pairClassification: PairClassification.TopPair,
+            boardTexture: "Wet"));
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Does.Not.Contain("bluff catch"));
     }
 
     [Test]
-    public void S22_2_BlankRiver_FacingBet_NoReduceBluffCatch()
+    public void S22_2_StrategyProfile_RiverRunoutParams_TienenDefaults()
     {
-        // Blank river → villain menos probable bluffing → threshold normal
-        var resultBlank = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 38,
-            Street = BoardPosition.River,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.Small,
-            PotOdds = 28,
-            HeroHandRank = HandRank.OnePair,
-            RiverCardType = RiverCardType.Blank
-        });
+        var profile = CreateDefaultProfile();
 
-        Assert.That(resultBlank.Action, Is.Not.Empty);
+        Assert.That(profile.RiverBlankThinValueBonus, Is.EqualTo(-2.0));
+        Assert.That(profile.RiverScareBluffCatchReduction, Is.EqualTo(0.90));
+        Assert.That(profile.RiverScareSizingReduction, Is.True);
     }
+
+    private static PostflopDecisionInput S22_2_RiverInput(
+        double equity,
+        BetSizeCategory villainBetSize,
+        RiverCardType riverCardType,
+        HandRank heroHandRank = HandRank.OnePair,
+        PairClassification pairClassification = PairClassification.TopPair,
+        string boardTexture = "Dry",
+        BoardChangeResult? boardChange = null)
+        => MakeInput(
+            equity: equity,
+            BoardPosition.River,
+            HandSituation.OpenRaise,
+            boardTexture,
+            isInPosition: true,
+            villainBetSize: villainBetSize,
+            potOdds: 120,
+            boardChange: boardChange,
+            heroHandRank: heroHandRank,
+            pairClassification: pairClassification,
+            riverCardType: riverCardType);
 
     #endregion
 

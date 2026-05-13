@@ -1,3 +1,4 @@
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Algorithms;
