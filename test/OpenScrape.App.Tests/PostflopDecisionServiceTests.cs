@@ -6200,113 +6200,65 @@ public class PostflopDecisionServiceTests
     #region S22.5 — Multiway Nut Advantage
 
     [Test]
-    public void S22_5_Flush_MultiwaY_PenaltyReducido50Pct()
+    public void S22_5_Flush_Multiway_ReducePenalty_YPermiteCallFrontera()
     {
-        // HU vs 3-way: hero tiene flush → penalty reducido en 3-way
-        var resultHU = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 55,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.Flush,
-            NumOpponents = 1
-        });
+        var flush = _service.DetermineAction(S22_5_Input(53.4, HandRank.Flush));
+        var twoPair = _service.DetermineAction(S22_5_Input(53.4, HandRank.TwoPair));
 
-        var result3Way = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 55,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.Flush,
-            NumOpponents = 2  // 3-way
-        });
-
-        // Con flush en multiway, penalty reducido → más agresivo que mano débil multiway
-        Assert.That(result3Way.Action, Is.Not.Empty);
-        Assert.That(resultHU.Action, Is.Not.Empty);
+        Assert.That(flush.Action, Is.EqualTo("Call"));
+        Assert.That(flush.Reason, Does.Contain("thin value"));
+        Assert.That(twoPair.Action, Is.EqualTo("Fold"));
+        Assert.That(twoPair.Reason, Is.EqualTo("Equity baja vs bet"));
     }
 
     [Test]
-    public void S22_5_Set_MultiWay_IP_PenaltyReducido30Pct()
+    public void S22_5_Set_IP_BoardNoPaired_ReducePenalty_YPermiteCallFrontera()
     {
-        // ThreeOfAKind IP en board no paired → penalty reducido 30%
-        var resultSet = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 58,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.ThreeOfAKind,
-            NumOpponents = 2,
-            BoardChange = new BoardChangeResult(false, false, false, false, false, -1, 0)
-        });
+        var result = _service.DetermineAction(S22_5_Input(
+            53.5,
+            HandRank.ThreeOfAKind,
+            isInPosition: true,
+            boardChange: new BoardChangeResult(false, false, false, false, false, -1, 0)));
 
-        Assert.That(resultSet.Action, Is.Not.Empty);
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("thin value"));
     }
 
     [Test]
-    public void S22_5_OnePair_Multiway_PenaltyNormal()
+    public void S22_5_Set_OOP_NoReducePenalty_YFoldeaFrontera()
     {
-        // OnePair en multiway → no hay reducción de penalty
-        var result = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 55,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Dry",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.OnePair,
-            NumOpponents = 2
-        });
+        var result = _service.DetermineAction(S22_5_Input(
+            53.5,
+            HandRank.ThreeOfAKind,
+            isInPosition: false,
+            heroPosition: TablePosition.BigBlind,
+            boardChange: new BoardChangeResult(false, false, false, false, false, -1, 0)));
 
-        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Is.EqualTo("Equity baja vs bet"));
     }
 
     [Test]
-    public void S22_5_Flush_HU_SinReduccion()
+    public void S22_5_Set_IP_BoardPaired_NoReducePenalty_YFoldeaFrontera()
     {
-        // HU: no hay multiway penalty → reducción no aplica (no hay qué reducir)
-        var result = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 65,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.Flush,
-            NumOpponents = 1
-        });
+        var result = _service.DetermineAction(S22_5_Input(
+            53.5,
+            HandRank.ThreeOfAKind,
+            isInPosition: true,
+            boardChange: new BoardChangeResult(false, false, false, true, false, -1, 0)));
 
-        Assert.That(result.Action, Does.Contain("Value"));
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Is.EqualTo("Equity baja vs bet"));
     }
 
     [Test]
-    public void S22_5_TwoPair_Multiway_PenaltyNormal()
+    public void S22_5_OnePairYTwoPair_Multiway_NoReducenPenalty()
     {
-        // TwoPair no llega a la reducción nut (solo Flush+ y ThreeOfAKind condicionado)
-        var result = _service.DetermineAction(new PostflopDecisionInput
-        {
-            Equity = 58,
-            Street = BoardPosition.Turn,
-            Situation = HandSituation.OpenRaise,
-            BoardTexture = "Wet",
-            IsInPosition = true,
-            VillainBetSize = BetSizeCategory.NoBet,
-            HeroHandRank = HandRank.TwoPair,
-            NumOpponents = 2
-        });
+        var onePair = _service.DetermineAction(S22_5_Input(53.4, HandRank.OnePair));
+        var twoPair = _service.DetermineAction(S22_5_Input(53.4, HandRank.TwoPair));
 
-        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(onePair.Action, Is.EqualTo("Fold"));
+        Assert.That(twoPair.Action, Is.EqualTo("Fold"));
     }
 
     [Test]
@@ -6316,6 +6268,29 @@ public class PostflopDecisionServiceTests
         Assert.That(profile.MultiwayNutPenaltyReduction, Is.EqualTo(0.50));
         Assert.That(profile.MultiwayStrongPenaltyReduction, Is.EqualTo(0.30));
     }
+
+    private static PostflopDecisionInput S22_5_Input(
+        double equity,
+        HandRank heroHandRank,
+        bool isInPosition = true,
+        TablePosition heroPosition = TablePosition.Button,
+        BoardChangeResult? boardChange = null)
+        => new()
+        {
+            Equity = equity,
+            Street = BoardPosition.Turn,
+            Situation = HandSituation.OpenRaise,
+            BoardTexture = "Wet",
+            IsInPosition = isInPosition,
+            VillainBetSize = BetSizeCategory.Medium,
+            PotOdds = 120,
+            HeroStack = 300,
+            PotSize = 100,
+            HeroHandRank = heroHandRank,
+            HeroPosition = heroPosition,
+            NumOpponents = 2,
+            BoardChange = boardChange
+        };
 
     #endregion
 

@@ -39,12 +39,12 @@
 - [ ] Tests: 8 tests (commit sizing, check-back, facing bet, projected SPR scenarios)
 
 ### S22.5: Multiway Nut Advantage
-- [ ] Modificar multiway penalty block en `DetermineAction()`:
+- [x] Modificar multiway penalty block en `DetermineAction()`:
   - Si heroHandRank >= Flush → penalty ×0.50
   - Si heroHandRank == ThreeOfAKind + board no paired + IP → penalty ×0.70
   - OnePair/TwoPair: sin reduccion
-- [ ] Agregar parametros: MultiwayNutPenaltyReduction, MultiwayStrongPenaltyReduction
-- [ ] Tests: 6 tests (flush/set/pair en multiway, IP/OOP, board paired)
+- [x] Agregar parametros: MultiwayNutPenaltyReduction, MultiwayStrongPenaltyReduction
+- [x] Tests: 6 tests (flush/set/pair en multiway, IP/OOP, board paired)
 
 ### S22.6: Bluff Frequency Basada en Equity
 - [ ] Modificar `HandleLowEquity()`: reemplazar freq estatica por `baseFreq × (1 - (threshold-equity)/threshold)`
