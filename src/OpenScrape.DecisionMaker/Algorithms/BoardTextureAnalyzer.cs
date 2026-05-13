@@ -1,14 +1,9 @@
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Algorithms;
 
 public enum BoardTextureCategory { Dry, SemiDry, SemiWet, Wet, Paired }
-
-/// <summary>
-/// S22.2: Clasificación de la carta de river para ajustar decisiones de bet/check/call.
-/// Blank = no cambia textura; Scare = completa draw o overcard significativo; Neutral = cambio menor.
-/// </summary>
-public enum RiverCardType { Blank, Neutral, Scare }
 
 public record BoardTextureResult(
     BoardTextureCategory Category,
