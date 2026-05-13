@@ -3,12 +3,12 @@
 ## S22: Sprint Refinamiento
 
 ### S22.1: Aplicar Tainted Outs al Equity Pipeline
-- [ ] Modificar `PostflopDecisionInput.cs`: agregar campo `EffectiveOuts` (double)
-- [ ] Modificar `GameCoordinator.cs`: pasar `outsResult.EffectiveOuts` al input
-- [ ] Modificar `PostflopDecisionService.cs` — semi-bluff path: usar EffectiveOuts para drawEquity
-- [ ] Modificar `PostflopDecisionService.cs` — draw calling path: usar EffectiveOuts para implied odds
-- [ ] Mantener `TotalOuts` en draw classification (HasFlushDraw, HasComboDraw checks)
-- [ ] Tests: 6 tests (semi-bluff con tainted, draw call, clasificacion, sin tainted)
+- [x] Modificar `PostflopDecisionInput.cs`: agregar campo `EffectiveOuts` (double)
+- [x] Modificar `GameCoordinator.cs`: pasar `outsResult.EffectiveOuts` al input
+- [x] Modificar `PostflopDecisionService.cs` — semi-bluff path: usar EffectiveOuts para drawEquity
+- [x] Modificar `PostflopDecisionService.cs` — draw calling path: usar EffectiveOuts para implied odds
+- [x] Mantener `TotalOuts` en draw classification (HasFlushDraw, HasComboDraw checks)
+- [x] Tests: 6 tests (semi-bluff con tainted, draw call, clasificacion, sin tainted)
 
 ### S22.2: River Runout Distinction
 - [ ] Crear enum `RiverCardType { Blank, Scare, Neutral }` en Domain

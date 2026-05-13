@@ -5698,18 +5698,26 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_1_SemiBluff_UsaEffectiveOuts_EnVezDeTotalOuts()
     {
-        // Con EffectiveOuts < TotalOuts, la equidad del draw baja → bluff EV más ajustado
-        // Escenario: flush draw con 2 tainted (9 total, ~7.6 effective)
-        var result = _service.DetermineAction(MakeInput(
-            equity: 30, BoardPosition.Turn, HandSituation.OpenRaise,
+        var resultDrawLimpio = _service.DetermineAction(MakeInput(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.NoBet,
             totalOuts: 9, hasFlushDraw: true,
-            effectiveOuts: 7.6,
-            foldEquity: 45));
+            effectiveOuts: 9.0,
+            foldEquity: 10));
 
-        // Con effective outs menores, el bluff EV es más restrictivo
-        Assert.That(result.Action, Is.Not.Empty);
+        var resultDrawTainted = _service.DetermineAction(MakeInput(
+            equity: 20, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Wet", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 1.0,
+            foldEquity: 10));
+
+        Assert.That(resultDrawLimpio.Action, Does.Contain("Semi-Bluff"));
+        Assert.That(resultDrawLimpio.Reason, Does.Contain("eff=9"));
+        Assert.That(resultDrawTainted.Action, Does.Not.Contain("Semi-Bluff"));
+        Assert.That(resultDrawTainted.Reason ?? string.Empty, Does.Not.Contain("Semi-bluff"));
     }
 
     [Test]
@@ -5738,27 +5746,26 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_1_DrawCall_UsaEffectiveOuts_ParaImpliedOdds()
     {
-        // Con EffectiveOuts altos (flush draw limpio), call es más atractivo
         var resultAlto = _service.DetermineAction(MakeInput(
-            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
-            potOdds: 25, totalOuts: 9, hasFlushDraw: true,
-            effectiveOuts: 9.0,  // sin tainted
+            potOdds: 15, totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 9.0,
             heroStack: 200, potSize: 50));
 
-        // Con EffectiveOuts bajos (draw con tainted), call menos atractivo
         var resultBajo = _service.DetermineAction(MakeInput(
-            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
+            equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
             boardTexture: "Wet", isInPosition: true,
             villainBetSize: BetSizeCategory.Small,
-            potOdds: 25, totalOuts: 9, hasFlushDraw: true,
-            effectiveOuts: 6.5,  // con tainted
+            potOdds: 15, totalOuts: 9, hasFlushDraw: true,
+            effectiveOuts: 1.0,
             heroStack: 200, potSize: 50));
 
-        // Ambos producen respuesta válida
-        Assert.That(resultAlto.Action, Is.Not.Empty);
-        Assert.That(resultBajo.Action, Is.Not.Empty);
+        Assert.That(resultAlto.Action, Is.EqualTo("Call"));
+        Assert.That(resultAlto.Reason, Does.Contain("eff=9"));
+        Assert.That(resultBajo.Action, Is.Not.EqualTo("Call"));
+        Assert.That(resultBajo.Reason ?? string.Empty, Does.Not.Contain("draw con"));
     }
 
     [Test]
