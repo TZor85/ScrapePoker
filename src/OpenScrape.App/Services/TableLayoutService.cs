@@ -258,20 +258,15 @@ public class TableLayoutService : ITableLayoutService
             var color = bitmap.GetPixel(scaled.X, scaled.Y);
             var colorMatch = IsColorMatch(color.B, _colorEmpty);
 
-
-
-            state.Players.Add(CreatePlayerData(playerNumber.Value));
+            var player = EnsurePlayer(state, playerNumber.Value);
 
             if (region.Name.Contains("empty") && colorMatch)
             {
-                var player = state.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
-                if (player != null)
-                {
-                    player.Empty = true;
-                }
+                player.Empty = true;
+                player.Active = false;
+                player.SitOut = false;
             }
         }
-
 
     }
 
@@ -292,25 +287,21 @@ public class TableLayoutService : ITableLayoutService
             var scaled = GetScaledRegion(region, screenshot);
             var color = bitmap.GetPixel(scaled.X, scaled.Y);
 
-            var player = state.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+            var player = EnsurePlayer(state, playerNumber.Value);
             bool isActive = region.Name.Contains("playing") && IsColorMatch(color.B, _colorPlaying);
 
             if (isActive)
             {
-                if (player != null)
-                {
-                    player.Active = true;
-                }
+                player.Active = true;
+                player.Empty = false;
+                player.SitOut = false;
+                player.HasFolded = false;
             }
             else
             {
-                if (player != null)
-                {
-                    player.Active = false;
-                }
+                player.Active = false;
             }
         }
-
 
     }
 
@@ -418,6 +409,14 @@ public class TableLayoutService : ITableLayoutService
     {
         foreach (var player in state.Players.Where(p => p.Name != "P0"))
         {
+            if (player.Bet > 0)
+            {
+                player.Active = true;
+                player.Empty = false;
+                player.SitOut = false;
+                player.HasFolded = false;
+            }
+
             if (!player.Active && !player.Empty && !player.SitOut &&
                 string.IsNullOrEmpty(player.Alias) &&
                 player.Stack == 0 && player.Bet == 0)
@@ -607,6 +606,17 @@ public class TableLayoutService : ITableLayoutService
             SitOut = false,
             ValuePosition = playerNumber
         };
+
+    private static Player EnsurePlayer(PlayerGameState state, int playerNumber)
+    {
+        var player = state.Players.FirstOrDefault(n => n.Name == $"P{playerNumber}");
+        if (player != null)
+            return player;
+
+        player = CreatePlayerData(playerNumber);
+        state.Players.Add(player);
+        return player;
+    }
 
     private static int? GetPlayerNumber(string regionName, string extraText = "")
     {
