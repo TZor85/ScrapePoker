@@ -28,7 +28,13 @@ internal class Program
             if (item.Key.Contains("box"))
             {
                 hand = replaceBox(item.Key);
-                var pp = item.Value["colorPercentage"].ToString().Replace("{", string.Empty).Replace("}", string.Empty).Split(",");
+                var colorPercentage = item.Value?["colorPercentage"]?.ToString();
+                if (string.IsNullOrWhiteSpace(colorPercentage))
+                {
+                    continue;
+                }
+
+                var pp = colorPercentage.Replace("{", string.Empty).Replace("}", string.Empty).Split(",");
 
                 foreach (var colors in pp)
                 {
@@ -39,9 +45,19 @@ internal class Program
             }
             else
             {
+                if (item.Value is null)
+                {
+                    continue;
+                }
+
                 foreach (var actions in item.Value)
                 {
-                    dic.Add(actions["name"].ToString(), actions["color"].ToString());
+                    var name = actions["name"]?.ToString();
+                    var color = actions["color"]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(color))
+                    {
+                        dic.Add(name, color);
+                    }
                 }
 
             }
@@ -66,7 +82,7 @@ internal class Program
                 action = textInfo.ToTitleCase(item.Key.ToLower());
                 color = item.Value;
             }
-                
+
             texto = texto.Replace(color, action);
 
         }
@@ -121,7 +137,7 @@ internal class Program
     }
 
     private static string ChangeParentesis(string texto)
-    {   
+    {
         string nuevoTexto = string.Empty;
 
         // Buscar el patrón "númeroBET (número BB)" usando una expresión regular
@@ -166,7 +182,7 @@ internal class Program
             if (item.Contains("#e0e0e0"))
                 dict.Add("Fold", item.Split(":")[1]);
         }
-        
+
 
         return dict;
 

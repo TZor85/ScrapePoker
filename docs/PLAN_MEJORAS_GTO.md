@@ -237,14 +237,14 @@ Mejora 4 (Bet Sizing)        → Depende de: 2 (range → sizing)
 ### Archivos a Crear
 - `src/OpenScrape.DecisionMaker/Services/ExploitabilityCalculator.cs`
 - `src/OpenScrape.DecisionMaker/Services/RangePolarizer.cs`
-- `OpenScrape.App.Tests/ExploitabilityCalculatorTests.cs`
-- `OpenScrape.App.Tests/RangePolarizerTests.cs`
+- `test/OpenScrape.App.Tests/ExploitabilityCalculatorTests.cs`
+- `test/OpenScrape.App.Tests/RangePolarizerTests.cs`
 
 ### Archivos a Modificar
 - `src/OpenScrape.App/Aplication/UseCases/UnifiedPokerCalculator.cs`
 - `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`
 - `src/OpenScrape.DecisionMaker/Services/BetSizingService.cs`
-- `OpenScrape.App.Tests/UnifiedPokerCalculatorTests.cs` (actualizar)
+- `test/OpenScrape.App.Tests/UnifiedPokerCalculatorTests.cs` (actualizar)
 
 ---
 

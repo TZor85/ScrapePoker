@@ -37,9 +37,9 @@ namespace OpenScrape.App
 
                 if (string.IsNullOrWhiteSpace(lbPath.Text))
                 {
-                    //folderPath = @"C:\Code\ScrapePoker\resources\Games";
+                    //folderPath = @"C:\Code\ScrapePoker\output\samples\games";
                     //portatil
-                    folderPath = @"C:\Code\Poker\ScrapePoker\resources\Games";
+                    folderPath = @"C:\Code\Poker\ScrapePoker\output\samples\games";
                 }
                 else
                 {

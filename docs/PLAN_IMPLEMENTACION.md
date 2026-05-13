@@ -11,16 +11,16 @@
 - [x] Prerequisito para todo lo demas — sin tests no se puede refactorizar con confianza
 
 **Archivos de tests:**
-- `OpenScrape.App.Tests/HandEvaluatorTests.cs` (15 tests)
-- `OpenScrape.App.Tests/MonteCarloSimulatorTests.cs` (6 tests)
-- `OpenScrape.App.Tests/OutsCalculatorTests.cs` (6 tests)
-- `OpenScrape.App.Tests/BetSizingServiceTests.cs` (9 tests)
-- `OpenScrape.App.Tests/EquityCalculatorServiceTests.cs` (7 tests)
-- `OpenScrape.App.Tests/GameLoopStateMachineTests.cs` (14 tests)
-- `OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
-- `OpenScrape.App.Tests/DecisionIntegrationTests.cs` (8 tests)
-- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (19 tests: 12 textura + 7 board change)
-- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests: facing bet, danger cards, blocker, cap)
+- `test/OpenScrape.App.Tests/HandEvaluatorTests.cs` (15 tests)
+- `test/OpenScrape.App.Tests/MonteCarloSimulatorTests.cs` (6 tests)
+- `test/OpenScrape.App.Tests/OutsCalculatorTests.cs` (6 tests)
+- `test/OpenScrape.App.Tests/BetSizingServiceTests.cs` (9 tests)
+- `test/OpenScrape.App.Tests/EquityCalculatorServiceTests.cs` (7 tests)
+- `test/OpenScrape.App.Tests/GameLoopStateMachineTests.cs` (14 tests)
+- `test/OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
+- `test/OpenScrape.App.Tests/DecisionIntegrationTests.cs` (8 tests)
+- `test/OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (19 tests: 12 textura + 7 board change)
+- `test/OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests: facing bet, danger cards, blocker, cap)
 
 **Resultado:** 225 tests, todos pasan (acumulado final incluyendo fases posteriores).
 
@@ -161,7 +161,7 @@ Los 20 metodos son:
 - `src/OpenScrape.Domain/Entities/StrategyProfile.cs`
 - `src/OpenScrape.Domain/ValueObjects/StreetThresholds.cs`
 - `src/OpenScrape.App/Services/StrategyProfileService.cs`
-- `OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
+- `test/OpenScrape.App.Tests/StrategyProfileTests.cs` (12 tests)
 
 **Archivos modificados:**
 - `appsettings.json` — seccion StrategyProfile con 20 thresholds + parametros globales
@@ -196,7 +196,7 @@ Los 20 metodos son:
 
 **Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs`
-- `OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (12 tests)
+- `test/OpenScrape.App.Tests/BoardTextureAnalyzerTests.cs` (12 tests)
 
 **Archivos modificados:**
 - `src/OpenScrape.App/Program.cs` — registrado como Singleton
@@ -274,7 +274,7 @@ Los 20 metodos son:
 
 **Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`
-- `OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests)
+- `test/OpenScrape.App.Tests/PostflopDecisionServiceTests.cs` (32 tests)
 
 **Archivos modificados:**
 - `src/OpenScrape.App/Program.cs` — registrado como Singleton
@@ -350,7 +350,7 @@ Los 20 metodos son:
 - `src/OpenScrape.Domain/ValueObjects/VillainRange.cs`
 - `src/OpenScrape.Domain/Entities/OpponentProfile.cs`
 - `src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs`
-- `OpenScrape.App.Tests/OpponentTrackerTests.cs`
+- `test/OpenScrape.App.Tests/OpponentTrackerTests.cs`
 
 **Archivos modificados:**
 - `src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs` — reescritura + overcards
@@ -522,7 +522,7 @@ Los 20 metodos son:
 
 **Archivos creados:**
 - `src/OpenScrape.DecisionMaker/Services/StrategyAnalyzerService.cs`
-- `OpenScrape.App.Tests/StrategyAnalyzerServiceTests.cs` (12 tests)
+- `test/OpenScrape.App.Tests/StrategyAnalyzerServiceTests.cs` (12 tests)
 
 **Archivos modificados:**
 - `src/OpenScrape.Domain/Entities/GameRound.cs` — HeroStackEnd, Result, Situation, SessionId
