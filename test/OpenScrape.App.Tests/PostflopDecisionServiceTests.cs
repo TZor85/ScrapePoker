@@ -6409,85 +6409,100 @@ public class PostflopDecisionServiceTests
     #region S22.7 — Pot Commitment Range Expandido
 
     [Test]
-    public void S22_7_SPR_MenosDeMedioCall_EquityPositiva()
+    public void S22_7_SPR_MenosDeMedio_CallPorEVPositivo()
     {
-        // SPR < 0.5 (existente): EV(call) > 0 → Call
-        var result = _service.DetermineAction(MakeInput(
-            equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large,
-            potOdds: 42, totalOuts: 0,
-            heroStack: 8, potSize: 20));
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 35,
+            heroStack: 8,
+            potSize: 20));
 
         Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("pot committed"));
+        Assert.That(result.Reason, Does.Contain("EV call"));
     }
 
     [Test]
-    public void S22_7_SPR_Entre05y10_EquidadSobre30_Call()
+    public void S22_7_SPR_Entre05y10_EquitySobre30_CallExpandido()
     {
-        // SPR 0.5-1.0: equity > 30% → Call por pot commitment expandido
-        var result = _service.DetermineAction(MakeInput(
-            equity: 33, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large,
-            potOdds: 40, totalOuts: 0,
-            heroStack: 15, potSize: 20));
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 33,
+            heroStack: 15,
+            potSize: 20));
 
-        // SPR ≈ 0.75 + equity 33% > 30% → Call
         Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("pot committed expandido"));
+        Assert.That(result.Reason, Does.Contain("30"));
     }
 
     [Test]
-    public void S22_7_SPR_Entre10y15_EquidadSobre38_Call()
+    public void S22_7_SPR_Entre05y10_EquityIgual30_NoActivaCommitment()
     {
-        // SPR 1.0-1.5: equity > 38% → Call por pot commitment expandido
-        var result = _service.DetermineAction(MakeInput(
-            equity: 40, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large,
-            potOdds: 40, totalOuts: 0,
-            heroStack: 25, potSize: 20));
-
-        // SPR ≈ 1.25 + equity 40% > 38% → Call
-        Assert.That(result.Action, Is.EqualTo("Call"));
-    }
-
-    [Test]
-    public void S22_7_SPR_Entre10y15_EquidadBajo38_NoCall()
-    {
-        // SPR 1.0-1.5: equity < 38% → no activa pot commitment
-        var result = _service.DetermineAction(MakeInput(
-            equity: 25, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large,
-            potOdds: 40, totalOuts: 0,
-            heroStack: 25, potSize: 20));
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 30,
+            heroStack: 15,
+            potSize: 20));
 
         Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Does.Not.Contain("pot committed"));
     }
 
     [Test]
-    public void S22_7_SPR_Sobre15_FueraDeRango_NoActivaCommitment()
+    public void S22_7_SPR_Entre10y15_EquitySobre38_CallMarginal()
     {
-        // SPR > 1.5: pot commitment expandido no aplica.
-        // Verificamos que la constante PotCommitmentSPRExpanded tiene el valor correcto
-        // y que la lógica del perfil está bien configurada
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 39,
+            heroStack: 25,
+            potSize: 20));
+
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("pot committed marginal"));
+        Assert.That(result.Reason, Does.Contain("38"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Entre10y15_EquityIgual38_NoActivaCommitment()
+    {
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 38,
+            heroStack: 25,
+            potSize: 20));
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Does.Not.Contain("pot committed"));
+    }
+
+    [Test]
+    public void S22_7_SPR_Sobre15_NoActivaCommitment()
+    {
+        var result = _service.DetermineAction(S22_7_Input(
+            equity: 39,
+            heroStack: 32,
+            potSize: 20));
+
+        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Reason, Does.Not.Contain("pot committed"));
+    }
+
+    [Test]
+    public void S22_7_HandleFacingBet_UsaCommitmentMarginal_CuandoNoEsLowEquity()
+    {
         var profile = CreateDefaultProfile();
-        Assert.That(profile.PotCommitmentSPRExpanded, Is.EqualTo(1.5),
-            "SPR > 1.5 debe estar fuera del rango de pot commitment expandido");
+        profile.Thresholds["Turn_OpenRaise"] = profile.Thresholds["Turn_OpenRaise"] with
+        {
+            FoldBelow = 20,
+            ThinValueAbove = 80,
+            ValueAbove = 90,
+            StrongValueAbove = 95
+        };
+        var service = CreateService(profile);
 
-        // SPR = 3 (heroStack=60, potSize=20): equity 39% con potOdds 38%
-        // Pot commitment expandido (SPR 1.0-1.5) requería equity > 38% → pero SPR=3, no aplica
-        // Por lo tanto, si equity < potOdds → fold normal
-        var result = _service.DetermineAction(MakeInput(
-            equity: 10, BoardPosition.Turn, HandSituation.OpenRaise,
-            boardTexture: "Dry", isInPosition: true,
-            villainBetSize: BetSizeCategory.Large,
-            potOdds: 45, totalOuts: 0,
-            heroStack: 60, potSize: 20));  // SPR=3
+        var result = service.DetermineAction(S22_7_Input(
+            equity: 39,
+            heroStack: 25,
+            potSize: 20));
 
-        // Con equity muy baja y potOdds altas → Fold
-        Assert.That(result.Action, Is.EqualTo("Fold"));
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("pot committed marginal"));
     }
 
     [Test]
@@ -6498,6 +6513,22 @@ public class PostflopDecisionServiceTests
         Assert.That(profile.PotCommitmentEquityMedium, Is.EqualTo(30.0));
         Assert.That(profile.PotCommitmentEquityWide, Is.EqualTo(38.0));
     }
+
+    private static PostflopDecisionInput S22_7_Input(
+        double equity,
+        decimal heroStack,
+        decimal potSize)
+        => MakeInput(
+            equity: equity,
+            BoardPosition.Turn,
+            HandSituation.OpenRaise,
+            boardTexture: "Dry",
+            isInPosition: true,
+            villainBetSize: BetSizeCategory.Large,
+            potOdds: 120,
+            totalOuts: 0,
+            heroStack: heroStack,
+            potSize: potSize);
 
     #endregion
 

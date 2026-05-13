@@ -53,11 +53,11 @@
 - [x] Tests: 6 tests (equity baja/media/alta freq, con modifiers, disabled)
 
 ### S22.7: Pot Commitment Range Expandido
-- [ ] Modificar pot commitment check en `HandleFacingBet()` y `HandleLowEquity()`:
+- [x] Modificar pot commitment check en `HandleFacingBet()` y `HandleLowEquity()`:
   - SPR 0.5-1.0: commit si equity > PotCommitmentEquityMedium (30%)
   - SPR 1.0-1.5: commit si equity > PotCommitmentEquityWide (38%)
-- [ ] Agregar parametros: PotCommitmentSPRExpanded, PotCommitmentEquityMedium, PotCommitmentEquityWide
-- [ ] Tests: 6 tests (SPR ranges, equity thresholds, boundaries)
+- [x] Agregar parametros: PotCommitmentSPRExpanded, PotCommitmentEquityMedium, PotCommitmentEquityWide
+- [x] Tests: 6 tests (SPR ranges, equity thresholds, boundaries)
 
 ### S22.8: Hand Strength Re-Evaluation en River
 - [ ] Agregar metodo `GetRelativeHandRank()` que degrada HandRank si draws completaron:
