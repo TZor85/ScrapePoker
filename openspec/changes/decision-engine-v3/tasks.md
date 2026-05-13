@@ -47,10 +47,10 @@
 - [x] Tests: 6 tests (flush/set/pair en multiway, IP/OOP, board paired)
 
 ### S22.6: Bluff Frequency Basada en Equity
-- [ ] Modificar `HandleLowEquity()`: reemplazar freq estatica por `baseFreq × (1 - (threshold-equity)/threshold)`
-- [ ] Mantener multiplicadores existentes (WTSD, opponent type, SPR) como overlay
-- [ ] Agregar parametro: BluffFreqEquityScaling (bool, default true)
-- [ ] Tests: 6 tests (equity baja/media/alta freq, con modifiers, disabled)
+- [x] Modificar `HandleLowEquity()`: reemplazar freq estatica por `baseFreq × (1 - (threshold-equity)/threshold)`
+- [x] Mantener multiplicadores existentes (WTSD, opponent type, SPR) como overlay
+- [x] Agregar parametro: BluffFreqEquityScaling (bool, default true)
+- [x] Tests: 6 tests (equity baja/media/alta freq, con modifiers, disabled)
 
 ### S22.7: Pot Commitment Range Expandido
 - [ ] Modificar pot commitment check en `HandleFacingBet()` y `HandleLowEquity()`:
