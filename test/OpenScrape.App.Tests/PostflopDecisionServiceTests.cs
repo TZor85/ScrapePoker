@@ -6297,129 +6297,111 @@ public class PostflopDecisionServiceTests
     #region S22.6 — Bluff Frequency Basada en Equity
 
     [Test]
-    public void S22_6_Bluff_ConFoldEquityAlta_FreqNormal()
+    public void S22_6_EquityCercaDeFoldBelow_BluffeaMasQueEquityMuyBaja()
     {
-        // Equity alta (cercana a FoldBelow) → scaling factor ~1.0 → freq normal
-        var profile = CreateDefaultProfile();
-        var service = CreateService(profile);
-
-        int bluffCount = 0;
-        for (int i = 0; i < 200; i++)
-        {
-            var result = service.DetermineAction(MakeInput(
-                equity: 38, BoardPosition.Turn, HandSituation.OpenRaise,
-                boardTexture: "Coordinated", isInPosition: true,
-                villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 55));
-            if (result.Reason != null &&
-                (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
-                bluffCount++;
-        }
-
-        // Con equity cercana a FoldBelow → freq normal (no penalizada)
-        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
-    }
-
-    [Test]
-    public void S22_6_Bluff_ConEquityMuyBaja_FreqReducida()
-    {
-        // Equity muy baja vs FoldBelow → scaling factor bajo pero >= 0.5 floor
-        var profile = CreateDefaultProfile();
-        var service = CreateService(profile);
-
-        int bluffCount = 0;
-        for (int i = 0; i < 500; i++)
-        {
-            var result = service.DetermineAction(MakeInput(
-                equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
-                boardTexture: "Coordinated", isInPosition: true,
-                villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 65));
-            if (result.Reason != null &&
-                (result.Reason.Contains("bluff") || result.Reason.Contains("semi")))
-                bluffCount++;
-        }
-
-        // Con equity muy baja → freq reducida pero floor 50%
-        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
-    }
-
-    [Test]
-    public void S22_6_Bluff_ConFoldEquitySuficiente_DeberiaBluffear()
-    {
-        // Equity baja pero fold equity alta → bluff EV positivo → debe bluffear
-        // Freq=1.0 + equity=44 (cerca de FoldBelow=45) → scaling factor ~0.98 → bluffFreq ~0.98
         var profile = CreateDefaultProfile();
         profile.TurnBluffFrequency = 1.0;
-        var service = CreateService(profile);
 
-        int bluffCount = 0;
-        for (int i = 0; i < 20; i++)
-        {
-            var result = service.DetermineAction(MakeInput(
-                equity: 44, BoardPosition.Turn, HandSituation.OpenRaise,
-                boardTexture: "Coordinated", isInPosition: true,
-                villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 80, totalOuts: 0));
-            if (result.IsBluff) bluffCount++;
-        }
+        int cerca = CountS22_6_Bluffs(profile, equity: 44, attempts: 500);
+        int baja = CountS22_6_Bluffs(profile, equity: 1, attempts: 500);
 
-        // Con freq 98% y 20 intentos, esperamos 15+ bluffs
-        Assert.That(bluffCount, Is.GreaterThan(10), "Con fold equity 80% debe bluffear (freq ~98%)");
+        Assert.That(cerca, Is.GreaterThan(baja + 120));
     }
 
     [Test]
-    public void S22_6_BluffFreqEquityScaling_EstaHabilitado()
+    public void S22_6_EquityMuyBaja_RespetaFloorDeFrecuencia()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+
+        int bluffCount = CountS22_6_Bluffs(profile, equity: 1, attempts: 500);
+
+        Assert.That(bluffCount, Is.GreaterThan(180));
+        Assert.That(bluffCount, Is.LessThan(320));
+    }
+
+    [Test]
+    public void S22_6_ScalingDeshabilitado_UsaFrecuenciaBaseCompleta()
+    {
+        var conScaling = CreateDefaultProfile();
+        conScaling.TurnBluffFrequency = 1.0;
+
+        var sinScaling = CreateDefaultProfile();
+        sinScaling.TurnBluffFrequency = 1.0;
+        sinScaling.BluffFreqEquityScaling = false;
+
+        int activo = CountS22_6_Bluffs(conScaling, equity: 1, attempts: 500);
+        int deshabilitado = CountS22_6_Bluffs(sinScaling, equity: 1, attempts: 500);
+
+        Assert.That(deshabilitado, Is.GreaterThan(activo + 120));
+    }
+
+    [Test]
+    public void S22_6_BluffFrequencyMultiplier_SeMantieneComoOverlay()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+
+        var reducido = CreateDefaultProfile();
+        reducido.TurnBluffFrequency = 1.0;
+        reducido.Thresholds["Turn_OpenRaise"] = reducido.Thresholds["Turn_OpenRaise"] with
+        {
+            BluffFrequencyMultiplier = 0.25
+        };
+
+        int baseCount = CountS22_6_Bluffs(profile, equity: 44, attempts: 500);
+        int reducidoCount = CountS22_6_Bluffs(reducido, equity: 44, attempts: 500);
+
+        Assert.That(baseCount, Is.GreaterThan(reducidoCount + 250));
+    }
+
+    [Test]
+    public void S22_6_WTSDAlto_ReduceFrecuenciaComoOverlay()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 1.0;
+
+        var callingStation = new OpponentProfile
+        {
+            TimesReachedRiver = 20,
+            TimesWentToShowdown = 15
+        };
+
+        int normal = CountS22_6_Bluffs(profile, equity: 44, attempts: 500);
+        int wtsdAlto = CountS22_6_Bluffs(profile, equity: 44, attempts: 500, villainProfile: callingStation);
+
+        Assert.That(normal, Is.GreaterThan(wtsdAlto + 120));
+    }
+
+    [Test]
+    public void S22_6_BluffFreqEquityScaling_EstaHabilitadoPorDefecto()
     {
         var profile = CreateDefaultProfile();
         Assert.That(profile.BluffFreqEquityScaling, Is.True);
     }
 
-    [Test]
-    public void S22_6_ScalingFactor_Floor_CercaDeCero_ConFreqAlta()
+    private static int CountS22_6_Bluffs(
+        StrategyProfile profile,
+        double equity,
+        int attempts,
+        OpponentProfile? villainProfile = null)
     {
-        // Con equity=1, FoldBelow=45 → scalingFactor = 1-(45-1)/45 = 0.022 → clamp a 0.5
-        // Con TurnBluffFrequency=1.0: bluffFreq = 1.0 * 0.5 * 1.0 = 0.5 → 50% chance de bluff
-        // El floor de 0.5 preserva bluffs +EV incluso con equity muy baja
-        var profile = CreateDefaultProfile();
-        profile.TurnBluffFrequency = 1.0;
         var service = CreateService(profile);
 
         int bluffCount = 0;
-        for (int i = 0; i < 200; i++)
+        for (int i = 0; i < attempts; i++)
         {
             var result = service.DetermineAction(MakeInput(
-                equity: 1, BoardPosition.Turn, HandSituation.OpenRaise,
+                equity: equity, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Coordinated", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 75, totalOuts: 0));
-            if (result.IsBluff) bluffCount++;
+                foldEquity: 80, totalOuts: 0,
+                villainProfile: villainProfile));
+            if (result.IsBluff)
+                bluffCount++;
         }
 
-        // Con TurnBluffFrequency=1.0 y floor 0.5: ~50% de 200 = ~100 bluffs esperados
-        Assert.That(bluffCount, Is.GreaterThan(30), "Floor 0.5 preserva bluffs +EV con equity muy baja");
-    }
-
-    [Test]
-    public void S22_6_SinBluffFreqScaling_Deshabilitado_NoAffecta()
-    {
-        var profile = CreateDefaultProfile();
-        profile.BluffFreqEquityScaling = false;
-        var service = CreateService(profile);
-
-        // Sin scaling → freq base se usa directamente
-        int bluffCount = 0;
-        for (int i = 0; i < 300; i++)
-        {
-            var result = service.DetermineAction(MakeInput(
-                equity: 5, BoardPosition.Turn, HandSituation.OpenRaise,
-                boardTexture: "Coordinated", isInPosition: true,
-                villainBetSize: BetSizeCategory.NoBet,
-                foldEquity: 70, totalOuts: 0));
-            if (result.Action == "Bluff") bluffCount++;
-        }
-
-        Assert.That(bluffCount, Is.GreaterThanOrEqualTo(0));
+        return bluffCount;
     }
 
     #endregion
