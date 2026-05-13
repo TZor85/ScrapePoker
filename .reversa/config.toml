@@ -1,0 +1,58 @@
+# Reversa — Configuração do Projeto
+# Este arquivo é gerenciado pelo instalador. Para customizações, edite config.user.toml
+
+[project]
+name = "ScrapePoker"
+version = "1.0.0"
+
+[user]
+name = "master"
+chat_language = "es-ES"
+doc_language = "Español"
+
+[output]
+folder = "_reversa_sdd"
+
+[agents]
+installed = [
+  "reversa",
+  "reversa-scout",
+  "reversa-archaeologist",
+  "reversa-detective",
+  "reversa-architect",
+  "reversa-writer",
+  "reversa-reviewer",
+  "reversa-visor",
+  "reversa-data-master",
+  "reversa-design-system",
+  "reversa-agents-help",
+  "reversa-reconstructor",
+  "reversa-migrate",
+  "reversa-paradigm-advisor",
+  "reversa-curator",
+  "reversa-strategist",
+  "reversa-designer",
+  "reversa-inspector"
+]
+
+[engines]
+installed = [
+  "claude-code",
+  "codex",
+  "opencode"
+]
+
+[analysis]
+answer_mode = "file"
+doc_level = "detalhado"
+
+# Organização das specs geradas pelos agentes.
+# Esta seção é preenchida pelo Reversa após o Scout sugerir uma estrutura
+# e o usuário confirmar a escolha no menu (logo após a pergunta de doc_level).
+# Para reapresentar o menu, remova a seção [specs] inteira e rode o Reversa de novo.
+[specs]
+layout = "feature-folder"
+granularity = "module"
+custom_folders = []
+scout_suggestion = "module"
+decided_at = "2026-05-05T06:37:00Z"

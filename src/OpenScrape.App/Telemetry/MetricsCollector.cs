@@ -24,6 +24,8 @@ public sealed class MetricsCollector : IMetricsCollector
 
     public ScopedMeasurement Measure(string category) => new(this, category);
 
+    public ScopedMeasurement MeasureSessionOnly(string category) => new(this, category, sessionOnly: true);
+
     public void Record(string category, TimeSpan elapsed)
     {
         var state = _categories.GetOrAdd(category, _ => new CategoryState());

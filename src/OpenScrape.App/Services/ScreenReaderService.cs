@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
+using OpenScrape.App.Telemetry;
+
 namespace OpenScrape.App.Services;
 
 /// <summary>
@@ -13,19 +15,24 @@ namespace OpenScrape.App.Services;
 /// </summary>
 public class ScreenReaderService : IScreenReaderService
 {
+    private static readonly Regex NumericPattern = new(@"^\d+[.,]?\d*$", RegexOptions.Compiled);
+
     private readonly OcrService _ocrService;
     private readonly ILogger<ScreenReaderService> _logger;
+    private readonly IMetricsCollector _metrics;
 
-    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger)
+    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger, IMetricsCollector metrics)
     {
         _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     }
 
     #region [Métodos públicos]
 
     public string ReadPlayerName(Image screenshot, int x, int y, int w, int h, double umbral, double inactiveUmbral)
     {
+        using var _ = _metrics.Measure("OcrPlayerNames");
         if (screenshot == null) return string.Empty;
 
         // Lectura 1: umbral estándar
@@ -59,6 +66,7 @@ public class ScreenReaderService : IScreenReaderService
     public decimal ReadBetValue(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber, int? playerNum = null)
     {
+        using var _ = _metrics.Measure("OcrBets");
         if (screenshot == null) return 0;
 
         OcrResult? firstOcr = null;
@@ -126,6 +134,7 @@ public class ScreenReaderService : IScreenReaderService
     public decimal ReadStackValue(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
     {
+        using var _ = _metrics.Measure("OcrStacks");
         if (screenshot == null) return 0;
 
         OcrResult? firstOcr = null;
@@ -193,6 +202,7 @@ public class ScreenReaderService : IScreenReaderService
     public string ReadHandNumber(Image screenshot, int x, int y, int w, int h,
         double? umbral, double? inactiveUmbral, bool? isOnlyNumber)
     {
+        using var _ = _metrics.Measure("OcrHandNumber");
         if (screenshot == null) return string.Empty;
 
         OcrResult? firstOcr = null;
@@ -292,6 +302,12 @@ public class ScreenReaderService : IScreenReaderService
             return 0;
 
         var rawStr = rawValue.ToString();
+
+        if (!IsValidNumericInput(rawStr))
+        {
+            _logger.LogWarning("[BET] Input OCR inválido, caracteres no numéricos: {Raw}", rawStr);
+            return 0;
+        }
         bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
 
         // Artefacto OCR: "8" espurio al inicio (ej: "850" → "50", "815,50" → "15,50")
@@ -336,6 +352,13 @@ public class ScreenReaderService : IScreenReaderService
             return 0;
 
         var rawStr = rawValue.ToString();
+
+        if (!IsValidNumericInput(rawStr))
+        {
+            _logger.LogWarning("[STACK] Input OCR inválido, caracteres no numéricos: {Raw}", rawStr);
+            return 0;
+        }
+
         bool hasDecimalSeparator = rawStr.Contains(',') || rawStr.Contains('.');
 
         // Solo corregir artefacto "8" cuando ya tiene separador decimal
@@ -370,6 +393,14 @@ public class ScreenReaderService : IScreenReaderService
         }
 
         return rawValue;
+    }
+
+    private static bool IsValidNumericInput(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return false;
+
+        return NumericPattern.IsMatch(input);
     }
 
     #endregion

@@ -1,0 +1,158 @@
+{
+  "generated_at": "2026-05-04T17:32:00Z",
+  "project_root": "C:/Code/Poker/ScrapePoker",
+  "languages": [
+    { "name": "C#", "extensions": [".cs"], "file_count": 282 },
+    { "name": "JSON", "extensions": [".json"], "file_count": 22 },
+    { "name": "Markdown", "extensions": [".md"], "file_count": 162 },
+    { "name": "XAML", "extensions": [".xaml"], "file_count": 1 }
+  ],
+  "primary_language": "C#",
+  "frameworks": [
+    { "name": ".NET", "version": "10.0", "source": "*.csproj" },
+    { "name": ".NET", "version": "8.0", "source": "Extractor/ExtractorTablas/ExtractorTablas.csproj" },
+    { "name": "Windows Forms", "version": "net10.0-windows", "source": "src/OpenScrape.App/OpenScrape.App.csproj" },
+    { "name": "Marten", "version": "8.24.0", "source": "package.json equivalent (csproj)" },
+    { "name": "Tesseract", "version": "5.2.0", "source": "src/OpenScrape.App/OpenScrape.App.csproj" },
+    { "name": "OpenCvSharp4", "version": "4.10.0.20241108", "source": "src/OpenScrape.App/OpenScrape.App.csproj" },
+    { "name": "SkiaSharp", "version": "3.119.2", "source": "src/OpenScrape.App/OpenScrape.App.csproj" },
+    { "name": "Microsoft.Extensions.Hosting", "version": "10.0.3", "source": "src/OpenScrape.App/OpenScrape.App.csproj" },
+    { "name": "Ardalis.Result", "version": "10.1.0", "source": "src/OpenScrape.Features/OpenScrape.Features.csproj" },
+    { "name": "NUnit", "version": "4.3.2", "source": "OpenScrape.App.Tests/OpenScrape.App.Tests.csproj" },
+    { "name": "BenchmarkDotNet", "version": "0.15.2", "source": "BenchmarkSuite1/BenchmarkSuite1.csproj" },
+    { "name": "Newtonsoft.Json", "version": "13.0.3", "source": "Extractor/ExtractorTablas/ExtractorTablas.csproj" }
+  ],
+  "package_manager": "NuGet",
+  "entry_points": [
+    { "path": "src/OpenScrape.App/Program.cs", "type": "app_entry" },
+    { "path": "src/OpenScrape.App/Forms/FrmMain.cs", "type": "ui_main_form" },
+    { "path": "src/OpenScrape.App/Forms/FrmOverlay.cs", "type": "ui_overlay" },
+    { "path": "src/OpenScrape.App/Forms/FrmHandDetail.cs", "type": "ui_dialog" },
+    { "path": "src/OpenScrape.App/Forms/FrmDetectionDebug.cs", "type": "ui_debug" },
+    { "path": "src/OpenScrape.App/Forms/FormAction.cs", "type": "ui_dialog" },
+    { "path": "src/OpenScrape.App/Forms/FormImage.cs", "type": "ui_dialog" },
+    { "path": "src/OpenScrape.App/Forms/FormListApps.cs", "type": "ui_dialog" },
+    { "path": "BenchmarkSuite1/", "type": "benchmark_entry" },
+    { "path": "Extractor/ExtractorTablas/", "type": "cli_tool" }
+  ],
+  "config_files": [
+    "src/OpenScrape.App/appsettings.json",
+    "src/OpenScrape.App/appsettings.Development.json",
+    "src/OpenScrape.App/Properties/launchSettings.json",
+    "src/OpenScrape.App/Data/BBvsSB.json",
+    "src/OpenScrape.App/Data/Cartas2.json",
+    "src/OpenScrape.App/Data/Cold4Bet.json",
+    "src/OpenScrape.App/Data/FourBet.json",
+    "src/OpenScrape.App/Data/OpenRaise.json",
+    "src/OpenScrape.App/Data/RaiseOverLimpers.json",
+    "src/OpenScrape.App/Data/RaiseVsSbLimp.json",
+    "src/OpenScrape.App/Data/RegionToTest.json",
+    "src/OpenScrape.App/Data/Regiones.json",
+    "src/OpenScrape.App/Data/Regiones3.json",
+    "src/OpenScrape.App/Data/Squeeze.json",
+    "src/OpenScrape.App/Data/ThreeBet.json",
+    "src/OpenScrape.App/Data/VsSqueeze.json",
+    "src/OpenScrape.App/Data/VsThreeBet.json",
+    "src/OpenScrape.App/Data/VsThreeBetAndCall.json",
+    "src/OpenScrape.App/Data/tableMap.json",
+    "opencode.json"
+  ],
+  "ci_cd": [
+    "scripts/verify-pre-merge.ps1",
+    "docs/pre-merge-checklist.md",
+    ".github/upgrades/scenarios/new-dotnet-version_75fdf3/"
+  ],
+  "docker": null,
+  "database_hints": [
+    { "path": "src/OpenScrape.Infrastructure/Services.cs", "type": "marten_setup" },
+    { "path": "src/OpenScrape.Domain/Entities/GameSession.cs", "type": "marten_document" },
+    { "path": "src/OpenScrape.Domain/Entities/Card.cs", "type": "marten_document" }
+  ],
+  "test_framework": "NUnit 4.3.2",
+  "test_file_count": 50,
+  "modules": [
+    "OpenScrape.App",
+    "OpenScrape.DecisionMaker",
+    "OpenScrape.Domain",
+    "OpenScrape.Features",
+    "OpenScrape.Infrastructure"
+  ],
+  "auxiliary_modules": [
+    "OpenScrape.App.Tests",
+    "BenchmarkSuite1",
+    "Extractor/ExtractorTablas"
+  ],
+  "total_files": 467,
+  "solution_files": [
+    "OpenScrape.sln",
+    "OpenScrape.App.sln"
+  ],
+  "internal_documentation": {
+    "claude_md": "CLAUDE.md",
+    "agents_md": "AGENTS.md",
+    "openspec_root": "openspec/",
+    "docs_root": "docs/"
+  },
+  "anomalies": [
+    {
+      "type": "orphan_project_dirs",
+      "description": "Carpetas src/OpenScrape.Application/ y src/OpenScrape.Core/ existen solo con bin/obj/ — sin .csproj ni .cs. Vestigios de refactorizaciones previas, no referenciadas por las solutions.",
+      "evidence": ["src/OpenScrape.Application/obj/", "src/OpenScrape.Core/bin/"]
+    },
+    {
+      "type": "secret_in_committed_config",
+      "description": "src/OpenScrape.App/appsettings.json contiene una connection string PostgreSQL real (Neon DB) y una Encrypter.Key real. CLAUDE.md declara que los valores deberían ser CHANGE_ME y que las credenciales reales viven solo en appsettings.Development.json (gitignored). Discrepancia para validar con el usuario en revisión final.",
+      "evidence": ["src/OpenScrape.App/appsettings.json", "CLAUDE.md"]
+    },
+    {
+      "type": "duplicated_resource",
+      "description": "eng.traineddata embebido como EmbeddedResource en dos rutas: Resources/tessdata/ y tessdata/. Solo la segunda tiene CopyToOutputDirectory=PreserveNewest.",
+      "evidence": ["src/OpenScrape.App/Resources/tessdata/eng.traineddata", "src/OpenScrape.App/tessdata/eng.traineddata"]
+    },
+    {
+      "type": "legacy_xaml",
+      "description": "MainPage.xaml y MainPage.xaml.cs en raíz, ambos vacíos. Probable resto de tentativa MAUI/UWP descartada.",
+      "evidence": ["MainPage.xaml", "MainPage.xaml.cs"]
+    },
+    {
+      "type": "no_ci_pipeline",
+      "description": "No hay GitHub Actions, GitLab CI ni Jenkinsfile. Pre-merge se valida manualmente con scripts/verify-pre-merge.ps1.",
+      "evidence": [".github/", "scripts/verify-pre-merge.ps1"]
+    }
+  ],
+  "organization_suggestion": {
+    "granularity": "module",
+    "rationale": "src/ está organizado en 5 proyectos top-level con responsabilidades aisladas (Clean Architecture). Cada proyecto = 1 unit, 1:1 con la unidad de despliegue.",
+    "signals": [
+      {
+        "type": "top_level_project_folders",
+        "evidence": [
+          "src/OpenScrape.App/",
+          "src/OpenScrape.DecisionMaker/",
+          "src/OpenScrape.Domain/",
+          "src/OpenScrape.Features/",
+          "src/OpenScrape.Infrastructure/"
+        ]
+      },
+      {
+        "type": "feature_subfolders_inside_features_layer",
+        "evidence": [
+          "src/OpenScrape.Features/Table/",
+          "src/OpenScrape.Features/Cards/",
+          "src/OpenScrape.Features/ActionScenario/",
+          "src/OpenScrape.Features/GameRound/",
+          "src/OpenScrape.Features/RegionsTableMap/"
+        ]
+      },
+      {
+        "type": "no_centralized_routing",
+        "evidence": ["No se detectaron Controllers, @RestController, app.get/post, urls.py ni Router(). El sistema es WinForms desktop sin REST API."]
+      },
+      {
+        "type": "no_bdd_specs",
+        "evidence": ["Sin archivos .feature, sin specs Gherkin. Solo tests NUnit."]
+      }
+    ],
+    "features": []
+  }
+}

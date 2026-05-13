@@ -1,0 +1,2197 @@
+{
+  "generated_at": "2026-05-06T10:30:00Z",
+  "modules": [
+    {
+      "name": "OpenScrape.Infrastructure",
+      "path": "src/OpenScrape.Infrastructure",
+      "purpose": "Único responsable de inicializar el document store de Marten sobre PostgreSQL (Neon). Expone un método de extensión sobre IServiceCollection que registra Marten, configura System.Text.Json, declara siete índices sobre GameSession y HandRecord, y activa AutoCreateSchemaObjects en modo desarrollo. No contiene repositorios ni lógica de aplicación: el acceso a datos se realiza desde Features/App/DecisionMaker consumiendo IDocumentStore directamente.",
+      "primary_files": [
+        "src/OpenScrape.Infrastructure/Services.cs",
+        "src/OpenScrape.Infrastructure/OpenScrape.Infrastructure.csproj"
+      ],
+      "functions": [
+        {
+          "name": "AddDataBase",
+          "file": "src/OpenScrape.Infrastructure/Services.cs:11",
+          "params": [
+            "this IServiceCollection services",
+            "IConfiguration configuration",
+            "bool IsDevelopment"
+          ],
+          "returns": "void",
+          "purpose": "Registra Marten en el contenedor DI: configura conexión, serializador STJ, 7 índices y AutoCreate condicional. Único método público del módulo.",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [],
+      "value_objects": [],
+      "enums": [],
+      "business_rules": [
+        {
+          "description": "Connection string se obtiene de ConnectionStrings:DefaultConnection con operador null-forgiving (!) — sin validación explícita, NRE si la clave falta",
+          "location": "src/OpenScrape.Infrastructure/Services.cs:16",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Serializador forzado a System.Text.Json (no Newtonsoft.Json default). Implica compatibilidad de [JsonIgnore] con namespace System.Text.Json.Serialization",
+          "location": "src/OpenScrape.Infrastructure/Services.cs:19",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Schema.For<GameSession>() declara 3 índices simples: EndTime, SessionId, TableName",
+          "location": "src/OpenScrape.Infrastructure/Services.cs:22-24",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Schema.For<HandRecord>() declara 3 índices simples (GameSessionId, Timestamp, HeroPosition) + 1 compuesto (GameSessionId+Timestamp) para acelerar 'manos de sesión X ordenadas por fecha'",
+          "location": "src/OpenScrape.Infrastructure/Services.cs:27-32",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "AutoCreateSchemaObjects = AutoCreate.All solo cuando IsDevelopment=true. En producción se requiere migración manual",
+          "location": "src/OpenScrape.Infrastructure/Services.cs:36-39",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Documentos sin Schema.For explícito (Card, Table, RegionTableMap) son autodescubiertos por Marten al primer uso vía IDocumentStore.LightweightSession()",
+          "location": "src/OpenScrape.App/Services/CardCacheService.cs:33; src/OpenScrape.Features/Table/GetAll/GetAllTables.cs; src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:19",
+          "confidence": "inferred"
+        }
+      ],
+      "dependencies": [
+        { "name": "Marten", "version": "8.24.0", "type": "nuget" },
+        { "name": "Microsoft.Extensions.Configuration.Abstractions", "version": "10.0.3", "type": "nuget" },
+        { "name": "Microsoft.Extensions.DependencyInjection.Abstractions", "version": "10.0.3", "type": "nuget" },
+        { "name": "Ardalis.Result", "version": "10.1.0", "type": "nuget", "note": "declarado pero sin consumidor en este módulo" }
+      ],
+      "internal_dependencies": [
+        "OpenScrape.Domain.Entities (GameSession, HandRecord)"
+      ],
+      "external_dependencies": [
+        { "name": "PostgreSQL (Neon, eu-west-2)", "via": "ConnectionStrings:DefaultConnection", "tls": "VerifyFull + Channel Binding Require" }
+      ],
+      "algorithms": [],
+      "anomalies": [
+        {
+          "severity": "high",
+          "description": "Program.cs:52 invoca AddDataBase(..., true) con IsDevelopment hardcoded a true, anulando la lógica condicional de Services.cs:36. Resultado: AutoCreate.All siempre activo independientemente del DOTNET_ENVIRONMENT",
+          "evidence": ["src/OpenScrape.App/Program.cs:52", "src/OpenScrape.Infrastructure/Services.cs:36-39"]
+        },
+        {
+          "severity": "high",
+          "description": "Credenciales reales de Neon Postgres committeadas en appsettings.json (CLAUDE.md declara que deberían ser CHANGE_ME). La password también vive en appsettings.Development.json (gitignored)",
+          "evidence": ["src/OpenScrape.App/appsettings.json:3", "CLAUDE.md", "src/OpenScrape.App/appsettings.Development.json:3"]
+        },
+        {
+          "severity": "medium",
+          "description": "NU1902 (vulnerabilidad transitiva en OpenTelemetry.Api desde Marten 8.24.0) suprimido sin plan de actualización",
+          "evidence": ["src/OpenScrape.Infrastructure/OpenScrape.Infrastructure.csproj:8"]
+        },
+        {
+          "severity": "low",
+          "description": "Ardalis.Result declarado en csproj pero sin uso en el módulo",
+          "evidence": ["src/OpenScrape.Infrastructure/OpenScrape.Infrastructure.csproj:12"]
+        }
+      ],
+      "complexity": "very_low",
+      "loc_estimate": 43,
+      "files_count": 1,
+      "public_types_count": 1
+    },
+    {
+      "name": "OpenScrape.Domain",
+      "path": "src/OpenScrape.Domain",
+      "purpose": "Núcleo del modelo de dominio del sistema. Define entidades core (Card, Table, GameSession, HandRecord, StrategyProfile, OpponentProfile), value objects de poker (Hand, Region, VillainRange, StreetThresholds, ThresholdKey, CardDataOuts, HandEvaluation, StreetDecision, BankrollSnapshot, telemetría), enums de tipificación (BoardPosition, HandSituation, TablePosition, HandRank, KickerStrength, PairClassification, OpponentType), mappers DTO↔Entity y excepciones de validación. Sin dependencias externas (puro .NET 10.0).",
+      "primary_files": [
+        "src/OpenScrape.Domain/Entities/StrategyProfile.cs",
+        "src/OpenScrape.Domain/Entities/OpponentProfile.cs",
+        "src/OpenScrape.Domain/Entities/GameSession.cs",
+        "src/OpenScrape.Domain/ValueObjects/VillainRange.cs",
+        "src/OpenScrape.Domain/ValueObjects/StreetThresholds.cs",
+        "src/OpenScrape.Domain/Enums/Positions.cs",
+        "src/OpenScrape.Domain/Enums/OutsDataEnum.cs"
+      ],
+      "functions": [
+        {
+          "name": "Validate",
+          "file": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:318",
+          "params": [],
+          "returns": "List<string>",
+          "purpose": "Valida coherencia entre los ~150 parámetros del perfil. Retorna lista de errores; vacía si OK.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetForSituation",
+          "file": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:32",
+          "params": ["HandSituation situation"],
+          "returns": "VillainRange?",
+          "purpose": "Selector estático del rango pre-definido del villano según HandSituation (12 ramas).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetForSituation (overload posición)",
+          "file": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:80",
+          "params": ["HandSituation situation", "TablePosition villainPosition"],
+          "returns": "VillainRange?",
+          "purpose": "Ajusta frecuencias del rango por posición del villano (EP ×0.7, BTN ×1.3, etc.).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetForSituation (overload OpponentProfile)",
+          "file": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:119",
+          "params": ["HandSituation situation", "TablePosition villainPosition", "OpponentProfile? opponentProfile"],
+          "returns": "VillainRange?",
+          "purpose": "Ajusta el rango por VPIP y 3Bet% observados; multiplier clamp [0.5, 2.0].",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "CalculateVpipMultiplier",
+          "file": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:163",
+          "params": ["double baseRangePercentage", "double observedVPIP"],
+          "returns": "double",
+          "purpose": "Razón VPIP observado / VPIP esperado, clampada a [0.5, 2.0].",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ExpandHandNotation",
+          "file": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:541",
+          "params": ["string notation"],
+          "returns": "List<(CardDataOuts, CardDataOuts)>",
+          "purpose": "Expande notación abreviada (AKs, QQ, JTo) a 4/6/12 combos concretos por palo.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetTypeForPosition",
+          "file": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:211",
+          "params": ["bool villainIsInPosition"],
+          "returns": "OpponentType",
+          "purpose": "Clasifica al villano (LAG/LP/TAG/TP) usando AF posicional con fallback a AF global.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetProfileForPosition",
+          "file": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:241",
+          "params": ["TablePosition position"],
+          "returns": "OpponentProfile",
+          "purpose": "Perfil sintético con stats por posición; fallback al global si <10 manos en esa posición.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ToDto / ToEntity (Card)",
+          "file": "src/OpenScrape.Domain/Mappers/CardDTOMapper.cs",
+          "params": ["this Card / this CardDTO"],
+          "returns": "CardDTO / Card",
+          "purpose": "Mapper bidireccional entre Card entity y CardDTO. Card.Id ↔ CardDTO.Name.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ToDto / ToEntity (Table)",
+          "file": "src/OpenScrape.Domain/Mappers/TableDTOMapper.cs",
+          "params": ["this Table / this TableDTO"],
+          "returns": "TableDTO / Table",
+          "purpose": "Mapper bidireccional Table↔TableDTO. Table.Id ↔ TableDTO.Name; copia Positions one-by-one.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "TryParse",
+          "file": "src/OpenScrape.Domain/ValueObjects/ThresholdKey.cs:36",
+          "params": ["string? rawKey", "out ThresholdKey? key", "out string error"],
+          "returns": "bool",
+          "purpose": "Parser tipado de claves '{BoardPosition}_{HandSituation}' con mensaje de error explícito.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetDescription (extension)",
+          "file": "src/OpenScrape.Domain/Enums/Positions.cs:118",
+          "params": ["this Enum value"],
+          "returns": "string",
+          "purpose": "Extrae el atributo [Description] de un enum vía Reflection. Usado por GameSituation.",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "Card",
+          "file": "src/OpenScrape.Domain/Entities/Card.cs",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true, "note": "Clave primaria Marten" },
+            { "name": "ImageBase64", "type": "string?", "required": false, "note": "Imagen serializada para reconocimiento OCR" },
+            { "name": "BinaryValue", "type": "string?", "required": false, "note": "Hash binario para comparación rápida" },
+            { "name": "Hall", "type": "List<string>?", "required": false, "note": "Variantes/aliases visuales" },
+            { "name": "Force", "type": "int", "required": true, "note": "Fuerza relativa de la carta" },
+            { "name": "Suit", "type": "int", "required": true, "note": "Palo (codificado como int, no enum aquí)" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Table",
+          "file": "src/OpenScrape.Domain/Entities/Table.cs",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true },
+            { "name": "Positions", "type": "List<PlayerActionSequence>?", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "RegionTableMap",
+          "file": "src/OpenScrape.Domain/Entities/RegionTableMap.cs",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true },
+            { "name": "Regions", "type": "List<Region>?", "required": false, "note": "Coordenadas de captura OCR" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OverlayConfig",
+          "file": "src/OpenScrape.Domain/Entities/OverlayConfig.cs",
+          "fields": [
+            { "name": "Opacity", "type": "double", "required": false, "default": 0.8 },
+            { "name": "FontSize", "type": "float", "required": false, "default": 10 },
+            { "name": "ActionFontSize", "type": "float", "required": false, "default": 14 },
+            { "name": "VerticalOffset", "type": "int", "required": false, "default": 75 },
+            { "name": "HorizontalOffsetPercent", "type": "double", "required": false, "default": 0.15 }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GameSession",
+          "file": "src/OpenScrape.Domain/Entities/GameSession.cs",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true, "default": "Guid.NewGuid()" },
+            { "name": "SessionId", "type": "string", "required": true },
+            { "name": "TableName", "type": "string", "required": true },
+            { "name": "StartTime", "type": "DateTime", "required": true, "default": "DateTime.UtcNow" },
+            { "name": "EndTime", "type": "DateTime", "required": true, "default": "DateTime.UtcNow" },
+            { "name": "BigBlind", "type": "decimal", "required": true, "default": 0.50 },
+            { "name": "StartingBankroll", "type": "decimal", "required": true },
+            { "name": "EndingBankroll", "type": "decimal", "required": true },
+            { "name": "PeakBankroll", "type": "decimal", "required": true },
+            { "name": "Hands", "type": "List<HandRecord>", "required": false, "note": "[JsonIgnore] - efímero, no persistido en Marten" },
+            { "name": "TotalHands", "type": "int", "required": false, "note": "Computed: Hands.Count, [JsonIgnore]" },
+            { "name": "TotalProfit", "type": "decimal", "required": false, "note": "Computed: suma de stack diff de manos con resultado conocido" },
+            { "name": "BBPer100", "type": "double", "required": false, "note": "Computed: (TotalProfit/BigBlind)/TotalHands*100" },
+            { "name": "IsValid", "type": "bool", "required": false, "note": "Computed: SessionId+TableName no vacíos y BigBlind > 0" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "HandRecord",
+          "file": "src/OpenScrape.Domain/Entities/GameSession.cs:56",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true, "default": "Guid.NewGuid()" },
+            { "name": "GameSessionId", "type": "string", "required": true, "note": "FK hacia GameSession" },
+            { "name": "HandNumber", "type": "long", "required": true },
+            { "name": "Timestamp", "type": "DateTime", "required": true, "default": "DateTime.UtcNow" },
+            { "name": "HeroCard1", "type": "string", "required": true },
+            { "name": "HeroCard2", "type": "string", "required": true },
+            { "name": "HeroPosition", "type": "TablePosition", "required": true },
+            { "name": "HeroStackStart", "type": "decimal", "required": true },
+            { "name": "HeroStackEnd", "type": "decimal", "required": true },
+            { "name": "BlindPosted", "type": "decimal", "required": true, "note": "SB/BB pagada — se resta para distinguir pérdida real" },
+            { "name": "AutoRebuy", "type": "decimal", "required": true, "note": "Rebuy automático típicamente 100BB — se resta del profit" },
+            { "name": "NetProfit", "type": "decimal", "required": false, "note": "Computed: (StackEnd-StackStart) - AutoRebuy + BlindPosted" },
+            { "name": "FlopCards", "type": "List<string>", "required": false },
+            { "name": "TurnCard", "type": "string?", "required": false },
+            { "name": "RiverCard", "type": "string?", "required": false },
+            { "name": "Decisions", "type": "List<StreetDecision>", "required": true },
+            { "name": "PotSizeFinal", "type": "decimal", "required": true },
+            { "name": "LastStreetPlayed", "type": "BoardPosition", "required": true },
+            { "name": "NumOpponents", "type": "int", "required": true },
+            { "name": "Result", "type": "HandResult", "required": true, "default": "Unknown" },
+            { "name": "Situation", "type": "HandSituation", "required": true, "default": "None" },
+            { "name": "Telemetry", "type": "TelemetryAggregate?", "required": false, "note": "null en manos previas a la activación de telemetría" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "StrategyProfile",
+          "file": "src/OpenScrape.Domain/Entities/StrategyProfile.cs",
+          "fields": [
+            { "name": "Id", "type": "string", "required": true, "default": "Guid.NewGuid()" },
+            { "name": "Name", "type": "string", "required": true, "default": "Default" },
+            { "name": "CreatedAt", "type": "DateTime", "required": true, "default": "DateTime.UtcNow" },
+            { "name": "Thresholds", "type": "Dictionary<string, StreetThresholds>", "required": true, "note": "Clave: '{Street}_{HandSituation}'. Ver ThresholdKey." },
+            { "name": "FoldEquityBase / Min / Max / FlopBonus / RiverPenalty / IPBonus / ThreeBetPenalty", "type": "double[7]", "required": true, "note": "Ajustes Fold Equity. Defaults: 20/5/60/+5/-5/+10/-10" },
+            { "name": "BetSizing*Multiplier (8 campos)", "type": "double[8]", "required": true, "note": "SPRDeep×1.25, SPRShallow×0.75, Paired×1.15, Coordinated×0.90, OOP×0.90, MultiOpponent×0.85" },
+            { "name": "FlopBluffFrequency / TurnBluffFrequency / RiverBluffFrequency", "type": "double[3]", "required": true, "default": "0.15/0.12/0.10" },
+            { "name": "CbetFrequency Flop/Turn/River", "type": "double[3]", "required": true, "default": "0.65/0.45/0.30" },
+            { "name": "Danger* (12+ campos)", "type": "double[]", "required": true, "note": "FlushPct=35, StraightPct=18, BoardPaired=5, FacingBetMul=1.4, blocker reductions, street multipliers, NoBetCap=45" },
+            { "name": "ImpliedOdds* (9 campos)", "type": "double[9]", "required": true, "note": "Factores SPR Deep/Medium/Shallow, FlushDrawBonus, IPBonus, FlopMul, TurnMul" },
+            { "name": "Cbet* (5 campos)", "type": "double[5]", "required": true, "note": "RangeAdvBonus=8, AggressorBonus=4, CallerDisadv=-3, MonotoneRed=0.5, MultiwayRed=3" },
+            { "name": "VillainBarrel/Sizing/BetCheckBet", "type": "double[4]", "required": true, "note": "FoldInc=5, ThinValueInc=3, SizingEsc=4, BetCheckBet=2" },
+            { "name": "SPR push/fold thresholds", "type": "double[5]", "required": true, "note": "Threshold=2, FoldRed=8, ValueInc=10, DeepCaution=4, DeepFoldInc=3" },
+            { "name": "S19/S20/S21/S22 calibration parameters (50+ campos)", "type": "double[50+]", "required": true, "note": "Sprints de calibración, ver code-analysis.md" },
+            { "name": "InitialBankroll / BuyInMax / MinSessionsForRecommendation / RiskOfRuinThreshold", "type": "decimal/int/double", "required": true, "default": "100m / 2m / 20 / 0.05" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OpponentProfile",
+          "file": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:47",
+          "fields": [
+            { "name": "PlayerId", "type": "string", "required": true },
+            { "name": "HandsPlayed", "type": "int", "required": true },
+            { "name": "TimesVoluntarilyPutMoneyIn / PreflopRaised / ThreeBet", "type": "int[3]", "required": true, "note": "Contadores preflop" },
+            { "name": "TimesPostflop Bet/Raised/Called/Folded", "type": "int[4]", "required": true, "note": "Contadores postflop globales" },
+            { "name": "TimesCBet / CBetOpportunity / FoldedToCBet / FacedCBet", "type": "int[4]", "required": true },
+            { "name": "TimesAggressive/Passive IP/OOP", "type": "int[4]", "required": true, "note": "S22.3: postflop por posición relativa" },
+            { "name": "TimesReachedRiver / WentToShowdown / WonAtShowdown", "type": "int[3]", "required": true, "note": "S18.3: contadores showdown" },
+            { "name": "TimesCheckRaised / CheckRaiseOpportunity", "type": "int[2]", "required": true, "note": "S18.3" },
+            { "name": "TimesDonkBet / DonkBetOpportunity", "type": "int[2]", "required": true, "note": "S18.3" },
+            { "name": "TimesBarreled / BarrelOpportunity", "type": "int[2]", "required": true, "note": "S18.2" },
+            { "name": "PositionProfiles", "type": "Dictionary<TablePosition, OpponentPositionProfile>", "required": false, "note": "S22.3: stats por posición exacta (BTN, EP, SB, BB)" },
+            { "name": "VPIP / PFR / ThreeBetPct", "type": "double[3]", "required": false, "note": "Computed: porcentajes preflop. Defaults 50/15/5 sin datos." },
+            { "name": "AggressionFactor / IP / OOP", "type": "double[3]", "required": false, "note": "Computed con Laplace smoothing. -1 si datos posicionales insuficientes." },
+            { "name": "FoldToCBetPct / CBetPct", "type": "double[2]", "required": false, "note": "Computed: defaults 50%" },
+            { "name": "WTSDPct / WSDPct / CheckRaisePct / DonkBetPct / BarrelFrequency", "type": "double[5]", "required": false, "note": "Defaults 35/50/8/10/-1" },
+            { "name": "Type / GetTypeForPosition", "type": "OpponentType", "required": false, "note": "Computed: LAG/LP/TAG/TP/Unknown según VPIP+AF" },
+            { "name": "ExpectedBarrelFrequency", "type": "double", "required": false, "note": "Computed: switch por Type (LAG=60, TAG=30, LP=20, TP=10)" },
+            { "name": "Reliability flags (8)", "type": "bool[8]", "required": false, "note": "IsReliable (≥20 hands), HasReliablePreflopData (≥10), HasReliableCBetData (≥5), HasReliableAFData (≥10 acciones), HasReliableFoldData (≥8), HasReliableWTSDData (≥15 rivers), HasReliableWSDData (≥10 sds), HasReliableCheckRaiseData (≥10 opp), HasReliableDonkBetData (≥8), HasReliableBarrelData (≥8)" }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OpponentPositionProfile",
+          "file": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:9",
+          "fields": [
+            { "name": "HandsPlayed / TimesVPIP / TimesPFR", "type": "int[3]", "required": true },
+            { "name": "TimesAggressive/Passive IP/OOP", "type": "int[4]", "required": true },
+            { "name": "VPIP / PFR / AFIP / AFOOP / IsReliable", "type": "double/double/double/double/bool", "required": false, "note": "Computed; defaults 50/15; AF -1 si <5 muestras; IsReliable >=10" }
+          ],
+          "confidence": "confirmed"
+        }
+      ],
+      "value_objects": [
+        { "name": "Hand", "kind": "record", "file": "ValueObjects/Hand.cs", "fields": "Name (no vacío), Suited?, Action, Percentage [0,100]", "validates_in_init": true },
+        { "name": "Region", "kind": "record", "file": "ValueObjects/Region.cs", "fields": "Category, Name, PosX, PosY, Width, Height, IsHash?, IsColor?, IsBoard?, Color?, IsOnlyNumber?, InactiveUmbral?, Umbral?" },
+        { "name": "PlayerActionSequence", "kind": "record", "file": "ValueObjects/PlayerActionSequence.cs", "fields": "Name, HeroPosition, OpenRaiser?, ThreeBetPosition?, Limper?, Caller?, Squeezer?, BetSize?, IsGreater?, RaiserFolds?, Hands" },
+        { "name": "CardDataOuts", "kind": "class", "file": "ValueObjects/CardDataOuts.cs", "fields": "Suit (Suit enum), Rank (Rank enum), Id => '{Rank}_{Suit}'" },
+        { "name": "DrawProbability", "kind": "class", "file": "ValueObjects/CardDataOuts.cs:19", "fields": "Outs (List<CardDataOuts>), Probability (porcentaje), ProbabilityDescription => 'XX.XX%'" },
+        { "name": "HandStrength", "kind": "class", "file": "ValueObjects/HandStrenght.cs", "fields": "13 DrawProbability fields: Flush/Straight/Gutshot/Set/FullHouse/Overcard/TwoPair/DoubleGutshot/StraightFlush/FourOfAKind/ThreeOfAKind/OnePair/HighCard" },
+        { "name": "HandEvaluation", "kind": "class", "file": "ValueObjects/HandEvaluation.cs", "fields": "Rank (HandRank), Score (long), Cards (List<CardDataOuts>), Kickers (List<int>)" },
+        { "name": "PotOddsResult", "kind": "class", "file": "ValueObjects/PotOddsResult.cs", "fields": "PotOddsPercentage, EquityPercentage, ShouldCall, Street?" },
+        { "name": "StreetDecision", "kind": "record", "file": "ValueObjects/StreetDecision.cs", "fields": "Street (BoardPosition), EquityPercent, PotOddsPercent, ExpectedValue, RecommendedAction, ActionTaken, PotSizeAtDecision, BetSize, Situation (HandSituation), IsInPosition, Reason?, BoardTexture?, TotalOuts, SPR" },
+        { "name": "StreetThresholds", "kind": "record", "file": "ValueObjects/StreetThresholds.cs", "fields": "FoldBelow/ThinValueAbove/ValueAbove/StrongValueAbove (4 tiers equity), 5 board-texture bet sizes, bluff control (CanBluff/Frequency/Size/Condition), low-equity action, ThinValue position handling, sizing adjustments, check-raise (CanCheckRaise/Threshold=75/Size), overbet (CanOverbet/Size/MinEquity=80), combo draw (Size/OutsThreshold=12), double barrel, probe bet (CanProbeBet/Size/IPSize/MinEquity=25), simplified mode (5 fixed bets)" },
+        { "name": "ThresholdKey", "kind": "record", "file": "ValueObjects/ThresholdKey.cs", "fields": "Street (BoardPosition), Situation (HandSituation). Validación en ctor + TryParse string." },
+        { "name": "VillainRange", "kind": "class", "file": "ValueObjects/VillainRange.cs", "fields": "Hands (Dict<string, double>), Name, RangePercentage. 8 rangos predefinidos estáticos." },
+        { "name": "BankrollSnapshot", "kind": "class", "file": "ValueObjects/BankrollSnapshot.cs", "fields": "Timestamp, Bankroll, BigBlind, SessionProfit, SessionHands, SessionId" },
+        { "name": "BankrollStats", "kind": "class", "file": "ValueObjects/BankrollSnapshot.cs:13", "fields": "CurrentBankroll, StartingBankroll, PeakBankroll, MaxDrawdown, MaxDrawdownPercent, WinRateBB100, StdDeviation, TotalSessions, WinningSessions, TotalHands, RiskOfRuin, AverageSessionProfit, LimitRecommendation, RiskLevel='Green', LastUpdated" },
+        { "name": "BankrollHistoryItem", "kind": "class", "file": "ValueObjects/BankrollSnapshot.cs:32", "fields": "Date, Hands, Profit, BBPer100, BankrollAfter" },
+        { "name": "CategoryStats", "kind": "record", "file": "ValueObjects/CategoryStats.cs", "fields": "P50Ms, P95Ms, MaxMs, Count" },
+        { "name": "TelemetryAggregate", "kind": "record", "file": "ValueObjects/TelemetryAggregate.cs", "fields": "HandId, CapturedAt, Phases (IReadOnlyDictionary<string, CategoryStats>)" }
+      ],
+      "enums": [
+        { "name": "Rank", "values": ["Two=2", "Three=3", "Four=4", "Five=5", "Six=6", "Seven=7", "Eight=8", "Nine=9", "Ten=10", "Jack=11", "Queen=12", "King=13", "Ace=14"], "type": "byte", "file": "Enums/OutsDataEnum.cs" },
+        { "name": "Suit", "values": ["Clubs=1", "Hearts=2", "Diamonds=3", "Spades=4"], "type": "byte", "file": "Enums/OutsDataEnum.cs" },
+        { "name": "HandRank", "values": ["HighCard=1", "OnePair=2", "TwoPair=3", "ThreeOfAKind=4", "Straight=5", "Flush=6", "FullHouse=7", "FourOfAKind=8", "StraightFlush=9", "RoyalFlush=10"], "type": "byte", "file": "Enums/OutsDataEnum.cs" },
+        { "name": "KickerStrength", "values": ["None=0", "Weak=1", "Medium=2", "Strong=3"], "type": "byte", "file": "Enums/OutsDataEnum.cs" },
+        { "name": "Positions", "values": ["None", "OutOfPosition", "InPosition"], "file": "Enums/Positions.cs" },
+        { "name": "TablePosition", "values": ["None", "Early", "Middle", "CutOff", "Button", "SmallBlind", "BigBlind"], "file": "Enums/Positions.cs" },
+        { "name": "HandSituation", "values": ["None", "OpenRaise", "RaiseOverLimper", "Call", "ThreeBet", "OpenRaiseVs3Bet", "OpenRaiseVs3BetAndCall", "FourBet", "Cold4Bet", "Squeeze", "VsSqueeze", "DonkBet", "DonkBetVsOpenRaise", "LimpRaise"], "file": "Enums/Positions.cs" },
+        { "name": "BoardPosition", "values": ["None", "Hand", "Flop", "Turn", "River"], "file": "Enums/Positions.cs" },
+        { "name": "HeroHand", "values": ["Nada", "ProyectoColor", "ProyectoEscalera", "ProyectoEscaleraColor", "CartaAlta", "Pareja", "DoblePareja", "Trio", "Escalera", "Color", "Full", "Poker", "EscaleraDeColor", "EscaleraReal"], "file": "Enums/Positions.cs", "note": "🟡 INFERIDO: enum legacy en español, posiblemente sin uso (overlap con HandRank)" },
+        { "name": "GameSituation", "values": ["None", "OpenRaise", "BigBlindVsSmallBlind", "RaiseOverLimpers", "Cold4Bet", "FourBet", "Squeeze", "ThreeBet", "VsSqueeze", "VsThreeBet", "VsThreeBetAndCall"], "file": "Enums/Positions.cs", "note": "🟡 INFERIDO: paralela a HandSituation con strings [Description] — posible duplicado/legacy" },
+        { "name": "PairClassification", "values": ["None=0", "BoardPaired=1", "BottomPair=2", "PocketPairUnder=3", "MiddlePair=4", "TopPair=5", "Overpair=6"], "type": "byte", "file": "Enums/Positions.cs" },
+        { "name": "HandResult", "values": ["Unknown", "Won", "Lost", "Push"], "file": "Entities/GameSession.cs:117" },
+        { "name": "OpponentType", "values": ["Unknown", "TAG", "LAG", "TP", "LP"], "file": "Entities/OpponentProfile.cs:303" },
+        { "name": "Styles", "values": ["Default", "Agresive", "Pasive"], "file": "Enums/Styles.cs", "note": "🟡 INFERIDO: enum legacy posiblemente sin uso actual" },
+        { "name": "BluffConditionType", "values": ["None", "Always", "OOPOnly", "IPCoordinatedSmallOnly"], "file": "Enums/BluffConditionType.cs" }
+      ],
+      "business_rules": [
+        {
+          "description": "Validación de coherencia entre umbrales de equity (FoldBelow < ThinValueAbove < ValueAbove < StrongValueAbove) por cada Threshold registrado",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:323",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "FoldEquityMin debe ser estrictamente menor que FoldEquityMax",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:334",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "SPRPushFoldThreshold debe ser menor que SPRDeepCautionThreshold (no se solapan)",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:338",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "DangerFlushCompletePct y DangerStraightCompletePct deben ser porcentajes [0, 100]",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:342",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "TaintedOutsDiscount debe estar en rango [0, 1]",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:348",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Bluff frequencies (flop/turn/river) deben estar en rango [0, 1]",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:352",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Multiplicadores de bet sizing SPR (Deep/Shallow) deben ser > 0",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:366",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ImpliedOddsSPRShallowThreshold debe ser menor que ImpliedOddsSPRDeepThreshold",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:378",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Hand.Name no puede ser vacío ni espacios",
+          "location": "src/OpenScrape.Domain/ValueObjects/Hand.cs:5",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Hand.Percentage debe estar entre 0 y 100",
+          "location": "src/OpenScrape.Domain/ValueObjects/Hand.cs:9",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ThresholdKey rechaza BoardPosition.None y BoardPosition.Hand (solo postflop válido: Flop/Turn/River)",
+          "location": "src/OpenScrape.Domain/ValueObjects/ThresholdKey.cs:17",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ThresholdKey rechaza HandSituation.None",
+          "location": "src/OpenScrape.Domain/ValueObjects/ThresholdKey.cs:22",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OpponentProfile.IsReliable requiere ≥20 manos jugadas para confiar en perfil global",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:276",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Reliability granular: ≥10 manos preflop, ≥5 oportunidades CBet, ≥10 acciones postflop AF, ≥8 facing actions fold",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:280-300",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OpponentType clasifica villain en 5 tipos vía VPIP>30% (loose) y AF>1.5 (aggressive); Unknown si <10 manos",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:188",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "AggressionFactor usa Laplace smoothing (a+1)/(p+1) para evitar división por cero y regresar a AF=1.0 con pocas muestras",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:101",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "AggressionFactorIP/OOP devuelve -1 si <5 muestras posicionales (sentinel para fallback al global)",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:113-133",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OpponentProfile.GetProfileForPosition retorna perfil sintético solo si HasReliable (≥10 manos en esa posición); fallback a global si no",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:241",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "VillainRange ajustado por posición villain con multiplicadores: EP×0.7, Mid×0.85, CO×1.0, BTN×1.3, SB×0.9, BB×1.1",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:86",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "VillainRange ajustado por VPIP observado: ratio = VPIP_obs / max(rangeBase, 10), clamped a [0.5, 2.0]",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:163",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "VillainRange ajusta rangos 3bet/4bet por 3Bet% observado vs 6% esperado, clamped [0.5, 2.0]",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:131",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ExpandHandNotation: pares=6 combos, suited=4 combos (un palo cada), offsuit=12 combos",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:557",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GameSession.IsValid requiere SessionId y TableName no vacíos y BigBlind > 0",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:47",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "HandRecord.NetProfit excluye blind obligatoria y auto-rebuy: (StackEnd-StackStart) - AutoRebuy + BlindPosted",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:92",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GameSession.BBPer100 = (TotalProfit / BigBlind) / TotalHands * 100, solo si BigBlind > 0 y TotalHands > 0",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:39",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "HandRecord persistido individualmente con FK GameSessionId; lista Hands en GameSession es [JsonIgnore] (efímera)",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:28",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "TotalProfit suma stack diff solo de manos con resultado conocido (Result != Unknown)",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:35",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ExpectedBarrelFrequency depende del OpponentType: LAG=60, TAG=30, LP=20, TP=10, default 30",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:176",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Stats default sin datos (con HandsPlayed=0): VPIP=50, PFR=15, ThreeBetPct=5, FoldToCBet=50, CBet=50, WTSD=35, WSD=50, CheckRaise=8, DonkBet=10",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:93-160",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [],
+      "internal_dependencies": [
+        "Domain.Entities depende de Domain.ValueObjects (Card→nada; Table→PlayerActionSequence; OpponentProfile→Enums.TablePosition+Enums.OpponentType; StrategyProfile→ValueObjects.StreetThresholds; GameSession→Enums.TablePosition+Enums.HandSituation+Enums.BoardPosition+ValueObjects.StreetDecision+ValueObjects.TelemetryAggregate)",
+        "Domain.ValueObjects.HandStrength depende de Domain.ValueObjects.DrawProbability (definido en CardDataOuts.cs, NO en Entities como sugiere el using)",
+        "Domain.ValueObjects.VillainRange depende de Domain.Entities.OpponentProfile + Enums (HandSituation, TablePosition, Rank, Suit) — acoplamiento ValueObjects→Entities en sentido inverso al esperado",
+        "Domain.ValueObjects.ThresholdKey depende de Enums.BoardPosition + Enums.HandSituation",
+        "Domain.Mappers depende de Domain.Entities + Domain.Dtos + Domain.ValueObjects",
+        "Domain.Exceptions sin dependencias internas"
+      ],
+      "external_dependencies": [],
+      "algorithms": [
+        {
+          "name": "Laplace smoothing for AggressionFactor",
+          "purpose": "Evita división por cero y regresa a AF=1 con pocas muestras",
+          "formula": "(aggressive + 1) / (passive + 1)",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:101"
+        },
+        {
+          "name": "OpponentType 4-quadrant classification",
+          "purpose": "Clasifica villano en LAG/LP/TAG/TP basado en VPIP+AF",
+          "formula": "isLoose=VPIP>30%, isAggressive=AF>1.5; (loose,aggr)=LAG, (loose,pass)=LP, (tight,aggr)=TAG, (tight,pass)=TP",
+          "location": "src/OpenScrape.Domain/Entities/OpponentProfile.cs:188-205"
+        },
+        {
+          "name": "Position-adjusted villain range",
+          "purpose": "Estrecha rangos en EP, amplía en BTN",
+          "formula": "freq[hand] = clamp(baseFreq * positionMul, 0, 1); EP=0.7, Mid=0.85, CO=1.0, BTN=1.3, SB=0.9, BB=1.1",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:80-112"
+        },
+        {
+          "name": "VPIP-adjusted villain range",
+          "purpose": "Ajusta el ancho del rango por VPIP observado del oponente",
+          "formula": "ratio = VPIP_observado / max(baseRangePercentage, 10); clamp([0.5, 2.0]); freq[hand] = min(1.0, baseFreq * ratio)",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:163-169"
+        },
+        {
+          "name": "Hand notation expansion to combos",
+          "purpose": "Convierte 'AKs'/'QQ'/'JTo' a tuplas concretas de 2 cartas con palos",
+          "complexity": "Pares: C(4,2)=6, Suited: 4, Offsuit: 4*4-4=12 (excluye mismo palo)",
+          "location": "src/OpenScrape.Domain/ValueObjects/VillainRange.cs:541"
+        },
+        {
+          "name": "NetProfit computation excluding blinds and rebuy",
+          "purpose": "Distingue pérdida real de ciega obligatoria y auto-rebuy",
+          "formula": "(HeroStackEnd - HeroStackStart) - AutoRebuy + BlindPosted",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:92"
+        },
+        {
+          "name": "BB/100 win rate normalization",
+          "purpose": "Métrica universal de ganancia normalizada por big blind y 100 manos",
+          "formula": "(TotalProfit / BigBlind) / TotalHands * 100",
+          "location": "src/OpenScrape.Domain/Entities/GameSession.cs:39"
+        },
+        {
+          "name": "StrategyProfile cross-field validation",
+          "purpose": "Detecta inconsistencias en ~150 parámetros antes del arranque",
+          "complexity": "13 reglas: orden estricto de tiers de equity por threshold; rangos % en [0,100]; rangos en [0,1] para frecuencias y multiplicadores; orden estricto de SPR thresholds",
+          "location": "src/OpenScrape.Domain/Entities/StrategyProfile.cs:318"
+        }
+      ],
+      "complexity": "high",
+      "loc_estimate": 1250,
+      "files_count": 33,
+      "public_types_count": 50
+    },
+    {
+      "name": "OpenScrape.Features",
+      "path": "src/OpenScrape.Features",
+      "purpose": "Capa de casos de uso scoped organizados en feature folders (ActionScenario, Table, Cards, RegionsTableMap, GameRound). Cada feature aporta clases concretas *UseCase (operaciones CRUD-ish sobre Marten + lógica de selección preflop) y un record agregador *UseCases que actúa como facade ligero. Los retornos van envueltos en Ardalis.Result excepto GetActionScenario (string) y GetRecentGameRounds (List<GameSession>). El módulo es cliente puro de OpenScrape.Domain + Marten — sin abstracciones extra ni interfaces. Convive con 3 use cases vacíos (GetAllTables, GetAllRegionTableMap, GetFlopCards) que constituyen dead code o scaffolding incompleto.",
+      "primary_files": [
+        "src/OpenScrape.Features/Services.cs",
+        "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs",
+        "src/OpenScrape.Features/Table/Get/GetTable.cs",
+        "src/OpenScrape.Features/Cards/GetAll/GetAllCards.cs",
+        "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs",
+        "src/OpenScrape.Features/GameRound/GetRecentGameRounds.cs"
+      ],
+      "functions": [
+        {
+          "name": "AddUseCases",
+          "file": "src/OpenScrape.Features/Services.cs:18",
+          "params": ["this IServiceCollection services"],
+          "returns": "IServiceCollection",
+          "purpose": "Registra todos los use cases y aggregator records como Scoped en el contenedor DI. Único punto de extensión del módulo.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetActionScenario.ExecuteAsync",
+          "file": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:16",
+          "params": ["GameSituation situation", "ActionScenarioRequest request"],
+          "returns": "Task<string>",
+          "purpose": "Resuelve la acción preflop a recomendar para una situación dada. Carga el documento Marten Table[Id == situation.GetDescription()], filtra Positions por hero/raiser/3bet/limper/caller/squeezer, busca Hand por nombre+suited y selecciona acción aleatorizada. Default 'Fold' si no hay match. ÚNICO use case con lógica de negocio no trivial.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetActionScenario.GetRandomAction",
+          "file": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:51",
+          "params": ["List<Hand> actions"],
+          "returns": "string",
+          "purpose": "Selección ponderada acumulada: requiere Sum(Percentage)==100, genera random en [1,100], itera hasta encontrar el rango acumulado que contiene el roll. Usa new Random() por llamada (anti-patrón).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetTable.ExecuteAsync",
+          "file": "src/OpenScrape.Features/Table/Get/GetTable.cs:17",
+          "params": ["string name"],
+          "returns": "Task<Result<TableDTO?>>",
+          "purpose": "Carga Table por Id desde Marten (QuerySession), mapea a TableDTO. NotFound si no existe; CriticalError envuelve excepciones.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetAllCards.ExecuteAsync",
+          "file": "src/OpenScrape.Features/Cards/GetAll/GetAllCards.cs:17",
+          "params": [],
+          "returns": "Task<Result<List<CardDTO>?>>",
+          "purpose": "Lista completa del catálogo de cartas (52 documentos esperados). Mapea Card→CardDTO. Solapa con CardCacheService singleton del módulo App.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "UpdateRegionTableMap.ExecuteAsync",
+          "file": "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:15",
+          "params": ["UpdateRegionTableMapRequest request", "CancellationToken ct = default"],
+          "returns": "Task<Result>",
+          "purpose": "Edición non-destructive de regiones de captura OCR. Carga RegionTableMap por Category, busca región con Name == request.Name, la elimina, construye una nueva preservando flags semánticos (IsHash/IsColor/IsBoard/IsOnlyNumber) y reemplazando geometría/color/umbrales con datos del request, persiste con Store + SaveChangesAsync.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetRecentGameRounds.Execute",
+          "file": "src/OpenScrape.Features/GameRound/GetRecentGameRounds.cs:15",
+          "params": ["int count = 20"],
+          "returns": "Task<List<GameSession>>",
+          "purpose": "Listado paginado de las últimas N sesiones, ordenado por EndTime descendente. Aprovecha el índice declarado en Infrastructure. Sin envoltorio Ardalis.Result (inconsistente con el resto del módulo).",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [],
+      "value_objects": [
+        {
+          "name": "ActionScenarioRequest",
+          "kind": "class (mutable)",
+          "file": "src/OpenScrape.Features/ActionScenario/ActionScenarioRequest.cs",
+          "fields": "HandName?, Suited?, 6 TablePosition? (HeroPosition/OpenRaiser/ThreeBetPosition/Limper/Caller/Squeezer), BetSize? (decimal — filtro comentado), IsGreater?, RaiserFolds?",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "UpdateRegionTableMapRequest",
+          "kind": "record (positional)",
+          "file": "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMapRequest.cs:3",
+          "fields": "Category, Name, PosX, PosY, Width, Height, Umbral (double), InactiveUmbral (double), Color, IsColor?, IsHash?, IsOnlyNumber?, IsBoard? (estos 4 últimos ignorados por el use case)",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ActionScenarioUseCases",
+          "kind": "record (aggregator)",
+          "file": "src/OpenScrape.Features/ActionScenario/ActionScenarioUseCases.cs:5",
+          "fields": "GetActionScenario",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "TableUseCases",
+          "kind": "record (aggregator)",
+          "file": "src/OpenScrape.Features/Table/TableUseCases.cs:6",
+          "fields": "GetTable, GetAllTables (vacío)",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "CardUseCases",
+          "kind": "record (aggregator)",
+          "file": "src/OpenScrape.Features/Cards/CardUseCases.cs:5",
+          "fields": "GetAllCards",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "RegionTableMapUseCases",
+          "kind": "record (aggregator)",
+          "file": "src/OpenScrape.Features/RegionsTableMap/RegionTableMapUseCases.cs:6",
+          "fields": "GetAllRegionTableMap (método comentado), UpdateRegionTableMap",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GameRoundUseCases",
+          "kind": "record (aggregator)",
+          "file": "src/OpenScrape.Features/GameRound/GameRoundUseCases.cs:3",
+          "fields": "GetRecentGameRounds",
+          "confidence": "confirmed"
+        }
+      ],
+      "enums": [],
+      "business_rules": [
+        {
+          "description": "GetActionScenario.ExecuteAsync usa GameSituation.GetDescription() como Id de búsqueda en Marten para el documento Table — convención de naming acoplada al atributo [Description] del enum",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:20",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Filtro multi-criterio sobre Positions: HeroPosition siempre comparado, 6 criterios opcionales (skip si null), filtro BetSize comentado",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:24-33",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Comparación case-sensitive entre TablePosition.GetDescription() y campos string en PlayerActionSequence — cualquier mismatch silencioso fuerza fallback a 'Fold'",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:25",
+          "confidence": "inferred"
+        },
+        {
+          "description": "GetRandomAction exige Sum(Percentage)==100 (else ArgumentException); selecciona vía rangos acumulados con Random.Next(1,101); fallback a actions.Last() en errores de redondeo",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:60-80",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Default action sentinel = 'Fold' (string literal). El consumidor SetPreflopActionUseCase trata 'Fold' como 'no aplica regla' y avanza al siguiente camino (Squeeze→OpenRaise→Cold4Bet→RaiseOverLimper→3Bet)",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:38,42",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "UpdateRegionTableMap preserva flags IsHash/IsColor/IsBoard/IsOnlyNumber del registro existente al reemplazar; ignora los del request (bug latente: si la región no existe, esos flags quedan null para siempre)",
+          "location": "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:30-44",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GetRecentGameRounds devuelve por defecto las últimas 20 sesiones ordenadas por EndTime descendente — alineado con el índice declarado en Infrastructure",
+          "location": "src/OpenScrape.Features/GameRound/GetRecentGameRounds.cs:15-21",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Mapeo Card.Id ↔ CardDTO.Name y Table.Id ↔ TableDTO.Name en los mappers consumidos — la UI no expone IDs internos",
+          "location": "src/OpenScrape.Domain/Mappers/CardDTOMapper.cs; src/OpenScrape.Domain/Mappers/TableDTOMapper.cs:13",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        { "name": "Marten", "version": "8.24.0", "type": "nuget" },
+        { "name": "Ardalis.Result", "version": "10.1.0", "type": "nuget" }
+      ],
+      "internal_dependencies": [
+        "OpenScrape.Domain.Entities (Table, Card, RegionTableMap, GameSession)",
+        "OpenScrape.Domain.Dtos (TableDTO, CardDTO)",
+        "OpenScrape.Domain.Mappers (TableDTOMapper.ToDto, CardDTOMapper.ToDto)",
+        "OpenScrape.Domain.ValueObjects (Hand, Region, PlayerActionSequence)",
+        "OpenScrape.Domain.Enums (GameSituation, TablePosition, EnumExtensions.GetDescription)"
+      ],
+      "external_dependencies": [
+        { "name": "PostgreSQL (Neon, eu-west-2) vía IDocumentStore", "via": "Marten registrado en OpenScrape.Infrastructure", "tls": "VerifyFull + Channel Binding Require (heredado)" }
+      ],
+      "algorithms": [
+        {
+          "name": "Weighted random sampling acumulado",
+          "purpose": "Elige una acción de una lista de Hand respetando los porcentajes asignados (que deben sumar 100)",
+          "formula": "roll = Random.Next(1, 101); foreach action: acc += action.Percentage; if roll <= acc → return action",
+          "complexity": "O(N) lineal, N = nº de Hand variants para esta combinación",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:51-84"
+        },
+        {
+          "name": "Multi-criteria filter chain con cortocircuito por null",
+          "purpose": "Filtra PlayerActionSequence aplicando solo los criterios que el request especifica explícitamente (resto es wildcard)",
+          "formula": "(field == null) || (sequence.Field == field.GetDescription())",
+          "complexity": "O(P × 7) donde P = Positions.Count típico ~50",
+          "location": "src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:24-33"
+        },
+        {
+          "name": "Region preserving update",
+          "purpose": "Sustituye una región conservando flags semánticos del registro existente y reemplazando geometría + umbrales + color con datos del request",
+          "complexity": "O(R) lineal sobre Regions.Count (≤41)",
+          "location": "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:23-46"
+        }
+      ],
+      "anomalies": [
+        {
+          "severity": "high",
+          "description": "GetActionScenario envuelve excepciones en Exception base — pierde stack trace y tipo original. Anti-patrón explícito",
+          "evidence": ["src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:46"]
+        },
+        {
+          "severity": "high",
+          "description": "Filtro BetSize comentado pero campos siguen vivos en ActionScenarioRequest y PlayerActionSequence — funcionalidad parcialmente abandonada o intencionalmente delegada a IsGreater",
+          "evidence": ["src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:31"]
+        },
+        {
+          "severity": "high",
+          "description": "Posible mismatch silencioso entre GameSituation.GetDescription() y nombre de fichero JSON: Cold4Bet.json vs [Description('ColdFourBet')]. Si el seed persiste con un Id distinto, GetActionScenario falla a Fold",
+          "evidence": ["src/OpenScrape.App/Data/Cold4Bet.json", "src/OpenScrape.Domain/Enums/Positions.cs:78"]
+        },
+        {
+          "severity": "medium",
+          "description": "3 use cases vacíos (GetAllTables, GetAllRegionTableMap, GetFlopCards) son dead code; GetAllTables incluso registrado en DI. GetFlopCards no registrado",
+          "evidence": [
+            "src/OpenScrape.Features/Services.cs:32",
+            "src/OpenScrape.Features/Table/GetAll/GetAllTables.cs",
+            "src/OpenScrape.Features/RegionsTableMap/GetAll/GetAllRegionTableMap.cs",
+            "src/OpenScrape.Features/Cards/GetFlop/GetFlopCards.cs"
+          ]
+        },
+        {
+          "severity": "medium",
+          "description": "UpdateRegionTableMap acepta IsHash/IsColor/IsBoard/IsOnlyNumber en el request pero NO los aplica al construir la nueva Region — solo preserva los del registro existente. Bug latente cuando la región no existe",
+          "evidence": [
+            "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:30-44",
+            "src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMapRequest.cs:3"
+          ]
+        },
+        {
+          "severity": "medium",
+          "description": "GetActionScenario.GetRandomAction usa new Random() por llamada en lugar de Random.Shared (.NET 6+ idiom)",
+          "evidence": ["src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:64"]
+        },
+        {
+          "severity": "medium",
+          "description": "GetTable usa `using` síncrono mientras GetRecentGameRounds usa `await using` async. Inconsistencia con CLAUDE.md ('Database sessions use await using per operation')",
+          "evidence": [
+            "src/OpenScrape.Features/Table/Get/GetTable.cs:21",
+            "src/OpenScrape.Features/GameRound/GetRecentGameRounds.cs:17"
+          ]
+        },
+        {
+          "severity": "medium",
+          "description": "GetRecentGameRounds no envuelve en Ardalis.Result — inconsistencia con resto del módulo",
+          "evidence": ["src/OpenScrape.Features/GameRound/GetRecentGameRounds.cs:15"]
+        },
+        {
+          "severity": "low",
+          "description": "Namespace inconsistente en feature Cards: Cards/CardUseCases.cs declara OpenScrape.Features.Card (singular), Cards/GetAll/GetAllCards.cs idem (singular), pero Cards/GetFlop/GetFlopCards.cs declara OpenScrape.Features.Cards.GetFlop (plural)",
+          "evidence": [
+            "src/OpenScrape.Features/Cards/CardUseCases.cs:3",
+            "src/OpenScrape.Features/Cards/GetAll/GetAllCards.cs:6",
+            "src/OpenScrape.Features/Cards/GetFlop/GetFlopCards.cs:8"
+          ]
+        },
+        {
+          "severity": "low",
+          "description": "ActionScenarioRequest es class mutable; resto de DTOs del módulo (UpdateRegionTableMapRequest) usan record positional. Sin razón aparente para divergir",
+          "evidence": ["src/OpenScrape.Features/ActionScenario/ActionScenarioRequest.cs:5"]
+        },
+        {
+          "severity": "low",
+          "description": "Doble validación redundante en GetRandomAction: actions.Count != 0 seguido de !actions.Any()",
+          "evidence": ["src/OpenScrape.Features/ActionScenario/Get/GetActionScenario.cs:53-56"]
+        },
+        {
+          "severity": "low",
+          "description": "Sobre-defensividad: request?.Color con null-conditional sobre un parámetro que nunca puede ser null por contrato",
+          "evidence": ["src/OpenScrape.Features/RegionsTableMap/Update/UpdateRegionTableMap.cs:40-43"]
+        }
+      ],
+      "complexity": "low",
+      "loc_estimate": 370,
+      "files_count": 16,
+      "public_types_count": 14
+    },
+    {
+      "name": "OpenScrape.DecisionMaker",
+      "path": "src/OpenScrape.DecisionMaker",
+      "purpose": "Motor de decisión y cálculo de equity del bot. Encapsula los algoritmos puros de poker (evaluación de manos por bit-manipulation, simulación Monte Carlo con enumeración exacta turn/river, cálculo de outs y draws, análisis de textura y cambios de board, equity preflop tabulada de 169 manos), los servicios de decisión postflop (PostflopDecisionService de 1893 LOC con 10+ paths: facing bet, no-bet, check-raise, float exit, probe bet, pot control, delayed value, c-bet mixing, bluff/semi-bluff, randomización), los calculadores especializados (DangerPenaltyCalculator, ImpliedOddsCalculator, BetSizingService, RangePolarizer, ThresholdsRegistry), el tracking de oponentes (OpponentTracker con VPIP/PFR/AF posicional/showdown stats, S22.3 thread-safe), backtesting histórico (StrategyBacktester), análisis estadístico (StrategyAnalyzerService, BankrollTrackerService con risk-of-ruin), y telemetría de explotabilidad GTO (ExploitabilityCalculator, AutoCalibrationService). 13 interfaces + 13 servicios + 6 algoritmos + 3 DTOs + 1 record context + 1 clase de constantes. Depende solo de OpenScrape.Domain, Microsoft.Extensions.{Logging.Abstractions,Options} y Marten 8.24 (BankrollTrackerService). NO contiene UnifiedPokerCalculator (vive en OpenScrape.App como facade que orquesta este módulo).",
+      "primary_files": [
+        "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs",
+        "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs",
+        "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs",
+        "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs",
+        "src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs",
+        "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs",
+        "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs",
+        "src/OpenScrape.DecisionMaker/Services/StrategyBacktester.cs",
+        "src/OpenScrape.DecisionMaker/PokerConstants.cs",
+        "src/OpenScrape.DecisionMaker/DTOs/PostflopDecisionInput.cs"
+      ],
+      "functions": [
+        {
+          "name": "PostflopDecisionService.DetermineAction",
+          "file": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:69",
+          "params": ["PostflopDecisionInput input"],
+          "returns": "PostflopDecisionResult",
+          "purpose": "Punto de entrada único del motor postflop. Acepta un record con 36+ campos (equity, street, situation, board texture, posiciones, perfiles villano, flags cross-street). Calcula effectiveEquity = equity − dangerPenalty + comboDrawBonus − reverseImpliedPenalty (con floor en 0), aplica ajustes (multiway IP lineal/OOP cuadrático con damping posicional, 3-bet/4-bet/squeeze/limp-raise pots, BvB dinámico, broadway-wet, range narrowing, kicker quality, villain barreling vs bet-check-bet, sizing escalation, oponente stats reales o tipo estático, WSD/barrel/donk overrides, SPR push/fold con interpolación suave) y delega a HandleFacingBet, HandleNoBet o HandleLowEquity. Soporta modo simplificado (RaiseOverLimper).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "MonteCarloSimulator.CalculateEquity",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:50",
+          "params": ["List<CardDataOuts> myCards", "List<CardDataOuts> communityCards", "int numOpponents", "int? iterations = null", "VillainRange? villainRange = null"],
+          "returns": "EquityResult",
+          "purpose": "Equity híbrido: 5 community → enumeración exacta C(remaining,2)=990; 4 community → enumeración exacta 45 rivers × C(remaining-1,2) ≈42K; 3 o 0 community → MC paralelizado con HandScore struct zero-alloc. Iteraciones adaptativas: preflop 30K, flop 50K. VillainRange ponderado con skip-on-block y BlockedComboPercentage para detectar fiabilidad (UnreliableThreshold = 20%).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BitHandEvaluator.EvaluateBestHand",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs:26",
+          "params": ["List<CardDataOuts> cards"],
+          "returns": "HandEvaluation",
+          "purpose": "Evaluación de la mejor mano de 5 cartas a partir de 5-7. Bit-manipulation con stackalloc (rankCount[15], suitCount[5], suitRankBits[5]) — sin allocations, sin LINQ, sin C(n,5) combinaciones. Detecta straight (incluye wheel A-2-3-4-5 con WheelMask), flush, straight flush, quads, full house. Construye Score con multiplicadores escalonados de PokerConstants (PairMultiplier=1M hasta StraightFlushMultiplier=10^13).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BitHandEvaluator.EvaluateHandScore",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs:253",
+          "params": ["List<CardDataOuts> cards"],
+          "returns": "HandScore (struct)",
+          "purpose": "Versión zero-alloc para Monte Carlo. Misma lógica de bit-manipulation pero retorna readonly struct con CompositeScore (long con HandRank en bits altos + 5 kickers de 4 bits) que permite comparación O(1) vía CompareTo. Reduce GC pressure crítico en MC (≈42K evaluaciones/turn).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OutsCalculator.CalculateOuts",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs:46",
+          "params": ["List<CardDataOuts> myCards", "List<CardDataOuts> communityCards", "string boardTexture = \"Dry\"", "bool heroBlocksTopCard = false"],
+          "returns": "OutsResult",
+          "purpose": "Cuenta outs aplicando inclusión-exclusión: flushOuts + straightOuts − overlapOuts + overcardOuts (ajustados por textura: Coordinated/Wet usa OvercardOutsConnectedBoard, Paired usa OvercardOutsPairedBoard, blocker boost) + backdoorOuts (S21.4 con overlap discount si flush draw + backdoor straight). Calcula tainted outs (outs que también ayudan al villano: 3+ same suit en board, board pair, 3 consecutivas) con descuento variable: ×0.7 si hero tiene flush draw, ×0.3 si no. EffectiveOuts = cleanOuts + taintedOuts × discount. Detecta combo draw, OESD, gutshot, straight flush draw.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BoardTextureAnalyzer.Analyze",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:62",
+          "params": ["List<int> ranks", "List<int> suits"],
+          "returns": "BoardTextureResult",
+          "purpose": "Calcula wetnessScore [0-100] sumando 10 contribuciones (Monotone+35, TwoTone+15, Connected+20, FlushPossibility+15, StraightPossibility+15, BroadwayHeavy+10, BroadwayConnected+20, Paired-10, Trips-15, ExtraCards+5). Categoriza con umbrales WetnessDryMax=15, SemiDryMax=35, SemiWetMax=60. Mapeo retrocompatible a 'Monotone'/'Paired'/'Wet'/'Coordinated'/'Dry' vía SimplifiedTexture.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BoardTextureAnalyzer.AnalyzeBoardChange",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:153",
+          "params": ["List<int> previousRanks", "List<int> previousSuits", "int newCardRank", "int newCardSuit"],
+          "returns": "BoardChangeResult",
+          "purpose": "Compara board pre/post nueva carta. Detecta FlushCompleted (4+ same suit en board), FlushDrawAppeared (3 same suit nuevo), StraightCompleted (4+ consecutive con prevHadDraw), BoardPaired, OvercardAppeared. Calcula DangerLevel ∈ [0,10]: flushCompleted+4, flushDrawAppeared+2, straightCompleted+3, boardPaired+2, overcardAppeared+1. Capped a 10.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BoardTextureAnalyzer.ClassifyRiverCard",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:227",
+          "params": ["BoardChangeResult boardChange"],
+          "returns": "RiverCardType (Blank|Neutral|Scare)",
+          "purpose": "S22.2: Clasifica river card. Scare = flush/straight completed o overcard. Neutral = boardPaired o flushDrawAppeared. Blank = sin cambio de peligro. Usado para ajustar bet sizing y bluff catch en river.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OpponentTracker.RecordPostflopAction",
+          "file": "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:84",
+          "params": ["string playerId", "PostflopAction action", "bool? isVillainInPosition = null"],
+          "returns": "void",
+          "purpose": "Acumula contadores postflop globales (Bet/Raise/Call/Fold) sobre ConcurrentDictionary thread-safe. Si isVillainInPosition tiene valor, también incrementa los contadores posicionales (TimesAggressiveIP/OOP, TimesPassiveIP/OOP) para que GetTypeForPosition() pueda discriminar agresión por contexto.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OpponentTracker.RegisterSeatAlias",
+          "file": "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:234",
+          "params": ["string seatName", "string alias"],
+          "returns": "void",
+          "purpose": "Mapea seat (\"P3\") → alias real (\"PlayerA\"). Si existe perfil con seatName, lo migra al alias y actualiza PlayerId interno. Estructura interna: ConcurrentDictionary<string, string> _seatAliasCache (case-insensitive).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "DangerPenaltyCalculator.Calculate",
+          "file": "src/OpenScrape.DecisionMaker/Services/DangerPenaltyCalculator.cs:31",
+          "params": ["double rawEquity", "BoardChangeResult boardChange", "bool heroBlocksDangerSuit", "bool isFacingBet", "StrategyProfile profile", "BoardPosition street", "bool heroHasNutBlocker", "HandRank heroHandRank", "bool heroCompletedFlush", "bool heroCompletedStraight"],
+          "returns": "double",
+          "purpose": "Calcula penalty = max(flushPct × equity, straightPct × equity) × streetMultiplier (Flop ×1.3, Turn ×1.0, River ×0.8). Skip si hero completó el draw (L3). Suma flushDrawPenalty proporcional (×8% equity, reducido si TwoPair+ ×0.5 o OnePair ×0.75, blocker reductions L2). Añade flat para boardPaired y overcard. Multiplica por DangerFacingBetMultiplier=1.4 si facing bet. Aplica blocker reduction granular (nut > non-nut > board4flush).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ImpliedOddsCalculator.CalculateImpliedOddsFactor",
+          "file": "src/OpenScrape.DecisionMaker/Services/ImpliedOddsCalculator.cs:35",
+          "params": ["BoardPosition street", "bool isInPosition", "bool hasFlushDraw", "decimal heroStack", "decimal potSize", "StrategyProfile profile", "int numOpponents = 1"],
+          "returns": "double ∈ [0.5, 1.0]",
+          "purpose": "Factor multiplicativo aplicado a pot odds. River = 1.0 (sin más calles). Por SPR: shallow = factor alto, deep = factor bajo (mejores implied odds). Interpolación cuadrática (sqrt) entre shallow y deep thresholds. Multiplica por streetFactor (Flop ImpliedOddsFlopMultiplier > Turn ImpliedOddsTurnMultiplier), IPBonus si IP, FlushDrawBonus si tiene flush draw. Multiway: OOP empeora (+5% por opp extra), IP con draw mejora (-3%).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ImpliedOddsCalculator.CalculateReverseImpliedOdds",
+          "file": "src/OpenScrape.DecisionMaker/Services/ImpliedOddsCalculator.cs:98",
+          "params": ["BoardChangeResult? boardChange", "HandRank heroHandRank", "bool hasFlushDraw", "BoardPosition street", "bool isFacingBet", "StrategyProfile profile", "PairClassification", "bool heroBlocksDangerSuit", "OpponentType villainType", "decimal heroStack", "decimal potSize", "bool isAnyoneAllIn"],
+          "returns": "double",
+          "purpose": "Penaliza calls turn/river con OnePair/TwoPair en boards con draws. Sumandos: ReverseImpliedFlushDrawPenalty si flushDraw apareció y hero no lo tiene, ReverseImpliedCoordinatedPenalty si DangerLevel≥2. OnePair multiplier por sub-tipo (Overpair 1.0 → BoardPaired 2.0). Reducción por blocker. River ×0.6. S20.3: bluff risk extra en turn (probabilidad miss draw × villain LAG/TP multiplier).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BetSizingService.CalculateDynamicBetSize",
+          "file": "src/OpenScrape.DecisionMaker/Services/BetSizingService.cs:147",
+          "params": ["double baseSize", "decimal heroStack", "decimal potSize", "int numOpponents", "bool isPaired", "bool isCoordinated", "bool isDry", "bool isInPosition", "BoardPosition street"],
+          "returns": "string ('Bet 1/4' a 'Bet Pot')",
+          "purpose": "Modula baseSize por SPR (deep ×deepMul, shallow ×shallowMul), multiway (×0.85 si ≥3), board (paired ×1.15, coordinated ×0.90), posición (OOP ×0.90), street (Flop ×0.90, Turn ×1.0, River ×1.10). Clamp [0.10, 1.00], discretiza a strings.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "RangePolarizer.GetOptimalRangeType",
+          "file": "src/OpenScrape.DecisionMaker/Services/RangePolarizer.cs:20",
+          "params": ["BoardTextureCategory texture", "bool isInPosition", "double spr", "BoardPosition street"],
+          "returns": "RangeType (Linear|Polarized|Condensed)",
+          "purpose": "Selección de rango: SPR<3 → Condensed; River → Polarized IP / Linear OOP; Dry/Paired → Polarized IP / Linear OOP; Wet/SemiWet → Linear. Threshold adjustments: Polarized IP (-4,-3), Polarized OOP (-2,-2), Linear IP (0,0), Linear OOP (+3,+2), Condensed (+6,+4).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ThresholdsRegistry.Get",
+          "file": "src/OpenScrape.DecisionMaker/Services/ThresholdsRegistry.cs:35",
+          "params": ["ThresholdKey key"],
+          "returns": "StreetThresholds",
+          "purpose": "Lookup tipado O(1) en Dictionary<ThresholdKey, StreetThresholds> construido en el ctor parseando todas las claves string del StrategyProfile. Lanza KeyNotFoundException si la clave no existe (válido porque el validador de arranque debería haber detectado el caso). Sustituye el acceso por string crudo eliminando el fallback silencioso.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PreflopAnalyzer.HasRangeAdvantageOnBoard",
+          "file": "src/OpenScrape.DecisionMaker/Services/PreflopAnalyzer.cs:54",
+          "params": ["List<int> flopRanks", "BoardTextureResult boardTexture", "bool isPreflopAggressor", "HandSituation situation"],
+          "returns": "bool",
+          "purpose": "Determina si el rango de hero tiene ventaja en el flop. Agresor en 3-bet pot: true si A/K en board, false si lowBoard o sin cartas altas + carta ≤6, true si highCards ≥1. Agresor en pot normal: hasAceOrKing || highCards≥2. Caller en 3-bet pot: solo isMediumBoard + connected.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PreflopEquityCalculator.GetEquity",
+          "file": "src/OpenScrape.DecisionMaker/Algorithms/PreflopEquityCalculator.cs:18",
+          "params": ["List<CardDataOuts> holeCards", "int numOpponents = 1"],
+          "returns": "double ∈ [0, 1]",
+          "purpose": "Lookup en tabla estática de 169 manos (AA, AKs, ..., 32o) con equities heads-up calibrados. Aplica AdjustEquityForOpponents(equity, numOpp) = equity^(1 + log2(numOpp) × 0.35) — exponente calibrado para que AA vs 5 opp ≈ 0.49 (valor real). Default 0.5 si la mano no está en tabla.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "EquityCalculatorService.CalculateFullEquity",
+          "file": "src/OpenScrape.DecisionMaker/Services/EquityCalculatorService.cs:44",
+          "params": ["List<CardDataOuts> myCards", "List<CardDataOuts> communityCards", "int numOpponents", "double potSize", "double callAmount", "int? monteCarloIterations"],
+          "returns": "FullEquityAnalysis",
+          "purpose": "Orquestador: si community.Count==0 usa PreflopEquityCalculator, si no MonteCarloSimulator + OutsCalculator. Calcula PotOdds = callAmount / (potSize + callAmount), ExpectedValue = equity × potSize − (1−equity) × callAmount, RecommendedAction (heurística simple: RAISE/BET si EV>0 y equity>0.6, CALL si EV>0 y equity>0.3, SEMI-BLUFF si equity>0.25 y outs>8, FOLD si EV<0).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OpponentTracker.GetAdjustedFoldEquity",
+          "file": "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:191",
+          "params": ["string playerId", "double baseFoldEquity"],
+          "returns": "double",
+          "purpose": "Si HasReliableAFData (≥10 acciones): LP ×1.25 (fish foldea mucho), TP ×1.10 (nit), TAG ×0.85 (reg resiste), LAG ×0.70 (no foldea fácil). Si no, devuelve base sin ajustar.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "StrategyBacktester.RunBacktest",
+          "file": "src/OpenScrape.DecisionMaker/Services/StrategyBacktester.cs:20",
+          "params": ["List<HandRecord> hands", "decimal bigBlind = 0.50m"],
+          "returns": "BacktestResult",
+          "purpose": "Replaya cada decisión postflop histórica a través de IPostflopDecisionService.DetermineAction. Compara con la acción original (Simplify normaliza a Bet/Call/Raise/Check/Fold/All-In). Para divergencias estima impacto en BB: Fold→Call/Bet = equity × potBB × 0.5, Call/Bet→Fold = (1−equity) × potBB × 0.3, Check→Bet = equity × potBB × 0.2, Bet→Check = (1−equity) × potBB × 0.15. Acumula EstimatedBBPer100Impact.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BankrollTrackerService.CalculateRiskOfRuinInternal",
+          "file": "src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:177",
+          "params": ["BankrollStats stats"],
+          "returns": "(double riskOfRuin, string level)",
+          "purpose": "Fórmula clásica de risk-of-ruin: ror = exp(−2 × bankroll_en_BB × winRate / σ²). Clamp del exponente a -700 para evitar overflow. Niveles: <0.05 Green, <0.15 Yellow, ≥0.15 Red. Devuelve (1.0, Red) si winRate≤0 o σ≤0. Requiere mínimo MinSessionsForRecommendation sesiones (default 20).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ExploitabilityCalculator.AnalyzeDecision",
+          "file": "src/OpenScrape.DecisionMaker/Services/ExploitabilityCalculator.cs:98",
+          "params": ["string ourDecision", "double equity", "double potOdds", "double foldEquity", "BoardPosition street", "HandSituation situation", "bool isInPosition", "string boardTexture", "decimal potSize", "BetSizeCategory villainBetSize"],
+          "returns": "DecisionAnalysis",
+          "purpose": "Calcula EV de la decisión tomada vs mejor respuesta GTO simplificada. ExploitabilityMbb = (bestEV − ourEV) × 100 / BigBlind (BigBlind constante = 1.0). IsExploitable si > 10 mbb. Categoriza leaks (OverBluffing/OverCalling/UnderBluffing/UnderValue/PotOddsError) y genera recommendación textual.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "AutoCalibrationService.Calibrate",
+          "file": "src/OpenScrape.DecisionMaker/Services/AutoCalibrationService.cs:46",
+          "params": ["IExploitabilityCalculator exploitabilityCalculator", "StrategyProfile currentProfile"],
+          "returns": "CalibrationResult",
+          "purpose": "Toma TopLeaks de SessionAnalysis. Para cada leak con AverageExploitabilityMbb/10 ≥ 1.0 propone ajuste sobre FoldBelow/ThinValueAbove (capped a MaxAdjustmentPerCycle=5.0). NO consulta el StrategyProfile real para OldValue (usa hardcoded 45/40 → bug latente: el ajuste no es relativo al valor actual). Requiere ≥20 decisiones, gtoDistance > 15 mbb.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PostflopGameContext.WithFlopState",
+          "file": "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs:106",
+          "params": ["bool heroBet", "bool villainBet", "bool isPreflopAggressor"],
+          "returns": "PostflopGameContext (nuevo)",
+          "purpose": "Helper inmutable que devuelve un nuevo record con HeroBetFlop, VillainBetFlop, PreviousStreetWasBet=heroBet, VillainAggressorCheckedFlop=!isPreflopAggressor && !villainBet. Centraliza la derivación para mantener invariantes coherentes entre streets.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PostflopGameContext.TrackHeroStack",
+          "file": "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs:133",
+          "params": ["decimal currentStack"],
+          "returns": "(PostflopGameContext NewContext, decimal EffectiveStack)",
+          "purpose": "Detecta auto-rebuy: si HeroStackPreRebuy≤0 lo inicializa, si currentStack > pre+50BB ignora el aumento (rebuy automático de la sala) y devuelve pre como effective, si descenso o pequeño aumento actualiza pre. Sin mutar el receptor.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PostflopDecisionService.CalculateAllinEV",
+          "file": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1427",
+          "params": ["double equity", "decimal heroStack", "decimal potSize"],
+          "returns": "double",
+          "purpose": "EV all-in = (equity/100) × (pot + stack) − (1 − equity/100) × stack. Usado cuando SPR < 1.0 para forzar push +EV en lugar de Fold por threshold. Internal para tests.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PostflopDecisionService.CalculateProjectedRiverSPR",
+          "file": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1441",
+          "params": ["decimal heroStack", "decimal potSize", "double betFraction"],
+          "returns": "double",
+          "purpose": "S22.4: SPR proyectado tras turn bet asumiendo villain call: (heroStack − bet) / (potSize + 2×bet). Usado para detectar si turn bet compromete river (StackoffProjectedSPRThreshold) y decidir entre All-In (equity buena) o Check (equity marginal).",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [],
+      "value_objects": [
+        { "name": "PostflopDecisionInput", "kind": "record", "file": "DTOs/PostflopDecisionInput.cs:14", "fields": "6 required (Equity, Street, Situation, BoardTexture, IsInPosition, VillainBetSize), 36+ con defaults: PotOdds, TotalOuts, EffectiveOuts, PreviousStreetBet, VillainShowedAggression, BoardChange?, HeroBlocksDangerSuit, HeroStack, PotSize, HasFlushDraw, NumOpponents=1, HeroIsAggressor, HeroHandRank, HasComboDraw, VillainAggressorCheckedPreviousStreet, VillainBarreling, VillainType, PairClassification, FoldEquity, VillainBetSizeFlop, VillainBetSizeTurn, VillainCheckedMiddleStreet, HeroHasNutBlocker, HeroFloatedFlop, VillainFoldToBetPct=-1, HeroKickerStrength, TurnCalledWithFlushDanger, HeroBlocksTopCard, HeroCheckedAllStreets, IsAnyoneAllIn, IsDonkBet, VillainProfile?, HeroPosition, VillainPosition, IsBroadwayWet, RiverCardType=Neutral", "validates_in_init": false },
+        { "name": "PostflopDecisionResult", "kind": "record", "file": "Services/PostflopDecisionService.cs:14", "fields": "Action (string), Reason?, IsBluff, IsBarrel, IsCheckRaise, IsFloating" },
+        { "name": "DecisionRequest", "kind": "sealed record", "file": "DTOs/DecisionRequest.cs:14", "fields": "HeroCards/CommunityCards required, Street, Situation, HeroStack, VillainStack, PotSize, BetToCall, IsInPosition, NumOpponents=1, HeroPosition, VillainPosition, VillainId='Unknown', VillainBetSize, 11 flags cross-street, PreviousBoard?, 4 flags hero blockers, VillainProfile?, HandSituationTag?, MonteCarloIterations? (DTO de facade en App, no consumido directamente por DecisionMaker)" },
+        { "name": "DecisionResult", "kind": "sealed record", "file": "DTOs/DecisionResult.cs:10", "fields": "RecommendedAction required, EquityPercent required, Reason required, BoardTexture?, BetSize?, PotOddsPercent, ExpectedValue, IsBluff, IsBarrel, IsCheckRaise, IsFloating, CalculationDetail (object opaque)" },
+        { "name": "PostflopGameContext", "kind": "sealed record", "file": "Services/PostflopGameContext.cs:12", "fields": "VillainBetFlop/Turn, HeroBetFlop/Turn, PreviousStreetWasBet, VillainBetSizeFlop/Turn, VillainAggressorCheckedFlop, VillainCheckedMiddleStreet, HeroFloatedFlop, TurnCalledWithFlushDanger, HeroCheckedAllStreets (computed), IsAnyoneAllIn, TurnBetCommitsToRiver, InitialBoardDanger, LastBoardChange, IsVillainBarreling (computed), HeroStackPreRebuy" },
+        { "name": "BoardTextureResult", "kind": "record", "file": "Algorithms/BoardTextureAnalyzer.cs:13", "fields": "Category (BoardTextureCategory), WetnessScore [0-100], IsMonotone, IsTwoTone, IsRainbow, IsPaired, IsConnected, IsBroadwayHeavy, IsLowBoard, HasFlushPossibility, HasStraightPossibility, SimplifiedTexture (computed)" },
+        { "name": "BoardChangeResult", "kind": "record", "file": "Algorithms/BoardTextureAnalyzer.cs:44", "fields": "FlushCompleted, FlushDrawAppeared, StraightCompleted, BoardPaired, OvercardAppeared, CompletedFlushSuit (-1=none), DangerLevel [0-10]; static Safe singleton" },
+        { "name": "MonteCarloSimulator.EquityResult", "kind": "class", "file": "Algorithms/MonteCarloSimulator.cs:35", "fields": "WinProbability, TieProbability, LoseProbability, Equity, Simulations, SkippedSimulations, IsReliable=true, BlockedComboPercentage, HandDistribution (Dict<HandRank,int>)" },
+        { "name": "OutsCalculator.OutsResult", "kind": "class", "file": "Algorithms/OutsCalculator.cs:27", "fields": "TotalOuts, TaintedOuts, CleanOuts, EffectiveOuts, HasFlushDraw, HasOpenEndedStraightDraw, HasGutshotStraightDraw, HasStraightFlushDraw, HasOvercards, OvercardCount, HasBackdoorFlushDraw, HasBackdoorStraightDraw, HasComboDraw, OutsToEquity, DrawTypes (List<string>)" },
+        { "name": "EquityCalculatorService.FullEquityAnalysis", "kind": "class", "file": "Services/EquityCalculatorService.cs:30", "fields": "OverallEquity, WinProbability, TieProbability, Outs, OutsToEquity, DrawTypes, HandDistribution, RecommendedAction (heurística textual), PotOdds, ExpectedValue" },
+        { "name": "BetSizingOption", "kind": "record", "file": "Services/BetSizingService.cs:20", "fields": "Size (double 0-1), Label (string), Type (BetSizingType: Value|ThinValue|Bluff|Overbet)" },
+        { "name": "DecisionAnalysis / DecisionRecord / SessionAnalysis / LeakInfo / GTODistance", "kind": "class", "file": "Services/ExploitabilityCalculator.cs:19-85", "fields": "DTOs de telemetría GTO: ourDecision/EV vs bestResponse/EV, exploitabilityMbb, leakCategory; record histórico (queue de hasta 10K), análisis agregado por street/posición/textura, top 5 leaks, distancia a GTO con status (GTO/Near-GTO/Exploitable)" },
+        { "name": "CalibrationResult / ParameterAdjustment / CalibrationPreview", "kind": "class", "file": "Services/AutoCalibrationService.cs:7-33", "fields": "Resultado de auto-calibración: success, adjustments propuestos (parameterName, oldValue, newValue, reason, causedBy), exploitability previa/estimada nueva, message" },
+        { "name": "BacktestResult / DecisionDivergence", "kind": "class", "file": "Services/StrategyBacktester.cs:181-243", "fields": "TotalHands, TotalDecisions, ChangedDecisions, BigBlind, ChangeRate, EstimatedBBImpact, EstimatedBBPer100Impact, ChangesByType (Dict<string,int>), ChangesByStreet, Divergences (lista detallada con HandNumber/Street/Equity/SPR/Situation/IP/originalAction/newAction/newReason/boardTexture)" },
+        { "name": "StrategyAnalysisResult / PositionStats / StreetStats / SituationStats / SessionSummary / EquityVsOutcome", "kind": "class", "file": "Services/StrategyAnalyzerService.cs:13-99", "fields": "Métricas de rendimiento: WinRate, TotalProfit, BBPer100, BiggestWin/Loss, agregados por TablePosition/BoardPosition/HandSituation, lista de SessionSummary, equity accuracy por buckets de 10%" },
+        { "name": "HandScore", "kind": "readonly struct", "file": "Algorithms/IHandEvaluator.cs:26", "fields": "CompositeScore (long), Rank (HandRank); IComparable<HandScore>; BuildComposite(rankValue, k1..k5) construye long con rank en bits altos + 5 kickers de 4 bits cada uno → comparación O(1)" }
+      ],
+      "enums": [
+        { "name": "BetSizeCategory", "values": ["NoBet", "Underbet", "Small", "Medium", "Large"], "file": "Services/PostflopDecisionService.cs:12" },
+        { "name": "BoardTextureCategory", "values": ["Dry", "SemiDry", "SemiWet", "Wet", "Paired"], "file": "Algorithms/BoardTextureAnalyzer.cs:5" },
+        { "name": "RiverCardType", "values": ["Blank", "Neutral", "Scare"], "file": "Algorithms/BoardTextureAnalyzer.cs:11", "note": "S22.2" },
+        { "name": "BetSizingType", "values": ["Value", "ThinValue", "Bluff", "Overbet"], "file": "Services/BetSizingService.cs:12" },
+        { "name": "RangeType", "values": ["Linear", "Polarized", "Condensed"], "file": "Services/RangePolarizer.cs:7" },
+        { "name": "PostflopAction", "values": ["Bet", "Raise", "Call", "Fold"], "file": "Services/OpponentTracker.cs:268" },
+        { "name": "LeakCategory", "values": ["None", "OverBluffing", "OverCalling", "UnderBluffing", "UnderValue", "PotOddsError"], "file": "Services/ExploitabilityCalculator.cs:9" }
+      ],
+      "business_rules": [
+        {
+          "description": "PostflopDecisionService.DetermineAction calcula effectiveEquity en orden estricto: equity − dangerPenalty + comboDrawBonus (con multiplier por textura) → cap por DangerCompletedDrawNoBetCap=45 si flush/straight completado y hero no lo tiene → − reverseImpliedPenalty (si no all-in) → Math.Max(0, …). Cualquier alteración del orden corrompe los thresholds.",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:140-181",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Multi-way penalty postflop: IP lineal (extra × MultiwayFoldBelowIP=2.0), OOP cuadrático (extra² × MultiwayFoldBelowOOP=6.0 × positionDamping). PositionDamping por TablePosition: SB usa MultiwayOOPMultiplierSB, BB usa MultiwayOOPMultiplierBB, Early usa MultiwayOOPMultiplierEP, resto MultiwayOOPQuadraticDamping. Multiplicado por streetMult (Turn ×1.2, River ×1.4). Si villain IP+aggressor amplifica por MultiwayIPAggressorAmplifier. Reducción si hero tiene nuts (Flush+ ×MultiwayNutPenaltyReduction=0.5).",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:230-284",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "C-bet: si agresor preflop con equity < FoldBelow pero dentro de -15 puntos, apuesta a frecuencia GetCbetFrequency(street) (Flop 65%, Turn 45%, River 30%). Modulado por GetCbetTurnTextureMultiplier (flush completado/draw apareció/straight/paired/brick), broadway-wet, y CheckRaise% del villain (si >15% reduce). C-bet mixing en equity media: chequea a freq (1−cbetFreq) para proteger checking range. Solo HU.",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:458-543",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Range narrowing: villain apostó en 2+ calles consecutivas → FoldBelow += RangeNarrowingPerStreet=3.0 × (villainBetStreets − 1). Si VillainCheckedMiddleStreet (bet-check-bet) → narrowingMultiplier = 0.5 (debilidad de draw fallido). Solo turn/river facing bet.",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:344-356",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "MonteCarloSimulator selecciona método por número de community cards: 5 → ExactEnumerationRiver (C(45,2)=990 evaluaciones), 4 → ExactEnumerationTurn (45 × C(44,2) ≈ 42K), 3/0 → MC paralelo. Iteraciones adaptativas: preflop 30K, flop 50K, default PokerConstants.DefaultMonteCarloIterations=10K.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:67-95",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "MonteCarloSimulator marca IsReliable=false si BlockedComboPercentage > UnreliableThreshold=20% (más del 20% del rango villano está bloqueado por hero/board). Calculado iterando sobre todos los combos del rango y comprobando si alguna carta está en el deck residual.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:48,97-122",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "MonteCarloSimulator.TryDrawFromRange usa hasta 20 intentos de muestreo ponderado; si todos fallan retorna false y la iteración se cuenta como SkippedSimulations en vez de contaminar con cartas random. effectiveCount = simulationCount − totalSkipped (mínimo 1).",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:582-618,409-410",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "MonteCarloSimulator usa ThreadLocal<CardDataOuts[]> para deck por thread + ThreadLocal<List<CardDataOuts>> para hand/opponent buffers, evitando alocaciones por iteración. Parallel.For con LocalInit/Finally + Interlocked.Add para acumular resultados sin lock.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:20-29,379-407",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "BitHandEvaluator.FindStraightHigh usa bitmask 0x1F << (high-4) para detectar 5 bits consecutivos. Wheel (A-2-3-4-5): mask = (1<<14)|(1<<2)|(1<<3)|(1<<4)|(1<<5), retorna 5 (no 14) como carta alta de la escalera.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs:24,415-429",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OutsCalculator no cuenta overcards si hero ya tiene mano hecha (HasMadeFlush || HasFiveCardStraight). Backdoor draws solo en flop (community.Count==3). Backdoor straight requiere ≥1 carta del hero contribuyendo. S21.4: si hay flush draw + backdoor straight, descuenta BackdoorStraightImpliedOuts × BackdoorOverlapDiscount para evitar doble conteo.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs:80-150",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OutsCalculator.tainted outs (3 categorías): añadir la carta pone 3+ del mismo palo en board (flush draw para villano), parea el board (trips/full para villano), o crea 3 consecutivas (straight draw). Descuento variable: TaintedOutsDiscountHeroStrong=0.7 (hero con flush draw) vs TaintedOutsDiscountHeroWeak=0.3.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs:160-165,286-336",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "BoardTextureAnalyzer.AnalyzeInitialBoard: 2+ same suit en flop = flushDrawPresent (DangerLevel+1), 3+ same suit = flushPossible (DangerLevel+3). Distinción crítica usada en PostflopDecisionService.dangerousFlushBoard: en flop solo monotone bloquea raise con OnePair, en turn/river FlushDrawAppeared o FlushCompleted.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:349-387; PostflopDecisionService.cs:648-651",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "DangerPenaltyCalculator: penalty = max(flushPct × equity, straightPct × equity) — toma el peor, no suma. Skip si hero completó el draw correspondiente. FlushDraw apareció (sin completar): penalty proporcional 8% × equity, reducido a 50% si TwoPair+ o 75% si OnePair. Multiplica por DangerFacingBetMultiplier=1.4 si facing bet. Blocker reduction granular: nut > non-nut > board4flush.",
+          "location": "src/OpenScrape.DecisionMaker/Services/DangerPenaltyCalculator.cs:43-107",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ImpliedOddsCalculator usa interpolación cuadrática (sqrt) entre SPRShallowFactor y SPRDeepFactor cuando SPR está en la zona intermedia, para que implied odds crezcan más rápido cerca del límite deep. River siempre devuelve 1.0 (sin más calles).",
+          "location": "src/OpenScrape.DecisionMaker/Services/ImpliedOddsCalculator.cs:44-69",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Reverse implied odds en river aplica multiplicador ×0.6 (no hay más cartas peligrosas, pero villain puede representar draws completados). S20.3: bluff risk extra solo en turn, OnePair o menos, draw board, villain no all-in: bluffRisk = BluffRiskBaseFactor × 0.55 × potRatio × villainTypeMul (LAG, TP).",
+          "location": "src/OpenScrape.DecisionMaker/Services/ImpliedOddsCalculator.cs:142-164",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OpponentTracker es ConcurrentDictionary thread-safe. RecordPostflopAction acumula contadores globales y posicionales (IP/OOP) si se proporciona isVillainInPosition. RegisterSeatAlias migra perfil de seat name a alias en operación atómica TryAdd+TryRemove.",
+          "location": "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:16,84-120,234-248",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OpponentTracker.GetFoldToBetPct requiere HasReliableFoldData (≥8 acciones facing bet). Devuelve -1 sentinel si insuficiente, consumido en PostflopDecisionService como fallback a tipo estático.",
+          "location": "src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:214-221; PostflopDecisionService.cs:397-422",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "PostflopGameContext es record inmutable. Cada transición devuelve instancia nueva vía with-expressions o helpers (WithFlopState, WithTurnState, TrackHeroStack). HeroCheckedAllStreets es computed (= !HeroBetFlop && !HeroBetTurn). IsVillainBarreling computed (= VillainBetFlop && VillainBetTurn).",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs:51,80,100-124",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "PostflopGameContext.TrackHeroStack detecta auto-rebuy: si currentStack > HeroStackPreRebuy + AutoRebuyThreshold=50m, ignora el aumento (asume rebuy automático de la sala) y devuelve pre-rebuy como effective stack para no contaminar el cálculo de profit.",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs:94,133-147",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "PostflopGameContext.CombineBoardChanges (static): suma DangerLevel acotado a 10, OR de las flags booleanas, prefiere el CompletedFlushSuit más reciente (si ≥0). Usado para acumular peligro entre flop, turn y river.",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopGameContext.cs:152-170",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ThresholdsRegistry valida en constructor que TODAS las claves string del StrategyProfile.Thresholds parsean correctamente como ThresholdKey ('{Street}_{HandSituation}'). Lanza InvalidOperationException si alguna falla (fail-fast en arranque).",
+          "location": "src/OpenScrape.DecisionMaker/Services/ThresholdsRegistry.cs:23-32",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "BetSizingService.GetValueBetSizes: equity>80 ofrece Overbet 0.75 + Pot, equity>65 ofrece 3/4 Pot + Pot, sino 1/2 Pot (ThinValue) + 2/3 Pot. Multiway aplica ×0.8 a todos los tamaños. OOP aplica ×1.1.",
+          "location": "src/OpenScrape.DecisionMaker/Services/BetSizingService.cs:39-82",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "RangePolarizer.GetThresholdAdjustment: Polarized IP (-4, -3) o OOP (-2, -2) — más agresivo. Linear IP (0, 0) o OOP (+3, +2) — más conservador. Condensed (+6, +4) — short stack obliga a tighten.",
+          "location": "src/OpenScrape.DecisionMaker/Services/RangePolarizer.cs:61-74",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ExploitabilityCalculator.RecordDecision es FIFO con ConcurrentQueue acotado a MaxRecords=10000. Si supera el límite, descarta el más antiguo (TryDequeue) antes de encolar el nuevo. BigBlind constante = 1.0 — implica que ExploitabilityMbb está normalizado a 1 BB.",
+          "location": "src/OpenScrape.DecisionMaker/Services/ExploitabilityCalculator.cs:93-97,153-160",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "AutoCalibrationService usa OldValue hardcoded (45 para ThinValueAbove, 40 para FoldBelow) en CalculateAdjustmentForLeak en vez de leer del StrategyProfile actual. Bug latente: el ajuste 'OldValue + delta' no representa el cambio real al perfil cargado.",
+          "location": "src/OpenScrape.DecisionMaker/Services/AutoCalibrationService.cs:174-208",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "BankrollTrackerService.CalculateRiskOfRuin = exp(−2 × bankroll_BB × winRate / σ²), exponente clamped a -700. Niveles: <0.05 Green, <0.15 Yellow, ≥0.15 Red. Devuelve (1.0, Red) si winRate≤0 o σ≤0. Requiere ≥MinSessionsForRecommendation sesiones (StrategyProfile, default 20).",
+          "location": "src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:177-213",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "StrategyBacktester.Simplify normaliza acciones complejas a 6 categorías: All-In, Raise, Fold, Call, Bet (incluye 'c-bet'/'barrel'/'value'), Check (default). EstimateImpact aplica multiplicadores conservadores: Fold→Call/Bet ×0.5, Call/Bet→Fold ×0.3, Check→Bet ×0.2, Bet→Check ×0.15.",
+          "location": "src/OpenScrape.DecisionMaker/Services/StrategyBacktester.cs:128-175",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "StrategyAnalyzerService.CalculateEquityAccuracy agrupa decisiones en buckets de 10% equity (≥3 muestras por bucket). Accuracy = 100 − promedio de |predictedEquity − actualWinRate|. Requiere ≥10 manos para devolver valor.",
+          "location": "src/OpenScrape.DecisionMaker/Services/StrategyAnalyzerService.cs:292-315",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "PreflopEquityCalculator.AdjustEquityForOpponents = baseEquity^(1 + log2(numOpp) × 0.35). Factor 0.35 calibrado para AA(0.852) vs 5 opponents ≈ 0.49 (valor real). Manos premium mantienen más equity multiway que las marginales.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/PreflopEquityCalculator.cs:86-95",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "PreflopAnalyzer.CategorizeOpponentBet: 0 = NoBet; ≤30% pot = Small; ≤70% pot = Medium; >70% = Large. Underbet (<15% pot) NO se detecta aquí — es categoría adicional manejada en otro lugar (DTO BetSizeCategory tiene Underbet pero esta función nunca lo retorna).",
+          "location": "src/OpenScrape.DecisionMaker/Services/PreflopAnalyzer.cs:152-161",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        { "name": "Marten", "version": "8.24.0", "type": "nuget", "note": "Solo BankrollTrackerService consume IDocumentStore" },
+        { "name": "Microsoft.Extensions.Logging.Abstractions", "version": "10.0.3", "type": "nuget" },
+        { "name": "Microsoft.Extensions.Options", "version": "10.0.3", "type": "nuget" }
+      ],
+      "internal_dependencies": [
+        "OpenScrape.Domain.Entities (StrategyProfile, OpponentProfile, OpponentPositionProfile, GameSession, HandRecord)",
+        "OpenScrape.Domain.ValueObjects (CardDataOuts, VillainRange, HandEvaluation, StreetThresholds, ThresholdKey, StreetDecision, BankrollSnapshot)",
+        "OpenScrape.Domain.Enums (BoardPosition, HandSituation, TablePosition, HandRank, KickerStrength, PairClassification, OpponentType, BluffConditionType, Rank, Suit)",
+        "InternalsVisibleTo OpenScrape.App.Tests"
+      ],
+      "external_dependencies": [
+        { "name": "PostgreSQL (Neon, eu-west-2) vía IDocumentStore", "via": "BankrollTrackerService consume Marten.IDocumentStore registrado en OpenScrape.Infrastructure" }
+      ],
+      "algorithms": [
+        {
+          "name": "Bit-manipulation hand evaluator (BitHandEvaluator)",
+          "purpose": "Reemplaza C(n,5) brute-force por bitmasks y arrays en stack",
+          "complexity": "O(7) escaneo único + O(13) detección de straight; vs O(C(7,5)=21) anterior",
+          "details": "Span<int>[15] rankCount, Span<int>[5] suitCount, rankBits OR-acumulado, suitRankBits[5] por palo. FindStraightHigh con mask 0x1F<<(high-4). WheelMask = (1<<14)|(1<<2)|(1<<3)|(1<<4)|(1<<5). Score = HandRankMultiplier × topRank, hasta StraightFlushMultiplier=10^13.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs"
+        },
+        {
+          "name": "HandScore composite key",
+          "purpose": "Comparación O(1) de manos en MC sin allocations",
+          "formula": "long = (rank<<20) | (k1<<16) | (k2<<12) | (k3<<8) | (k4<<4) | k5; CompareTo via long.CompareTo",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/IHandEvaluator.cs:47-57"
+        },
+        {
+          "name": "Monte Carlo híbrido con enumeración exacta",
+          "purpose": "Equity determinística cuando es factible, MC paralelo con varianza acotada cuando no",
+          "complexity": "River: C(45,2)=990 evals (exacto). Turn: 45 × C(44,2) ≈ 42K (exacto). Flop: 50K MC. Preflop: 30K MC.",
+          "details": "ThreadLocal deck/buffers, Parallel.For con LocalInit/Finally, Interlocked.Add para acumular. Pre-computa totalWeight del rango villano una vez. TryDrawFromRange con 20 intentos antes de skip-on-block.",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:50-95,127-135,369-407,582-618"
+        },
+        {
+          "name": "Outs counting con inclusión-exclusión y backdoor",
+          "purpose": "Cuenta outs únicos sin doble-conteo entre flush+straight, con backdoor implícitos en flop y tainted discount",
+          "formula": "totalOuts = flushOuts + straightOuts − overlapOuts + overcardOuts (textura-aware) + backdoorOuts (S21.4 overlap discount); effectiveOuts = cleanOuts + taintedOuts × discount; OutsToEquity = totalOuts × cardsToCome × 2.0",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs:46-202"
+        },
+        {
+          "name": "Board wetness scoring",
+          "purpose": "Categorizar boards en Dry/SemiDry/SemiWet/Wet/Paired con escala continua [0-100]",
+          "formula": "score = Σ(monotone+35, twoTone+15, connected+20 o connectedCount×8, flushPossibility+15, straightPossibility+15, broadwayHeavy+10, broadwayConnected+20, paired-10, trips-15, ≥5cards+5)",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:308-343"
+        },
+        {
+          "name": "Board change danger detection",
+          "purpose": "Detectar transiciones peligrosas entre streets para ajustar penalizaciones",
+          "formula": "DangerLevel ∈ [0,10]: flushCompleted+4, flushDrawAppeared+2, straightCompleted+3, boardPaired+2, overcardAppeared+1; ClassifyRiverCard mapea a Blank/Neutral/Scare",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:153-249"
+        },
+        {
+          "name": "All-in EV vs fold (push/fold mode)",
+          "purpose": "Decisión all-in en SPR corto basada en EV, no en HandRank",
+          "formula": "EV = (equity/100) × (pot + stack) − (1 − equity/100) × stack",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1427-1434"
+        },
+        {
+          "name": "Projected river SPR (S22.4)",
+          "purpose": "Detectar si turn bet compromete river para decidir entre All-In y Check",
+          "formula": "projectedRiverSPR = (heroStack − bet) / (potSize + 2×bet)",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1441-1449"
+        },
+        {
+          "name": "SPR push/fold smooth interpolation",
+          "purpose": "Evitar saltos discretos en thresholds por SPR",
+          "formula": "factor = 1 − spr/PushFoldThreshold (zona corta) o min((spr−DeepCautionThreshold)/2, 1) (zona deep); foldAdjust = -PushFoldFoldReduction × factor; isPushFold = spr < threshold × 0.5",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1389-1418"
+        },
+        {
+          "name": "Implied odds cuadrática (sqrt)",
+          "purpose": "Crecimiento acelerado de implied odds cerca de SPR deep",
+          "formula": "position = (spr − shallowThreshold) / (deepThreshold − shallowThreshold); curvedPosition = sqrt(position); sprFactor = shallowFactor + curvedPosition × (deepFactor − shallowFactor)",
+          "location": "src/OpenScrape.DecisionMaker/Services/ImpliedOddsCalculator.cs:55-64"
+        },
+        {
+          "name": "Risk-of-ruin clásico (BankrollTrackerService)",
+          "purpose": "Probabilidad de quiebra dado bankroll, winRate y desviación estándar",
+          "formula": "ror = exp(-2 × bankroll_BB × winRate / σ²); exponente clamped a -700; niveles: <0.05 Green / <0.15 Yellow / ≥0.15 Red",
+          "location": "src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:198-211"
+        },
+        {
+          "name": "Multi-way OOP cuadrático con damping posicional",
+          "purpose": "Penalizar más a OOP que IP en multiway, modular por posición exacta y agresor",
+          "formula": "OOP: extra² × MultiwayFoldBelowOOP × positionDamping (SB/BB/EP/Other) × streetMult (Turn ×1.2, River ×1.4); IP: lineal × MultiwayFoldBelowIP=2.0; villain IP+aggressor amplifica",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:230-284"
+        },
+        {
+          "name": "Range narrowing por línea agresiva del villano",
+          "purpose": "Estrechar rango asumido del villano según número de calles apostadas",
+          "formula": "FoldBelow += RangeNarrowingPerStreet=3.0 × (villainBetStreets − 1); si VillainCheckedMiddleStreet (bet-check-bet) → narrowingMultiplier = 0.5 (debilidad de draw fallido vs barrel real)",
+          "location": "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:344-356"
+        },
+        {
+          "name": "Hand notation expansion (delegado a Domain.VillainRange)",
+          "purpose": "Convertir AKs/QQ/JTo a combos concretos en MonteCarloSimulator.BuildVillainCombos",
+          "complexity": "Pares 6 combos, suited 4, offsuit 12; bloqueado-by-hero descartado a priori",
+          "location": "src/OpenScrape.DecisionMaker/Algorithms/MonteCarloSimulator.cs:541-564"
+        },
+        {
+          "name": "Equity accuracy por buckets",
+          "purpose": "Validar que la equity predicha por el motor refleja el resultado real",
+          "formula": "agrupar manos en buckets de 10% equity (≥3 muestras); accuracy = 100 − Σ|predictedEquity − actualWinRate| / nBuckets",
+          "location": "src/OpenScrape.DecisionMaker/Services/StrategyAnalyzerService.cs:292-315"
+        }
+      ],
+      "anomalies": [
+        {
+          "severity": "high",
+          "description": "PostflopDecisionService.cs tiene 1893 LOC y >40 ramas de decisión en DetermineAction → HandleFacingBet/HandleNoBet/HandleLowEquity. Viola SRP claramente: mezcla cálculo de thresholds, ajustes por contexto, generación de strings de bet sizing, lógica de mixing aleatorio y telemetría. Refactoring en sub-strategies sería el camino natural.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs"]
+        },
+        {
+          "severity": "high",
+          "description": "AutoCalibrationService.CalculateAdjustmentForLeak hardcodea OldValue=45 (ThinValueAbove) y OldValue=40 (FoldBelow) en vez de leer del StrategyProfile actual. Resultado: el delta propuesto no es relativo al perfil cargado, las correcciones quedan desincronizadas. Bug latente o dead code.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/AutoCalibrationService.cs:174-208"]
+        },
+        {
+          "severity": "high",
+          "description": "Random.Shared.NextDouble() invocado directamente en producción para mixing en c-bet (×3), check-raise (×2), randomización adaptativa, donk bet raise frequency, 3-bet pot probe/CR/anti-barrel/IP-call (×4). Imposible reproducir decisiones para debugging o tests deterministas. Falta abstracción IRandomProvider.",
+          "evidence": [
+            "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:473,539,597,608,634,842,861,871,968,989,1231"
+          ]
+        },
+        {
+          "severity": "high",
+          "description": "IMonteCarloSimulator referencia el tipo nested MonteCarloSimulator.EquityResult, acoplando el contrato a la implementación concreta. Lo mismo con IOutsCalculator → OutsCalculator.OutsResult e IEquityCalculatorService → EquityCalculatorService.FullEquityAnalysis. Cambiar el tipo de retorno requiere tocar interfaz + implementación.",
+          "evidence": [
+            "src/OpenScrape.DecisionMaker/Algorithms/IMonteCarloSimulator.cs:10",
+            "src/OpenScrape.DecisionMaker/Algorithms/IOutsCalculator.cs:10",
+            "src/OpenScrape.DecisionMaker/Interfaces/IEquityCalculatorService.cs:12"
+          ]
+        },
+        {
+          "severity": "medium",
+          "description": "HandEvaluator (legacy, 206 LOC, brute-force C(n,5)) coexiste con BitHandEvaluator (515 LOC, bit-manipulation). HandEvaluator.EvaluateHandScore delega a `new BitHandEvaluator()` por llamada (alocación innecesaria). Sin justificación documentada para mantener ambos en paralelo si solo BitHandEvaluator se usa en MC.",
+          "evidence": [
+            "src/OpenScrape.DecisionMaker/Algorithms/HandEvaluator.cs:11-15",
+            "src/OpenScrape.DecisionMaker/Algorithms/BitHandEvaluator.cs"
+          ]
+        },
+        {
+          "severity": "medium",
+          "description": "PostflopDecisionService duplica el bloque de pot commitment (SPR<0.5/EV>0, SPR<1.0/equity>30%, SPR<expanded/equity>wide) en HandleFacingBet (líneas 772-795) y en HandleLowEquity (líneas 1665-1688). Misma lógica copy-pasted; cualquier ajuste obliga a editar en dos sitios.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:772-795,1665-1688"]
+        },
+        {
+          "severity": "medium",
+          "description": "PostflopDecisionService.cs:1199-1203 contiene un bloque if vacío con solo un comentario ('TwoPair degradado a OnePair → no overbet'). Restos de refactoring incompleto o intent residual sin implementación.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1198-1203"]
+        },
+        {
+          "severity": "medium",
+          "description": "PostflopDecisionService.HandleNoBet usa un goto explícito (`goto skipBluffCatch`) para saltar bloques de bluff catch. Anti-patrón en C# moderno: refactorizable a if/else o helper function.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1602,1663"]
+        },
+        {
+          "severity": "medium",
+          "description": "ExploitabilityCalculator.BigBlind = 1.0 hardcoded como constante. Implica que ExploitabilityMbb está siempre en unidades de 1 BB, pero ningún caller normaliza explícitamente — los pot sizes pasan en decimal sin conversión. Si potSize representa unidades reales (no BB), el cálculo de mbb está mal escalado.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/ExploitabilityCalculator.cs:93,322-348"]
+        },
+        {
+          "severity": "medium",
+          "description": "OutsCalculator construye un nuevo deck (List<CardDataOuts> con Enum.GetValues) y lo recorre con List.RemoveAll por cada llamada. Para uso intensivo desde MC se podría mantener un deck reutilizable estático (como hace MonteCarloSimulator.DeckTemplate).",
+          "evidence": ["src/OpenScrape.DecisionMaker/Algorithms/OutsCalculator.cs:424-443"]
+        },
+        {
+          "severity": "medium",
+          "description": "BankrollTrackerService.GetBankrollStats hace un Query<HandRecord> dentro del foreach por cada sesión (N+1 query). Para N sesiones grandes implica latencia lineal contra Postgres. Debería precargar todas las manos con un solo Where(h => sessionIds.Contains(h.GameSessionId)).",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:65-89"]
+        },
+        {
+          "severity": "medium",
+          "description": "BankrollTrackerService usa `using` síncrono (línea 36, 250) en vez de `await using` async, contradiciendo la guía de CLAUDE.md ('Database sessions use await using per operation'). Las queries son síncronas (.ToList()) y bloquean el thread.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:36,67,250,260"]
+        },
+        {
+          "severity": "low",
+          "description": "BankrollTrackerService captura excepciones genéricas (catch { return GetDefaultStats(); }) sin logging. Errores de conexión a Postgres se silencian completamente.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/BankrollTrackerService.cs:129-132,279-282"]
+        },
+        {
+          "severity": "low",
+          "description": "PreflopAnalyzer es una clase con métodos estáticos pero implementa IPreflopAnalyzer mediante explicit interface implementation que delega trivialmente a los métodos estáticos. La interfaz no aporta valor (no permite mock/override real). Decisión arquitectural ambigua: o estática pura, o virtual.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PreflopAnalyzer.cs:14-34"]
+        },
+        {
+          "severity": "low",
+          "description": "EquityCalculatorService.CalculateOuts no propaga heroBlocksTopCard ni boardTexture (siempre 'Dry') al OutsCalculator. Pierde la calibración por textura del board del Sprint 21.1.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/EquityCalculatorService.cs:80"]
+        },
+        {
+          "severity": "low",
+          "description": "EquityCalculatorService.GenerateRecommendation usa thresholds hardcoded (0.6, 0.3, 0.25, 8) en vez de StrategyProfile. Convive en paralelo con PostflopDecisionService que sí usa thresholds configurables — recomendación divergente.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/EquityCalculatorService.cs:103-140"]
+        },
+        {
+          "severity": "low",
+          "description": "Carpeta obj/ versiona artefactos para net8.0, net9.0 y net10.0 (csproj solo declara net10.0). Restos de migraciones de target framework no limpiados.",
+          "evidence": ["src/OpenScrape.DecisionMaker/obj/Debug/net8.0/", "src/OpenScrape.DecisionMaker/obj/Debug/net9.0/", "src/OpenScrape.DecisionMaker/OpenScrape.DecisionMaker.csproj:4"]
+        },
+        {
+          "severity": "low",
+          "description": "PreflopEquityCalculator.LoadPreflopEquitiesFromFile y SavePreflopEquities son public pero no se observan consumidores en el módulo. Probablemente para tests/herramientas externas, sin tests visibles aquí.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Algorithms/PreflopEquityCalculator.cs:205-230"]
+        },
+        {
+          "severity": "low",
+          "description": "PostflopDecisionService.GetHandVulnerabilityAdjustment para PairClassification.None devuelve fallback = 2.0 (entre Top y Middle pair). Comportamiento ambiguo: una mano sin clasificar se trata como pareja media — preferible un fallback explícito (0 o más alto).",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1334"]
+        },
+        {
+          "severity": "low",
+          "description": "BoardTextureAnalyzer no devuelve ninguna info sobre 'Monotone' como categoría discreta — se comprime a Wet en SimplifiedTexture pero PostflopDecisionService usa el string 'Monotone' explícito en 12+ ramas. La adaptación Wet/Monotone está repartida entre productor y consumidor sin un único punto canónico.",
+          "evidence": [
+            "src/OpenScrape.DecisionMaker/Algorithms/BoardTextureAnalyzer.cs:29-37",
+            "src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:937,1067,1147,1167"
+          ]
+        },
+        {
+          "severity": "low",
+          "description": "OpponentTracker.GetProfile devuelve un OpponentProfile vacío (sin agregar al diccionario) si playerId está vacío. Cualquier llamada subsiguiente con el mismo string vacío devuelve otro perfil distinto — no hay singleton por id-vacío.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/OpponentTracker.cs:21-27"]
+        },
+        {
+          "severity": "low",
+          "description": "PostflopDecisionService.IncreaseBetSize/ReduceBetSize manipulan strings con Contains+Replace. 'Bet 1/3 (Value)' funciona pero 'Pot Bet' dispararía un Replace inesperado. Frágil ante variaciones de formato; preferible un enum interno.",
+          "evidence": ["src/OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs:1355-1362,1781-1791"]
+        }
+      ],
+      "complexity": "very_high",
+      "loc_estimate": 6800,
+      "files_count": 38,
+      "public_types_count": 50
+    },
+    {
+      "name": "OpenScrape.App",
+      "path": "src/OpenScrape.App",
+      "purpose": "Application & UI layer del bot. Es composition root (Program.cs cablea ~50 servicios via Microsoft.Extensions.Hosting con scopes Singleton/Scoped/Transient y forwarding pattern para algorítmica), entry point WinForms (Application.Run FrmMain), pipeline operacional (captura ventana → OCR Tesseract con consenso 3-lecturas → detección de turno por color píxel → orquestación de mano vía GameCoordinator → invoca el motor OpenScrape.DecisionMaker) y presentación (overlay flotante drag-able, FrmMain con 5+ tabs, popups Hand Detail/Detection Debug). Encapsula toda la I/O del bot: Win32 P-Invoke (PrintWindow, GetForegroundWindow, EnumWindows), sesiones Marten, telemetría de histograma logarítmico, file logging JSON. La persistencia y las decisiones quedan delegadas a sus respectivos paquetes; este módulo solo orquesta.",
+      "primary_files": [
+        "src/OpenScrape.App/Program.cs",
+        "src/OpenScrape.App/Forms/FrmMain.cs",
+        "src/OpenScrape.App/Forms/FrmOverlay.cs",
+        "src/OpenScrape.App/Services/GameCoordinator.cs",
+        "src/OpenScrape.App/Services/ScreenReaderService.cs",
+        "src/OpenScrape.App/Services/TableLayoutService.cs",
+        "src/OpenScrape.App/Services/OcrService.cs",
+        "src/OpenScrape.App/Services/ImageCropperService.cs",
+        "src/OpenScrape.App/Services/GameLoopStateMachine.cs",
+        "src/OpenScrape.App/Services/GameLoggerService.cs",
+        "src/OpenScrape.App/Services/PokerDecisionFacade.cs",
+        "src/OpenScrape.App/Services/GameLoopCoordinator.cs",
+        "src/OpenScrape.App/Telemetry/MetricsCollector.cs",
+        "src/OpenScrape.App/Aplication/UseCases/UnifiedPokerCalculator.cs",
+        "src/OpenScrape.App/Aplication/SetPreflopActionUseCase.cs",
+        "src/OpenScrape.App/Helpers/CaptureWindowsHelper.cs",
+        "src/OpenScrape.App/Services/StrategyProfileValidator.cs"
+      ],
+      "functions": [
+        {
+          "name": "Main",
+          "file": "src/OpenScrape.App/Program.cs:34",
+          "params": [],
+          "returns": "void",
+          "purpose": "STA entry point. Construye Host con DI (50+ registros + 13 algorítmicas+services con forwarding pattern + 14 IOptions Configure), valida StrategyProfile fail-fast (MessageBox + Environment.Exit 1 si throw), inicializa CoordinateScaler desde CaptureSettings, abre CreateAsyncScope (necesario para GameLoopCoordinator IAsyncDisposable), Application.Run FrmMain, dispose en finally.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "btnCapture_Click",
+          "file": "src/OpenScrape.App/Forms/FrmMain.cs:642",
+          "params": ["object sender", "EventArgs e"],
+          "returns": "async void",
+          "purpose": "Pipeline canónico de juego (~270 LOC). Métricas Cycle.Total → captura PrintWindow + clone → init scaler en primera vez → SetTableHand (OCR pot/holes/handnum/tablename) → DetectNewHand con 7 indicadores → snapshot/reset estado postflop si misma mano → HandleNewHandAsync (EndHand+SaveSession+RecordHand/VPIP/PFR+StartNewHand) → init/refresh players con TableLayoutService → SetBetPlayer/SetHeroStack (auto-rebuy)/RetryEmptyAliases → ProcessTableInfoAsync rama preflop o postflop con retries hole cards → DetermineXxxAction delegado a GameCoordinator → overlay update.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BackgroundWorker1_DoWork",
+          "file": "src/OpenScrape.App/Forms/FrmMain.cs:2737",
+          "params": ["object sender", "DoWorkEventArgs e"],
+          "returns": "void",
+          "purpose": "Loop infinito while(true) en thread dedicado. Cada iteración: captura ventana → PerformEnhancedDetection (LockBits 32bppArgb, lee 9 píxeles cruz ±2px, avgB-24≤3 detect hero turn) → this.Invoke MethodInvoker → si ShouldCaptureFlop StateMachine.TryTransition FlopDetected,3 → si ShouldCapture LogTurnDetected + btnCapture_Click reentrante + SaveDebugScreenshot c/5 → LogStatistics c/1000 → btnWindow_Click recheck handle → delay adaptativo 200/100ms.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "DetermineFlopAction",
+          "file": "src/OpenScrape.App/Services/GameCoordinator.cs:333",
+          "params": ["PlayerGameState state"],
+          "returns": "GameDecisionResult",
+          "purpose": "Decide acción flop. Extrae maxBet/potSize/inPosition/numOpps/villainStack → GetOpponentBetSize categoría (Underbet ≤15% / Small ≤30% / Medium ≤70% / Large >70%) → boardTextureAnalyzer.Analyze + AnalyzeInitialBoard (guarda InitialBoardDanger en contextHolder) → DetectDonkBet cross-street → CalculateCbetAdjustment → effectiveEquity = rawEquity + cbetAdj → construye PostflopDecisionInput con 30+ campos → postflopDecisionService.DetermineAction → TrackVillainPostflopAction → contextHolder.Update HeroBetFlop/VillainBetFlop/HeroFloatedFlop/VillainAggressorCheckedFlop → exploitabilityCalculator.AnalyzeDecision/RecordDecision → log ═══ FLOP ═══ → gameLoggerService.LogStreetDecision.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "DetermineTurnAction",
+          "file": "src/OpenScrape.App/Services/GameCoordinator.cs:477",
+          "params": ["PlayerGameState state"],
+          "returns": "GameDecisionResult",
+          "purpose": "Análogo flop con: dangerPenalty calculado, combinedBoardChange = CombineBoardChanges InitialBoardDanger + boardChange, turnIsAggressor cross-street incluye HeroBetFlop, VillainBarreling = VillainBetFlop AND maxBet>0, TurnCalledWithFlushDanger se actualiza si Call vs bet con FlushDrawAppeared.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "DetermineRiverAction",
+          "file": "src/OpenScrape.App/Services/GameCoordinator.cs:635",
+          "params": ["PlayerGameState state"],
+          "returns": "GameDecisionResult",
+          "purpose": "Análogo turn con: AllinCheck si villainStack ≤ 0 setea IsAnyoneAllIn=true, RiverCardType S22.2 (Brick/Scare/Improving/Neutral), combinedBoardChange = CombineBoardChanges LastBoardChange + boardChange, riverIsAggressor cross-street incluye HeroBetFlop OR HeroBetTurn, pasa input adicional VillainBetSizeTurn/VillainCheckedMiddleStreet/TurnCalledWithFlushDanger/HeroCheckedAllStreets.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ExtractTextFromRegionAndDebug",
+          "file": "src/OpenScrape.App/Services/OcrService.cs:141",
+          "params": ["Image sourceImage", "int x, y, w, h", "double umbral", "bool onlyNumber"],
+          "returns": "OcrResult",
+          "purpose": "OCR Tesseract con dual cache LRU (bitmap 200, ocr 500), 4 attempts (default/lower/higher/contrast), dHash 64-bit perceptual para cache, lock(_lock) global. Si cache hit retorna Confidence=-1. Sino best = OrderByDescending Confidence.ThenByDescending Length.First.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ReadBetValue",
+          "file": "src/OpenScrape.App/Services/ScreenReaderService.cs:66",
+          "params": ["Image screenshot", "int x, y, w, h", "double? umbral, inactiveUmbral", "bool? isOnlyNumber", "int? playerNum"],
+          "returns": "decimal",
+          "purpose": "Multi-lectura por consenso para bets. 3 lecturas (preprocessed con umbral, preprocessed inactiveUmbral, directa fallback) → CleanOcrNumericText regexes BB/IBS/88 → decimal.TryParse NumberStyles.Any → consenso prioriza ocr3 directa si != 0, sino ocr1==ocr2, sino el primero != 0.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "NormalizeBetValue",
+          "file": "src/OpenScrape.App/Services/ScreenReaderService.cs:299",
+          "params": ["decimal rawValue", "decimal potSize"],
+          "returns": "decimal",
+          "purpose": "Corrección post-OCR. Detecta artefacto '8' inicial (parts[0].Length>2 && parts[0][0]=='8' → strip). Detecta separador decimal perdido si rawValue >= 300 OR rawValue > potSize×5 y longitud >= 3 (insert separator a 2 decimales).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "SetDealerPlayer",
+          "file": "src/OpenScrape.App/Services/TableLayoutService.cs:93",
+          "params": ["Image screenshot", "PlayerGameState state"],
+          "returns": "void",
+          "purpose": "Limpia Dealer flags previos. Para cada región Dealer/p[0..N]dealer con IsColor=true, llama IsDealerButtonColor (radio 3 px, busca R≥200 && G≥140 && B≤80 dorado). Asigna primer match. SetDealerForPlayer: si playerNumber=0 hero es dealer Position=Button, sino DetermineP0Position via PositionCalculator.AssignAllPositions con moving blinds saltando SitOut.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "AssignAllPositions",
+          "file": "src/OpenScrape.App/Services/PositionCalculator.cs:25",
+          "params": ["int dealerPosition", "List<Player> players"],
+          "returns": "Dictionary<int, TablePosition>",
+          "purpose": "Heads-up: dealer = SB, otro = BB. Multiway: SB salta SitOut consecutivos a la izquierda del dealer; BB salta SitOut a la izquierda de SB sin rebasar dealer; SitOut consumidos por el salto quedan sin posición; restantes labels Early/Middle/CutOff por effectiveCount = total - skippedSB - skippedBB.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "TryTransition",
+          "file": "src/OpenScrape.App/Services/GameLoopStateMachine.cs:73",
+          "params": ["GameState newState", "int visibleBoardCards"],
+          "returns": "bool",
+          "purpose": "Sobrecarga con validación: bloquea si visibleBoardCards > 0 AND expectedMinCards > 0 AND visibleBoardCards < expectedMinCards (3/4/5 para Flop/Turn/River). Warn si excede max. Delega al TryTransition base que verifica _validTransitions[CurrentState].Contains(newState) bajo lock(_stateLock).",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "FinalizeAndPersistHandAsync",
+          "file": "src/OpenScrape.App/Services/GameLoggerService.cs:211",
+          "params": [],
+          "returns": "Task",
+          "purpose": "Telemetry snapshot ANTES de persistir (_metrics.EndHand). Acumula totalHands con Interlocked. Trunca Hands en memoria a últimas 20 (las anteriores ya persistidas). _dbWriteLock SemaphoreSlim → LightweightSession.Store(_currentHand) → SaveChangesAsync. Cierra _handScope correlation.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "EndHand",
+          "file": "src/OpenScrape.App/Telemetry/MetricsCollector.cs:74",
+          "params": [],
+          "returns": "TelemetryAggregate?",
+          "purpose": "Bajo lock(_handLock). Itera categorías (excluye SessionOnly = Persistence.SaveHand). Para cada CategoryState bajo state.Lock: ToStats(state.LastHand) P50/P95/Max/Count → state.LastHand.Reset. Construye TelemetryAggregate con UtcNow.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "GetPercentile",
+          "file": "src/OpenScrape.App/Telemetry/Histogram.cs:41",
+          "params": ["double percentile"],
+          "returns": "TimeSpan",
+          "purpose": "Histograma logarítmico 30 buckets cubre 10μs → 6.3s. target = ceil(_count × percentile). Iteración lineal acumulando _buckets[i] hasta superar target. Sobrestima percentil hasta ~37% (nunca subestima) por ancho log step=10^0.2.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Calculate",
+          "file": "src/OpenScrape.App/Aplication/UseCases/UnifiedPokerCalculator.cs:80",
+          "params": ["List<CardDataOuts> playerHand, communityCards", "decimal potSize, betToCall", "int numOpponents, monteCarloIterations?", "bool isInPosition", "decimal heroStack, villainStack", "string? handSituation", "TablePosition villainPosition", "OpponentProfile? opponentProfile"],
+          "returns": "PokerCalculationResult",
+          "purpose": "Fachada principal del motor. 8 pasos: pot odds → equity (cache 2048, MC adaptativo 250-1500 iters preflop, MC con VillainRange si HandSituation conocida) → outs (12 tipos via OutsCalculator) → hand eval (BitHandEvaluator si ≥5 cartas) + ClassifyPair (Overpair/TopPair/MiddlePair/BottomPair/PocketPairUnder/BoardPaired) → board texture → fold equity con ajustes street/IP/3bet/multiway → EV + EVWithFoldEquity → ShouldCall ajustada por draws/river/IP/SPR → bet sizing recomendado.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "EvaluateAsync",
+          "file": "src/OpenScrape.App/Services/PokerDecisionFacade.cs:44",
+          "params": ["DecisionRequest request", "CancellationToken cancellationToken"],
+          "returns": "Task<DecisionResult>",
+          "purpose": "5 fases medidas con telemetry: Decision.Equity (ResolveVillainProfile + Calculator.Calculate) → Decision.Texture (Analyze + ComputeBoardChange + ClassifyRiverCard si river) → Decision.Profile (GetTypeForPosition + GetFoldToBetPct si reliable) → Decision.DecisionService (build PostflopDecisionInput + DetermineAction) → Decision.Sizing (ExtractBetSize map fixed). NO usado en producción hoy: dualidad con UnifiedPokerCalculator.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Validate",
+          "file": "src/OpenScrape.App/Services/StrategyProfileValidator.cs:46",
+          "params": ["StrategyProfile profile"],
+          "returns": "void (throws)",
+          "purpose": "Fail-fast. Itera Thresholds verificando claves parseables y rangos [0,100] para cada tier + orden FoldBelow < ThinValueAbove < ValueAbove < StrongValueAbove. Verifica 36 entradas obligatorias: 3 streets × 12 situaciones (OpenRaise/Call/RaiseOverLimper/ThreeBet/OpenRaiseVs3Bet/+Call/FourBet/Cold4Bet/Squeeze/VsSqueeze/DonkBet/+VsOpenRaise). Acumula errores y lanza StrategyProfileValidationException si lista no vacía.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "PerformEnhancedDetection",
+          "file": "src/OpenScrape.App/Forms/FrmMain.cs:2905",
+          "params": ["Bitmap bitmap", "Region regionAction", "Region flop"],
+          "returns": "DetectionResult",
+          "purpose": "LockBits 32bppArgb directo (anti-marshaling de GetPixel). Lee píxel central + 8 vecinos en cruz ±2px → promedia avgR/G/B. IsActionColorInRange = abs(avgB - 24) ≤ 3. IsFlopVisible = abs(flopColor.B - 255) ≤ 10. ShouldCapture = inRange AND !_executeCapture. ShouldCaptureFlop = ShouldCapture AND IsFlopVisible. Try/catch fallback a GetPixel comparación exacta.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "CompareCardsBase64",
+          "file": "src/OpenScrape.App/Services/ImageCropperService.cs:121",
+          "params": ["string base64Image1", "string base64Image2"],
+          "returns": "double",
+          "purpose": "Pre-filtro dHash O(1) con HammingDistance ≤ 15 (descarta si > 15, imposible alcanzar 90% similar). Sino pixel-comparison FastBitmap LockBits 32bppArgb con terminación temprana cada 32 píxeles si pixelesSimilares + restantes < umbralMinimo. Retorna porcentajeSimilitud o 0 si < 90%.",
+          "confidence": "confirmed"
+        }
+      ],
+      "entities": [
+        {
+          "name": "PlayerGameState",
+          "fields": [
+            { "name": "IsDealer", "type": "bool", "required": true },
+            { "name": "PotSize", "type": "decimal", "required": true },
+            { "name": "HoleCard1Face/HoleCard2Face", "type": "string", "required": true },
+            { "name": "HoleCard1Rank/HoleCard2Rank", "type": "int", "required": true },
+            { "name": "HoleCard1Suit/HoleCard2Suit", "type": "int", "required": true },
+            { "name": "Kicker", "type": "int", "required": false },
+            { "name": "IsInPosition", "type": "bool", "required": true },
+            { "name": "Position", "type": "TablePosition", "required": true },
+            { "name": "CurrentBet", "type": "decimal", "required": true },
+            { "name": "HeroStack", "type": "decimal", "required": true },
+            { "name": "HandSituation", "type": "HandSituation", "required": true },
+            { "name": "Players", "type": "List<Player>", "required": true, "default": "[Player(P0)]" },
+            { "name": "BoardCards", "type": "List<BoardData>", "required": true },
+            { "name": "HavePocketPair", "type": "bool computed", "required": false },
+            { "name": "IsSuited", "type": "bool computed", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "Player",
+          "fields": [
+            { "name": "Name", "type": "string?", "required": true, "default": "P0..P5" },
+            { "name": "Alias", "type": "string?", "required": false },
+            { "name": "Dealer", "type": "bool", "required": false },
+            { "name": "Bet", "type": "decimal", "required": false },
+            { "name": "Stack", "type": "decimal", "required": false },
+            { "name": "Active", "type": "bool", "required": false },
+            { "name": "SitOut", "type": "bool", "required": false },
+            { "name": "Empty", "type": "bool", "required": false },
+            { "name": "HasFolded", "type": "bool", "required": false },
+            { "name": "Position", "type": "TablePosition", "required": false },
+            { "name": "ValuePosition", "type": "int 0-5", "required": true },
+            { "name": "WasPreflopAggressor", "type": "bool", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BoardData",
+          "fields": [
+            { "name": "Name", "type": "string?", "required": false },
+            { "name": "Force", "type": "int (rank)", "required": true },
+            { "name": "Suit", "type": "int", "required": true },
+            { "name": "Position", "type": "BoardPosition", "required": true },
+            { "name": "Location", "type": "int 1-5", "required": true }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "ResponseAction",
+          "fields": [
+            { "name": "Action", "type": "string?", "required": false },
+            { "name": "HandSituation", "type": "HandSituation", "required": true },
+            { "name": "IsSecondAction", "type": "bool", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "OcrResult",
+          "fields": [
+            { "name": "Text", "type": "string?", "required": false },
+            { "name": "Image", "type": "Bitmap? IDisposable", "required": false },
+            { "name": "Confidence", "type": "float", "required": true, "default": "-1 (cache hit)" },
+            { "name": "Attempts", "type": "int", "required": true, "default": "1" },
+            { "name": "IsHighConfidence", "type": "bool computed (Confidence < 0 OR >= 0.70)", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "TableScrapeFlopResult",
+          "fields": [
+            { "name": "BoardTexture", "type": "BoardTexture (nested)", "required": true },
+            { "name": "HeroStrength", "type": "HeroHandStrength (nested)", "required": true },
+            { "name": "Draws", "type": "DrawingOpportunities (nested)", "required": true },
+            { "name": "HasStrongHand", "type": "bool computed", "required": false },
+            { "name": "HasWeakHand", "type": "bool computed", "required": false },
+            { "name": "ShouldContinue", "type": "bool computed", "required": false }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "DetectionResult (record nested en FrmMain)",
+          "fields": [
+            { "name": "ActionColor", "type": "Color", "required": true },
+            { "name": "FlopColor", "type": "Color", "required": true },
+            { "name": "AverageActionB", "type": "double", "required": true },
+            { "name": "SampleCount", "type": "int", "required": true },
+            { "name": "IsActionColorInRange", "type": "bool", "required": true },
+            { "name": "ShouldCapture", "type": "bool", "required": true },
+            { "name": "ShouldCaptureFlop", "type": "bool", "required": true },
+            { "name": "IsFlopVisible", "type": "bool", "required": true }
+          ],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "MetricsSnapshot (sealed record)",
+          "fields": [
+            { "name": "CurrentHandId", "type": "string?", "required": false },
+            { "name": "LastHand", "type": "IReadOnlyDictionary<string, CategoryStats>", "required": true },
+            { "name": "Session", "type": "IReadOnlyDictionary<string, CategoryStats>", "required": true }
+          ],
+          "confidence": "confirmed"
+        }
+      ],
+      "value_objects": [
+        {
+          "name": "ScopedMeasurement (readonly struct + IDisposable)",
+          "purpose": "Zero-allocation. Stopwatch.GetTimestamp start/end. Distingue sessionOnly para Persistence.SaveHand. Dispose llama Record o RecordSessionOnly.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "BestHandResult (internal sealed record)",
+          "purpose": "(HandRank Ranking, List<NormalizedCard> Cards, List<NormalizedCard> Kickers). Resultado interno de PokerHandEvaluator.",
+          "confidence": "confirmed"
+        }
+      ],
+      "enums": [
+        {
+          "name": "GameState",
+          "values": [
+            "WaitingForHand", "HandDetected", "PreflopAction",
+            "FlopDetected", "FlopAction", "TurnDetected", "TurnAction",
+            "RiverDetected", "RiverAction", "HandComplete"
+          ],
+          "transitions": "10 estados con _validTransitions Dictionary. WaitingForHand→HandDetected→PreflopAction→FlopDetected→FlopAction→TurnDetected→TurnAction→RiverDetected→RiverAction→HandComplete→WaitingForHand. Todos los estados tienen transición de salida a WaitingForHand. *Action permiten HandComplete.",
+          "confidence": "confirmed"
+        },
+        {
+          "name": "TurnBoardTexture",
+          "values": ["Dry", "Coordinated", "Paired"],
+          "confidence": "confirmed"
+        },
+        {
+          "name": "RiverBoardTexture",
+          "values": ["Dry", "Coordinated", "Paired"],
+          "confidence": "confirmed"
+        }
+      ],
+      "business_rules": [
+        {
+          "description": "DOTNET_ENVIRONMENT default a 'Development' (no Production) — propiedad explícita del bot desktop, no servidor",
+          "location": "src/OpenScrape.App/Program.cs:41",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Forwarding pattern: AddSingleton<Concrete> + AddSingleton<IFace>(sp => sp.GetRequiredService<Concrete>()) — comparten misma instancia, Concrete inyectable directamente para tests",
+          "location": "src/OpenScrape.App/Program.cs:72-100,128-133,140-152,162,170",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "StrategyProfileValidator fail-fast: si lanza StrategyProfileValidationException MessageBox + Environment.Exit(1) ANTES de mostrar FrmMain. Acumula todos los errores en un único mensaje",
+          "location": "src/OpenScrape.App/Program.cs:185-197 + Services/StrategyProfileValidator.cs",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "CreateAsyncScope (no síncrono) requerido porque GameLoopCoordinator implementa IAsyncDisposable",
+          "location": "src/OpenScrape.App/Program.cs:213-222",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "TableLayoutService dealer detection: color dorado RGB R≥200 AND G≥140 AND B≤80 en radio 3 px alrededor del centro de la región",
+          "location": "src/OpenScrape.App/Services/TableLayoutService.cs:200-221",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Empty colors detected by canal Blue ∈ {14, 15, 53, 59, 74} con tolerancia ±5; Playing color Blue = 17 con tolerancia ±5",
+          "location": "src/OpenScrape.App/Services/TableLayoutService.cs:28-29",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Moving blinds: SB/BB saltan SitOut consecutivos. Jugadores 'consumidos' por el salto quedan sin posición esa mano. Heads-up: dealer=SB",
+          "location": "src/OpenScrape.App/Services/PositionCalculator.cs",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OCR consensus para bets: prioriza ocr3 (lectura directa sin preprocess) si != 0; sino ocr1==ocr2; sino primero != 0",
+          "location": "src/OpenScrape.App/Services/ScreenReaderService.cs:108-125",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OCR consensus para stacks: prefiere igualdad 3-vías → 2-vías → ocr3 fallback. NormalizeStackValue umbral más alto (>=500) que NormalizeBetValue (>=300)",
+          "location": "src/OpenScrape.App/Services/ScreenReaderService.cs:170-200,349-396",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OCR multi-attempt en OcrService: default umbral, lower (-20), higher (+20), contrast (1.5x) — best por OrderByDescending Confidence ThenByDescending Length",
+          "location": "src/OpenScrape.App/Services/OcrService.cs:174-204",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "OcrResult.IsHighConfidence = Confidence < 0 OR Confidence >= 0.70f. Cache hit (Confidence=-1) se considera alta confianza",
+          "location": "src/OpenScrape.App/Services/OcrService.cs:455",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Auto-rebuy detection: _heroStackPreRebuy NO se actualiza si stack sube bruscamente a 100BB durante mano activa. Profit calculado al EndHand usa _heroStackPreRebuy si > 0",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:104-105 + SetHeroStack + HandleNewHandAsync (prevHeroStack)",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "DetectNewHand requiere indicator1 (handChange) + 1 secundario, o sin handChange + 3 secundarios. Indicadores: holeCards detectadas, pot < 10, board vacío, dealer cambió, SB cambió, BB cambió",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:1374-1422 + Services/GameCoordinator.cs:297-327",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Cambio de hand number 'sospechoso' en postflop (ratio >100 o <0.01 o lengthDiffers o no parseable) NO confía en handChange y exige 3+ indicadores secundarios",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:2274-2331",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GameLoopStateMachine.TryTransition con visibleBoardCards bloquea si menos cartas que mínimo (≥3 flop, ≥4 turn, ≥5 river). Warn si excede max",
+          "location": "src/OpenScrape.App/Services/GameLoopStateMachine.cs:73-111",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GameLoggerService persiste cada HandRecord como documento Marten independiente. _currentSession.Hands trunca a últimas 20 (MaxHandsInMemory). Acumuladores _sessionTotalHands/_sessionTotalProfit con Interlocked y _dbWriteLock SemaphoreSlim",
+          "location": "src/OpenScrape.App/Services/GameLoggerService.cs:15-29,211-255",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "MetricsCollector.EndHand excluye TelemetryCategories.SessionOnly (Persistence.SaveHand) — esa categoría se mide después del snapshot de mano",
+          "location": "src/OpenScrape.App/Telemetry/MetricsCollector.cs:81-100 + TelemetryCategories.cs:60-65",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Histogram 30 buckets logarítmicos: bound[i] = 1e-5 × 10^(i × 0.2) segundos. Cubre 10μs → 6.3s. Sobrestima percentil hasta ~37% (nunca subestima)",
+          "location": "src/OpenScrape.App/Telemetry/Histogram.cs:75-87",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "GameLoopCoordinator es esqueleto con feature flag UseGameLoopCoordinator=false. Hoy emite GameLoopResult { Empty=true } por tick",
+          "location": "src/OpenScrape.App/Services/GameLoopCoordinator.cs:166-180 + Configuration/FeatureFlags.cs",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "BackgroundWorker delay adaptativo: 200ms si capturó (slow después de detección), 100ms si no",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:2880-2882",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "Detección de turno por color píxel: avgB - 24 ≤ 3 (tolerancia ±3). Detección de flop visible: flopColor.B - 255 ≤ 10. Sample 9 píxeles cruz ±2px",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:2960-2975",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "ImageCropperService dHash pre-filtro: si HammingDistance > 15 descarta sin pixel-comparison (imposible alcanzar 90% similitud)",
+          "location": "src/OpenScrape.App/Services/ImageCropperService.cs:128-133",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "CalculateSimilarity terminación temprana: cada 32 píxeles verifica si pixelesSimilares + restantes < umbralMinimo (90%) y aborta",
+          "location": "src/OpenScrape.App/Services/ImageCropperService.cs:266-275",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "FindWindows filtra ventanas que contengan: '.NET', 'GDI+', 'Hidden', 'DDE', 'System', 'Opera'. Filtro adicional 'NL H' en FormListApps para clientes Hold'em",
+          "location": "src/OpenScrape.App/Helpers/WindowsInformationHelper.cs:55-58 + Forms/FormListApps.cs:32",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "CoordinateScaler.scale = (currentW/refW + currentH/refH)/2.0 — promedio de ratios X e Y para mantener proporciones",
+          "location": "src/OpenScrape.App/Helpers/CoordinateScaler.cs:30-32",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "FrmMain.SaveReferenceDimensionsToConfig reescribe appsettings.json con string-building manual ramificando solo CaptureSettings.* (no JsonSerializer roundtrip)",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:2561-2626",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "TextBoxLogger BeginInvoke cross-thread + AppendWithRotation por MaxLines (FIFO). Buffer pendientes hasta SetTextBoxTarget (one-shot, throws si llamado dos veces)",
+          "location": "src/OpenScrape.App/Services/Logging/TextBoxLoggerProvider.cs:44-66,88-130",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "FrmMain.FormClosing intercepta close: si HasActiveHand/HasActiveSession setea Cancel=true + _isClosing=true, llama EndHand con _heroStackPreRebuy o HeroStack, await SaveSessionAsync, luego Close() reentrante",
+          "location": "src/OpenScrape.App/Forms/FrmMain.cs:304-347",
+          "confidence": "confirmed"
+        },
+        {
+          "description": "EncrypterHelper usa AES-CBC con SHA256(secret) como key e IV fija de 16 ceros. Documentado, posible debilidad criptográfica si secret no se rota",
+          "location": "src/OpenScrape.App/Helpers/EncrypterHelper.cs:120-122,134",
+          "confidence": "confirmed"
+        }
+      ],
+      "dependencies": [
+        "OpenScrape.Domain",
+        "OpenScrape.Features",
+        "OpenScrape.Infrastructure",
+        "OpenScrape.DecisionMaker",
+        "Tesseract 5.2.0",
+        "OpenCvSharp4 4.10",
+        "SkiaSharp 3.119",
+        "Marten 8.24",
+        "Microsoft.Extensions.Hosting 10.0.3",
+        "Microsoft.Extensions.Logging"
+      ],
+      "algorithms": [
+        {
+          "name": "dHash perceptual hash",
+          "purpose": "Cache key + pre-filtro de comparación de imágenes",
+          "complexity": "O(64) compute + O(1) HammingDistance con popcount Brian Kernighan",
+          "location": "OcrService.ComputeDHash + ImageCropperService.ComputeDHashFromBytes"
+        },
+        {
+          "name": "Logarithmic histogram percentile",
+          "purpose": "Telemetría sin almacenar samples",
+          "complexity": "Add O(30), GetPercentile O(30); sobrestima ~37% nunca subestima",
+          "location": "Telemetry/Histogram.cs"
+        },
+        {
+          "name": "9-pixel cross sampling con LockBits",
+          "purpose": "Detección robusta de color hero turn",
+          "complexity": "O(9) reads directo de buffer pinned",
+          "location": "FrmMain.PerformEnhancedDetection"
+        },
+        {
+          "name": "Pixel similarity con terminación temprana",
+          "purpose": "Comparar cartas evitando full scan cuando inviable",
+          "complexity": "O(width × height) worst case; aborta cada 32 px si imposible alcanzar 90%",
+          "location": "ImageCropperService.CalculateSimilarity"
+        },
+        {
+          "name": "Moving blinds position assignment",
+          "purpose": "Asignar SB/BB saltando SitOut consecutivos",
+          "complexity": "O(n) iterate ring",
+          "location": "PositionCalculator.AssignAllPositions"
+        },
+        {
+          "name": "OCR multi-attempt con consensus",
+          "purpose": "Robustez OCR Tesseract con preprocesamientos múltiples",
+          "complexity": "O(4 attempts) en OcrService + O(3 reads) en ScreenReaderService = 12 llamadas Tesseract worst case por valor",
+          "location": "OcrService.ExtractTextFromRegionAndDebug + ScreenReaderService.Read*"
+        },
+        {
+          "name": "ImagePreprocessor pipeline parallel",
+          "purpose": "Optimizar imagen para OCR: resize → grayscale → median → contrast → deskew → binarize",
+          "complexity": "Parallel.For sobre filas, secuencial sobre stages",
+          "location": "ImagePreprocessorHelper.ProcessImage"
+        },
+        {
+          "name": "Auto-rebuy detection",
+          "purpose": "Distinguir rebuy automático de profit/loss real",
+          "complexity": "O(1) tracking via _heroStackPreRebuy",
+          "location": "FrmMain.SetHeroStack + HandleNewHandAsync prevHeroStack"
+        }
+      ],
+      "anomalies": [
+        {
+          "severity": "critical",
+          "description": "FrmMain god class 4502 LOC con 95+ métodos. Refactor refactor-frmmain-coordinators Fases 6-7 pendiente: GameLoopCoordinator esqueleto con feature flag OFF",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:1-4501 + 4448-4500 inventario migración"]
+        },
+        {
+          "severity": "critical",
+          "description": "SaveReferenceDimensionsToConfig reescribe appsettings.json con string-building manual ramificando solo CaptureSettings.*. No es roundtrip JSON real. Si una clave contiene escape ',' o se reordena, puede corromper el archivo",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:2561-2626"]
+        },
+        {
+          "severity": "critical",
+          "description": "BackgroundWorker1_DoWork loop infinito while(true) sin CancellationToken. Solo sale por Overlay.Visible=false (e.Cancel=true) o exception global",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:2737-2900"]
+        },
+        {
+          "severity": "critical",
+          "description": "btnCapture_Click método de ~270 LOC con responsabilidades mixtas: captura/OCR/lifecycle/decisiones/persistencia/overlay. Es prácticamente el 'main' del game loop",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:642-825"]
+        },
+        {
+          "severity": "critical",
+          "description": "Doble entry point al motor de decisión: UnifiedPokerCalculator (usado hoy) y PokerDecisionFacade (planeado, no usado en producción). Refactor pendiente para unificar",
+          "evidence": ["src/OpenScrape.App/Aplication/UseCases/UnifiedPokerCalculator.cs", "src/OpenScrape.App/Services/PokerDecisionFacade.cs"]
+        },
+        {
+          "severity": "medium",
+          "description": "Hardcoded path absoluto en FrmMain.GetImageWhilePlaying: 'C:', 'Code', 'Poker', 'ScrapePoker', 'resources', 'Games'. No portable. Debería derivar de AppDomain.CurrentDomain.BaseDirectory",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:2508-2510"]
+        },
+        {
+          "severity": "medium",
+          "description": "OcrService.GetCroppedBitmap keyifica con image.GetHashCode() (identidad del objeto, no contenido). Si caller reusa Bitmap con PNG distinto, devuelve cache stale. Mitigado en flujo actual porque _formImage.pbImage.Image se reasigna con new Bitmap() cada captura",
+          "evidence": ["src/OpenScrape.App/Services/OcrService.cs:332"]
+        },
+        {
+          "severity": "medium",
+          "description": "EncrypterHelper usa AES-CBC con IV fija de 16 ceros. Debilidad criptográfica conocida. Solo aceptable si secret se rota, no documentado",
+          "evidence": ["src/OpenScrape.App/Helpers/EncrypterHelper.cs:120-122,134"]
+        },
+        {
+          "severity": "medium",
+          "description": "GameLoggerService.GetRecentSessionsWithStatsAsync hace N+1 queries: un Query<HandRecord> por cada GameSession. Para 50 sesiones = 51 queries",
+          "evidence": ["src/OpenScrape.App/Services/GameLoggerService.cs:335-364"]
+        },
+        {
+          "severity": "medium",
+          "description": "ProcessRiverAsync cuenta cartas con !string.IsNullOrEmpty(d.Name) mientras ProcessFlopAsync/Turn cuentan por Position == BoardPosition.X. Inconsistencia heredada de fix OCR-3",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:1668-1672 vs 1447,1587"]
+        },
+        {
+          "severity": "medium",
+          "description": "PokerHandEvaluator legacy 388 LOC brute-force C(n,5) coexiste con BitHandEvaluator del módulo DecisionMaker (más eficiente). Sin justificación documentada",
+          "evidence": ["src/OpenScrape.App/Services/PokerHandEvaluator.cs"]
+        },
+        {
+          "severity": "medium",
+          "description": "tbResume.Text se persiste íntegro en cada nueva mano (HandleNewHandAsync). Write amplification: cada mano escribe todo el log acumulado",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:1804-1806"]
+        },
+        {
+          "severity": "medium",
+          "description": "FormImage.btnLoad_Click tiene path hardcoded 'C:\\Code\\Poker\\ScrapePoker\\resources\\Games' y comentario //portatil. Setup-specific",
+          "evidence": ["src/OpenScrape.App/Forms/FormImage.cs:40-42"]
+        },
+        {
+          "severity": "medium",
+          "description": "DetectionLoggerService.WriteLogEntry con File.AppendAllText sin batching. Bajo carga puede tener contención",
+          "evidence": ["src/OpenScrape.App/Services/DetectionLoggerService.cs:215-244"]
+        },
+        {
+          "severity": "low",
+          "description": "_papel = _formImage.pbImage.CreateGraphics() en UpdateRegionDisplay crea Graphics sin disposar fuera del using. Recurso GDI fugado por iteración",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs:534-540"]
+        },
+        {
+          "severity": "low",
+          "description": "TextBoxLogger mezcla LogError/LogInformation/LogDebug y Console.WriteLine indistintamente. Existe el provider correlated pero conviven con Debug.WriteLine directo",
+          "evidence": ["src/OpenScrape.App/Forms/FrmMain.cs many sites + Services/OcrService.cs:57"]
+        },
+        {
+          "severity": "low",
+          "description": "WindowsInformationHelper.FindWindows filtra '.NET', 'GDI+', 'Hidden', 'DDE', 'System', 'Opera'. Heurística específica del entorno de desarrollo",
+          "evidence": ["src/OpenScrape.App/Helpers/WindowsInformationHelper.cs:55-58"]
+        },
+        {
+          "severity": "low",
+          "description": "LruCache.Values retorna snapshot que puede quedar inconsistente vs _lruList si hay concurrent modification entre lock. Caller debe asumir snapshot point-in-time",
+          "evidence": ["src/OpenScrape.App/Services/LruCache.cs:30-43"]
+        },
+        {
+          "severity": "low",
+          "description": "MetricsCollector.StartHand con mano anterior pendiente loggea warning y descarta. Comportamiento documentado",
+          "evidence": ["src/OpenScrape.App/Telemetry/MetricsCollector.cs:48-72"]
+        },
+        {
+          "severity": "low",
+          "description": "OcrResult expone Confidence float [0,1] o -1 (cache hit). UI no muestra como percentil legible",
+          "evidence": ["src/OpenScrape.App/Services/OcrService.cs:448-462"]
+        }
+      ],
+      "complexity": "very_high",
+      "loc_estimate": 13117,
+      "files_count": 124,
+      "public_types_count": 120
+    }
+  ]
+}

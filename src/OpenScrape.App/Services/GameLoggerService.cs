@@ -1,5 +1,6 @@
 using Marten;
 using Microsoft.Extensions.Logging;
+using OpenScrape.App.Telemetry;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -15,6 +16,7 @@ public class GameLoggerService
 
     private readonly IDocumentStore _store;
     private readonly ILogger<GameLoggerService> _logger;
+    private readonly IMetricsCollector _metrics;
     private readonly SemaphoreSlim _dbWriteLock = new(1, 1);
     private GameSession? _currentSession;
     private HandRecord? _currentHand;
@@ -28,10 +30,11 @@ public class GameLoggerService
     /// <summary>Big blind de la sesión activa (para calcular ciegas pagadas).</summary>
     public decimal CurrentBigBlind => _currentSession?.BigBlind ?? 0.50m;
 
-    public GameLoggerService(IDocumentStore store, ILogger<GameLoggerService> logger)
+    public GameLoggerService(IDocumentStore store, ILogger<GameLoggerService> logger, IMetricsCollector metrics)
     {
         _store = store;
         _logger = logger;
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     }
 
     /// <summary>
@@ -107,6 +110,8 @@ public class GameLoggerService
             NumOpponents = numOpponents,
             BlindPosted = blindPosted
         };
+
+        _metrics.StartHand(handNumber.ToString());
 
         // Correlation scope: HandNumber se propaga hasta FinalizeAndPersistHandAsync.
         _handScope?.Dispose();
@@ -210,6 +215,9 @@ public class GameLoggerService
         _currentHand.GameSessionId = _currentSession.Id;
         _currentSession.EndTime = DateTime.UtcNow;
 
+        // Telemetry de la mano ANTES de persistir
+        _currentHand.Telemetry = _metrics.EndHand();
+
         // Actualizar acumuladores antes de truncar
         Interlocked.Increment(ref _sessionTotalHands);
         if (_currentHand.Result != HandResult.Unknown)
@@ -227,6 +235,7 @@ public class GameLoggerService
         await _dbWriteLock.WaitAsync();
         try
         {
+            using var _ = _metrics.MeasureSessionOnly("Persistence.SaveHand");
             await using var session = _store.LightweightSession();
             session.Store(_currentHand);
             await session.SaveChangesAsync();

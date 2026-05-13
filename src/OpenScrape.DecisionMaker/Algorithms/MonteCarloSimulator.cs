@@ -40,8 +40,12 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public double Equity { get; set; }
             public int Simulations { get; set; }
             public int SkippedSimulations { get; set; }
+            public bool IsReliable { get; set; } = true;
+            public double BlockedComboPercentage { get; set; }
             public Dictionary<HandRank, int> HandDistribution { get; set; } = new();
         }
+
+        public const double UnreliableThreshold = 0.20; // 20% de combos bloqueados
 
         public EquityResult CalculateEquity(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
             int numOpponents, int? iterations = null, VillainRange? villainRange = null)
@@ -53,21 +57,68 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             double precomputedTotalWeight = villainCombos != null ? ComputeTotalWeight(villainCombos) : 0;
 
+            // Calcular porcentaje de combos bloqueados para evaluar fiabilidad
+            double blockedPercentage = 0;
+            if (villainCombos != null && villainRange != null)
+            {
+                blockedPercentage = CalculateBlockedComboPercentage(villainRange, myCards, communityCards);
+            }
+
             int communityCount = communityCards.Count;
 
             // River (5 community cards) → enumeración exacta
             if (communityCount == 5)
-                return ExactEnumerationRiver(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
+            {
+                var result = ExactEnumerationRiver(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
+                result.BlockedComboPercentage = blockedPercentage;
+                result.IsReliable = blockedPercentage <= UnreliableThreshold;
+                return result;
+            }
 
             // Turn (4 community cards) → enumeración exacta
             if (communityCount == 4)
-                return ExactEnumerationTurn(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
+            {
+                var result = ExactEnumerationTurn(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
+                result.BlockedComboPercentage = blockedPercentage;
+                result.IsReliable = blockedPercentage <= UnreliableThreshold;
+                return result;
+            }
 
             // Flop (3 cards) o preflop (0 cards) → Monte Carlo con iteraciones altas
             int simulationCount = iterations ?? GetAdaptiveIterations(communityCount);
 
-            return RunMonteCarloSimulation(myCards, communityCards, numOpponents,
+            var mcResult = RunMonteCarloSimulation(myCards, communityCards, numOpponents,
                 simulationCount, villainCombos, precomputedTotalWeight);
+            mcResult.BlockedComboPercentage = blockedPercentage;
+            mcResult.IsReliable = mcResult.IsReliable && blockedPercentage <= UnreliableThreshold;
+            return mcResult;
+        }
+
+        private double CalculateBlockedComboPercentage(VillainRange range, List<CardDataOuts> myCards, List<CardDataOuts> communityCards)
+        {
+            var blocked = new HashSet<(Suit, Rank)>();
+            foreach (var c in myCards) blocked.Add((c.Suit, c.Rank));
+            foreach (var c in communityCards) blocked.Add((c.Suit, c.Rank));
+
+            int totalCombosInRange = 0;
+            int blockedCombosInRange = 0;
+
+            foreach (var (notation, weight) in range.Hands)
+            {
+                if (weight <= 0) continue;
+
+                var expanded = VillainRange.ExpandHandNotation(notation);
+                foreach (var (c1, c2) in expanded)
+                {
+                    totalCombosInRange++;
+                    if (blocked.Contains((c1.Suit, c1.Rank)) || blocked.Contains((c2.Suit, c2.Rank)))
+                    {
+                        blockedCombosInRange++;
+                    }
+                }
+            }
+
+            return totalCombosInRange > 0 ? (double)blockedCombosInRange / totalCombosInRange : 0;
         }
 
         /// <summary>
