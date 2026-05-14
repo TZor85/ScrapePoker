@@ -60,14 +60,14 @@
 - [x] Tests: 6 tests (SPR ranges, equity thresholds, boundaries)
 
 ### S22.8: Hand Strength Re-Evaluation en River
-- [ ] Agregar metodo `GetRelativeHandRank()` que degrada HandRank si draws completaron:
+- [x] Agregar metodo `GetRelativeHandRank()` que degrada HandRank si draws completaron:
   - TwoPair + FlushCompleted (hero sin flush) → tratar como OnePair para raise decisions
   - TwoPair + StraightCompleted (hero sin straight) → tratar como OnePair
   - Flush/Straight+ → no degradar
-- [ ] Modificar `HandleFacingBet()` river: usar relativeHandRank para raise conditions
-- [ ] Modificar `HandleNoBet()` river: usar relativeHandRank para overbet/value conditions
-- [ ] Agregar parametro: HandReEvalOnDrawCompletion (bool, default true)
-- [ ] Tests: 6 tests (TwoPair degradado, flush ok, sin draw, OnePair no afectado)
+- [x] Modificar `HandleFacingBet()` river: usar relativeHandRank para raise conditions
+- [x] Modificar `HandleNoBet()` river: usar relativeHandRank para overbet/value conditions
+- [x] Agregar parametro: HandReEvalOnDrawCompletion (bool, default true)
+- [x] Tests: 6 tests (TwoPair degradado, flush ok, sin draw, OnePair no afectado)
 
 ---
 

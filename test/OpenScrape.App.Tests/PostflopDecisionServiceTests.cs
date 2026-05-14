@@ -6721,5 +6721,35 @@ public class PostflopDecisionServiceTests
         Assert.That(profile.HandReEvalOnDrawCompletion, Is.True);
     }
 
+    [Test]
+    public void S22_8_GetRelativeHandRank_DegradaTwoPair_SiFlushCompletadoSinFlushHero()
+    {
+        var boardChange = new BoardChangeResult(true, true, false, false, false, -1, 3);
+
+        var relativeRank = PostflopDecisionService.GetRelativeHandRank(
+            heroHandRank: HandRank.TwoPair,
+            street: BoardPosition.River,
+            boardChange: boardChange,
+            heroBlocksDangerSuit: false,
+            handReEvalOnDrawCompletion: true);
+
+        Assert.That(relativeRank, Is.EqualTo(HandRank.OnePair));
+    }
+
+    [Test]
+    public void S22_8_GetRelativeHandRank_MantieneFlush_SiFlushCompletado()
+    {
+        var boardChange = new BoardChangeResult(true, true, false, false, false, -1, 3);
+
+        var relativeRank = PostflopDecisionService.GetRelativeHandRank(
+            heroHandRank: HandRank.Flush,
+            street: BoardPosition.River,
+            boardChange: boardChange,
+            heroBlocksDangerSuit: false,
+            handReEvalOnDrawCompletion: true);
+
+        Assert.That(relativeRank, Is.EqualTo(HandRank.Flush));
+    }
+
     #endregion
 }
