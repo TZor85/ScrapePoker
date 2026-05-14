@@ -200,6 +200,17 @@ public class PostflopDecisionService : IPostflopDecisionService
         // Floor: equity efectiva no puede ser negativa (evita corrupción de thresholds)
         effectiveEquity = Math.Max(0, effectiveEquity);
 
+        if (isFacingBet && street == BoardPosition.Turn && heroStack > 0 && potSize > 0 && potOdds > 0)
+        {
+            double projectedSPR = CalculateProjectedTurnCallSPR(heroStack, potSize, potOdds);
+            if (projectedSPR < _profile.StackoffProjectedSPRThreshold &&
+                effectiveEquity >= _profile.StackoffCommitEquityMin)
+            {
+                return new PostflopDecisionResult("Call",
+                    $"Call — projected SPR committed tras call (projected SPR={projectedSPR:F2}, equity={effectiveEquity:F1}%)");
+            }
+        }
+
         // All-in: desactivar fold equity (villain no puede foldear)
         if (isAnyoneAllIn)
             foldEquity = 0;
@@ -538,6 +549,40 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (allinEV > 0)
                 return new PostflopDecisionResult("All-In (Value)",
                     $"Push +EV — SPR corto (EV={allinEV:F1}, equity={effectiveEquity:F1}%)");
+        }
+
+        if (street == BoardPosition.Turn && heroStack > 0 && potSize > 0 &&
+            effectiveEquity > thresholds.ThinValueAbove)
+        {
+            var baseBetThreshold = boardTexture switch
+            {
+                "Dry" => thresholds.DryBoardBetSize,
+                "Coordinated" => thresholds.CoordinatedBoardBetSize,
+                "Paired" => thresholds.PairedBoardBetSize,
+                "Monotone" => thresholds.MonotoneBoardBetSize,
+                "Wet" => thresholds.WetBoardBetSize,
+                _ => thresholds.DryBoardBetSize
+            };
+
+            if (thresholds.ReduceSizeForOOP && !isInPosition)
+                baseBetThreshold = ReduceBetSize(baseBetThreshold);
+
+            double baseBetFraction = BetStringToFraction(baseBetThreshold);
+            if (baseBetFraction > 0)
+            {
+                double projectedSPR = CalculateProjectedRiverSPR(heroStack, potSize, baseBetFraction);
+                if (projectedSPR < _profile.StackoffProjectedSPRThreshold)
+                {
+                    if (effectiveEquity >= _profile.StackoffCommitEquityMin)
+                    {
+                        return new PostflopDecisionResult("All-In (Value)",
+                            $"All-in turn — bet compromete river (projSPR={projectedSPR:F2}, equity={effectiveEquity:F1}%)");
+                    }
+
+                    return new PostflopDecisionResult("Check",
+                        $"Check — pot control, bet turn comprometería river (projSPR={projectedSPR:F2})");
+                }
+            }
         }
 
         // C-bet mixing: agresor con equity media puede chequear para proteger checking range
@@ -1189,32 +1234,6 @@ public class PostflopDecisionService : IPostflopDecisionService
             return new PostflopDecisionResult("Check",
                 "Check — pot control, equity marginal en board volátil");
 
-        // S22.4: Stackoff planning — si apostar en turn compromete el river, ir all-in directamente
-        // Calcula projected river SPR con el bet size base de la textura actual
-        if (street == BoardPosition.Turn && heroStack > 0 && potSize > 0 && equity > thresholds.ThinValueAbove)
-        {
-            double baseBetFraction = BetStringToFraction(baseBetThreshold);
-            if (baseBetFraction > 0)
-            {
-                double projectedSPR = CalculateProjectedRiverSPR(heroStack, potSize, baseBetFraction);
-                if (projectedSPR < _profile.StackoffProjectedSPRThreshold)
-                {
-                    if (equity >= _profile.StackoffCommitEquityMin)
-                    {
-                        // Equity buena + commit inevitable → all-in ahora (mejor que tamaño intermedio)
-                        return new PostflopDecisionResult("All-In (Value)",
-                            $"All-in turn — bet compromete river (projSPR={projectedSPR:F2}, equity={equity:F1}%)");
-                    }
-                    else
-                    {
-                        // Equity marginal + commit inevitable → pot control (check)
-                        return new PostflopDecisionResult("Check",
-                            $"Check — pot control, bet turn comprometería river (projSPR={projectedSPR:F2})");
-                    }
-                }
-            }
-        }
-
         // S22.2: Overbet en river también usa relativeHandRank (S22.8): bloqueado si degradado
         if (street == BoardPosition.River && thresholds.CanOverbet &&
             equity > thresholds.OverbetMinEquity && relativeHandRank < HandRank.TwoPair)
@@ -1465,6 +1484,18 @@ public class PostflopDecisionService : IPostflopDecisionService
         decimal remainingStack = heroStack - betAmount;
         decimal projectedPot = potSize + 2 * betAmount; // hero bet + villain call
         if (projectedPot <= 0) return 99;
+        return (double)(remainingStack / projectedPot);
+    }
+
+    internal static double CalculateProjectedTurnCallSPR(decimal heroStack, decimal potSize, double potOdds)
+    {
+        if (heroStack <= 0 || potSize <= 0 || potOdds <= 0 || potOdds >= 100) return 99;
+
+        decimal callAmount = potSize * (decimal)(potOdds / (100.0 - potOdds));
+        decimal remainingStack = Math.Max(0, heroStack - callAmount);
+        decimal projectedPot = potSize + callAmount;
+        if (projectedPot <= 0) return 99;
+
         return (double)(remainingStack / projectedPot);
     }
 
