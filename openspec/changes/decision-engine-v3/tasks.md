@@ -30,13 +30,13 @@
 - [ ] Tests: 8 tests (track posicional, fallback, tipo posicional, uso en decisions)
 
 ### S22.4: Stackoff Planning Cross-Street
-- [ ] Agregar metodo `CalculateProjectedRiverSPR()` en `PostflopDecisionService.cs`
-- [ ] Agregar campo `TurnBetCommitsToRiver` a `PostflopGameContext.cs`
-- [ ] Modificar `HandleNoBet()` turn: si projected SPR < 1.0 con equity buena → All-In directo
-- [ ] Modificar `HandleNoBet()` turn: si projected SPR < 1.0 con equity marginal → Check (pot control)
-- [ ] Modificar `HandleFacingBet()` turn: pot commitment expandido con projected SPR
-- [ ] Agregar parametros: StackoffProjectedSPRThreshold, StackoffCommitEquityMin
-- [ ] Tests: 8 tests (commit sizing, check-back, facing bet, projected SPR scenarios)
+- [x] Agregar metodo `CalculateProjectedRiverSPR()` en `PostflopDecisionService.cs`
+- [x] Agregar campo `TurnBetCommitsToRiver` a `PostflopGameContext.cs`
+- [x] Modificar `HandleNoBet()` turn: si projected SPR < 1.0 con equity buena → All-In directo
+- [x] Modificar `HandleNoBet()` turn: si projected SPR < 1.0 con equity marginal → Check (pot control)
+- [x] Modificar `HandleFacingBet()` turn: pot commitment expandido con projected SPR
+- [x] Agregar parametros: StackoffProjectedSPRThreshold, StackoffCommitEquityMin
+- [x] Tests: 8 tests (commit sizing, check-back, facing bet, projected SPR scenarios)
 
 ### S22.5: Multiway Nut Advantage
 - [x] Modificar multiway penalty block en `DetermineAction()`:

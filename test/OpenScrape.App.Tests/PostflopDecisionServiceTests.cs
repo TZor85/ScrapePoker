@@ -6176,36 +6176,47 @@ public class PostflopDecisionServiceTests
             HeroIsAggressor = true
         });
 
-        // Con SPR bajo y equity alta → All-In o Bet grande
-        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(result.Action, Is.EqualTo("All-In (Value)"));
+        Assert.That(result.Reason, Does.Contain("bet compromete river"));
     }
 
     [Test]
     public void S22_4_TurnBet_EquityMarginal_SPRBajo_CheckBack()
     {
         // Turn con equity marginal y bet que compromete → preferir check
-        var result = _service.DetermineAction(new PostflopDecisionInput
+        var profile = CreateDefaultProfile();
+        profile.StackoffCommitEquityMin = 55;
+        profile.Thresholds["Turn_OpenRaise"] = profile.Thresholds["Turn_OpenRaise"] with
+        {
+            ThinValueAbove = 45,
+            ValueAbove = 55,
+            StrongValueAbove = 80
+        };
+        var service = CreateService(profile);
+
+        var result = service.DetermineAction(new PostflopDecisionInput
         {
             Equity = 48,
             Street = BoardPosition.Turn,
             Situation = HandSituation.OpenRaise,
-            BoardTexture = "Coordinated",
+            BoardTexture = "Dry",
             IsInPosition = true,
             VillainBetSize = BetSizeCategory.NoBet,
             HeroHandRank = HandRank.OnePair,
             HeroStack = 25,
             PotSize = 20,
-            NumOpponents = 1
+            NumOpponents = 1,
+            HeroIsAggressor = true
         });
 
-        // Equity marginal + SPR bajo → Check o Bet conservador
-        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(result.Action, Is.EqualTo("Check"));
+        Assert.That(result.Reason, Does.Contain("pot control"));
     }
 
     [Test]
     public void S22_4_FacingBet_TurnSPRComprometido_PotCommitment()
     {
-        // Facing bet que dejaría SPR < 0.5 con equity > 35%
+        // Facing bet grande que deja SPR < 0.5 tras call, aunque el SPR actual no sea bajo.
         var result = _service.DetermineAction(new PostflopDecisionInput
         {
             Equity = 40,
@@ -6214,14 +6225,23 @@ public class PostflopDecisionServiceTests
             BoardTexture = "Dry",
             IsInPosition = true,
             VillainBetSize = BetSizeCategory.Large,
-            PotOdds = 35,
+            PotOdds = 60,
             HeroHandRank = HandRank.OnePair,
-            HeroStack = 15,
-            PotSize = 30
+            HeroStack = 100,
+            PotSize = 50
         });
 
-        // Call por pot commitment (SPR bajo + equity > 35%)
-        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(result.Action, Is.EqualTo("Call"));
+        Assert.That(result.Reason, Does.Contain("projected SPR"));
+    }
+
+    [Test]
+    public void S22_4_StrategyProfile_StackoffParams_TienenDefaults()
+    {
+        var profile = CreateDefaultProfile();
+
+        Assert.That(profile.StackoffProjectedSPRThreshold, Is.EqualTo(1.0));
+        Assert.That(profile.StackoffCommitEquityMin, Is.EqualTo(35.0));
     }
 
     [Test]
