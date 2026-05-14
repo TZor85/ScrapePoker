@@ -48,6 +48,30 @@ public class PostflopDecisionService : IPostflopDecisionService
     public double CalculateDangerPenalty(double rawEquity, BoardChangeResult boardChange, bool heroBlocksDangerSuit, bool isFacingBet, BoardPosition street = BoardPosition.Turn, bool heroHasNutBlocker = false, HandRank heroHandRank = HandRank.HighCard, bool heroCompletedFlush = false, bool heroCompletedStraight = false)
         => DangerPenaltyCalculator.Calculate(rawEquity, boardChange, heroBlocksDangerSuit, isFacingBet, _profile, street, heroHasNutBlocker, heroHandRank, heroCompletedFlush, heroCompletedStraight);
 
+    public static HandRank GetRelativeHandRank(
+        HandRank heroHandRank,
+        BoardPosition street,
+        BoardChangeResult? boardChange,
+        bool heroBlocksDangerSuit,
+        bool handReEvalOnDrawCompletion)
+    {
+        if (!handReEvalOnDrawCompletion ||
+            street != BoardPosition.River ||
+            boardChange == null ||
+            heroHandRank != HandRank.TwoPair)
+        {
+            return heroHandRank;
+        }
+
+        if (boardChange.FlushCompleted && !heroBlocksDangerSuit)
+            return HandRank.OnePair;
+
+        if (boardChange.StraightCompleted)
+            return HandRank.OnePair;
+
+        return heroHandRank;
+    }
+
     /// <summary>
     /// Calcula el factor de implied odds. Delega a ImpliedOddsCalculator.
     /// </summary>
@@ -125,16 +149,12 @@ public class PostflopDecisionService : IPostflopDecisionService
         bool heroCompletedFlush = heroHandRank >= HandRank.Flush;
         bool heroCompletedStraight = heroHandRank >= HandRank.Straight && heroHandRank < HandRank.Flush;
 
-        // S22.8: Relative hand rank en river — TwoPair degrada si draw completó y hero no lo tiene
-        HandRank relativeHandRank = heroHandRank;
-        if (_profile.HandReEvalOnDrawCompletion && street == BoardPosition.River &&
-            boardChange != null && heroHandRank == HandRank.TwoPair)
-        {
-            if (boardChange.FlushCompleted && !heroBlocksDangerSuit)
-                relativeHandRank = HandRank.OnePair;
-            else if (boardChange.StraightCompleted)
-                relativeHandRank = HandRank.OnePair;
-        }
+        var relativeHandRank = GetRelativeHandRank(
+            heroHandRank,
+            street,
+            boardChange,
+            heroBlocksDangerSuit,
+            _profile.HandReEvalOnDrawCompletion);
 
         // Aplicar penalización por carta peligrosa (escalada por street, blocker granular, mano hero)
         double dangerPenalty = boardChange != null
