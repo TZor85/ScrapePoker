@@ -46,6 +46,12 @@ public class OpponentPositionProfile
 /// </summary>
 public class OpponentProfile
 {
+    public string Id
+    {
+        get => PlayerId;
+        set => PlayerId = value;
+    }
+
     public string PlayerId { get; set; } = string.Empty;
     public int HandsPlayed { get; set; }
 

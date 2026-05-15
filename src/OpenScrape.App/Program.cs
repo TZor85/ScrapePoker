@@ -90,6 +90,7 @@ namespace OpenScrape.App
                     services.AddSingleton<IRangePolarizer>(sp => sp.GetRequiredService<RangePolarizer>());
                     services.AddSingleton<PostflopDecisionService>();
                     services.AddSingleton<IPostflopDecisionService>(sp => sp.GetRequiredService<PostflopDecisionService>());
+                    services.AddSingleton<IOpponentProfileStore, MartenOpponentProfileStore>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
                     services.AddSingleton<StrategyAnalyzerService>();

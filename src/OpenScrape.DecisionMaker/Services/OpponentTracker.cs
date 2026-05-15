@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
@@ -14,6 +15,13 @@ namespace OpenScrape.DecisionMaker.Services;
 public class OpponentTracker : Interfaces.IOpponentTracker
 {
     private readonly ConcurrentDictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, object> _profileLocks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly IOpponentProfileStore? _profileStore;
+
+    public OpponentTracker(IOpponentProfileStore? profileStore = null)
+    {
+        _profileStore = profileStore;
+    }
 
     /// <summary>
     /// Obtiene o crea el perfil de un oponente.
@@ -23,7 +31,10 @@ public class OpponentTracker : Interfaces.IOpponentTracker
         if (string.IsNullOrWhiteSpace(playerId))
             return new OpponentProfile();
 
-        return _profiles.GetOrAdd(playerId, id => new OpponentProfile { PlayerId = id });
+        return _profiles.GetOrAdd(playerId, id =>
+            IsPersistablePlayerId(id)
+                ? _profileStore?.Load(id) ?? new OpponentProfile { PlayerId = id }
+                : new OpponentProfile { PlayerId = id });
     }
 
     /// <summary>
@@ -32,14 +43,19 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordHandPlayed(string playerId, TablePosition position = TablePosition.None)
     {
-        var profile = GetProfile(playerId);
-        profile.HandsPlayed++;
-
-        if (position != TablePosition.None)
+        lock (GetProfileLock(playerId))
         {
-            if (!profile.PositionProfiles.ContainsKey(position))
-                profile.PositionProfiles[position] = new OpponentPositionProfile();
-            profile.PositionProfiles[position].HandsPlayed++;
+            var profile = GetProfile(playerId);
+            profile.HandsPlayed++;
+
+            if (position != TablePosition.None)
+            {
+                if (!profile.PositionProfiles.ContainsKey(position))
+                    profile.PositionProfiles[position] = new OpponentPositionProfile();
+                profile.PositionProfiles[position].HandsPlayed++;
+            }
+
+            SaveProfile(profile);
         }
     }
 
@@ -49,11 +65,16 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordVPIP(string playerId, TablePosition position = TablePosition.None)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesVoluntarilyPutMoneyIn++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesVoluntarilyPutMoneyIn++;
 
-        if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
-            posStats.TimesVPIP++;
+            if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
+                posStats.TimesVPIP++;
+
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -62,11 +83,16 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordPFR(string playerId, TablePosition position = TablePosition.None)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesPreflopRaised++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesPreflopRaised++;
 
-        if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
-            posStats.TimesPFR++;
+            if (position != TablePosition.None && profile.PositionProfiles.TryGetValue(position, out var posStats))
+                posStats.TimesPFR++;
+
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -74,8 +100,12 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordThreeBet(string playerId)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesThreeBet++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesThreeBet++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -83,39 +113,44 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordPostflopAction(string playerId, PostflopAction action, bool? isVillainInPosition = null)
     {
-        var profile = GetProfile(playerId);
-        switch (action)
+        lock (GetProfileLock(playerId))
         {
-            case PostflopAction.Bet:
-                profile.TimesPostflopBet++;
-                break;
-            case PostflopAction.Raise:
-                profile.TimesPostflopRaised++;
-                break;
-            case PostflopAction.Call:
-                profile.TimesPostflopCalled++;
-                break;
-            case PostflopAction.Fold:
-                profile.TimesPostflopFolded++;
-                break;
-        }
-
-        // Trackear agresión por posición si se conoce
-        if (isVillainInPosition.HasValue)
-        {
-            bool isAggressive = action is PostflopAction.Bet or PostflopAction.Raise;
-            bool isPassive = action == PostflopAction.Call;
-
-            if (isVillainInPosition.Value)
+            var profile = GetProfile(playerId);
+            switch (action)
             {
-                if (isAggressive) profile.TimesAggressiveIP++;
-                else if (isPassive) profile.TimesPassiveIP++;
+                case PostflopAction.Bet:
+                    profile.TimesPostflopBet++;
+                    break;
+                case PostflopAction.Raise:
+                    profile.TimesPostflopRaised++;
+                    break;
+                case PostflopAction.Call:
+                    profile.TimesPostflopCalled++;
+                    break;
+                case PostflopAction.Fold:
+                    profile.TimesPostflopFolded++;
+                    break;
             }
-            else
+
+            // Trackear agresión por posición si se conoce
+            if (isVillainInPosition.HasValue)
             {
-                if (isAggressive) profile.TimesAggressiveOOP++;
-                else if (isPassive) profile.TimesPassiveOOP++;
+                bool isAggressive = action is PostflopAction.Bet or PostflopAction.Raise;
+                bool isPassive = action == PostflopAction.Call;
+
+                if (isVillainInPosition.Value)
+                {
+                    if (isAggressive) profile.TimesAggressiveIP++;
+                    else if (isPassive) profile.TimesPassiveIP++;
+                }
+                else
+                {
+                    if (isAggressive) profile.TimesAggressiveOOP++;
+                    else if (isPassive) profile.TimesPassiveOOP++;
+                }
             }
+
+            SaveProfile(profile);
         }
     }
 
@@ -124,9 +159,13 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordCBetOpportunity(string playerId, bool didCBet)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesCBetOpportunity++;
-        if (didCBet) profile.TimesCBet++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesCBetOpportunity++;
+            if (didCBet) profile.TimesCBet++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -134,9 +173,13 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void RecordFacedCBet(string playerId, bool folded)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesFacedCBet++;
-        if (folded) profile.TimesFoldedToCBet++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesFacedCBet++;
+            if (folded) profile.TimesFoldedToCBet++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -144,12 +187,16 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void TrackShowdownResult(string playerId, bool wentToSD, bool wonSD)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesReachedRiver++;
-        if (wentToSD)
+        lock (GetProfileLock(playerId))
         {
-            profile.TimesWentToShowdown++;
-            if (wonSD) profile.TimesWonAtShowdown++;
+            var profile = GetProfile(playerId);
+            profile.TimesReachedRiver++;
+            if (wentToSD)
+            {
+                profile.TimesWentToShowdown++;
+                if (wonSD) profile.TimesWonAtShowdown++;
+            }
+            SaveProfile(profile);
         }
     }
 
@@ -158,9 +205,13 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void TrackCheckRaise(string playerId, bool didCR, bool hadOpportunity)
     {
-        var profile = GetProfile(playerId);
-        if (hadOpportunity) profile.TimesCheckRaiseOpportunity++;
-        if (didCR) profile.TimesCheckRaised++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            if (hadOpportunity) profile.TimesCheckRaiseOpportunity++;
+            if (didCR) profile.TimesCheckRaised++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -168,9 +219,13 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void TrackDonkBet(string playerId, bool didDonk, bool hadOpportunity)
     {
-        var profile = GetProfile(playerId);
-        if (hadOpportunity) profile.TimesDonkBetOpportunity++;
-        if (didDonk) profile.TimesDonkBet++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            if (hadOpportunity) profile.TimesDonkBetOpportunity++;
+            if (didDonk) profile.TimesDonkBet++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -178,9 +233,13 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     /// </summary>
     public void TrackBarrel(string playerId, bool didBarrel)
     {
-        var profile = GetProfile(playerId);
-        profile.TimesBarrelOpportunity++;
-        if (didBarrel) profile.TimesBarreled++;
+        lock (GetProfileLock(playerId))
+        {
+            var profile = GetProfile(playerId);
+            profile.TimesBarrelOpportunity++;
+            if (didBarrel) profile.TimesBarreled++;
+            SaveProfile(profile);
+        }
     }
 
     /// <summary>
@@ -236,14 +295,18 @@ public class OpponentTracker : Interfaces.IOpponentTracker
         if (string.IsNullOrWhiteSpace(seatName) || string.IsNullOrWhiteSpace(alias))
             return;
 
-        _seatAliasCache[seatName] = alias;
-
-        // Migrar perfil de seat a alias si existe (solo si no hay perfil con el alias)
-        if (_profiles.TryGetValue(seatName, out var seatProfile) &&
-            _profiles.TryAdd(alias, seatProfile))
+        lock (GetProfileLock(alias))
         {
-            seatProfile.PlayerId = alias;
-            _profiles.TryRemove(seatName, out _);
+            _seatAliasCache[seatName] = alias;
+
+            // Migrar perfil de seat a alias si existe (solo si no hay perfil con el alias)
+            if (_profiles.TryGetValue(seatName, out var seatProfile) &&
+                _profiles.TryAdd(alias, seatProfile))
+            {
+                seatProfile.PlayerId = alias;
+                _profiles.TryRemove(seatName, out _);
+                SaveProfile(seatProfile);
+            }
         }
     }
 
@@ -262,6 +325,38 @@ public class OpponentTracker : Interfaces.IOpponentTracker
     {
         _profiles.Clear();
         _seatAliasCache.Clear();
+        _profileLocks.Clear();
+    }
+
+    private object GetProfileLock(string playerId)
+    {
+        var key = string.IsNullOrWhiteSpace(playerId) ? string.Empty : playerId;
+        return _profileLocks.GetOrAdd(key, _ => new object());
+    }
+
+    private void SaveProfile(OpponentProfile profile)
+    {
+        if (IsPersistablePlayerId(profile.PlayerId))
+            _profileStore?.Save(profile);
+    }
+
+    private static bool IsPersistablePlayerId(string playerId)
+    {
+        if (string.IsNullOrWhiteSpace(playerId))
+            return false;
+
+        if (playerId.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return !IsSeatName(playerId);
+    }
+
+    private static bool IsSeatName(string playerId)
+    {
+        if (playerId.Length < 2 || playerId[0] != 'P')
+            return false;
+
+        return playerId[1..].All(char.IsDigit);
     }
 }
 

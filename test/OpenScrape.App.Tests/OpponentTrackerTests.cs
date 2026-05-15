@@ -1,5 +1,7 @@
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Tests;
 
@@ -557,5 +559,149 @@ public class OpponentTrackerTests
     {
         var profile = _tracker.GetProfile("P1");
         Assert.That(profile.WTSDPct, Is.EqualTo(35));
+    }
+
+    [Test]
+    public void GetProfile_PerfilPersistido_LoCargaDesdeStore()
+    {
+        var store = new FakeOpponentProfileStore();
+        store.Save(new OpponentProfile
+        {
+            PlayerId = "PlayerA",
+            HandsPlayed = 12,
+            TimesVoluntarilyPutMoneyIn = 6
+        });
+        var tracker = new OpponentTracker(store);
+
+        var profile = tracker.GetProfile("PlayerA");
+
+        Assert.That(profile.HandsPlayed, Is.EqualTo(12));
+        Assert.That(profile.TimesVoluntarilyPutMoneyIn, Is.EqualTo(6));
+    }
+
+    [Test]
+    public void RecordHandPlayed_AliasReal_GuardaPerfil()
+    {
+        var store = new FakeOpponentProfileStore();
+        var tracker = new OpponentTracker(store);
+
+        tracker.RecordHandPlayed("PlayerA", TablePosition.Button);
+        tracker.RecordVPIP("PlayerA", TablePosition.Button);
+
+        var persisted = store.Load("PlayerA");
+        Assert.That(persisted, Is.Not.Null);
+        Assert.That(persisted!.HandsPlayed, Is.EqualTo(1));
+        Assert.That(persisted.TimesVoluntarilyPutMoneyIn, Is.EqualTo(1));
+        Assert.That(persisted.PositionProfiles[TablePosition.Button].HandsPlayed, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RegisterSeatAlias_MigraPerfilTemporalYPersisteAlias()
+    {
+        var store = new FakeOpponentProfileStore();
+        var tracker = new OpponentTracker(store);
+
+        tracker.RecordHandPlayed("P3");
+        tracker.RecordVPIP("P3");
+        tracker.RegisterSeatAlias("P3", "PlayerA");
+
+        Assert.That(store.Load("P3"), Is.Null);
+        var persisted = store.Load("PlayerA");
+        Assert.That(persisted, Is.Not.Null);
+        Assert.That(persisted!.PlayerId, Is.EqualTo("PlayerA"));
+        Assert.That(persisted.HandsPlayed, Is.EqualTo(1));
+        Assert.That(persisted.TimesVoluntarilyPutMoneyIn, Is.EqualTo(1));
+    }
+
+    [TestCase("")]
+    [TestCase("Unknown")]
+    [TestCase("P3")]
+    public void RecordHandPlayed_IdNoPersistible_NoGuardaPerfil(string playerId)
+    {
+        var store = new FakeOpponentProfileStore();
+        var tracker = new OpponentTracker(store);
+
+        tracker.RecordHandPlayed(playerId);
+
+        Assert.That(store.SavedCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RecordHandPlayed_MismoAliasDesdeVariasMesas_NoPierdeIncrementos()
+    {
+        var store = new FakeOpponentProfileStore();
+        var tracker = new OpponentTracker(store);
+
+        Parallel.For(0, 500, _ => tracker.RecordHandPlayed("PlayerA"));
+
+        var profile = tracker.GetProfile("PlayerA");
+        var persisted = store.Load("PlayerA");
+
+        Assert.That(profile.HandsPlayed, Is.EqualTo(500));
+        Assert.That(persisted, Is.Not.Null);
+        Assert.That(persisted!.HandsPlayed, Is.EqualTo(500));
+    }
+
+    private sealed class FakeOpponentProfileStore : IOpponentProfileStore
+    {
+        private readonly Dictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
+
+        public int SavedCount { get; private set; }
+
+        public OpponentProfile? Load(string playerId)
+        {
+            return _profiles.TryGetValue(playerId, out var profile) ? Clone(profile) : null;
+        }
+
+        public void Save(OpponentProfile profile)
+        {
+            SavedCount++;
+            _profiles[profile.PlayerId] = Clone(profile);
+        }
+
+        private static OpponentProfile Clone(OpponentProfile profile)
+        {
+            return new OpponentProfile
+            {
+                PlayerId = profile.PlayerId,
+                HandsPlayed = profile.HandsPlayed,
+                TimesVoluntarilyPutMoneyIn = profile.TimesVoluntarilyPutMoneyIn,
+                TimesPreflopRaised = profile.TimesPreflopRaised,
+                TimesThreeBet = profile.TimesThreeBet,
+                TimesPostflopBet = profile.TimesPostflopBet,
+                TimesPostflopRaised = profile.TimesPostflopRaised,
+                TimesPostflopCalled = profile.TimesPostflopCalled,
+                TimesPostflopFolded = profile.TimesPostflopFolded,
+                TimesCBet = profile.TimesCBet,
+                TimesCBetOpportunity = profile.TimesCBetOpportunity,
+                TimesFoldedToCBet = profile.TimesFoldedToCBet,
+                TimesFacedCBet = profile.TimesFacedCBet,
+                TimesAggressiveIP = profile.TimesAggressiveIP,
+                TimesPassiveIP = profile.TimesPassiveIP,
+                TimesAggressiveOOP = profile.TimesAggressiveOOP,
+                TimesPassiveOOP = profile.TimesPassiveOOP,
+                TimesReachedRiver = profile.TimesReachedRiver,
+                TimesWentToShowdown = profile.TimesWentToShowdown,
+                TimesWonAtShowdown = profile.TimesWonAtShowdown,
+                TimesCheckRaised = profile.TimesCheckRaised,
+                TimesCheckRaiseOpportunity = profile.TimesCheckRaiseOpportunity,
+                TimesDonkBet = profile.TimesDonkBet,
+                TimesDonkBetOpportunity = profile.TimesDonkBetOpportunity,
+                TimesBarreled = profile.TimesBarreled,
+                TimesBarrelOpportunity = profile.TimesBarrelOpportunity,
+                PositionProfiles = profile.PositionProfiles.ToDictionary(
+                    p => p.Key,
+                    p => new OpponentPositionProfile
+                    {
+                        HandsPlayed = p.Value.HandsPlayed,
+                        TimesVPIP = p.Value.TimesVPIP,
+                        TimesPFR = p.Value.TimesPFR,
+                        TimesAggressiveIP = p.Value.TimesAggressiveIP,
+                        TimesPassiveIP = p.Value.TimesPassiveIP,
+                        TimesAggressiveOOP = p.Value.TimesAggressiveOOP,
+                        TimesPassiveOOP = p.Value.TimesPassiveOOP
+                    })
+            };
+        }
     }
 }
