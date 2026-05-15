@@ -64,6 +64,9 @@ namespace OpenScrape.App
                     services.AddSingleton<ThresholdsRegistry>();
                     services.AddSingleton<IThresholdsRegistry>(sp => sp.GetRequiredService<ThresholdsRegistry>());
                     services.AddSingleton<IRandomProvider, SystemRandomProvider>();
+                    services.AddSingleton<
+                        OpenScrape.Domain.Interfaces.IRandomProvider,
+                        OpenScrape.Domain.Services.SystemRandomProvider>();
 
                     // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
                     services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));

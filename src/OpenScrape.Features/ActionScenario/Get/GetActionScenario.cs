@@ -1,4 +1,6 @@
 ﻿using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.Interfaces;
+using OpenScrape.Domain.Services;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features.Table;
 
@@ -6,11 +8,13 @@ namespace OpenScrape.Features.ActionScenario.Get;
 
 public class GetActionScenario
 {
-    private TableUseCases tableUseCases;
+    private readonly TableUseCases tableUseCases;
+    private readonly IRandomProvider _randomProvider;
 
-    public GetActionScenario(TableUseCases tableUseCases)
+    public GetActionScenario(TableUseCases tableUseCases, IRandomProvider? randomProvider = null)
     {
         this.tableUseCases = tableUseCases;
+        _randomProvider = randomProvider ?? new SystemRandomProvider();
     }
 
     public async Task<string> ExecuteAsync(GameSituation situation, ActionScenarioRequest request)
@@ -69,8 +73,7 @@ public class GetActionScenario
                 throw new ArgumentException("Los porcentajes deben sumar 100");
 
             // Generamos un número aleatorio entre 1 y 100
-            Random random = new Random();
-            int randomNumber = random.Next(1, 101);
+            int randomNumber = _randomProvider.Next(1, 101);
 
             // Acumulamos los porcentajes para crear rangos
             int accumulatedPercentage = 0;

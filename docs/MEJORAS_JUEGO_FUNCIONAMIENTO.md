@@ -21,9 +21,10 @@ El motor usa `Random.Shared` directamente en `PostflopDecisionService` y `MonteC
 4. Extender el patrón a `GetActionScenario`.
 5. Extender el patrón a `MonteCarloSimulator` y guardar seed por mano/sesión.
 
-### Alcance de esta rama
+### Estado
 
-Esta rama implementa la fase 1-3: el motor postflop deja de depender de `Random.Shared` directamente y los tests pueden forzar ramas probabilísticas de forma determinista.
+- Fases 1-3 implementadas: el motor postflop deja de depender de `Random.Shared` directamente y los tests pueden forzar ramas probabilísticas de forma determinista.
+- Fase 4 implementada: `GetActionScenario` usa un proveedor de RNG inyectable para seleccionar acciones por porcentaje de forma reproducible en tests.
 
 ## Siguientes mejoras recomendadas
 
