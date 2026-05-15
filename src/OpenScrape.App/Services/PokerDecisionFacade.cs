@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Algorithms;
@@ -24,6 +26,8 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
     private readonly IBoardTextureAnalyzer _boardTextureAnalyzer;
     private readonly IOpponentTracker _opponentTracker;
     private readonly IMetricsCollector _metrics;
+    private readonly IDecisionTraceStore _decisionTraceStore;
+    private readonly ILogger<PokerDecisionFacade> _logger;
 
     public PokerDecisionFacade(
         IPokerCalculator calculator,
@@ -31,7 +35,9 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
         IBetSizingService betSizingService,
         IBoardTextureAnalyzer boardTextureAnalyzer,
         IOpponentTracker opponentTracker,
-        IMetricsCollector metrics)
+        IMetricsCollector metrics,
+        IDecisionTraceStore? decisionTraceStore = null,
+        ILogger<PokerDecisionFacade>? logger = null)
     {
         _calculator = calculator;
         _decisionService = decisionService;
@@ -39,9 +45,11 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
         _boardTextureAnalyzer = boardTextureAnalyzer;
         _opponentTracker = opponentTracker;
         _metrics = metrics;
+        _decisionTraceStore = decisionTraceStore ?? NullDecisionTraceStore.Instance;
+        _logger = logger ?? NullLogger<PokerDecisionFacade>.Instance;
     }
 
-    public Task<DecisionResult> EvaluateAsync(DecisionRequest request, CancellationToken cancellationToken = default)
+    public async Task<DecisionResult> EvaluateAsync(DecisionRequest request, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -166,7 +174,7 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
             betSize = ExtractBetSize(decision.Action);
         }
 
-        return Task.FromResult(new DecisionResult
+        var result = new DecisionResult
         {
             RecommendedAction = decision.Action,
             EquityPercent = calculation.EquityPercentage,
@@ -180,8 +188,77 @@ public sealed class PokerDecisionFacade : IPokerDecisionFacade
             IsCheckRaise = decision.IsCheckRaise,
             IsFloating = decision.IsFloating,
             CalculationDetail = calculation,
-        });
+        };
+
+        await TryPersistDecisionTraceAsync(
+            request,
+            result,
+            calculation,
+            profile,
+            cancellationToken).ConfigureAwait(false);
+
+        return result;
     }
+
+    private async Task TryPersistDecisionTraceAsync(
+        DecisionRequest request,
+        DecisionResult result,
+        PokerCalculationResult calculation,
+        OpponentProfile? profile,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var trace = new DecisionTrace
+        {
+            Street = request.Street,
+            Situation = request.Situation,
+            HandSituationTag = request.HandSituationTag,
+            HeroCards = request.HeroCards.Select(FormatCard).ToList(),
+            CommunityCards = request.CommunityCards.Select(FormatCard).ToList(),
+            VillainId = profile?.PlayerId ?? request.VillainId,
+            HeroPosition = request.HeroPosition,
+            VillainPosition = request.VillainPosition,
+            IsInPosition = request.IsInPosition,
+            NumOpponents = request.NumOpponents,
+            HeroStack = request.HeroStack,
+            VillainStack = request.VillainStack,
+            PotSize = request.PotSize,
+            BetToCall = request.BetToCall,
+            RecommendedAction = result.RecommendedAction,
+            Reason = result.Reason,
+            BoardTexture = result.BoardTexture,
+            BetSize = result.BetSize,
+            EquityPercent = result.EquityPercent,
+            PotOddsPercent = result.PotOddsPercent,
+            ExpectedValue = result.ExpectedValue,
+            TotalOuts = calculation.TotalOuts,
+            IsBluff = result.IsBluff,
+            IsBarrel = result.IsBarrel,
+            IsCheckRaise = result.IsCheckRaise,
+            IsFloating = result.IsFloating,
+            HeroHandRank = calculation.HeroHandRank.ToString(),
+            HeroKickerStrength = calculation.HeroKickerStrength.ToString(),
+            PairClassification = calculation.PairType.ToString(),
+            HasComboDraw = calculation.HasComboDraw,
+            FoldEquity = calculation.FoldEquity,
+        };
+
+        try
+        {
+            await _decisionTraceStore.SaveAsync(trace, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error persistiendo DecisionTrace para {Street}/{Situation}", request.Street, request.Situation);
+        }
+    }
+
+    private static string FormatCard(CardDataOuts card) => card.Id;
 
     private OpponentProfile? ResolveVillainProfile(DecisionRequest request)
     {

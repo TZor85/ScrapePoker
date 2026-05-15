@@ -91,6 +91,7 @@ namespace OpenScrape.App
                     services.AddSingleton<PostflopDecisionService>();
                     services.AddSingleton<IPostflopDecisionService>(sp => sp.GetRequiredService<PostflopDecisionService>());
                     services.AddSingleton<IOpponentProfileStore, MartenOpponentProfileStore>();
+                    services.AddSingleton<IDecisionTraceStore, MartenDecisionTraceStore>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
                     services.AddSingleton<StrategyAnalyzerService>();

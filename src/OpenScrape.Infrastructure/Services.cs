@@ -37,6 +37,10 @@ public static class Services
             // Índice por posición para análisis estadístico
             options.Schema.For<HandRecord>().Index(x => x.HeroPosition);
 
+            options.Schema.For<DecisionTrace>().Index(x => x.Timestamp);
+            options.Schema.For<DecisionTrace>().Index(x => x.VillainId);
+            options.Schema.For<DecisionTrace>().Index(x => x.Street);
+
             // If we're running in development mode, let Marten just take care
             // of all necessary schema building and patching behind the scenes
             if (isDevelopment)
