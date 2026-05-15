@@ -124,6 +124,7 @@ namespace OpenScrape.App
                     services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
 
                     // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
+                    services.AddSingleton<IGameLoopTickProcessor>(EmptyGameLoopTickProcessor.Instance);
                     services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
 
                     // UI sync (refactor-frmmain-coordinators Fase 5)

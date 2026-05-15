@@ -18,6 +18,7 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
 {
     private readonly ILogger<GameLoopCoordinator> _logger;
     private readonly GameLoopOptions _options;
+    private readonly IGameLoopTickProcessor _tickProcessor;
 
     private readonly SemaphoreSlim _startStopLock = new(1, 1);
     private readonly object _tickLock = new();
@@ -34,10 +35,12 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
 
     public GameLoopCoordinator(
         ILogger<GameLoopCoordinator> logger,
-        IOptions<GameLoopOptions> options)
+        IOptions<GameLoopOptions> options,
+        IGameLoopTickProcessor? tickProcessor = null)
     {
         _logger = logger;
         _options = options.Value;
+        _tickProcessor = tickProcessor ?? EmptyGameLoopTickProcessor.Instance;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -143,7 +146,7 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
             do
             {
                 if (token.IsCancellationRequested) break;
-                await TickAsync(token).ConfigureAwait(false);
+                await RunTickWithWatchdogAsync(token).ConfigureAwait(false);
             }
             while (await timer.WaitForNextTickAsync(token).ConfigureAwait(false));
         }
@@ -163,20 +166,80 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
     /// La Fase 4 reemplazará esta implementación con la lógica real del
     /// pipeline (captura → OCR → decisión).
     /// </summary>
-    private Task TickAsync(CancellationToken token)
+    private async Task RunTickWithWatchdogAsync(CancellationToken token)
+    {
+        if (!_options.WatchdogEnabled || _options.WatchdogTimeoutMs <= 0)
+        {
+            await TickAsync(token).ConfigureAwait(false);
+            return;
+        }
+
+        var tickCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var tickTask = TickAsync(tickCts.Token);
+        var timeout = TimeSpan.FromMilliseconds(_options.WatchdogTimeoutMs);
+        var timeoutTask = Task.Delay(timeout, token);
+        var completed = await Task.WhenAny(tickTask, timeoutTask).ConfigureAwait(false);
+
+        if (completed == tickTask)
+        {
+            try
+            {
+                await tickTask.ConfigureAwait(false);
+                return;
+            }
+            finally
+            {
+                tickCts.Dispose();
+            }
+        }
+
+        tickCts.Cancel();
+        if (token.IsCancellationRequested)
+        {
+            ObserveTickCompletion(tickTask, tickCts);
+            token.ThrowIfCancellationRequested();
+        }
+
+        ResetTickGate();
+
+        var exception = new TimeoutException(
+            $"Game loop tick bloqueado durante más de {_options.WatchdogTimeoutMs}ms");
+        _logger.LogWarning(
+            exception,
+            "Watchdog del GameLoopCoordinator disparado tras {TimeoutMs}ms",
+            _options.WatchdogTimeoutMs);
+        SafeEmit(new GameLoopResult { Error = exception });
+
+        ObserveTickCompletion(tickTask, tickCts);
+    }
+
+    private static void ObserveTickCompletion(Task tickTask, CancellationTokenSource tickCts)
+    {
+        _ = tickTask.ContinueWith(
+            task =>
+            {
+                _ = task.Exception;
+                tickCts.Dispose();
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private async Task TickAsync(CancellationToken token)
     {
         lock (_tickLock)
         {
             if (_tickInProgress)
-                return Task.CompletedTask;
+                return;
             _tickInProgress = true;
         }
 
         try
         {
             token.ThrowIfCancellationRequested();
-            SafeEmit(new GameLoopResult { Empty = true });
-            return Task.CompletedTask;
+            var result = await _tickProcessor.ExecuteAsync(token).ConfigureAwait(false);
+            SafeEmit(result);
         }
         catch (OperationCanceledException)
         {
@@ -186,9 +249,16 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
         {
             _logger.LogError(ex, "Error en iteración del loop");
             SafeEmit(new GameLoopResult { Error = ex });
-            return Task.CompletedTask;
         }
         finally
+        {
+            ResetTickGate();
+        }
+    }
+
+    private void ResetTickGate()
+    {
+        lock (_tickLock)
         {
             _tickInProgress = false;
         }
