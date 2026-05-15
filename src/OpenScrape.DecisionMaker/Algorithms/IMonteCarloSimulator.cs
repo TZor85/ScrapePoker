@@ -12,5 +12,6 @@ public interface IMonteCarloSimulator
         List<CardDataOuts> communityCards,
         int numOpponents,
         int? iterations = null,
-        VillainRange? villainRange = null);
+        VillainRange? villainRange = null,
+        int? randomSeed = null);
 }

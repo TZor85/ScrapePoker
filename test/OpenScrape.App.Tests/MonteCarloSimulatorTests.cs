@@ -370,6 +370,86 @@ public class MonteCarloSimulatorTests
     }
 
     [Test]
+    public void CalculateEquity_Flop_MismaSemilla_EsDeterminista()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Hearts),
+            C(Rank.Five, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Hearts),
+            C(Rank.King, Suit.Clubs)
+        };
+
+        var result1 = _simulator.CalculateEquity(myCards, communityCards, 1, 2000, null, randomSeed: 12345);
+        var result2 = _simulator.CalculateEquity(myCards, communityCards, 1, 2000, null, randomSeed: 12345);
+
+        Assert.That(result1.RandomSeed, Is.EqualTo(12345));
+        Assert.That(result2.RandomSeed, Is.EqualTo(12345));
+        Assert.That(result1.Equity, Is.EqualTo(result2.Equity));
+        Assert.That(result1.WinProbability, Is.EqualTo(result2.WinProbability));
+        Assert.That(result1.TieProbability, Is.EqualTo(result2.TieProbability));
+        Assert.That(result1.LoseProbability, Is.EqualTo(result2.LoseProbability));
+        Assert.That(result1.HandDistribution, Is.EqualTo(result2.HandDistribution));
+    }
+
+    [Test]
+    public void CalculateEquity_FlopConRango_MismaSemilla_EsDeterminista()
+    {
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Spades),
+            C(Rank.King, Suit.Spades)
+        };
+        var communityCards = new List<CardDataOuts>
+        {
+            C(Rank.Two, Suit.Hearts),
+            C(Rank.Seven, Suit.Diamonds),
+            C(Rank.Nine, Suit.Clubs)
+        };
+        var range = VillainRange.GetForSituation(HandSituation.OpenRaiseVs3Bet);
+
+        var result1 = _simulator.CalculateEquity(myCards, communityCards, 1, 2000, range, randomSeed: 67890);
+        var result2 = _simulator.CalculateEquity(myCards, communityCards, 1, 2000, range, randomSeed: 67890);
+
+        Assert.That(result1.RandomSeed, Is.EqualTo(67890));
+        Assert.That(result2.RandomSeed, Is.EqualTo(67890));
+        Assert.That(result1.Equity, Is.EqualTo(result2.Equity));
+        Assert.That(result1.WinProbability, Is.EqualTo(result2.WinProbability));
+        Assert.That(result1.TieProbability, Is.EqualTo(result2.TieProbability));
+        Assert.That(result1.LoseProbability, Is.EqualTo(result2.LoseProbability));
+        Assert.That(result1.SkippedSimulations, Is.EqualTo(result2.SkippedSimulations));
+        Assert.That(result1.HandDistribution, Is.EqualTo(result2.HandDistribution));
+    }
+
+    [Test]
+    public void CalculateEquity_SemillaDeSesion_EsDeterminista()
+    {
+        var simulator1 = new MonteCarloSimulator(24680);
+        var simulator2 = new MonteCarloSimulator(24680);
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Queen, Suit.Spades),
+            C(Rank.Jack, Suit.Hearts)
+        };
+        var communityCards = new List<CardDataOuts>();
+
+        var result1 = simulator1.CalculateEquity(myCards, communityCards, 1, 2000);
+        var result2 = simulator2.CalculateEquity(myCards, communityCards, 1, 2000);
+
+        Assert.That(result1.RandomSeed, Is.EqualTo(24680));
+        Assert.That(result2.RandomSeed, Is.EqualTo(24680));
+        Assert.That(result1.Equity, Is.EqualTo(result2.Equity));
+        Assert.That(result1.WinProbability, Is.EqualTo(result2.WinProbability));
+        Assert.That(result1.TieProbability, Is.EqualTo(result2.TieProbability));
+        Assert.That(result1.LoseProbability, Is.EqualTo(result2.LoseProbability));
+        Assert.That(result1.HandDistribution, Is.EqualTo(result2.HandDistribution));
+    }
+
+    [Test]
     public void CalculateEquity_VillainRangeBloqueado_NoContaminaEquity()
     {
         // Rango muy reducido (4Bet: AA,KK,QQ,AK) con hero AK en board AAKK
