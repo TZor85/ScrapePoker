@@ -31,6 +31,6 @@ El motor usa `Random.Shared` directamente en `PostflopDecisionService` y `MonteC
 
 1. Persistir `OpponentProfile` por alias/GUID. Implementado: `OpponentTracker` carga y guarda perfiles reales mediante store Marten opcional, sin persistir seats temporales.
 2. Añadir watchdog de mano atascada al `GameLoopCoordinator`. Implementado: cada tick del loop tiene timeout configurable y emite `GameLoopResult` con `TimeoutException` si queda bloqueado, sin derribar la app.
-3. Guardar `DecisionTrace` por decisión.
+3. Guardar `DecisionTrace` por decisión. Implementado: `PokerDecisionFacade` genera una traza auditable por decisión y la persiste mediante `IDecisionTraceStore`/Marten sin bloquear la respuesta si falla el guardado.
 4. Hacer configurables rutas de recursos y filtro de ventana.
 5. Persistir artefactos de debug OCR.

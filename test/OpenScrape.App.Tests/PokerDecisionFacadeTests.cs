@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Services;
 using OpenScrape.App.Telemetry;
-using OpenScrape.Domain.ValueObjects;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
@@ -52,11 +51,29 @@ public class PokerDecisionFacadeTests
         }
     }
 
+    private sealed class FakeDecisionTraceStore : IDecisionTraceStore
+    {
+        public List<DecisionTrace> Saved { get; } = new();
+
+        public Task SaveAsync(DecisionTrace trace, CancellationToken cancellationToken = default)
+        {
+            Saved.Add(trace);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ThrowingDecisionTraceStore : IDecisionTraceStore
+    {
+        public Task SaveAsync(DecisionTrace trace, CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("trace persistence failed");
+    }
+
     private static PokerDecisionFacade CreateFacade(
         out FakePokerCalculator calculator,
         out IPostflopDecisionService decisionService,
         out IOpponentTracker opponentTracker,
-        out MetricsCollector metrics)
+        out MetricsCollector metrics,
+        IDecisionTraceStore? traceStore = null)
     {
         calculator = new FakePokerCalculator();
         var profile = Options.Create(new StrategyProfile().FillMissingThresholds());
@@ -68,7 +85,7 @@ public class PokerDecisionFacadeTests
         opponentTracker = new OpponentTracker();
         metrics = new MetricsCollector(NullLogger<MetricsCollector>.Instance);
         return new PokerDecisionFacade(
-            calculator, decisionService, betSizing, boardAnalyzer, opponentTracker, metrics);
+            calculator, decisionService, betSizing, boardAnalyzer, opponentTracker, metrics, traceStore);
     }
 
     private static PokerDecisionFacade CreateFacade(
@@ -367,5 +384,60 @@ public class PokerDecisionFacadeTests
 
         Assert.That(result.CalculationDetail, Is.Not.Null);
         Assert.That(result.CalculationDetail, Is.TypeOf<PokerCalculationResult>());
+    }
+
+    [Test]
+    public async Task EvaluateAsync_GuardaDecisionTraceConContextoAuditable()
+    {
+        var traceStore = new FakeDecisionTraceStore();
+        var facade = CreateFacade(out var calc, out _, out _, out _, traceStore);
+        calc.NextResult = new PokerCalculationResult
+        {
+            EquityPercentage = 64.5,
+            PotOddsPercentage = 25,
+            ExpectedValue = 3.2,
+            HeroHandRank = HandRank.OnePair,
+            DrawTypes = ["Flush Draw"],
+        };
+
+        var request = MakeFlopRequest(64.5) with
+        {
+            VillainId = "villain-1",
+            HandSituationTag = "BTN_OPEN",
+        };
+
+        var result = await facade.EvaluateAsync(request);
+
+        Assert.That(traceStore.Saved, Has.Count.EqualTo(1));
+        var trace = traceStore.Saved.Single();
+        Assert.That(trace.Street, Is.EqualTo(BoardPosition.Flop));
+        Assert.That(trace.Situation, Is.EqualTo(HandSituation.OpenRaise));
+        Assert.That(trace.VillainId, Is.EqualTo("villain-1"));
+        Assert.That(trace.HeroCards, Is.EquivalentTo(new[] { "Ace_Hearts", "King_Hearts" }));
+        Assert.That(trace.CommunityCards, Has.Count.EqualTo(3));
+        Assert.That(trace.RecommendedAction, Is.EqualTo(result.RecommendedAction));
+        Assert.That(trace.EquityPercent, Is.EqualTo(64.5));
+        Assert.That(trace.PotOddsPercent, Is.EqualTo(25));
+        Assert.That(trace.ExpectedValue, Is.EqualTo(3.2));
+        Assert.That(trace.BoardTexture, Is.Not.Null);
+        Assert.That(trace.Reason, Is.EqualTo(result.Reason));
+    }
+
+    [Test]
+    public async Task EvaluateAsync_ErrorPersistiendoTrace_NoImpideDecision()
+    {
+        var facade = CreateFacade(out var calc, out _, out _, out _, new ThrowingDecisionTraceStore());
+        calc.NextResult = new PokerCalculationResult
+        {
+            EquityPercentage = 45,
+            PotOddsPercentage = 20,
+            HeroHandRank = HandRank.OnePair,
+            DrawTypes = [],
+        };
+
+        var result = await facade.EvaluateAsync(MakeFlopRequest(45));
+
+        Assert.That(result.RecommendedAction, Is.Not.Null.And.Not.Empty);
+        Assert.That(result.EquityPercent, Is.EqualTo(45));
     }
 }
