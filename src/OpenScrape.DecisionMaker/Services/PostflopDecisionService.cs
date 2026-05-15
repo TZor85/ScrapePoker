@@ -25,17 +25,20 @@ public class PostflopDecisionService : IPostflopDecisionService
     private readonly BetSizingService _betSizingService;
     private readonly RangePolarizer _rangePolarizer;
     private readonly IThresholdsRegistry _thresholdsRegistry;
+    private readonly IRandomProvider _randomProvider;
 
     public PostflopDecisionService(
         IOptions<StrategyProfile> profileOptions,
         BetSizingService betSizingService,
         RangePolarizer rangePolarizer,
-        IThresholdsRegistry thresholdsRegistry)
+        IThresholdsRegistry thresholdsRegistry,
+        IRandomProvider? randomProvider = null)
     {
         _profile = profileOptions.Value;
         _betSizingService = betSizingService;
         _rangePolarizer = rangePolarizer;
         _thresholdsRegistry = thresholdsRegistry;
+        _randomProvider = randomProvider ?? new SystemRandomProvider();
     }
 
     private StreetThresholds GetThresholds(BoardPosition street, HandSituation situation)
@@ -92,6 +95,8 @@ public class PostflopDecisionService : IPostflopDecisionService
     /// </summary>
     public PostflopDecisionResult DetermineAction(PostflopDecisionInput input)
     {
+        ValidateInput(input);
+
         // Locales para preservar el cuerpo legacy sin reescribir referencias.
         var equity = input.Equity;
         var street = input.Street;
@@ -501,7 +506,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
                 cbetFreq *= _profile.CheckRaiseCbetMultiplier;
-            if (cbetFreq > 0 && Random.Shared.NextDouble() < cbetFreq)
+            if (cbetFreq > 0 && _randomProvider.NextDouble() < cbetFreq)
             {
                 var cbetSize = AdjustBetSizeForSPR(thresholds.BluffBetSize, heroStack, potSize, street);
                 return new PostflopDecisionResult(
@@ -601,7 +606,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (villainProfile != null && villainProfile.HasReliableCheckRaiseData &&
                 villainProfile.CheckRaisePct > 15)
                 cbetFreq *= _profile.CheckRaiseCbetMultiplier;
-            if (cbetFreq > 0 && Random.Shared.NextDouble() >= cbetFreq)
+            if (cbetFreq > 0 && _randomProvider.NextDouble() >= cbetFreq)
             {
                 return new PostflopDecisionResult("Check",
                     $"Check — protección de range como agresor ({1 - cbetFreq:P0} check freq)");
@@ -615,6 +620,30 @@ public class PostflopDecisionService : IPostflopDecisionService
             heroFloatedFlop, hasComboDraw, totalOuts, heroKickerStrength,
             heroBlocksDangerSuit, turnCalledWithFlushDanger, heroBlocksTopCard,
             heroCheckedAllStreets, situation, riverCardType, relativeHandRank);
+    }
+
+    private static void ValidateInput(PostflopDecisionInput input)
+    {
+        if (double.IsNaN(input.Equity) || double.IsInfinity(input.Equity) || input.Equity < 0 || input.Equity > 100)
+            throw new ArgumentOutOfRangeException(nameof(input.Equity), "Equity debe estar entre 0 y 100.");
+
+        if (double.IsNaN(input.PotOdds) || double.IsInfinity(input.PotOdds) || input.PotOdds < 0)
+            throw new ArgumentOutOfRangeException(nameof(input.PotOdds), "Pot odds debe ser un número no negativo.");
+
+        if (input.PotSize < 0)
+            throw new ArgumentOutOfRangeException(nameof(input.PotSize), "Pot size no puede ser negativo.");
+
+        if (input.HeroStack < 0)
+            throw new ArgumentOutOfRangeException(nameof(input.HeroStack), "Hero stack no puede ser negativo.");
+
+        if (double.IsNaN(input.FoldEquity) || double.IsInfinity(input.FoldEquity) || input.FoldEquity < 0 || input.FoldEquity > 100)
+            throw new ArgumentOutOfRangeException(nameof(input.FoldEquity), "Fold equity debe estar entre 0 y 100.");
+
+        if (input.TotalOuts < 0)
+            throw new ArgumentOutOfRangeException(nameof(input.TotalOuts), "Total outs no puede ser negativo.");
+
+        if (double.IsNaN(input.EffectiveOuts) || double.IsInfinity(input.EffectiveOuts) || input.EffectiveOuts < 0)
+            throw new ArgumentOutOfRangeException(nameof(input.EffectiveOuts), "Effective outs debe ser un número no negativo.");
     }
 
     /// <summary>
@@ -659,7 +688,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (!isInPosition && street == BoardPosition.Turn && villainBarreling &&
                 heroHandRank >= HandRank.TwoPair)
             {
-                if (Random.Shared.NextDouble() < _profile.ThreeBetPotAntiBarrelCR)
+                if (_randomProvider.NextDouble() < _profile.ThreeBetPotAntiBarrelCR)
                     return new PostflopDecisionResult("Raise 3x (Value)",
                         $"Anti-barrel CR — 3bet pot OOP ({heroHandRank})", IsCheckRaise: true);
                 return new PostflopDecisionResult("Call",
@@ -670,7 +699,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (isInPosition && heroHandRank >= HandRank.OnePair &&
                 equity > thresholds.ThinValueAbove)
             {
-                if (Random.Shared.NextDouble() >= _profile.ThreeBetPotIPCallFreq)
+                if (_randomProvider.NextDouble() >= _profile.ThreeBetPotIPCallFreq)
                     return new PostflopDecisionResult("Raise 3x (Value)",
                         $"Raise — 3bet pot IP caller ({heroHandRank})");
                 return new PostflopDecisionResult("Call",
@@ -696,7 +725,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                     villainProfile.DonkBetPct > 20)
                     raiseFreq = Math.Min(1.0, raiseFreq + 0.20);
 
-                if (Random.Shared.NextDouble() < raiseFreq)
+                if (_randomProvider.NextDouble() < raiseFreq)
                 {
                     string sizing = $"Raise {_profile.DonkBetRaiseSizing.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}x (Value)";
                     return new PostflopDecisionResult(sizing,
@@ -904,7 +933,7 @@ public class PostflopDecisionService : IPostflopDecisionService
             if (street == BoardPosition.Turn && villainAggressorCheckedPreviousStreet &&
                 equity >= thresholds.ThinValueAbove)
             {
-                if (Random.Shared.NextDouble() < _profile.ThreeBetPotProbeFreq)
+                if (_randomProvider.NextDouble() < _profile.ThreeBetPotProbeFreq)
                 {
                     var probeSize = AdjustBetSizeForSPR("Bet 1/2", heroStack, potSize, street);
                     return new PostflopDecisionResult(probeSize + " (Probe)",
@@ -923,7 +952,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                 // TwoPair+ → CR 50% / Call 50%
                 if (heroHandRank >= HandRank.TwoPair && equity > thresholds.CheckRaiseThreshold)
                 {
-                    if (Random.Shared.NextDouble() < _profile.ThreeBetPotCRFreqStrong)
+                    if (_randomProvider.NextDouble() < _profile.ThreeBetPotCRFreqStrong)
                         return new PostflopDecisionResult("Check (Check-Raise)",
                             $"Check-raise — 3bet pot OOP ({heroHandRank})", IsCheckRaise: true);
                     return new PostflopDecisionResult("Check",
@@ -933,7 +962,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                 // Combo/Flush draw → CR 35% / Fold 65% (no float OOP en 3bet)
                 if (hasDrawForCR && equity >= _profile.CheckRaiseDrawMinEquity)
                 {
-                    if (Random.Shared.NextDouble() < _profile.ThreeBetPotCRFreqDraw)
+                    if (_randomProvider.NextDouble() < _profile.ThreeBetPotCRFreqDraw)
                         return new PostflopDecisionResult("Check (Check-Raise)",
                             $"Check-raise semi-bluff — 3bet pot draw OOP ({totalOuts} outs)",
                             IsCheckRaise: true);
@@ -1030,7 +1059,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                         crFreq = _profile.CRMixFreqOOPStrong;
                 }
 
-                if (Random.Shared.NextDouble() < crFreq)
+                if (_randomProvider.NextDouble() < crFreq)
                 {
                     string reason = hasStrongDraw && !hasStrongMade
                         ? $"Check-raise semi-bluff — {totalOuts} outs OOP"
@@ -1051,7 +1080,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                 double ipCrFreq = _profile.CheckRaiseMixingEnabled
                     ? _profile.CRMixFreqIPTrap : 1.0;
 
-                if (Random.Shared.NextDouble() < ipCrFreq)
+                if (_randomProvider.NextDouble() < ipCrFreq)
                 {
                     return new PostflopDecisionResult(
                         "Check (Check-Raise)",
@@ -1267,7 +1296,7 @@ public class PostflopDecisionService : IPostflopDecisionService
                 _ => PokerConstants.RandomizationBetFrequency // 0.70 default
             };
 
-            if (Random.Shared.NextDouble() > betFreq)
+            if (_randomProvider.NextDouble() > betFreq)
             {
                 return new PostflopDecisionResult("Check",
                     $"Check — randomización adaptativa ({villainType}, bet freq {betFreq:P0})");
@@ -1761,10 +1790,10 @@ public class PostflopDecisionService : IPostflopDecisionService
 
         return thresholds.BluffCondition switch
         {
-            BluffConditionType.Always => Random.Shared.NextDouble() < bluffFreq,
-            BluffConditionType.OOPOnly => !isInPosition && Random.Shared.NextDouble() < bluffFreq,
+            BluffConditionType.Always => _randomProvider.NextDouble() < bluffFreq,
+            BluffConditionType.OOPOnly => !isInPosition && _randomProvider.NextDouble() < bluffFreq,
             // Antes requería betSize == Small (imposible sin facing bet). Ahora: IP + Coordinated board.
-            BluffConditionType.IPCoordinatedSmallOnly => isInPosition && boardTexture == "Coordinated" && Random.Shared.NextDouble() < bluffFreq,
+            BluffConditionType.IPCoordinatedSmallOnly => isInPosition && boardTexture == "Coordinated" && _randomProvider.NextDouble() < bluffFreq,
             _ => false
         };
     }

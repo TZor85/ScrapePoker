@@ -228,4 +228,48 @@ public class AutoCalibrationServiceTests
 
         Assert.That(preview.ProposedAdjustments, Is.Empty);
     }
+
+    [Test]
+    public void GetPreview_UsaThresholdActualComoOldValue()
+    {
+        for (int i = 0; i < 25; i++)
+        {
+            _exploitabilityCalculator.RecordDecision(new DecisionRecord
+            {
+                OurDecision = "Call",
+                Equity = 20,
+                PotOdds = 35,
+                FoldEquity = 0,
+                Street = BoardPosition.Turn,
+                Situation = HandSituation.OpenRaise,
+                IsInPosition = true,
+                BoardTexture = "Dry",
+                PotSize = 100,
+                VillainBetSize = BetSizeCategory.Medium,
+                OurDecisionEV = -10,
+                BestResponseEV = 10,
+                ExploitabilityMbb = 50
+            });
+        }
+
+        var profile = new StrategyProfile
+        {
+            Thresholds = new Dictionary<string, StreetThresholds>
+            {
+                ["Turn_OpenRaise"] = new()
+                {
+                    FoldBelow = 33,
+                    ThinValueAbove = 52,
+                    ValueAbove = 65,
+                    StrongValueAbove = 80
+                }
+            }
+        };
+
+        var preview = _service.GetPreview(_exploitabilityCalculator, profile);
+
+        var adjustment = preview.ProposedAdjustments.Single(a => a.ParameterName == "FoldBelow");
+        Assert.That(adjustment.OldValue, Is.EqualTo(33));
+        Assert.That(adjustment.NewValue, Is.EqualTo(38));
+    }
 }

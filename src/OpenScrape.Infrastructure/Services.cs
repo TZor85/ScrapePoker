@@ -8,12 +8,18 @@ namespace OpenScrape.Infrastructure;
 
 public static class Services
 {
-    public static void AddDataBase(this IServiceCollection services, IConfiguration configuration, bool IsDevelopment)
+    public static void AddDataBase(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException("Connection string 'DefaultConnection' no encontrada.");
+        }
+
         services.AddMarten(options =>
         {
             // Establish the connection string to your Marten database
-            options.Connection(configuration.GetConnectionString("DefaultConnection")!);
+            options.Connection(connectionString);
 
             // Specify that we want to use STJ as our serializer
             options.UseSystemTextJsonForSerialization();
@@ -33,7 +39,7 @@ public static class Services
 
             // If we're running in development mode, let Marten just take care
             // of all necessary schema building and patching behind the scenes
-            if (IsDevelopment)
+            if (isDevelopment)
             {
                 options.AutoCreateSchemaObjects = AutoCreate.All;
             }
