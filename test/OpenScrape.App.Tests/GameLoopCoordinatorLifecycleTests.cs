@@ -25,6 +25,15 @@ public class GameLoopCoordinatorLifecycleTests
         return new GameLoopCoordinator(NullLogger<GameLoopCoordinator>.Instance, options);
     }
 
+    private sealed class BlockingTickProcessor(TaskCompletionSource release) : IGameLoopTickProcessor
+    {
+        public async Task<GameLoopResult> ExecuteAsync(CancellationToken cancellationToken)
+        {
+            await release.Task.WaitAsync(cancellationToken);
+            return new GameLoopResult { Empty = true };
+        }
+    }
+
     [Test]
     public async Task StartAsync_ArrancaLoopYEmiteResultados()
     {
@@ -159,5 +168,45 @@ public class GameLoopCoordinatorLifecycleTests
         Assert.That(last, Is.Not.Null);
         Assert.That(last!.Empty, Is.True);
         Assert.That(last.Error, Is.Null);
+    }
+
+    [Test]
+    public async Task TickBloqueado_DisparaWatchdogYPermiteDetenerLoop()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var options = Options.Create(new GameLoopOptions
+        {
+            CaptureIntervalMs = 10,
+            StopTimeoutMs = 500,
+            WatchdogEnabled = true,
+            WatchdogTimeoutMs = 50,
+        });
+
+        await using var coord = new GameLoopCoordinator(
+            NullLogger<GameLoopCoordinator>.Instance,
+            options,
+            new BlockingTickProcessor(release));
+
+        GameLoopResult? timeoutResult = null;
+        using var timeoutSeen = new ManualResetEventSlim();
+        coord.ResultReady += (_, result) =>
+        {
+            if (result.Error is TimeoutException)
+            {
+                timeoutResult = result;
+                timeoutSeen.Set();
+            }
+        };
+
+        using var cts = new CancellationTokenSource();
+        await coord.StartAsync(cts.Token);
+
+        Assert.That(timeoutSeen.Wait(TimeSpan.FromSeconds(2)), Is.True);
+        await coord.StopAsync();
+        release.TrySetResult();
+
+        Assert.That(coord.IsRunning, Is.False);
+        Assert.That(timeoutResult, Is.Not.Null);
+        Assert.That(timeoutResult!.Empty, Is.False);
     }
 }

@@ -7,4 +7,8 @@ public sealed class GameLoopOptions
     public int CaptureIntervalMs { get; set; } = 100;
 
     public int StopTimeoutMs { get; set; } = 2000;
+
+    public bool WatchdogEnabled { get; set; } = true;
+
+    public int WatchdogTimeoutMs { get; set; } = 15000;
 }
