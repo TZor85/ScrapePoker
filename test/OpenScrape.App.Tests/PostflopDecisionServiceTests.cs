@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -31,6 +32,27 @@ public class PostflopDecisionServiceTests
 
         Assert.That(result.Action, Does.Contain("Value"));
         Assert.That(result.Reason, Does.Contain("strong value").IgnoreCase);
+    }
+
+    [Test]
+    public void DetermineAction_EquityNaN_LanzaErrorAccionable()
+    {
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => _service.DetermineAction(MakeInput(
+            equity: double.NaN, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet)));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("Equity"));
+    }
+
+    [Test]
+    public void DetermineAction_PotSizeNegativo_LanzaErrorAccionable()
+    {
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => _service.DetermineAction(MakeInput(
+            equity: 50, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Dry", isInPosition: true, villainBetSize: BetSizeCategory.NoBet,
+            potSize: -1)));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("PotSize"));
     }
 
     [Test]
@@ -631,13 +653,27 @@ public class PostflopDecisionServiceTests
         Assert.That(result.Action, Is.EqualTo("Call"));
     }
 
-    private static PostflopDecisionService CreateService(StrategyProfile profile)
+    private static PostflopDecisionService CreateService(StrategyProfile profile, IRandomProvider? randomProvider = null)
     {
         profile.FillMissingThresholds();
         var betSizing = new BetSizingService(Options.Create(profile));
         var rangePolarizer = new RangePolarizer();
         var registry = new ThresholdsRegistry(Options.Create(profile));
-        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer, registry);
+        return new PostflopDecisionService(Options.Create(profile), betSizing, rangePolarizer, registry, randomProvider);
+    }
+
+    private sealed class FixedRandomProvider : IRandomProvider
+    {
+        private readonly double _nextDouble;
+
+        public FixedRandomProvider(double nextDouble)
+        {
+            _nextDouble = nextDouble;
+        }
+
+        public double NextDouble() => _nextDouble;
+
+        public int Next(int minValue, int maxValue) => minValue;
     }
 
     private static StrategyProfile CreateDefaultProfile()
@@ -1628,7 +1664,7 @@ public class PostflopDecisionServiceTests
         // Usar Turn_OpenRaise que tiene CanBluff=true, BluffCondition=IPCoordinatedSmallOnly
         var profile = CreateDefaultProfile();
         profile.TurnBluffFrequency = 1.0; // 100% frecuencia para test determinista
-        var service = CreateService(profile);
+        var service = CreateService(profile, new FixedRandomProvider(0.0));
 
         // Equity baja, sin facing bet, IP, Coordinated → debería poder bluffear
         bool bluffOccurred = false;
@@ -1650,6 +1686,25 @@ public class PostflopDecisionServiceTests
 
         Assert.That(bluffOccurred, Is.True,
             "IPCoordinatedSmallOnly debería permitir bluff en Coordinated board IP sin facing bet (con fold equity suficiente)");
+    }
+
+    [Test]
+    public void Bluff_IPCoordinatedSmallOnly_RngAlto_NoBluffea()
+    {
+        var profile = CreateDefaultProfile();
+        profile.TurnBluffFrequency = 0.5;
+        profile.BluffFreqEquityScaling = false;
+        var service = CreateService(profile, new FixedRandomProvider(0.99));
+
+        var result = service.DetermineAction(MakeInput(
+            equity: 15, BoardPosition.Turn, HandSituation.OpenRaise,
+            boardTexture: "Coordinated", isInPosition: true,
+            villainBetSize: BetSizeCategory.NoBet,
+            heroHandRank: HandRank.HighCard,
+            foldEquity: 40));
+
+        Assert.That(result.IsBluff, Is.False);
+        Assert.That(result.Action, Is.EqualTo("Check"));
     }
 
     [Test]

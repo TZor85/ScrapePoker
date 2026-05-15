@@ -48,8 +48,8 @@ namespace OpenScrape.App
                 })
                 .ConfigureServices((context, services) =>
                 {
-                    // Agregar configuraci�n de base de datos
-                    services.AddDataBase(context.Configuration, true);
+                    // Agregar configuración de base de datos
+                    services.AddDataBase(context.Configuration, context.HostingEnvironment.IsDevelopment());
                     services.AddUseCases();
                     //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
 
@@ -63,6 +63,7 @@ namespace OpenScrape.App
                     services.AddSingleton<StrategyProfileService>();
                     services.AddSingleton<ThresholdsRegistry>();
                     services.AddSingleton<IThresholdsRegistry>(sp => sp.GetRequiredService<ThresholdsRegistry>());
+                    services.AddSingleton<IRandomProvider, SystemRandomProvider>();
 
                     // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
                     services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));

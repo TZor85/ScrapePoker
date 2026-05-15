@@ -21,18 +21,7 @@ public class GetActionScenario
             if (table?.Value == null)
                 throw new Exception("Table not found");
 
-            var hands = table.Value.Positions?
-                        .Where(w => w.HeroPosition == request.HeroPosition?.GetDescription()
-                                && (request.OpenRaiser == null || w.OpenRaiser == request.OpenRaiser.GetDescription())
-                                && (request.ThreeBetPosition == null || w.ThreeBetPosition == request.ThreeBetPosition.GetDescription())
-                                && (request.Limper == null || w.Limper == request.Limper.GetDescription())
-                                && (request.Caller == null || w.Caller == request.Caller.GetDescription())
-                                && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
-                                //&& (request.BetSize == null || w.BetSize == request.BetSize)
-                                && (request.IsGreater == null || w.IsGreater == request.IsGreater)
-                                && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
-                        .FirstOrDefault()?.Hands
-                        .Where(f => f.Name == request.HandName && f.Suited == request.Suited);
+            var hands = SelectMatchingHands(table.Value.Positions, request);
 
             if (hands == null)
                 return "Fold";
@@ -46,6 +35,25 @@ public class GetActionScenario
         {
             throw new Exception($"Error executing {situation.GetDescription()} scenario: {ex.Message}");
         }
+    }
+
+    public static IEnumerable<Hand> SelectMatchingHands(
+        IEnumerable<PlayerActionSequence>? positions,
+        ActionScenarioRequest request)
+    {
+        return positions?
+                   .Where(w => w.HeroPosition == request.HeroPosition?.GetDescription()
+                           && (request.OpenRaiser == null || w.OpenRaiser == request.OpenRaiser.GetDescription())
+                           && (request.ThreeBetPosition == null || w.ThreeBetPosition == request.ThreeBetPosition.GetDescription())
+                           && (request.Limper == null || w.Limper == request.Limper.GetDescription())
+                           && (request.Caller == null || w.Caller == request.Caller.GetDescription())
+                           && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
+                           && (request.BetSize == null || w.BetSize == request.BetSize)
+                           && (request.IsGreater == null || w.IsGreater == request.IsGreater)
+                           && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
+                   .FirstOrDefault()?.Hands
+                   .Where(f => f.Name == request.HandName && f.Suited == request.Suited)
+               ?? Enumerable.Empty<Hand>();
     }
 
     private string GetRandomAction(List<Hand> actions)

@@ -1,6 +1,7 @@
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker;
 
@@ -169,42 +170,81 @@ public class AutoCalibrationService : Interfaces.IAutoCalibrationService
         if (adjustmentValue < 1.0)
             return null;
 
+        var foldBelow = GetCurrentThresholdValue(leak, currentProfile, nameof(StreetThresholds.FoldBelow), 40);
+        var thinValueAbove = GetCurrentThresholdValue(leak, currentProfile, nameof(StreetThresholds.ThinValueAbove), 45);
+
         return leak.Category switch
         {
             LeakCategory.OverBluffing => new ParameterAdjustment
             {
                 ParameterName = "ThinValueAbove",
-                OldValue = 45,
-                NewValue = 45 + adjustmentValue,
+                OldValue = thinValueAbove,
+                NewValue = thinValueAbove + adjustmentValue,
                 Reason = $"Over-bluffing detectado: {leak.Frequency} veces. Incrementar ThinValue para reducir bluffs marginales.",
                 CausedBy = LeakCategory.OverBluffing
             },
             LeakCategory.OverCalling => new ParameterAdjustment
             {
                 ParameterName = "FoldBelow",
-                OldValue = 40,
-                NewValue = 40 + adjustmentValue,
+                OldValue = foldBelow,
+                NewValue = foldBelow + adjustmentValue,
                 Reason = $"Over-calling detectado: {leak.Frequency} veces. Incrementar FoldBelow para hacer más folds.",
                 CausedBy = LeakCategory.OverCalling
             },
             LeakCategory.UnderBluffing => new ParameterAdjustment
             {
                 ParameterName = "FoldBelow",
-                OldValue = 40,
-                NewValue = 40 - adjustmentValue,
+                OldValue = foldBelow,
+                NewValue = foldBelow - adjustmentValue,
                 Reason = $"Under-bluffing detectado: {leak.Frequency} veces. Reducir FoldBelow para más betting.",
                 CausedBy = LeakCategory.UnderBluffing
             },
             LeakCategory.UnderValue => new ParameterAdjustment
             {
                 ParameterName = "ThinValueAbove",
-                OldValue = 45,
-                NewValue = 45 - adjustmentValue,
+                OldValue = thinValueAbove,
+                NewValue = thinValueAbove - adjustmentValue,
                 Reason = $"Under-value detectado: {leak.Frequency} veces. Reducir ThinValue para más value betting.",
                 CausedBy = LeakCategory.UnderValue
             },
             _ => null
         };
+    }
+
+    private static double GetCurrentThresholdValue(
+        LeakInfo leak,
+        StrategyProfile currentProfile,
+        string parameterName,
+        double fallback)
+    {
+        var threshold = TryGetThresholdFromSample(leak, currentProfile)
+            ?? currentProfile.Thresholds.Values.FirstOrDefault();
+
+        if (threshold is null)
+            return fallback;
+
+        return parameterName switch
+        {
+            nameof(StreetThresholds.FoldBelow) => threshold.FoldBelow,
+            nameof(StreetThresholds.ThinValueAbove) => threshold.ThinValueAbove,
+            _ => fallback
+        };
+    }
+
+    private static StreetThresholds? TryGetThresholdFromSample(LeakInfo leak, StrategyProfile currentProfile)
+    {
+        var sample = leak.SampleSpots.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(sample))
+            return null;
+
+        var parts = sample.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+            return null;
+
+        var key = $"{parts[0]}_{parts[1]}";
+        return currentProfile.Thresholds.TryGetValue(key, out var threshold)
+            ? threshold
+            : null;
     }
 
     private double CalculateEstimatedImprovement(List<ParameterAdjustment> adjustments)
