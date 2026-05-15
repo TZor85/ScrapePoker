@@ -28,8 +28,15 @@ namespace OpenScrape.DecisionMaker.Algorithms
         private static readonly ThreadLocal<List<CardDataOuts>> ThreadOpponentBuffer =
             new(() => new List<CardDataOuts>(7));
 
+        private readonly int? _sessionSeed;
+
         public MonteCarloSimulator()
         {
+        }
+
+        public MonteCarloSimulator(int sessionSeed)
+        {
+            _sessionSeed = sessionSeed;
         }
 
         public class EquityResult
@@ -42,14 +49,17 @@ namespace OpenScrape.DecisionMaker.Algorithms
             public int SkippedSimulations { get; set; }
             public bool IsReliable { get; set; } = true;
             public double BlockedComboPercentage { get; set; }
+            public int? RandomSeed { get; set; }
             public Dictionary<HandRank, int> HandDistribution { get; set; } = new();
         }
 
         public const double UnreliableThreshold = 0.20; // 20% de combos bloqueados
 
         public EquityResult CalculateEquity(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
-            int numOpponents, int? iterations = null, VillainRange? villainRange = null)
+            int numOpponents, int? iterations = null, VillainRange? villainRange = null, int? randomSeed = null)
         {
+            int? effectiveSeed = randomSeed ?? _sessionSeed;
+
             // Pre-expandir combos del villano si hay rango definido
             var villainCombos = villainRange != null
                 ? BuildVillainCombos(villainRange, myCards, communityCards)
@@ -72,6 +82,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 var result = ExactEnumerationRiver(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
                 result.BlockedComboPercentage = blockedPercentage;
                 result.IsReliable = blockedPercentage <= UnreliableThreshold;
+                result.RandomSeed = effectiveSeed;
                 return result;
             }
 
@@ -81,6 +92,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 var result = ExactEnumerationTurn(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
                 result.BlockedComboPercentage = blockedPercentage;
                 result.IsReliable = blockedPercentage <= UnreliableThreshold;
+                result.RandomSeed = effectiveSeed;
                 return result;
             }
 
@@ -88,9 +100,10 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int simulationCount = iterations ?? GetAdaptiveIterations(communityCount);
 
             var mcResult = RunMonteCarloSimulation(myCards, communityCards, numOpponents,
-                simulationCount, villainCombos, precomputedTotalWeight);
+                simulationCount, villainCombos, precomputedTotalWeight, effectiveSeed);
             mcResult.BlockedComboPercentage = blockedPercentage;
             mcResult.IsReliable = mcResult.IsReliable && blockedPercentage <= UnreliableThreshold;
+            mcResult.RandomSeed = effectiveSeed;
             return mcResult;
         }
 
@@ -369,7 +382,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
         private EquityResult RunMonteCarloSimulation(
             List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
             int numOpponents, int simulationCount,
-            List<VillainCombo>? villainCombos, double precomputedTotalWeight)
+            List<VillainCombo>? villainCombos, double precomputedTotalWeight, int? randomSeed)
         {
             int totalWins = 0;
             int totalTies = 0;
@@ -380,8 +393,12 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 () => new int[3 + HandRankCount], // [0]=wins, [1]=ties, [2]=skipped, [3..]=distribution
                 (i, state, local) =>
                 {
+                    var random = randomSeed.HasValue
+                        ? new Random(CreateIterationSeed(randomSeed.Value, i))
+                        : Random.Shared;
+
                     var result = RunSingleSimulation(myCards, communityCards, numOpponents,
-                        villainCombos, precomputedTotalWeight);
+                        villainCombos, precomputedTotalWeight, random);
 
                     if (result.skipped)
                     {
@@ -425,7 +442,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
         private (int wins, int ties, HandRank bestRank, bool skipped) RunSingleSimulation(
             List<CardDataOuts> myCards, List<CardDataOuts> communityCards, int numOpponents,
-            List<VillainCombo>? villainCombos, double precomputedTotalWeight)
+            List<VillainCombo>? villainCombos, double precomputedTotalWeight, Random random)
         {
             var deck = ThreadDeck.Value!;
             Array.Copy(DeckTemplate, deck, DeckSize);
@@ -442,7 +459,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int communityNeeded = 5 - communityCards.Count;
             for (int c = 0; c < communityNeeded; c++)
             {
-                handBuffer.Add(DrawRandomCard(deck, ref available));
+                handBuffer.Add(DrawRandomCard(deck, ref available, random));
             }
 
             // Evaluar mano del hero (HandScore struct — zero alloc)
@@ -459,7 +476,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
                 if (villainCombos != null && villainCombos.Count > 0)
                 {
-                    if (!TryDrawFromRange(villainCombos, deck, available, precomputedTotalWeight, out card1, out card2))
+                    if (!TryDrawFromRange(villainCombos, deck, available, precomputedTotalWeight, random, out card1, out card2))
                     {
                         // Skip: no contaminar con random cuando el rango está totalmente bloqueado
                         return (0, 0, heroScore.Rank, skipped: true);
@@ -469,8 +486,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
                 }
                 else
                 {
-                    card1 = DrawRandomCard(deck, ref available);
-                    card2 = DrawRandomCard(deck, ref available);
+                    card1 = DrawRandomCard(deck, ref available, random);
+                    card2 = DrawRandomCard(deck, ref available, random);
                 }
 
                 // Construir mano oponente reutilizando buffer ThreadLocal
@@ -529,9 +546,9 @@ namespace OpenScrape.DecisionMaker.Algorithms
             return available;
         }
 
-        private static CardDataOuts DrawRandomCard(CardDataOuts[] deck, ref int available)
+        private static CardDataOuts DrawRandomCard(CardDataOuts[] deck, ref int available, Random random)
         {
-            int index = Random.Shared.Next(available);
+            int index = random.Next(available);
             var card = deck[index];
             available--;
             deck[index] = deck[available];
@@ -581,7 +598,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
         /// </summary>
         private static bool TryDrawFromRange(
             List<VillainCombo> combos, CardDataOuts[] deck, int available,
-            double totalWeight, out CardDataOuts card1, out CardDataOuts card2)
+            double totalWeight, Random random, out CardDataOuts card1, out CardDataOuts card2)
         {
             if (totalWeight <= 0)
             {
@@ -592,7 +609,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             for (int attempt = 0; attempt < 20; attempt++)
             {
-                double roll = Random.Shared.NextDouble() * totalWeight;
+                double roll = random.NextDouble() * totalWeight;
                 double cumulative = 0;
 
                 foreach (var combo in combos)
@@ -615,6 +632,21 @@ namespace OpenScrape.DecisionMaker.Algorithms
             card1 = default!;
             card2 = default!;
             return false;
+        }
+
+        private static int CreateIterationSeed(int randomSeed, int iteration)
+        {
+            unchecked
+            {
+                uint value = (uint)randomSeed;
+                value ^= (uint)iteration + 0x9E3779B9u + (value << 6) + (value >> 2);
+                value ^= value >> 16;
+                value *= 0x7FEB352Du;
+                value ^= value >> 15;
+                value *= 0x846CA68Bu;
+                value ^= value >> 16;
+                return (int)(value & 0x7FFFFFFF);
+            }
         }
 
         private static bool IsCardAvailable(CardDataOuts[] deck, int available, CardDataOuts target)
