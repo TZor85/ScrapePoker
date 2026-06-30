@@ -164,6 +164,9 @@ namespace OpenScrape.App
                     services.AddSingleton<RegionLookupCache>();
                     services.AddSingleton<CardCacheService>();
 
+                    // Detection loop service (Fase 1: extraído de FrmMain.BackgroundWorker1_DoWork)
+                    services.AddSingleton<IDetectionLoopService, DetectionLoopService>();
+
                     // Table layout (detección jugadores, dealer, posiciones)
                     services.AddScoped<TableLayoutService>();
                     services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());

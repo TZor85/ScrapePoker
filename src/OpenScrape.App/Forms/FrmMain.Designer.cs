@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
-            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
             tbControl = new TabControl();
             tbJuego = new TabPage();
             pnlUserStack = new Panel();
@@ -226,10 +225,6 @@
             pnlPerformance.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvBankrollHistory).BeginInit();
             SuspendLayout();
-            // 
-            // backgroundWorker1
-            // 
-            backgroundWorker1.DoWork += BackgroundWorker1_DoWork;
             // 
             // tbControl
             // 
@@ -1823,7 +1818,6 @@
         }
 
         #endregion
-        private System.ComponentModel.BackgroundWorker backgroundWorker1;
         private Label label6;
         private Label label9;
         private TabControl tbControl;

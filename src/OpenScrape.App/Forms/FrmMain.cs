@@ -182,6 +182,10 @@ namespace OpenScrape.App
         // extract-frmmain-testable-logic Fase 2-3: helpers de lógica pura extraídos
         private readonly IActionFormatter _actionFormatter;
         private readonly IOverlayPositioner _overlayPositioner;
+
+        // refactor-frmmain Fase 1: DetectionLoopService extraído del BackgroundWorker
+        private readonly IDetectionLoopService _detectionLoopService;
+        private CancellationTokenSource? _detectionCts;
         #endregion
 
         /// <summary>
@@ -230,7 +234,8 @@ namespace OpenScrape.App
                         IPostflopContextHolder contextHolder,
                         ILogger<FrmMain> logger,
                         TextBoxLoggerProvider textBoxLoggerProvider,
-                        IMetricsCollector metrics)
+                        IMetricsCollector metrics,
+                        IDetectionLoopService detectionLoopService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -282,6 +287,10 @@ namespace OpenScrape.App
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
             _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
+            _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
+
+            // Suscribirse a eventos del DetectionLoopService (Fase 1)
+            SubscribeDetectionEvents();
 
             // Resto de inicialización existente...
             _session = GenerateRandomNumbers();
@@ -319,6 +328,20 @@ namespace OpenScrape.App
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error deteniendo GameLoopCoordinator al cerrar");
+                }
+            }
+
+            // refactor-frmmain Fase 1: parada del DetectionLoopService
+            if (_detectionLoopService.IsRunning)
+            {
+                try
+                {
+                    _detectionCts?.Cancel();
+                    await _detectionLoopService.StopAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error deteniendo DetectionLoopService al cerrar");
                 }
             }
 
@@ -2663,6 +2686,107 @@ namespace OpenScrape.App
         #region [UI Events]
 
         /// <summary>
+        /// Suscribe FrmMain a los eventos del DetectionLoopService.
+        /// Fase 1: usa this.Invoke() provisional hasta que UiUpdateService (Fase 5) absorba el marshaling.
+        /// </summary>
+        private void SubscribeDetectionEvents()
+        {
+            _detectionLoopService.HeroTurnDetected += (_, args) =>
+            {
+                if (IsDisposed) return;
+                this.BeginInvoke((MethodInvoker)(() =>
+                {
+                    try
+                    {
+                        _detectionLoggerService.LogTurnDetected(
+                            new Point(0, 0),
+                            args.ActionColor,
+                            _gameLoopStateMachine.CurrentState.ToString());
+
+                        // Guardar screenshot de debug cada 5 detecciones
+                        if (_detectionLoopService.Detections % 5 == 0)
+                        {
+                            _detectionLoggerService.SaveDebugScreenshot(
+                                _formImage.pbImage.Image,
+                                new Point(0, 0),
+                                args.ActionColor,
+                                "turn_detected");
+                        }
+
+                        btnCapture_Click(this, EventArgs.Empty);
+                    }
+                    catch (Exception ex)
+                    {
+                        _detectionLoggerService.LogDetectionError($"Error en HeroTurnDetected handler: {ex.Message}", ex);
+                    }
+                }));
+            };
+
+            _detectionLoopService.FlopDetected += (_, args) =>
+            {
+                if (IsDisposed) return;
+                this.BeginInvoke((MethodInvoker)(() =>
+                {
+                    try
+                    {
+                        _gameLoopStateMachine.TryTransition(GameState.FlopDetected, 3);
+                        _detectionLoggerService.LogTurnDetected(
+                            new Point(0, 0),
+                            Color.Empty,
+                            "FlopDetected");
+                    }
+                    catch (Exception ex)
+                    {
+                        _detectionLoggerService.LogDetectionError($"Error en FlopDetected handler: {ex.Message}", ex);
+                    }
+                }));
+            };
+
+            _detectionLoopService.IterationCompleted += (_, _) =>
+            {
+                if (IsDisposed) return;
+                // Tracking de ventana: reemplaza btnWindow_Click(sender, e) en el loop original
+                this.BeginInvoke((MethodInvoker)(() =>
+                {
+                    try
+                    {
+                        if (_handle != IntPtr.Zero)
+                        {
+                            User32.RECT windowRect = new User32.RECT();
+                            User32.GetWindowRect(_handle, ref windowRect);
+
+                            bool windowMoved = windowRect.left != _locWindowRect.left ||
+                                              windowRect.right != _locWindowRect.right ||
+                                              windowRect.top != _locWindowRect.top ||
+                                              windowRect.bottom != _locWindowRect.bottom;
+
+                            if (windowMoved)
+                            {
+                                _locWindowRect = windowRect;
+                                if (_frmOverlay != null)
+                                {
+                                    _frmOverlay.Location = _overlayPositioner.Calculate(
+                                        windowRect.left, windowRect.right, windowRect.bottom,
+                                        _frmOverlay.Size.Width);
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error en IterationCompleted (tracking de ventana)");
+                    }
+                }));
+            };
+
+            _detectionLoopService.DetectionStopped += (_, _) =>
+            {
+                _backgroundExecute = false;
+                _logger.LogInformation("DetectionLoopService detenido");
+            };
+        }
+
+        /// <summary>
         /// Maneja el evento de clic en el botón de ventana
         /// </summary>
         private void btnWindow_Click(object sender, EventArgs e)
@@ -2713,7 +2837,14 @@ namespace OpenScrape.App
                 }
 
                 if (!_backgroundExecute)
-                    backgroundWorker1.RunWorkerAsync();
+                {
+                    _detectionCts = new CancellationTokenSource();
+                    _ = _detectionLoopService.StartAsync(
+                        _handle,
+                        () => _frmOverlay?.Visible ?? false,
+                        _detectionCts.Token);
+                    _backgroundExecute = true;
+                }
 
                 // refactor-frmmain-coordinators Fase 6: arranque opcional del coordinator.
                 // Feature flag en false por defecto → este bloque queda inerte en producción
@@ -2732,316 +2863,14 @@ namespace OpenScrape.App
             }
         }
 
-        /// <summary>
-        /// Maneja el evento DoWork del BackgroundWorker con detección mejorada y logging detallado
-        /// </summary>
-        private void BackgroundWorker1_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
-        {
-            try
-            {
-                _backgroundExecute = true;
-                var detectionStats = new { StartTime = DateTime.Now, TotalChecks = 0, Detections = 0, Errors = 0 };
-                var lastLoggedColor = Color.Empty;
-                var colorChangeCount = 0;
-
-                User32.RECT windowRect = new User32.RECT();
-                User32.GetWindowRect(_handle, ref windowRect);
-
-                _detectionLoggerService.LogDetectionError("BackgroundWorker iniciado - Monitoreo de detección activo");
-
-                while (true)
-                {
-                    try
-                    {
-                        detectionStats = detectionStats with { TotalChecks = detectionStats.TotalChecks + 1 };
-
-                        // Validación de overlay
-                        if (_frmOverlay == null || !_frmOverlay.Visible)
-                        {
-                            _detectionLoggerService.LogDetectionError("Overlay no visible - Cancelando BackgroundWorker");
-                            e.Cancel = true;
-                            return;
-                        }
-
-                        if (_handle == IntPtr.Zero)
-                        {
-                            _detectionLoggerService.LogDetectionError("Handle es IntPtr.Zero - no se puede capturar");
-                            Task.Delay(500).Wait();
-                            continue;
-                        }
-
-                        using var img = _useCase.Execute(_handle);
-
-                        if (img == null || img.Width <= 1 || img.Height <= 1)
-                        {
-                            _detectionLoggerService.LogDetectionError($"Captura inválida: {img?.Width}x{img?.Height}");
-                            Task.Delay(500).Wait();
-                            continue;
-                        }
-
-                        // Validación de regiones
-                        var regionAction = _regionLookupCache.GetRegion("User", "uAction");
-                        var flop = _regionLookupCache.GetRegion("Table", "isFlop");
-
-                        if (regionAction == null || flop == null)
-                        {
-                            if (detectionStats.TotalChecks % 100 == 0) // Log cada 100 intentos
-                            {
-                                _detectionLoggerService.LogDetectionError($"Regiones no encontradas - uAction: {regionAction != null}, isFlop: {flop != null}");
-                            }
-                            Task.Delay(100).Wait();
-                            continue;
-                        }
-
-                        using var bitmap = new Bitmap(img);
-
-                        // Detección mejorada con múltiples píxeles y tolerancia
-                        var detectionResult = PerformEnhancedDetection(bitmap, regionAction, flop);
-
-                        // Log cambios de color significativos
-                        if (!detectionResult.ActionColor.Equals(lastLoggedColor))
-                        {
-                            colorChangeCount++;
-                            if (colorChangeCount % 10 == 0 || Math.Abs(detectionResult.ActionColor.B - lastLoggedColor.B) > 5)
-                            {
-                                _detectionLoggerService.LogColorDetection(
-                                    new Point(regionAction.PosX, regionAction.PosY),
-                                    detectionResult.ActionColor,
-                                    detectionResult.ShouldCapture,
-                                    "uAction"
-                                );
-                                lastLoggedColor = detectionResult.ActionColor;
-                            }
-                        }
-
-                        this.Invoke((MethodInvoker)delegate
-                        {
-                            try
-                            {
-                                // Detección de flop mejorada
-                                if (detectionResult.ShouldCaptureFlop)
-                                {
-                                    _gameLoopStateMachine.TryTransition(GameState.FlopDetected, 3);
-                                    _detectionLoggerService.LogTurnDetected(
-                                        new Point(regionAction.PosX, regionAction.PosY),
-                                        detectionResult.ActionColor,
-                                        "FlopDetected"
-                                    );
-                                }
-
-                                // Detección de turno del Hero mejorada
-                                if (detectionResult.ShouldCapture)
-                                {
-                                    detectionStats = detectionStats with { Detections = detectionStats.Detections + 1 };
-
-                                    _detectionLoggerService.LogTurnDetected(
-                                        new Point(regionAction.PosX, regionAction.PosY),
-                                        detectionResult.ActionColor,
-                                        _gameLoopStateMachine.CurrentState.ToString()
-                                    );
-
-                                    // Guardar screenshot de debug si está habilitado
-                                    if (detectionStats.Detections % 5 == 0) // Cada 5 detecciones
-                                    {
-                                        _detectionLoggerService.SaveDebugScreenshot(
-                                            img,
-                                            new Point(regionAction.PosX, regionAction.PosY),
-                                            detectionResult.ActionColor,
-                                            "turn_detected"
-                                        );
-                                    }
-
-                                    btnCapture_Click(sender, e);
-                                }
-
-                                // Reset del flag de ejecución con lógica mejorada
-                                if (!detectionResult.IsActionColorInRange)
-                                    _executeCapture = false;
-                            }
-                            catch (Exception invokeEx)
-                            {
-                                _detectionLoggerService.LogDetectionError($"Error en Invoke delegate: {invokeEx.Message}", invokeEx);
-                            }
-                        });
-
-                        // Log estadísticas periódicas
-                        if (detectionStats.TotalChecks % 1000 == 0)
-                        {
-                            var sessionDuration = DateTime.Now - detectionStats.StartTime;
-                            _detectionLoggerService.LogDetectionStatistics(
-                                detectionStats.TotalChecks,
-                                detectionStats.Detections,
-                                detectionStats.Errors,
-                                sessionDuration
-                            );
-                        }
-
-                        btnWindow_Click(sender, e);
-
-                        // Delay adaptativo basado en la actividad
-                        var delay = detectionResult.ShouldCapture ? 200 : 100; // Más lento después de detección
-                        Task.Delay(delay).Wait();
-                    }
-                    catch (Exception loopEx)
-                    {
-                        detectionStats = detectionStats with { Errors = detectionStats.Errors + 1 };
-                        _detectionLoggerService.LogDetectionError($"Error en bucle de detección: {loopEx.Message}", loopEx);
-
-                        // Delay más largo en caso de error para evitar spam
-                        Task.Delay(500).Wait();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _detectionLoggerService.LogDetectionError($"Error crítico en BackgroundWorker1_DoWork: {ex.Message}", ex);
-                _logger.LogError(ex, "Error en BackgroundWorker1_DoWork");
-                e.Cancel = true;
-            }
-        }
-
-        /// <summary>
-        /// Realiza detección mejorada con múltiples píxeles y tolerancia de color
-        /// </summary>
-        private DetectionResult PerformEnhancedDetection(Bitmap bitmap, Domain.ValueObjects.Region regionAction, Domain.ValueObjects.Region flop)
-        {
-            try
-            {
-                // Escalar coordenadas de las regiones
-                var scaledAction = GetScaledRegion(regionAction);
-                var scaledFlop = GetScaledRegion(flop);
-
-                int w = bitmap.Width;
-                int h = bitmap.Height;
-
-                // Acceso directo al buffer de píxeles (evita marshaling de GetPixel)
-                var bmpData = bitmap.LockBits(
-                    new Rectangle(0, 0, w, h),
-                    System.Drawing.Imaging.ImageLockMode.ReadOnly,
-                    bitmap.PixelFormat);
-
-                try
-                {
-                    int bpp = System.Drawing.Image.GetPixelFormatSize(bitmap.PixelFormat) / 8;
-                    int stride = bmpData.Stride;
-                    nint scan0 = bmpData.Scan0;
-
-                    // Leer color principal de acción y flop
-                    var (actionR, actionG, actionB) = ReadPixelFromBuffer(scan0, stride, scaledAction.X, scaledAction.Y, bpp);
-                    var (flopR, flopG, flopB) = ReadPixelFromBuffer(scan0, stride, scaledFlop.X, scaledFlop.Y, bpp);
-
-                    Color primaryActionColor = Color.FromArgb(actionR, actionG, actionB);
-                    Color flopColor = Color.FromArgb(flopR, flopG, flopB);
-
-                    // Muestrear píxeles en patrón de cruz (±2 px) — suma manual sin LINQ
-                    int sumR = actionR, sumG = actionG, sumB = actionB;
-                    int count = 1;
-
-                    ReadOnlySpan<(int dx, int dy)> offsets =
-                    [
-                        (-2, 0), (2, 0), (0, -2), (0, 2),
-                        (-1, -1), (1, 1), (-1, 1), (1, -1)
-                    ];
-
-                    foreach (var (dx, dy) in offsets)
-                    {
-                        int x = scaledAction.X + dx;
-                        int y = scaledAction.Y + dy;
-
-                        if (x >= 0 && x < w && y >= 0 && y < h)
-                        {
-                            var (r, g, b) = ReadPixelFromBuffer(scan0, stride, x, y, bpp);
-                            sumR += r;
-                            sumG += g;
-                            sumB += b;
-                            count++;
-                        }
-                    }
-
-                    double avgB = (double)sumB / count;
-                    double avgR = (double)sumR / count;
-                    double avgG = (double)sumG / count;
-
-                    // Detección con rango de tolerancia en lugar de valor exacto
-                    const int TARGET_B = 24;
-                    const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
-
-                    bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
-                    bool shouldCapture = isActionColorInRange && !_executeCapture;
-
-                    // Detección de flop mejorada
-                    const int FLOP_TARGET_B = 255;
-                    const int FLOP_TOLERANCE = 10;
-                    bool isFlopVisible = Math.Abs(flopB - FLOP_TARGET_B) <= FLOP_TOLERANCE;
-                    bool shouldCaptureFlop = shouldCapture && isFlopVisible;
-
-                    return new DetectionResult
-                    {
-                        ActionColor = primaryActionColor,
-                        FlopColor = flopColor,
-                        AverageActionB = avgB,
-                        SampleCount = count,
-                        IsActionColorInRange = isActionColorInRange,
-                        ShouldCapture = shouldCapture,
-                        ShouldCaptureFlop = shouldCaptureFlop,
-                        IsFlopVisible = isFlopVisible
-                    };
-                }
-                finally
-                {
-                    bitmap.UnlockBits(bmpData);
-                }
-            }
-            catch (Exception ex)
-            {
-                _detectionLoggerService.LogDetectionError($"Error en detección mejorada: {ex.Message}", ex);
-
-                // Fallback a detección simple (GetPixel como último recurso)
-                var scaledAction = GetScaledRegion(regionAction);
-                var scaledFlop = GetScaledRegion(flop);
-                Color actionColor = bitmap.GetPixel(scaledAction.X, scaledAction.Y);
-                Color flopColor = bitmap.GetPixel(scaledFlop.X, scaledFlop.Y);
-
-                return new DetectionResult
-                {
-                    ActionColor = actionColor,
-                    FlopColor = flopColor,
-                    AverageActionB = actionColor.B,
-                    SampleCount = 1,
-                    IsActionColorInRange = actionColor.B == 24,
-                    ShouldCapture = actionColor.B == 24 && !_executeCapture,
-                    ShouldCaptureFlop = actionColor.B == 24 && !_executeCapture && flopColor.B == 255,
-                    IsFlopVisible = flopColor.B == 255
-                };
-            }
-        }
-
-        /// <summary>
-        /// Lee un píxel directamente del buffer de LockBits (soporta 24bpp y 32bpp)
-        /// </summary>
-        private static (byte R, byte G, byte B) ReadPixelFromBuffer(nint scan0, int stride, int x, int y, int bpp)
-        {
-            int offset = y * stride + x * bpp;
-            byte b = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset);
-            byte g = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset + 1);
-            byte r = System.Runtime.InteropServices.Marshal.ReadByte(scan0, offset + 2);
-            return (r, g, b);
-        }
-
-        /// <summary>
-        /// Resultado de la detección mejorada
-        /// </summary>
-        private record DetectionResult
-        {
-            public Color ActionColor { get; init; }
-            public Color FlopColor { get; init; }
-            public double AverageActionB { get; init; }
-            public int SampleCount { get; init; }
-            public bool IsActionColorInRange { get; init; }
-            public bool ShouldCapture { get; init; }
-            public bool ShouldCaptureFlop { get; init; }
-            public bool IsFlopVisible { get; init; }
-        }
+        // ============================================================================
+        // CÓDIGO ELIMINADO — refactor-frmmain Fase 1: DetectionLoopService
+        // ----------------------------------------------------------------------------
+        // BackgroundWorker1_DoWork → movido a DetectionLoopService.DetectionLoop
+        // PerformEnhancedDetection  → movido a DetectionLoopService.PerformEnhancedDetection
+        // ReadPixelFromBuffer       → movido a DetectionLoopService.ReadPixelFromBuffer
+        // DetectionResult           → movido a DetectionLoopService (record público)
+        // ============================================================================
 
         /// <summary>
         /// Habilita los botones de control
