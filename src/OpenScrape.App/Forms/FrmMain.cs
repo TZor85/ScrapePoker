@@ -81,7 +81,6 @@ namespace OpenScrape.App
         private List<RegionTableMap>? _regionsTableMap;
         private readonly RegionLookupCache _regionLookupCache;
         private readonly CardCacheService _cardCacheService;
-        private readonly ICoordinateScaler _coordinateScaler;
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
@@ -186,6 +185,8 @@ namespace OpenScrape.App
         // refactor-frmmain Fase 1: DetectionLoopService extraído del BackgroundWorker
         private readonly IDetectionLoopService _detectionLoopService;
         private CancellationTokenSource? _detectionCts;
+        // refactor-frmmain Fase 2: CaptureService extraído de GetImageWhilePlaying
+        private readonly ICaptureService _captureService;
         #endregion
 
         /// <summary>
@@ -209,7 +210,6 @@ namespace OpenScrape.App
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
                         CardCacheService cardCacheService,
-                        ICoordinateScaler coordinateScaler,
                         OcrService ocrService,
                         ColorDetectionService colorDetectionService,
                         ImageCropperService imageCropperService,
@@ -235,7 +235,8 @@ namespace OpenScrape.App
                         ILogger<FrmMain> logger,
                         TextBoxLoggerProvider textBoxLoggerProvider,
                         IMetricsCollector metrics,
-                        IDetectionLoopService detectionLoopService)
+                        IDetectionLoopService detectionLoopService,
+                        ICaptureService captureService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -271,7 +272,6 @@ namespace OpenScrape.App
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
             _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
             _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
-            _coordinateScaler = coordinateScaler ?? throw new ArgumentNullException(nameof(coordinateScaler));
             _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
             _colorDetectionService = colorDetectionService ?? throw new ArgumentNullException(nameof(colorDetectionService));
             _imageCropperService = imageCropperService ?? throw new ArgumentNullException(nameof(imageCropperService));
@@ -288,6 +288,7 @@ namespace OpenScrape.App
             _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
             _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
             _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
+            _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -2517,58 +2518,38 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Obtiene una imagen mientras se está jugando
+        /// Obtiene una imagen mientras se está jugando.
+        /// Delega la captura en ICaptureService y solo maneja la presentación en UI.
         /// </summary>
         private async Task GetImageWhilePlaying()
         {
             try
             {
-                if (_handle == IntPtr.Zero)
-                {
-                    _logger.LogError("GetImageWhilePlaying: _handle es IntPtr.Zero, no se puede capturar");
-                    return;
-                }
-
+                // Crear directorio de sesión si no existe
                 string baseFolder = Path.Combine(
                     "C:", "Code", "Poker", "ScrapePoker", "output", "samples", "games",
                     $"{DateTime.Now:yyyyMMdd}_Game");
 
                 _folderPath = Path.Combine(baseFolder, _session);
 
-                // Crear directorio si no existe
                 if (!Directory.Exists(_folderPath))
                 {
                     Directory.CreateDirectory(_folderPath);
                 }
 
-                var path = Path.Combine(_folderPath, $"game_{DateTime.Now.Ticks}.png");
-
-                using var capturedBitmap = _useCase.ExecuteImage(path);
-
-                if (capturedBitmap.Width <= 1 || capturedBitmap.Height <= 1)
-                {
-                    _logger.LogError("GetImageWhilePlaying: Captura inválida ({Width}x{Height})", capturedBitmap.Width, capturedBitmap.Height);
+                var capturedBitmap = _captureService.CaptureWindow(_handle);
+                if (capturedBitmap == null)
                     return;
-                }
-
-                // Inicializar CoordinateScaler en primera captura y guardar en configuración
-                if (!_coordinateScaler.IsInitialized)
-                {
-                    _coordinateScaler.Initialize(capturedBitmap.Width, capturedBitmap.Height);
-                    SaveReferenceDimensionsToConfig(capturedBitmap.Width, capturedBitmap.Height);
-                }
-
-                using var windowImg = Image.FromFile(path);
 
                 // Ajuste de tamaño de formulario
-                _formImage.Width = windowImg.Width + _formImage.Width / 11;
-                _formImage.Height = windowImg.Height + _formImage.Height / 4;
+                _formImage.Width = capturedBitmap.Width + _formImage.Width / 11;
+                _formImage.Height = capturedBitmap.Height + _formImage.Height / 4;
 
-                _formImage.pbImage.Width = windowImg.Width;
-                _formImage.pbImage.Height = windowImg.Height;
+                _formImage.pbImage.Width = capturedBitmap.Width;
+                _formImage.pbImage.Height = capturedBitmap.Height;
 
                 // Clonar imagen para evitar problemas de acceso
-                _formImage.pbImage.Image = new Bitmap(windowImg);
+                _formImage.pbImage.Image = new Bitmap(capturedBitmap);
                 _formImage.pbImage.Refresh();
 
                 await Task.Delay(100);
@@ -2580,102 +2561,22 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Guarda las dimensiones de referencia en appsettings.json
+        /// Guarda las dimensiones de referencia en appsettings.json.
+        /// Delega en ICaptureService.
         /// </summary>
         private void SaveReferenceDimensionsToConfig(int width, int height)
         {
-            try
-            {
-                var configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-                if (!File.Exists(configPath))
-                {
-                    _logger.LogError("SaveReferenceDimensionsToConfig: appsettings.json no encontrado");
-                    return;
-                }
-
-                var json = File.ReadAllText(configPath);
-                var doc = System.Text.Json.JsonDocument.Parse(json);
-                var root = doc.RootElement;
-
-                using var ms = new MemoryStream();
-                using var writer = new StreamWriter(ms);
-                using var reader = new StreamReader(ms);
-
-                writer.Write("{");
-                bool isFirst = true;
-
-                foreach (var property in root.EnumerateObject())
-                {
-                    if (!isFirst) writer.Write(",");
-                    isFirst = false;
-
-                    if (property.Name == "CaptureSettings")
-                    {
-                        writer.Write($"\"CaptureSettings\":{{");
-                        bool innerFirst = true;
-                        foreach (var captureProp in property.Value.EnumerateObject())
-                        {
-                            if (!innerFirst) writer.Write(",");
-                            innerFirst = false;
-
-                            if (captureProp.Name == "ReferenceImageWidth")
-                                writer.Write($"\"ReferenceImageWidth\":{width}");
-                            else if (captureProp.Name == "ReferenceImageHeight")
-                                writer.Write($"\"ReferenceImageHeight\":{height}");
-                            else if (captureProp.Name == "IsReferenceSet")
-                                writer.Write($"\"IsReferenceSet\":true");
-                            else
-                                writer.Write($"\"{captureProp.Name}\":{GetJsonValue(captureProp.Value)}");
-                        }
-                        writer.Write("}");
-                    }
-                    else
-                    {
-                        writer.Write($"\"{property.Name}\":{GetJsonValue(property.Value)}");
-                    }
-                }
-
-                writer.Write("}");
-                writer.Flush();
-
-                ms.Position = 0;
-                File.WriteAllText(configPath, reader.ReadToEnd());
-
-                _logger.LogInformation("Guardadas dimensiones de referencia: {Width}x{Height}", width, height);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al guardar dimensiones de referencia");
-            }
-        }
-
-        private static string GetJsonValue(System.Text.Json.JsonElement element)
-        {
-            return element.ValueKind switch
-            {
-                System.Text.Json.JsonValueKind.String => $"\"{element.GetString()}\"",
-                System.Text.Json.JsonValueKind.Number => element.GetRawText(),
-                System.Text.Json.JsonValueKind.True => "true",
-                System.Text.Json.JsonValueKind.False => "false",
-                System.Text.Json.JsonValueKind.Null => "null",
-                _ => element.GetRawText()
-            };
+            _captureService.SaveReferenceDimensions(width, height);
         }
 
         /// <summary>
-        /// Escala las coordenadas de una región según el ratio entre la imagen actual y la imagen de referencia
+        /// Escala las coordenadas de una región según el ratio entre la imagen actual y la imagen de referencia.
+        /// Delega en ICaptureService.
         /// </summary>
         private (int X, int Y, int Width, int Height) GetScaledRegion(OpenScrape.Domain.ValueObjects.Region region)
         {
-            if (_formImage.pbImage.Image == null)
-                return (region.PosX, region.PosY, region.Width, region.Height);
-
-            int currentWidth = _formImage.pbImage.Image.Width;
-            int currentHeight = _formImage.pbImage.Image.Height;
-
-            return _coordinateScaler.ScaleRegion(
-                region.PosX, region.PosY, region.Width, region.Height,
-                currentWidth, currentHeight);
+            var scaled = _captureService.GetScaledRegion(region);
+            return (scaled.PosX, scaled.PosY, scaled.Width, scaled.Height);
         }
 
         // Método CalculateOverlayPosition movido a IOverlayPositioner

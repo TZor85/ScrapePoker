@@ -1,9 +1,10 @@
 ﻿using OpenScrape.App.Helpers;
+using OpenScrape.App.Services;
 using System.Drawing.Imaging;
 
 namespace OpenScrape.App.Aplication.UseCases
 {
-    public class GetWindowsScreenUseCase
+    public class GetWindowsScreenUseCase : IGetWindowsScreenUseCase
     {
         private IntPtr _handle = IntPtr.Zero;
 

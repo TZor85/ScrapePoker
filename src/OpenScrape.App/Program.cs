@@ -167,6 +167,10 @@ namespace OpenScrape.App
                     // Detection loop service (Fase 1: extraído de FrmMain.BackgroundWorker1_DoWork)
                     services.AddSingleton<IDetectionLoopService, DetectionLoopService>();
 
+                    // Capture service (Fase 2: extraído de FrmMain.GetImageWhilePlaying)
+                    services.AddSingleton<IGetWindowsScreenUseCase>(sp => sp.GetRequiredService<GetWindowsScreenUseCase>());
+                    services.AddScoped<ICaptureService, CaptureService>();
+
                     // Table layout (detección jugadores, dealer, posiciones)
                     services.AddScoped<TableLayoutService>();
                     services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
