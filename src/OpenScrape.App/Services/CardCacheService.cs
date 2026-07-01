@@ -9,7 +9,7 @@ namespace OpenScrape.App.Services;
 /// Singleton que carga las 52 CardDTO una vez desde Marten y las comparte con todos los consumidores.
 /// Elimina queries redundantes en GetCardsFlop/Turn/RiverUseCase.
 /// </summary>
-public class CardCacheService(IDocumentStore documentStore)
+public class CardCacheService(IDocumentStore documentStore) : ICardCacheService
 {
     private List<CardDTO>? _cards;
     private readonly SemaphoreSlim _semaphore = new(1, 1);

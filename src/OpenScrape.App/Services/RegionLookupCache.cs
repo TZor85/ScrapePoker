@@ -7,7 +7,7 @@ namespace OpenScrape.App.Services;
 /// Cache pre-computado de regiones con lookup O(1) por mapId y regionName.
 /// Reemplaza las búsquedas O(n) con FirstOrDefault sobre _regionsTableMap.
 /// </summary>
-public class RegionLookupCache
+public class RegionLookupCache : IRegionLookupCache
 {
     private Dictionary<string, Dictionary<string, Region>> _regionsByMapAndName = new();
     private Dictionary<string, List<Region>> _regionsByMap = new();

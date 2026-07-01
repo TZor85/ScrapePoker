@@ -5,7 +5,7 @@ using Tesseract;
 
 namespace OpenScrape.App.Services;
 
-public class OcrService : IDisposable
+public class OcrService : IOcrService, IDisposable
 {
     private readonly string _tessdataPath;
     public event Action<string> OnDebugImageGenerated;

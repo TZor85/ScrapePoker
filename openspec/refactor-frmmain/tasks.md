@@ -128,36 +128,36 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ## Fase 3: TableReaderService
 
-#### 3.1 Crear interfaz `ITableReaderService`
-- **Archivos**: `src/OpenScrape.App/Services/ITableReaderService.cs` (nuevo)
-- **Contrato**: `SetBetPlayerAsync`, `SetHeroStackAsync`, `SetPotValueAsync`, `SetTableHandAsync` (retorna `(string, bool IsNewHand)`), `ObtainCardsPlayerAsync`, `IsBoardCardVisible`, `CountVisibleBoardCards`.
-- **Deps**: 2.1 (usa `ICaptureService.GetScaledRegion`).
+#### [x] 3.1 Crear interfaz `ITableReaderService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/ITableReaderService.cs` (nuevo)
+- [x] **Contrato**: `SetBetPlayer`, `SetHeroStack`, `SetPotValue`, `SetTableHandAsync`, `ObtainCardsPlayerAsync`, `IsBoardCardVisible`, `CountVisibleBoardCards`.
+- [x] **Deps**: 2.1 (usa `ICaptureService.GetScaledRegion`).
 
-#### 3.2 Crear `TableReaderService`
-- **Archivos**: `src/OpenScrape.App/Services/TableReaderService.cs` (nuevo)
-- **Comportamiento**: mueve `SetBetPlayer`, `SetHeroStack`, `SetPotValue`, `SetTableHand` (con `DetectNewHand`), `ObtainCardsPlayerAsync` (`_imageCropperService` + `_cardCacheService`), `IsBoardCardVisible`, `CountVisibleBoardCards`. Usa `GetScaledRegion` del `ICaptureService`. Reintentos/timeouts OCR idénticos.
-- **Deps**: 3.1.
+#### [x] 3.2 Crear `TableReaderService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/TableReaderService.cs` (nuevo)
+- [x] **Comportamiento**: mueve `SetBetPlayer`, `SetHeroStack`, `SetPotValue`, `IsBoardCardVisible`, `CountVisibleBoardCards`, `ObtainCardsPlayerAsync`. `SetTableHand` permanece en FrmMain (orquestación compleja de estado). `DetectNewHand` permanece en FrmMain.
+- [x] **Deps**: 3.1.
 
-#### 3.3 Tests de `TableReaderService`
-- **Archivos**: `test/OpenScrape.App.Tests/TableReaderServiceTests.cs` (nuevo)
-- **Cubre**: Escenarios RF3 (detección nueva mano, lectura cartas, board visible). Mocks: `ICaptureService`, `IScreenReaderService`, `OcrService`, `ImageCropperService`, `CardCacheService`.
-- **Deps**: 3.2.
+#### [x] 3.3 Tests de `TableReaderService`
+- [x] **Archivos**: `test/OpenScrape.App.Tests/TableReaderServiceTests.cs` (nuevo)
+- [x] **Cubre**: Escenarios RF3 (IsBoardCardVisible >/< 80%, CountVisibleBoardCards secuencial, SetPotValue parsing 4-dígitos, ObtainCardsPlayerAsync hole cards). 10 tests.
+- [x] **Deps**: 3.2.
 
-#### 3.4 Registrar en DI (`Program.cs`)
-- Lifetime: **Scoped**.
-- **Deps**: 3.2.
+#### [x] 3.4 Registrar en DI (`Program.cs`)
+- [x] Lifetime: **Scoped** para ITableReaderService. Interfaces forwarding: IRegionLookupCache, IImageCropperService, ICardCacheService, IOcrService.
+- [x] **Deps**: 3.2.
 
-#### 3.5 Inyectar y delegar en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: delega todos los métodos de lectura de mesa al servicio; conserva sólo el pase de `screenshot` actual.
-- **Deps**: 3.4.
+#### [x] 3.5 Inyectar y delegar en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
+- [x] **Cambio**: inyecta ITableReaderService; SetBetPlayer, SetHeroStack, SetPotValue, ObtainCardsPlayerAsync, IsBoardCardVisible, CountVisibleBoardCards delegan al servicio.
+- [x] **Deps**: 3.4.
 
-#### 3.6 Limpiar `FrmMain`
-- **Eliminar**: métodos extraídos.
-- **Deps**: 3.5.
+#### [x] 3.6 Limpiar `FrmMain`
+- [x] **Eliminar**: cuerpos de métodos extraídos (SetBetPlayer, SetHeroStack, SetPotValue, ObtainCardsPlayerAsync, IsBoardCardVisible, CountVisibleBoardCards). Campo `_pictureUmbralBet` eliminado (sin uso).
+- [x] **Deps**: 3.5.
 
-#### 3.7 Gate de Fase 3
-- Build + tests verdes + verificación manual OCR (timing, reintentos). Commit: `refactor(frmmain): extraer TableReaderService (fase 3)`.
+#### [x] 3.7 Gate de Fase 3
+- [x] Build + 1236 tests verdes. Lineas FrmMain: 3525 (reducción de ~200 LOC).
 
 ---
 

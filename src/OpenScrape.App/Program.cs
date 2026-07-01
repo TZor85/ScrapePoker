@@ -171,6 +171,14 @@ namespace OpenScrape.App
                     services.AddSingleton<IGetWindowsScreenUseCase>(sp => sp.GetRequiredService<GetWindowsScreenUseCase>());
                     services.AddScoped<ICaptureService, CaptureService>();
 
+                    // Table reader service (Fase 3: extraído de FrmMain.SetBetPlayer/SetHeroStack/etc.)
+                    // Interfaces para testeabilidad: forwarding desde las implementaciones concretas existentes
+                    services.AddSingleton<IRegionLookupCache>(sp => sp.GetRequiredService<RegionLookupCache>());
+                    services.AddSingleton<IImageCropperService>(sp => sp.GetRequiredService<ImageCropperService>());
+                    services.AddSingleton<ICardCacheService>(sp => sp.GetRequiredService<CardCacheService>());
+                    services.AddSingleton<IOcrService>(sp => sp.GetRequiredService<OcrService>());
+                    services.AddScoped<ITableReaderService, TableReaderService>();
+
                     // Table layout (detección jugadores, dealer, posiciones)
                     services.AddScoped<TableLayoutService>();
                     services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());

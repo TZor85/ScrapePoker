@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace OpenScrape.App.Services;
 
-public class ImageCropperService
+public class ImageCropperService : IImageCropperService
 {
     private const int DefaultTolerance = 10;
     private const double SimilarityThreshold = 90.0;

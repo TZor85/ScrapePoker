@@ -84,7 +84,6 @@ namespace OpenScrape.App
         private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
-        private int _pictureUmbralBet = 130;
         private string _session = string.Empty;
         private IntPtr _handle;
         private User32.RECT _locWindowRect = new();
@@ -187,6 +186,8 @@ namespace OpenScrape.App
         private CancellationTokenSource? _detectionCts;
         // refactor-frmmain Fase 2: CaptureService extraído de GetImageWhilePlaying
         private readonly ICaptureService _captureService;
+        // refactor-frmmain Fase 3: TableReaderService extraído de SetBetPlayer/SetHeroStack/etc.
+        private readonly ITableReaderService _tableReaderService;
         #endregion
 
         /// <summary>
@@ -236,7 +237,8 @@ namespace OpenScrape.App
                         TextBoxLoggerProvider textBoxLoggerProvider,
                         IMetricsCollector metrics,
                         IDetectionLoopService detectionLoopService,
-                        ICaptureService captureService)
+                        ICaptureService captureService,
+                        ITableReaderService tableReaderService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -289,6 +291,7 @@ namespace OpenScrape.App
             _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
             _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
+            _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -1313,49 +1316,25 @@ namespace OpenScrape.App
         /// <summary>
         /// Verifica si una carta del board (Card4=turn, Card5=river) es visible en la mesa
         /// comparando la imagen de la región contra las cartas conocidas.
+        /// Delega en ITableReaderService (Fase 3).
         /// </summary>
         private bool IsBoardCardVisible(string cardRegionName)
         {
-            if (_formImage.pbImage.Image == null || _cardsImages == null || !_cardsImages.Any())
-                return false;
-
-            var cardRegion = _regionLookupCache.GetRegion("Board", cardRegionName);
-            if (cardRegion != null && cardRegion.IsHash != true)
-                cardRegion = null;
-            if (cardRegion == null)
-                return false;
-
-            var scaled = GetScaledRegion(cardRegion);
-            var imageToBase64 = _imageCropperService.CropImageToBase64(
-                _formImage.pbImage.Image, scaled.X, scaled.Y, scaled.Width, scaled.Height);
-
-            var bestMatch = _cardsImages
-                .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-                .Select(item => _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64))
-                .DefaultIfEmpty(0)
-                .Max();
-
-            // Umbral de confianza: >80% indica carta real, <80% indica fondo de mesa
-            _logger.LogDebug("IsBoardCardVisible({Region}): bestMatch={Match:F1}%, visible={Visible}", cardRegionName, bestMatch, bestMatch > 80.0);
-            return bestMatch > 80.0;
+            if (_formImage.pbImage.Image is Bitmap bmp)
+                return _tableReaderService.IsBoardCardVisible(bmp, cardRegionName);
+            return false;
         }
 
         /// <summary>
         /// Cuenta cuántas cartas del board son realmente visibles (Card1 a Card5).
         /// Las cartas son secuenciales: si Card3 no es visible, Card4/5 tampoco.
+        /// Delega en ITableReaderService (Fase 3).
         /// </summary>
         private int CountVisibleBoardCards()
         {
-            int count = 0;
-            string[] cardRegions = { "Card1", "Card2", "Card3", "Card4", "Card5" };
-            foreach (var region in cardRegions)
-            {
-                if (IsBoardCardVisible(region))
-                    count++;
-                else
-                    break;
-            }
-            return count;
+            if (_formImage.pbImage.Image is Bitmap bmp)
+                return _tableReaderService.CountVisibleBoardCards(bmp);
+            return 0;
         }
 
         #region [Legacy Turn/River Handlers - REMOVED]
@@ -2101,82 +2080,25 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece las apuestas de los jugadores
+        /// Establece las apuestas de los jugadores.
+        /// Delega en ITableReaderService (Fase 3).
         /// </summary>
         private void SetBetPlayer()
         {
-            using var binaryImage = PixConverter.ToPix(CaptureWindowsHelper.BinaryImage(new Bitmap(_formImage.pbImage.Image), _pictureUmbralBet));
-            var betsRegions = _regionLookupCache.GetRegions("Bets");
-
-            _logger.LogInformation("[SetBetPlayer] Total regions: {Count}", betsRegions?.Count ?? 0);
-
-            if (betsRegions == null || _formImage.pbImage.Image == null)
-                return;
-
-            foreach (var region in betsRegions)
-            {
-                var playerNumber = PlayerRegionParser.GetPlayerNumber(region.Name, "bet");
-                _logger.LogInformation("[SetBetPlayer] Region: {Region}, parsed playerNumber: {PlayerNumber}", region.Name, playerNumber);
-
-                if (playerNumber == null) continue;
-
-                var scaled = GetScaledRegion(region);
-                var betValue = _screenReader.ReadBetValue(_formImage.pbImage.Image,
-                    scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber, playerNumber);
-
-                // Log para debug de bets
-                _logger.LogInformation("[SetBetValue] Region: {Region}, Player: P{PlayerNumber}, Value: {BetValue}", region.Name, playerNumber, betValue);
-
-                // Normalizar: detecta decimal separator perdido (593 → 5,93), artefacto "8"
-                betValue = _screenReader.NormalizeBetValue(betValue, _playerGameState.PotSize);
-
-                if (playerNumber == 0)
-                {
-                    _playerGameState.CurrentBet = betValue;
-                    continue;
-                }
-
-                var player = _playerGameState.Players.FirstOrDefault(f => f.Name == $"P{playerNumber}");
-                if (player != null)
-                {
-                    player.Bet = betValue;
-                }
-            }
+            if (_formImage.pbImage.Image is Bitmap bmp)
+                _tableReaderService.SetBetPlayer(bmp, _playerGameState);
         }
 
         /// <summary>
-        /// Establece el stack del héroe
+        /// Establece el stack del héroe.
+        /// Delega OCR en ITableReaderService, mantiene detección de auto-rebuy y UI update en FrmMain (Fase 3).
         /// </summary>
         private void SetHeroStack()
         {
-            var region = _regionLookupCache.GetRegion("User", "uStack");
-            if (region == null || _formImage.pbImage.Image == null)
+            if (_formImage.pbImage.Image is not Bitmap bmp)
                 return;
 
-            // Limpiar cache OCR para evitar colisiones dHash entre valores similares (ej: 97 vs 92)
-            _ocrService.ClearCache();
-
-            // Intentar leer el stack con retry
-            decimal stackValue = 0;
-            int maxRetries = 2;
-
-            var scaled = GetScaledRegion(region);
-
-            for (int attempt = 0; attempt <= maxRetries; attempt++)
-            {
-                var rawValue = _screenReader.ReadStackValue(_formImage.pbImage.Image,
-                    scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    region.Umbral, region.InactiveUmbral, region.IsOnlyNumber);
-
-                stackValue = _screenReader.NormalizeStackValue(rawValue);
-
-                if (stackValue > 0)
-                    break;
-
-                if (attempt < maxRetries)
-                    Thread.Sleep(100);
-            }
+            var stackValue = _tableReaderService.SetHeroStack(bmp, _playerGameState);
 
             // Si no se obtuvo valor válido, mantener el anterior
             if (stackValue <= 0 && _playerGameState.HeroStack > 0)
@@ -2209,34 +2131,13 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Establece el valor del bote
+        /// Establece el valor del bote.
+        /// Delega en ITableReaderService (Fase 3).
         /// </summary>
         private void SetPotValue()
         {
-            var regionPot = _regionLookupCache.GetRegion("Table", "pot");
-            if (_formImage.pbImage.Image == null)
-                return;
-            if (regionPot != null)
-            {
-                decimal potValue = 0;
-                var scaled = GetScaledRegion(regionPot);
-                var pot = _screenReader.ReadText(_formImage.pbImage.Image,
-                    scaled.X, scaled.Y, scaled.Width, scaled.Height,
-                    regionPot.Umbral, regionPot.InactiveUmbral, regionPot.IsOnlyNumber);
-                try
-                {
-                    // Mejorada la lógica de parsing
-                    if (pot.Length == 4 && !pot.Contains(".") && !pot.Contains(","))
-                        decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2), out potValue);
-                    else
-                        decimal.TryParse(pot, out potValue);
-                }
-                catch (Exception ex)
-                {
-                    var pp = ex.Message;
-                }
-                _playerGameState.PotSize = potValue;
-            }
+            if (_formImage.pbImage.Image is Bitmap bmp)
+                _tableReaderService.SetPotValue(bmp, _playerGameState);
         }
 
         /// <summary>
@@ -2461,60 +2362,13 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Obtiene las cartas del jugador de forma asíncrona
+        /// Obtiene las cartas del jugador de forma asíncrona.
+        /// Delega en ITableReaderService (Fase 3).
         /// </summary>
         private async Task ObtainCardsPlayerAsync()
         {
-            var userRegionsList = _regionLookupCache.GetRegions("User");
-            if (userRegionsList == null || _formImage.pbImage.Image == null)
-                return;
-
-            var hashRegions = userRegionsList.Where(w => w.IsHash == true).ToList();
-
-            // Carga de cartas desde cache singleton
-            _cardsImages ??= await _cardCacheService.GetCardsAsync();
-
-            foreach (var region in hashRegions)
-            {
-                var scaled = GetScaledRegion(region);
-
-                var imageToBase64 = _imageCropperService.CropImageToBase64(
-                    _formImage.pbImage.Image,
-                    scaled.X,
-                    scaled.Y,
-                    scaled.Width,
-                    scaled.Height);
-
-                if (_cardsImages == null || !_cardsImages.Any())
-                    continue;
-
-                var bestMatch = _cardsImages
-                    .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-                    .Select(item => new
-                    {
-                        Card = item,
-                        Percentage = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64)
-                    })
-                    .OrderByDescending(x => x.Percentage)
-                    .FirstOrDefault();
-
-                if (bestMatch == null)
-                    continue;
-
-                switch (region.Name)
-                {
-                    case "u0cardface0":
-                        _playerGameState.HoleCard1Face = bestMatch.Card.Name.Split(" ")[0];
-                        _playerGameState.HoleCard1Rank = bestMatch.Card.Force;
-                        _playerGameState.HoleCard1Suit = bestMatch.Card.Suit;
-                        break;
-                    case "u0cardface1":
-                        _playerGameState.HoleCard2Face = bestMatch.Card.Name.Split(" ")[0];
-                        _playerGameState.HoleCard2Rank = bestMatch.Card.Force;
-                        _playerGameState.HoleCard2Suit = bestMatch.Card.Suit;
-                        break;
-                }
-            }
+            if (_formImage.pbImage.Image is Bitmap bmp)
+                await _tableReaderService.ObtainCardsPlayerAsync(bmp, _playerGameState);
         }
 
         /// <summary>
