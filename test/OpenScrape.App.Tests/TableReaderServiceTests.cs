@@ -547,7 +547,14 @@ public class TableReaderServiceTests
 
     private sealed class FakeCaptureService : ICaptureService
     {
-        public Bitmap? CaptureWindow(IntPtr handle) => null;
+        public IntPtr WindowHandle { get; set; }
+        private Bitmap? _captureResult;
+
+        public void SetCaptureResult(Bitmap? bitmap) => _captureResult = bitmap;
+
+        public Bitmap? CaptureWindow(IntPtr handle) => _captureResult;
+
+        public Bitmap? CaptureWindow() => _captureResult;
 
         public DomainRegion GetScaledRegion(DomainRegion region)
         {

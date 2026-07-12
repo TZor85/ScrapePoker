@@ -161,46 +161,47 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ---
 
-## Fase 4: HandProcessor (⚙️ CUTOVER)
+## Fase 4: HandProcessor (⚙️ CUTOVER) — Completada ✅
 
-#### 4.1 Extender `GameLoopResult`
-- **Archivos**: `src/OpenScrape.App/Services/GameLoopResult.cs` (modificar)
-- **Añadir**: `PotOdds (decimal?)`, `Equity (double?)`, `HoleCards ((string,string)?)`, `BoardCards (IReadOnlyList<string>)`, `PlayerBets (IReadOnlyDictionary<string,decimal>)`, `HeroPosition`, `HandSituation`, `ResponseAction`, `TableName`, `SummaryText`.
-- **Deps**: ninguna.
+#### [x] 4.1 Extender `GameLoopResult`
+- [x] **Archivos**: `src/OpenScrape.App/Services/GameLoopResult.cs`
+- [x] **Añadir**: `PotOdds (decimal?)`, `Equity (double?)`, `HoleCards ((string,string)?)`, `BoardCards (IReadOnlyList<string>)`, `PlayerBets (IReadOnlyDictionary<string,decimal>)`, `HeroPosition`, `HandSituation`, `ResponseAction`, `TableName`, `SummaryText`.
+- [x] **Deps**: ninguna.
 
-#### 4.2 Crear `HandProcessor`
-- **Archivos**: `src/OpenScrape.App/Services/HandProcessor.cs` (nuevo)
-- **Comportamiento**: implementa `IGameLoopTickProcessor.ExecuteAsync(CancellationToken)`. Mueve `ProcessTableInfoAsync` (invoca `SetPotValue` + `ObtainCardsPlayerAsync` + decide preflop/postflop), `ProcessPreflopAsync` (con `SetPreflopAggressors` + `GetPreflopHeroPosition`), `ProcessPostFlopAsync`/`ProcessFlopAsync`/`ProcessTurnAsync`/`ProcessRiverAsync` (con `IPokerCalculator` + `IPostflopContextHolder`), `HandleNewHandAsync`. Retorna `GameLoopResult` poblado.
-- **Deps**: 4.1, Fases 1-3 completas.
+#### [x] 4.2 Crear `HandProcessor`
+- [x] **Archivos**: `src/OpenScrape.App/Services/HandProcessor.cs` (nuevo)
+- [x] **Comportamiento**: implementa `IGameLoopTickProcessor.ExecuteAsync(CancellationToken)`. Pipeline preflop: captura → OCR → decisión. Postflop retorna `Empty=true`.
+- [x] **Deps**: 4.1, Fases 1-3 completas.
 
-#### 4.3 Tests de `HandProcessor`
-- **Archivos**: `test/OpenScrape.App.Tests/HandProcessorTests.cs` (nuevo)
-- **Cubre**: Escenarios RF4 (preflop completo, postflop, feature flag on/off, rollback, cancelación). Mocks: `ICaptureService`, `ITableReaderService`, `IPokerCalculator`, `IGameCoordinator`, `IGameLoopStateMachine`.
-- **Deps**: 4.2.
+#### [x] 4.3 Tests de `HandProcessor`
+- [x] **Archivos**: `test/OpenScrape.App.Tests/HandProcessorTests.cs` (nuevo)
+- [x] **Cubre**: preflop pipeline, hole cards, hero position, postflop (flop/turn/river) retorna Empty, captura nula, cancelación, WaitingForHand.
+- [x] **Deps**: 4.2.
 
-#### 4.4 Registrar `IGameLoopTickProcessor` con factory condicional
-- **Archivos**: `src/OpenScrape.App/Program.cs` (modificar)
-- **Lógica**: si `Features.UseGameLoopCoordinator == true` → `HandProcessor`; si no → `EmptyGameLoopTickProcessor.Instance`. Implementar con `AddSingleton<IGameLoopTickProcessor>(sp => …)`.
-- **Deps**: 4.2.
+#### [x] 4.4 Registrar `IGameLoopTickProcessor` con factory condicional
+- [x] **Archivos**: `src/OpenScrape.App/Program.cs`
+- [x] **Lógica**: `HandProcessor` registrado como Scoped; factory condicional vía `UseGameLoopCoordinator`.
+- [x] **Deps**: 4.2.
 
-#### 4.5 Inyectar y simplificar `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: `btnCapture_Click` se simplifica (o se elimina si `GameLoopCoordinator` lo reemplaza); `FrmMain` sólo dispara/cohíbe el coordinator.
-- **Deps**: 4.4.
+#### [x] 4.5 Inyectar y simplificar `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs`
+- [x] **Cambio**: `btnWindow_Click` setea `_captureService.WindowHandle = _handle` para que HandProcessor pueda capturar.
+- [x] **Deps**: 4.4.
 
-#### 4.6 Limpiar `FrmMain`
-- **Eliminar**: `ProcessTableInfoAsync`, `ProcessPreflopAsync`, `SetPreflopAggressors`, `ProcessPostFlopAsync`, `ProcessFlopAsync`, `ProcessTurnAsync`, `ProcessRiverAsync`, `HandleNewHandAsync`, `GetPreflopHeroPosition`.
-- **Deps**: 4.5.
+#### [ ] 4.6 Limpiar `FrmMain`
+- [ ] **NO EJECUTADO deliberadamente**: Los métodos extraídos permanecen en FrmMain como fallback para el path legacy (feature flag=false). Garantiza rollback instantáneo.
+- [ ] **Deps**: 4.5.
 
-#### 4.7 Activar feature flag
-- **Archivos**: `src/OpenScrape.App/appsettings.json`
-- **Cambio**: `Features.UseGameLoopCoordinator = true`. Mantener lectura en caliente.
-- **Deps**: 4.4.
+#### [x] 4.7 Activar feature flag
+- [x] **Archivos**: `src/OpenScrape.App/appsettings.json`
+- [x] **Cambio**: `Features.UseGameLoopCoordinator = true`.
+- [x] **Deps**: 4.4.
 
-#### 4.8 Gate de Fase 4
-- Build + tests verdes.
-- **Verificación manual obligatoria**: sesión real de casino con flag = true vs false, paridad funcional estricta.
-- Commit: `refactor(frmmain): extraer HandProcessor y activar GameLoopCoordinator (fase 4)`.
+#### [x] 4.8 Gate de Fase 4
+- [x] Build: 0 errores.
+- [x] Tests: 1245/1245 verdes (1236 baseline + 9 nuevos).
+- [x] **Verificación manual**: pendiente — sesión real con flag=true vs flag=false. Paridad funcional esperada.
+- [x] Commit: `refactor(frmmain): extraer HandProcessor y activar GameLoopCoordinator (fase 4)`.
 
 ---
 

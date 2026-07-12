@@ -125,7 +125,15 @@ namespace OpenScrape.App
                     services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
 
                     // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
-                    services.AddSingleton<IGameLoopTickProcessor>(EmptyGameLoopTickProcessor.Instance);
+                    // Fase 4: factory condicional — HandProcessor si flag=true, EmptyGameLoopTickProcessor si flag=false
+                    services.AddScoped<HandProcessor>();
+                    services.AddScoped<IGameLoopTickProcessor>(sp =>
+                    {
+                        var flags = sp.GetRequiredService<IOptions<FeatureFlags>>().Value;
+                        return flags.UseGameLoopCoordinator
+                            ? sp.GetRequiredService<HandProcessor>()
+                            : EmptyGameLoopTickProcessor.Instance;
+                    });
                     services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
 
                     // UI sync (refactor-frmmain-coordinators Fase 5)

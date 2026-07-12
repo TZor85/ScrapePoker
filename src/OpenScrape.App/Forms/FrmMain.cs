@@ -2570,8 +2570,11 @@ namespace OpenScrape.App
 
                 if (_handle != IntPtr.Zero)
                 {
-                    User32.GetWindowRect(_handle, ref windowRect);
+                    // Fase 4: Propagar el handle al CaptureService para HandProcessor
+                    _captureService.WindowHandle = _handle;
 
+                    User32.GetWindowRect(_handle, ref windowRect);
+                    
                     // Extracción de condición compleja a variable
                     bool windowMoved = windowRect.left != _locWindowRect.left ||
                                       windowRect.right != _locWindowRect.right ||

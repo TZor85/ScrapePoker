@@ -36,4 +36,36 @@ public sealed record GameLoopResult
 
     /// <summary>True si se detectó el inicio de una nueva mano.</summary>
     public bool NewHandDetected { get; init; }
+
+    // ==================== Campos RF4 (HandProcessor) ====================
+
+    /// <summary>Pot odds calculadas para la decisión actual.</summary>
+    public decimal? PotOdds { get; init; }
+
+    /// <summary>Equity calculado para la mano del héroe.</summary>
+    public double? Equity { get; init; }
+
+    /// <summary>Cartas del héroe (face1, face2).</summary>
+    public (string, string)? HoleCards { get; init; }
+
+    /// <summary>Cartas comunitarias visibles en el board.</summary>
+    public IReadOnlyList<string> BoardCards { get; init; } = Array.Empty<string>();
+
+    /// <summary>Apuestas de cada jugador (nombre → valor).</summary>
+    public IReadOnlyDictionary<string, decimal> PlayerBets { get; init; } = new Dictionary<string, decimal>();
+
+    /// <summary>Posición del héroe en la mesa.</summary>
+    public TablePosition? HeroPosition { get; init; }
+
+    /// <summary>Situación de mano detectada (OpenRaise, ThreeBet, etc.).</summary>
+    public HandSituation? HandSituation { get; init; }
+
+    /// <summary>Acción recomendada en formato texto (p.ej. "Bet 1/2", "Fold").</summary>
+    public string? ResponseAction { get; init; }
+
+    /// <summary>Nombre de la mesa detectado.</summary>
+    public string? TableName { get; init; }
+
+    /// <summary>Texto de resumen para el log / tbResume.</summary>
+    public string? SummaryText { get; init; }
 }
