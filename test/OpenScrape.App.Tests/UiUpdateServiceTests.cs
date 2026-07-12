@@ -54,8 +54,11 @@ public class UiUpdateServiceTests
         };
         state.Players.Add(new Player
         {
-            Name = "P1", Alias = "Player1", Active = true,
-            Bet = 20m, Stack = 500m
+            Name = "P1",
+            Alias = "Player1",
+            Active = true,
+            Bet = 20m,
+            Stack = 500m
         });
         return state;
     }
@@ -228,7 +231,8 @@ internal sealed class FakeGameCoordinator : IGameCoordinator
     public void SetRiverResult(PokerCalculationResult result) { }
 
     public void TrackVillainPostflopAction(PlayerGameState state, decimal villainBet,
-        bool isPreflopAggressor, bool? heroIsInPosition = null) { }
+        bool isPreflopAggressor, bool? heroIsInPosition = null)
+    { }
 }
 
 internal sealed class FakeOverlay : IFrmOverlay
@@ -254,7 +258,8 @@ internal sealed class UiTestLogger<T> : ILogger<T>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public bool IsEnabled(LogLevel logLevel) => true;
     public void Log<TState>(LogLevel logLevel, EventId eventId,
-        TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+        TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    { }
 }
 
 #endregion

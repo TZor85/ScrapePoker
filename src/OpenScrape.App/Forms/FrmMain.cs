@@ -2461,7 +2461,7 @@ namespace OpenScrape.App
                     _captureService.WindowHandle = _handle;
 
                     User32.GetWindowRect(_handle, ref windowRect);
-                    
+
                     // Extracción de condición compleja a variable
                     bool windowMoved = windowRect.left != _locWindowRect.left ||
                                       windowRect.right != _locWindowRect.right ||
