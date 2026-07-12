@@ -866,7 +866,7 @@
             btnTestCarta.TabIndex = 89;
             btnTestCarta.Text = "Carta";
             btnTestCarta.UseVisualStyleBackColor = true;
-            btnTestCarta.Click += btnTestCarta_Click;
+            
             // 
             // tbTestTexto
             // 
@@ -884,7 +884,7 @@
             btnTestTexto.TabIndex = 87;
             btnTestTexto.Text = "Texto";
             btnTestTexto.UseVisualStyleBackColor = true;
-            btnTestTexto.Click += btnTestTexto_Click;
+
             // 
             // pbColorDebug
             // 
@@ -910,7 +910,7 @@
             btnTestColor.TabIndex = 0;
             btnTestColor.Text = "Color";
             btnTestColor.UseVisualStyleBackColor = true;
-            btnTestColor.Click += btnTestColor_Click;
+
             // 
             // pictureBox1
             // 
@@ -1005,7 +1005,7 @@
             cbSpeed.Name = "cbSpeed";
             cbSpeed.Size = new Size(42, 23);
             cbSpeed.TabIndex = 98;
-            cbSpeed.SelectedIndexChanged += cbSpeed_SelectedIndexChanged;
+
             // 
             // btnUpRight
             // 
@@ -1018,7 +1018,7 @@
             btnUpRight.Text = "↗";
             btnUpRight.TextAlign = ContentAlignment.MiddleRight;
             btnUpRight.UseVisualStyleBackColor = true;
-            btnUpRight.Click += btnUpRight_Click;
+
             // 
             // btnDownRight
             // 
@@ -1031,7 +1031,7 @@
             btnDownRight.Text = "↘";
             btnDownRight.TextAlign = ContentAlignment.MiddleRight;
             btnDownRight.UseVisualStyleBackColor = true;
-            btnDownRight.Click += btnDownRight_Click;
+
             // 
             // btnDownLeft
             // 
@@ -1044,7 +1044,7 @@
             btnDownLeft.Text = "↙";
             btnDownLeft.TextAlign = ContentAlignment.MiddleRight;
             btnDownLeft.UseVisualStyleBackColor = true;
-            btnDownLeft.Click += btnDownLeft_Click;
+
             // 
             // btnUpLeft
             // 
@@ -1057,7 +1057,7 @@
             btnUpLeft.Text = "↖";
             btnUpLeft.TextAlign = ContentAlignment.MiddleRight;
             btnUpLeft.UseVisualStyleBackColor = true;
-            btnUpLeft.Click += btnUpLeft_Click;
+
             // 
             // btnUp
             // 
@@ -1070,7 +1070,7 @@
             btnUp.Text = "↑";
             btnUp.TextAlign = ContentAlignment.BottomCenter;
             btnUp.UseVisualStyleBackColor = true;
-            btnUp.Click += btnUp_Click;
+
             // 
             // btnDown
             // 
@@ -1083,7 +1083,7 @@
             btnDown.Text = "↓";
             btnDown.TextAlign = ContentAlignment.TopCenter;
             btnDown.UseVisualStyleBackColor = true;
-            btnDown.Click += btnDown_Click;
+
             // 
             // btnLeft
             // 
@@ -1095,7 +1095,7 @@
             btnLeft.Text = "←";
             btnLeft.TextAlign = ContentAlignment.TopCenter;
             btnLeft.UseVisualStyleBackColor = true;
-            btnLeft.Click += btnLeft_Click;
+
             // 
             // btnRight
             // 
@@ -1107,7 +1107,7 @@
             btnRight.Text = "→";
             btnRight.TextAlign = ContentAlignment.TopCenter;
             btnRight.UseVisualStyleBackColor = true;
-            btnRight.Click += btnRigth_Click;
+
             // 
             // btnPlusWidth
             // 
@@ -1121,7 +1121,7 @@
             btnPlusWidth.Text = "+";
             btnPlusWidth.TextAlign = ContentAlignment.TopCenter;
             btnPlusWidth.UseVisualStyleBackColor = true;
-            btnPlusWidth.Click += btnPlusWidth_Click;
+
             // 
             // btnMinusWidth
             // 
@@ -1133,7 +1133,7 @@
             btnMinusWidth.TabIndex = 87;
             btnMinusWidth.Text = "-";
             btnMinusWidth.UseVisualStyleBackColor = true;
-            btnMinusWidth.Click += btnMinusWidth_Click;
+
             // 
             // btnPlusHeight
             // 
@@ -1145,7 +1145,7 @@
             btnPlusHeight.Text = "+";
             btnPlusHeight.TextAlign = ContentAlignment.MiddleRight;
             btnPlusHeight.UseVisualStyleBackColor = true;
-            btnPlusHeight.Click += btnPlusHeight_Click;
+
             // 
             // btnMinusHeight
             // 
@@ -1157,7 +1157,7 @@
             btnMinusHeight.Text = "-";
             btnMinusHeight.TextAlign = ContentAlignment.TopCenter;
             btnMinusHeight.UseVisualStyleBackColor = true;
-            btnMinusHeight.Click += btnMinusHeight_Click;
+
             // 
             // tbRegionName
             // 
@@ -1237,7 +1237,7 @@
             tbHeight.TabIndex = 38;
             tbHeight.Text = "0";
             tbHeight.TextAlign = HorizontalAlignment.Right;
-            tbHeight.Leave += tbHeight_Leave;
+
             // 
             // label2
             // 
@@ -1256,7 +1256,7 @@
             tbWidth.TabIndex = 36;
             tbWidth.Text = "0";
             tbWidth.TextAlign = HorizontalAlignment.Right;
-            tbWidth.Leave += tbWidth_Leave;
+
             // 
             // label1
             // 
@@ -1275,7 +1275,7 @@
             tbY.TabIndex = 33;
             tbY.Text = "0";
             tbY.TextAlign = HorizontalAlignment.Right;
-            tbY.Leave += tbY_Leave;
+
             // 
             // label3
             // 
@@ -1295,7 +1295,7 @@
             tbX.TabIndex = 30;
             tbX.Text = "0";
             tbX.TextAlign = HorizontalAlignment.Right;
-            tbX.Leave += tbX_Leave;
+
             // 
             // btnUpdateMap
             // 
@@ -1305,7 +1305,7 @@
             btnUpdateMap.TabIndex = 74;
             btnUpdateMap.Text = "Update";
             btnUpdateMap.UseVisualStyleBackColor = true;
-            btnUpdateMap.Click += btnSaveMap_Click;
+
             // 
             // cbMark
             // 
@@ -1341,7 +1341,7 @@
             twRegionsConfig.Name = "twRegionsConfig";
             twRegionsConfig.Size = new Size(132, 342);
             twRegionsConfig.TabIndex = 45;
-            twRegionsConfig.DoubleClick += twRegions_DoubleClick;
+
             // 
             // tbTables
             // 

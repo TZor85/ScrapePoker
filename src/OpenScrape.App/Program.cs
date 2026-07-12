@@ -213,6 +213,9 @@ namespace OpenScrape.App
                     services.AddTransient<BankrollTabControl>();
                     services.AddTransient<MetricsTabControl>();
 
+                    // Fase 8: RegionEditorControl extraído de FrmMain
+                    services.AddTransient<RegionEditorControl>();
+
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();
                 });
