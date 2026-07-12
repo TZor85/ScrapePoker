@@ -142,6 +142,9 @@ namespace OpenScrape.App
                     // UiUpdateService (Fase 5: extraído de FrmMain.UpdateUIWithResults y relacionados)
                     services.AddScoped<IUiUpdateService, UiUpdateService>();
 
+                    // ThemeService (Fase 6: estilos visuales extraídos de FrmMain)
+                    services.AddSingleton<IThemeService, ThemeService>();
+
                     // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
                     services.AddSingleton<IActionFormatter, ActionFormatter>();
                     services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
