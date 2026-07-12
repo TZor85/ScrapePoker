@@ -27,11 +27,4 @@ public interface IUiSyncService : IDisposable
     /// varias veces sin efectos colaterales.
     /// </summary>
     void Detach();
-
-    /// <summary>
-    /// Conecta opcionalmente un <see cref="IUiUpdateService"/> para que el
-    /// coordinator (cuando está activo) actualice los controles completos de FrmMain
-    /// además del overlay.
-    /// </summary>
-    void SetUiUpdateService(IUiUpdateService? service);
 }

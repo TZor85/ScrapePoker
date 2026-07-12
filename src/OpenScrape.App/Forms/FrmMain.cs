@@ -188,8 +188,6 @@ namespace OpenScrape.App
         private readonly ICaptureService _captureService;
         // refactor-frmmain Fase 3: TableReaderService extraído de SetBetPlayer/SetHeroStack/etc.
         private readonly ITableReaderService _tableReaderService;
-        // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults/UpdateOverlay/etc.
-        private readonly IUiUpdateService _uiUpdateService;
         #endregion
 
         /// <summary>
@@ -240,8 +238,7 @@ namespace OpenScrape.App
                         IMetricsCollector metrics,
                         IDetectionLoopService detectionLoopService,
                         ICaptureService captureService,
-                        ITableReaderService tableReaderService,
-                        IUiUpdateService uiUpdateService)
+                        ITableReaderService tableReaderService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -295,7 +292,6 @@ namespace OpenScrape.App
             _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
-            _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -395,7 +391,6 @@ namespace OpenScrape.App
 
                 var allCards = await sessionDB.Query<Card>().ToListAsync();
                 _cards.AddRange(allCards);
-                _uiUpdateService.SetCardList(_cards);
 
                 _formImage.Location = new Point(Width, Location.Y);
                 _formImage.Show();
@@ -835,9 +830,8 @@ namespace OpenScrape.App
                 // Procesar la información de la mesa
                 await ProcessTableInfoAsync(potOddsResult);
 
-                // Actualizar la interfaz con los resultados (Fase 5: delega en UiUpdateService)
-                _playerGameState.HandSituation = _responseAction.HandSituation;
-                _uiUpdateService.UpdateResults(_playerGameState, potOddsResult, _responseAction?.Action, _tableHand, _tableName);
+                // Actualizar la interfaz con los resultados
+                UpdateUIWithResults(potOddsResult);
 
                 // Telemetry: medir render del overlay
                 using var _overlayTimer = _metrics?.Measure(TelemetryCategories.OverlayRender);
@@ -2617,45 +2611,9 @@ namespace OpenScrape.App
                 {
                     _gameLoopCts = new CancellationTokenSource();
                     _uiSyncService.Attach(_gameLoopCoordinator, this, _frmOverlay!, tbResume);
-                    _uiSyncService.SetUiUpdateService(_uiUpdateService);
                     _ = _gameLoopCoordinator.StartAsync(_gameLoopCts.Token);
                     _logger.LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
                 }
-
-                // Fase 5: Attach UiUpdateService a los controles
-                var uiControls = new UiUpdateControls(
-                    LbAction: lbAction,
-                    LbPositionAction: lbPositionAction,
-                    TbResume: tbResume,
-                    PbButtonPlayerOne: pbbuttonPlayerOne,
-                    PbButtonPlayerTwo: pbButtonPlayerTwo,
-                    PbButtonPlayerThree: pbButtonPlayerThree,
-                    PbButtonPlayerFour: pbButtonPlayerFour,
-                    PbButtonPlayerFive: pbButtonPlayerFive,
-                    PbButtonHero: pbButtonHero,
-                    LbNamePlayerOne: lbNamePlayerOne,
-                    LbNamePlayerTwo: lbNamePlayerTwo,
-                    LbNamePlayerThree: lbNamePlayerThree,
-                    LbNamePlayerFour: lbNamePlayerFour,
-                    LbNamePlayerFive: lbNamePlayerFive,
-                    LbBetPlayerOne: lbBetPlayerOne,
-                    LbBetPlayerTwo: lbBetPlayerTwo,
-                    LbBetPlayerThree: lbBetPlayerThree,
-                    LbBetPlayerFour: lbBetPlayerFour,
-                    LbBetPlayerFive: lbBetPlayerFive,
-                    LbBetHero: lbBetHero,
-                    LbPot: lbPot,
-                    LbUserStack: lbUserStack,
-                    LbTableHand: lbTableHand,
-                    LbTableName: lbTableName,
-                    PbHeroCard0: pbHeroCard0,
-                    PbHeroCard1: pbHeroCard1,
-                    PbBoard1: pbBoard1,
-                    PbBoard2: pbBoard2,
-                    PbBoard3: pbBoard3,
-                    PbBoard4: pbBoard4,
-                    PbBoard5: pbBoard5);
-                _uiUpdateService.Attach(this, _frmOverlay!, uiControls);
             }
             catch (Exception ex)
             {
