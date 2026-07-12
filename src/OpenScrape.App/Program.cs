@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Marten;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Configuration;
+using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Logging;
@@ -206,6 +207,11 @@ namespace OpenScrape.App
                     services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
                     services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
                     services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
+
+                    // Fase 7: UserControls de TabPageContributions
+                    services.AddTransient<HistorialTabControl>();
+                    services.AddTransient<BankrollTabControl>();
+                    services.AddTransient<MetricsTabControl>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

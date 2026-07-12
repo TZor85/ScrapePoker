@@ -283,37 +283,39 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ## Fase 7: TabPageContributions
 
-#### 7.1 Crear `HistorialTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/HistorialTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con `DataGridView`; mueve `InitializeHistorialTab` y handlers de selección. Recibe datos por propiedad pública.
-- **Deps**: ninguna.
+#### [x] 7.1 Crear `HistorialTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/HistorialTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con DataGridView; mueve InitializeHistorialTab y handlers. Inyecta GameLoggerService, ILogger, IPostflopDecisionService.
+- [x] **Deps**: ninguna.
 
-#### 7.2 Crear `BankrollTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/BankrollTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con gráficos de bankroll; mueve `InitializeBankrollTab`.
-- **Deps**: 7.1 (paralelizable).
+#### [x] 7.2 Crear `BankrollTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/BankrollTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con dashboard bankroll; mueve InitializeBankrollTab y UpdateBankrollDashboard.
+- [x] **Deps**: 7.1 (paralelizable).
 
-#### 7.3 Crear `MetricsTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/MetricsTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con métricas (manos/hora, win rate, VPIP, PFR); mueve `InitializeMetricsTab`.
-- **Deps**: 7.1 (paralelizable).
+#### [x] 7.3 Crear `MetricsTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/MetricsTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con grid de telemetría; mueve InitializeMetricsTab y handlers. Timer 1s con ciclo provider.
+- [x] **Deps**: 7.1 (paralelizable).
 
-#### 7.4 Tests de TabPageContributions
-- **Archivos**: `test/OpenScrape.App.Tests/TabPageContributionsTests.cs` (nuevo)
-- **Cubre**: Escenario RF7 (estado preservado entre cambios de tab).
-- **Deps**: 7.1, 7.2, 7.3.
+#### [x] 7.4 Tests de TabPageContributions
+- [x] **Archivos**: `test/OpenScrape.App.Tests/TabPageContributionsTests.cs` (nuevo, 7 tests)
+- [x] **Cubre**: Initialize columnas, null-safety, UpdateBankrollDashboard sin excepción.
+- [x] **Deps**: 7.1, 7.2, 7.3.
 
-#### 7.5 Embeber UserControls en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `FrmMain.Designer.cs` (modificar)
-- **Cambio**: cada tab page se reemplaza por el `UserControl` correspondiente; conecta datos vía propiedades.
-- **Deps**: 7.1, 7.2, 7.3.
+#### [x] 7.5 Embeber UserControls en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `Program.cs` (modificar)
+- [x] **Cambio**: inyectar 3 UserControls en constructor, llamar Initialize en body, suscribir tpHistorial.Enter.
+- [x] **Deps**: 7.1, 7.2, 7.3.
 
-#### 7.6 Limpiar `FrmMain`
-- **Eliminar**: `InitializeHistorialTab`, `InitializeBankrollTab`, `InitializeMetricsTab` y sus handlers.
-- **Deps**: 7.5.
+#### [x] 7.6 Limpiar `FrmMain`
+- [x] **Eliminar**: InitializeHistorialTab, InitializeBankrollTab, InitializeMetricsTab y todos sus handlers (15 métodos, 3 campos).
+- [x] **Conservar**: _metrics, _cycleCounter, UpdateBankrollDashboard.
+- [x] **Deps**: 7.5.
 
-#### 7.7 Gate de Fase 7
-- Build + tests verdes. Commit: `refactor(frmmain): extraer TabPageContributions (fase 7)`.
+#### [x] 7.7 Gate de Fase 7
+- [x] Build + 1260 tests verdes (1253 baseline + 7 nuevos).
+- [x] Commit: `refactor(frmmain): extraer TabPageContributions (fase 7)`.
 
 ---
 

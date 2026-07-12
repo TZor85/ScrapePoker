@@ -11,6 +11,7 @@ using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
+using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Telemetry;
@@ -122,6 +123,8 @@ namespace OpenScrape.App
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
             => _coordinator.DetectDonkBet(_playerGameState, maxBet, isHeroInPosition, currentSituation);
+        private int _cycleCounter;
+        private IMetricsCollector? _metrics;
         private volatile bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -190,6 +193,10 @@ namespace OpenScrape.App
         private readonly ITableReaderService _tableReaderService;
         // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults y relacionados
         private readonly IUiUpdateService _uiUpdateService;
+        // refactor-frmmain Fase 7: UserControls de TabPageContributions
+        private readonly HistorialTabControl _historialTab;
+        private readonly BankrollTabControl _bankrollTab;
+        private readonly MetricsTabControl _metricsTab;
         #endregion
 
         /// <summary>
@@ -241,7 +248,10 @@ namespace OpenScrape.App
                         IDetectionLoopService detectionLoopService,
                         ICaptureService captureService,
                         ITableReaderService tableReaderService,
-                        IUiUpdateService uiUpdateService)
+                         IUiUpdateService uiUpdateService,
+                         HistorialTabControl historialTab,
+                         BankrollTabControl bankrollTab,
+                         MetricsTabControl metricsTab)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -296,6 +306,9 @@ namespace OpenScrape.App
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
             _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
+            _historialTab = historialTab ?? throw new ArgumentNullException(nameof(historialTab));
+            _bankrollTab = bankrollTab ?? throw new ArgumentNullException(nameof(bankrollTab));
+            _metricsTab = metricsTab ?? throw new ArgumentNullException(nameof(metricsTab));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -309,9 +322,15 @@ namespace OpenScrape.App
 
             FormClosing += FrmMain_FormClosing;
 
-            InitializeHistorialTab();
-            InitializeBankrollTab();
-            InitializeMetricsTab();
+            // Fase 7: Inicializar UserControls en lugar de llamadas directas
+            _historialTab.Initialize(dgvSessions, dgvSessionHands, btnBacktest, lblSessionStats);
+            tpHistorial.Enter += async (s, e) => await _historialTab.OnTabEnterAsync();
+            _bankrollTab.Initialize(dgvBankrollHistory, tpBankroll,
+                lblBankrollCurrent, lblBankrollPeak, lblBankrollMaxDD,
+                lblWinRate, lblStdDev, lblTotalSessions, lblTotalHands,
+                lblAvgSessionProfit, lblRiskOfRuin, lblRecommendation);
+            _metricsTab.Initialize(dgvMetrics, btnResetMetrics, lblCurrentHand,
+                lblCycleCount, lblLastUpdate, tbControl, tabMetrics, () => _cycleCounter);
         }
 
         /// <summary>
@@ -3677,380 +3696,7 @@ namespace OpenScrape.App
         private string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
             => _coordinator.AdjustBetSize(action, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
 
-        #region Pestaña Historial
-
-        private bool _historialLoaded;
-        private List<SessionStatsDto>? _loadedSessions;
-        private List<HandRecord>? _loadedHands;
-
-        /// <summary>
-        /// Inicializa la pestaña Historial: columnas, estilos y eventos
-        /// </summary>
-        private void InitializeHistorialTab()
-        {
-            // Configurar columnas de sesiones
-            dgvSessions.AutoGenerateColumns = false;
-            dgvSessions.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "TableName", HeaderText = "Mesa", DataPropertyName = "TableName", Width = 120 },
-                new DataGridViewTextBoxColumn { Name = "StartTime", HeaderText = "Inicio", DataPropertyName = "StartTime", Width = 130 },
-                new DataGridViewTextBoxColumn { Name = "Duration", HeaderText = "Duración", DataPropertyName = "Duration", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "TotalHands", HeaderText = "Manos", DataPropertyName = "TotalHands", Width = 60 }
-                //new DataGridViewTextBoxColumn { Name = "TotalProfit", HeaderText = "Profit", DataPropertyName = "TotalProfit", Width = 80 },
-                //new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 }
-            );
-
-            // Configurar columnas de manos
-            dgvSessionHands.AutoGenerateColumns = false;
-            dgvSessionHands.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "HandNumber", HeaderText = "Hand#", DataPropertyName = "HandNumber", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "Cards", HeaderText = "Cartas", DataPropertyName = "Cards", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "Position", HeaderText = "Pos", DataPropertyName = "Position", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "LastStreet", HeaderText = "Street", DataPropertyName = "LastStreet", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "Result", HeaderText = "Resultado", DataPropertyName = "Result", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "ProfitLoss", HeaderText = "P/L", DataPropertyName = "ProfitLoss", Width = 70 }
-            );
-
-            // Eventos
-            tpHistorial.Enter += async (s, e) =>
-            {
-                if (!_historialLoaded)
-                    await LoadSessionsWithStatsAsync();
-            };
-            dgvSessions.SelectionChanged += DgvSessions_SelectionChanged;
-            dgvSessionHands.CellDoubleClick += DgvSessionHands_CellDoubleClick;
-            dgvSessions.CellFormatting += DgvSessions_CellFormatting;
-            dgvSessionHands.CellFormatting += DgvSessionHands_CellFormatting;
-            btnBacktest.Click += BtnBacktest_Click;
-        }
-
-        /// <summary>
-        /// Carga las sesiones recientes con sus estadísticas
-        /// </summary>
-        private async Task LoadSessionsWithStatsAsync()
-        {
-            try
-            {
-                _loadedSessions = await _gameLoggerService.GetRecentSessionsWithStatsAsync(50);
-
-                var displayData = _loadedSessions.Select(s => new
-                {
-                    s.TableName,
-                    StartTime = s.StartTime.ToString("dd/MM HH:mm"),
-                    Duration = FormatDuration(s.EndTime - s.StartTime),
-                    s.TotalHands,
-                    TotalProfit = s.TotalProfit.ToString("+0.00;-0.00"),
-                    BBPer100 = s.BBPer100.ToString("+0.0;-0.0")
-                }).ToList();
-
-                dgvSessions.DataSource = displayData;
-                _historialLoaded = true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cargando sesiones");
-            }
-        }
-
-        private static string FormatDuration(TimeSpan duration)
-        {
-            if (duration.TotalMinutes < 1)
-                return "< 1m";
-            return duration.TotalHours >= 1
-                ? $"{(int)duration.TotalHours}h {duration.Minutes}m"
-                : $"{duration.Minutes}m";
-        }
-
-        private async void DgvSessions_SelectionChanged(object? sender, EventArgs e)
-        {
-            if (dgvSessions.SelectedRows.Count == 0 || _loadedSessions == null)
-                return;
-
-            int idx = dgvSessions.SelectedRows[0].Index;
-            if (idx < 0 || idx >= _loadedSessions.Count)
-                return;
-
-            var session = _loadedSessions[idx];
-
-            try
-            {
-                _loadedHands = await _gameLoggerService.GetHandsForSessionAsync(session.Id);
-
-                var displayData = _loadedHands.Select(h => new
-                {
-                    h.HandNumber,
-                    Cards = $"{h.HeroCard1} {h.HeroCard2}",
-                    Position = FormatPosition(h.HeroPosition),
-                    LastStreet = h.LastStreetPlayed.ToString(),
-                    Result = h.Result.ToString(),
-                    ProfitLoss = (h.HeroStackEnd - h.HeroStackStart).ToString("+0.00;-0.00")
-                }).ToList();
-
-                dgvSessionHands.DataSource = displayData;
-
-                lblSessionStats.Text = $"Sesión: {session.TableName} | {session.TotalHands} manos | " +
-                    $"{session.TotalProfit:+0.00;-0.00} | {session.BBPer100:+0.0;-0.0} BB/100";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cargando manos");
-            }
-        }
-
-        private static string FormatPosition(TablePosition pos) => pos switch
-        {
-            TablePosition.Button => "BTN",
-            TablePosition.CutOff => "CO",
-            TablePosition.Middle => "MP",
-            TablePosition.Early => "EP",
-            TablePosition.SmallBlind => "SB",
-            TablePosition.BigBlind => "BB",
-            _ => pos.ToString()
-        };
-
-        private void DgvSessionHands_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0 || _loadedHands == null || e.RowIndex >= _loadedHands.Count)
-                return;
-
-            var hand = _loadedHands[e.RowIndex];
-            decimal bigBlind = _loadedSessions != null && dgvSessions.SelectedRows.Count > 0
-                ? _loadedSessions[dgvSessions.SelectedRows[0].Index].BigBlind
-                : 0.50m;
-
-            using var frm = new FrmHandDetail(hand, bigBlind);
-            frm.ShowDialog(this);
-        }
-
-        /// <summary>
-        /// Aplica colores condicionales verde/rojo a las columnas Profit y BB/100
-        /// </summary>
-        private void DgvSessions_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (e.Value == null) return;
-
-            string colName = dgvSessions.Columns[e.ColumnIndex].Name;
-            if (colName is "TotalProfit" or "BBPer100")
-            {
-                string val = e.Value.ToString() ?? "";
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        /// <summary>
-        /// Aplica colores condicionales a Result y P/L en la grilla de manos
-        /// </summary>
-        private void DgvSessionHands_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (e.Value == null) return;
-
-            string colName = dgvSessionHands.Columns[e.ColumnIndex].Name;
-            string val = e.Value.ToString() ?? "";
-
-            if (colName == "Result")
-            {
-                e.CellStyle.ForeColor = val switch
-                {
-                    "Won" => AppThemeHelper.Success,
-                    "Lost" => AppThemeHelper.Danger,
-                    _ => AppThemeHelper.PrimaryLight
-                };
-            }
-            else if (colName == "ProfitLoss")
-            {
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        /// <summary>
-        /// Ejecuta backtest A/B comparando decisiones históricas con el motor actual.
-        /// </summary>
-        private async void BtnBacktest_Click(object? sender, EventArgs e)
-        {
-            btnBacktest.Enabled = false;
-            btnBacktest.Text = "Analizando...";
-
-            try
-            {
-                // Cargar todas las manos disponibles
-                var hands = await _gameLoggerService.GetRecentHandsAsync(500);
-
-                if (hands == null || hands.Count == 0)
-                {
-                    MessageBox.Show("No hay manos en el historial para analizar.",
-                        "Backtest", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                // Determinar BigBlind de la sesión
-                decimal bigBlind = _loadedSessions?.FirstOrDefault()?.BigBlind ?? 0.50m;
-
-                // Ejecutar backtest
-                var backtester = new DecisionMaker.Services.StrategyBacktester(_postflopDecisionService);
-                var result = backtester.RunBacktest(hands, bigBlind);
-
-                // Mostrar resultado en popup
-                var msg = result.ToString();
-                MessageBox.Show(msg, $"Backtest A/B — {hands.Count} manos",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error en backtest: {ex.Message}",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                btnBacktest.Enabled = true;
-                btnBacktest.Text = "Backtest A/B";
-            }
-        }
-
-        #endregion
-
-        #region Pestaña Bankroll
-
-        private bool _bankrollLoaded;
-
-        private void InitializeBankrollTab()
-        {
-            dgvBankrollHistory.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Fecha", DataPropertyName = "Date", Width = 100 },
-                new DataGridViewTextBoxColumn { Name = "Hands", HeaderText = "Manos", DataPropertyName = "Hands", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "Profit", HeaderText = "Profit", DataPropertyName = "Profit", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "BankrollAfter", HeaderText = "Bankroll", DataPropertyName = "BankrollAfter", Width = 90 }
-            );
-
-            tpBankroll.Enter += (s, e) =>
-            {
-                if (!_bankrollLoaded)
-                {
-                    UpdateBankrollDashboard();
-                    _bankrollLoaded = true;
-                }
-            };
-
-            dgvBankrollHistory.CellFormatting += DgvBankrollHistory_CellFormatting;
-        }
-
-        private void DgvBankrollHistory_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            var colName = dgvBankrollHistory.Columns[e.ColumnIndex].Name;
-            if (colName == "Profit" && e.Value is string val)
-            {
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        #endregion
-
-        #region Pestaña Métricas
-
-        private System.Windows.Forms.Timer? _metricsRefreshTimer;
-        private int _cycleCounter;
-        private IMetricsCollector? _metrics;
-
-        private void InitializeMetricsTab()
-        {
-            dgvMetrics.Columns.Clear();
-            dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "Fase",
-                HeaderText = "Fase",
-                FillWeight = 180f,
-                ReadOnly = true,
-            });
-            foreach (var prefix in new[] { "Last", "Session" })
-                foreach (var suffix in new[] { "P50", "P95", "Max", "Count" })
-                {
-                    dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
-                    {
-                        Name = $"{prefix}{suffix}",
-                        HeaderText = prefix == "Last" ? $"Últ. {suffix}" : $"Ses. {suffix}",
-                        FillWeight = 60f,
-                        ReadOnly = true,
-                        DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight },
-                    });
-                }
-
-            foreach (var cat in TelemetryCategories.DisplayOrder)
-            {
-                int rowIdx = dgvMetrics.Rows.Add(cat, "—", "—", "—", "0", "—", "—", "—", "0");
-                dgvMetrics.Rows[rowIdx].Tag = cat;
-            }
-
-            _metricsRefreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
-            _metricsRefreshTimer.Tick += (s, e) => RefreshMetricsGrid();
-
-            tbControl.Selected += TabControl_Selected;
-            btnResetMetrics.Click += BtnResetMetrics_Click;
-        }
-
-        private void TabControl_Selected(object? sender, TabControlEventArgs e)
-        {
-            if (e.TabPage == tabMetrics)
-            {
-                RefreshMetricsGrid();
-                _metricsRefreshTimer?.Start();
-            }
-            else
-            {
-                _metricsRefreshTimer?.Stop();
-            }
-        }
-
-        private void RefreshMetricsGrid()
-        {
-            if (_metrics == null) return;
-
-            var snap = _metrics.SnapshotSession();
-
-            lblCurrentHand.Text = $"Mano actual: {snap.CurrentHandId ?? "—"}";
-            lblCycleCount.Text = $"Ciclos: {_cycleCounter:N0}";
-            lblLastUpdate.Text = $"Actualizado: {DateTime.Now:HH:mm:ss}";
-
-            foreach (DataGridViewRow row in dgvMetrics.Rows)
-            {
-                if (row.Tag is not string category) continue;
-
-                FillCells(row, 1, snap.LastHand.TryGetValue(category, out var last) ? last : null);
-                FillCells(row, 5, snap.Session.TryGetValue(category, out var session) ? session : null);
-            }
-        }
-
-        private static void FillCells(DataGridViewRow row, int startCol, CategoryStats? stats)
-        {
-            if (stats is null)
-            {
-                row.Cells[startCol + 0].Value = "—";
-                row.Cells[startCol + 1].Value = "—";
-                row.Cells[startCol + 2].Value = "—";
-                row.Cells[startCol + 3].Value = "0";
-                return;
-            }
-            row.Cells[startCol + 0].Value = stats.P50Ms.ToString("N0");
-            row.Cells[startCol + 1].Value = stats.P95Ms.ToString("N0");
-            row.Cells[startCol + 2].Value = stats.MaxMs.ToString("N0");
-            row.Cells[startCol + 3].Value = stats.Count.ToString("N0");
-        }
-
-        private void BtnResetMetrics_Click(object? sender, EventArgs e)
-        {
-            _metrics?.ResetSession();
-            RefreshMetricsGrid();
-            _logger.LogInformation("Telemetría: sesión reseteada por el usuario");
-        }
-
-        #endregion
+        // Pestañas Bankroll/Métricas delegadas a UserControls (Fase 7)
 
         // ============================================================================
         // INVENTARIO DE ESTADO MUTABLE — refactor-frmmain-coordinators (Fase 1.4)
