@@ -250,43 +250,38 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ---
 
-## Fase 6: ThemeService — Completada ✅
+## Fase 6: ThemeService
 
-#### [x] 6.1 Crear interfaz `IThemeService`
-- [x] **Archivos**: `src/OpenScrape.App/Services/IThemeService.cs` (nuevo)
-- [x] **Contrato**: 8 métodos — `InitializeVisualStyles(Form)`, `ApplyModernTabStyle(TabControl)`, más 6 tab-specific methods.
-- [x] **Deps**: ninguna.
+#### 6.1 Crear interfaz `IThemeService`
+- **Archivos**: `src/OpenScrape.App/Services/IThemeService.cs` (nuevo)
+- **Contrato**: `InitializeVisualStyles(Form)`; `ApplyModernTabStyle(TabControl)`; `ApplyGameTabStyle(TabPage)`; `ApplyConfigTabStyle(TabPage)`; métodos específicos por tab.
+- **Deps**: ninguna.
 
-#### [x] 6.2 Crear `ThemeService`
-- [x] **Archivos**: `src/OpenScrape.App/Services/ThemeService.cs` (nuevo)
-- [x] **Comportamiento**: implementa los 8 métodos. Busca controles por nombre vía `Controls.Find(name, true)` para no depender de campos de FrmMain. Paint handlers preservados con closures correctas. `SetStyle` no puede ir aquí (es protected) — se llama desde FrmMain.
-- [x] **Deps**: 6.1.
+#### 6.2 Crear `ThemeService`
+- **Archivos**: `src/OpenScrape.App/Services/ThemeService.cs` (nuevo)
+- **Comportamiento**: mueve `InitializeVisualStyles`, `ApplyModernTabStyle`, `ApplyGameTabStyle`, `ApplyConfigTabStyle`, etc. Acepta controles por parámetro. Sin referencias a `_playerGameState`.
+- **Deps**: 6.1.
 
-#### [x] 6.3 Tests de `ThemeService`
-- [x] **Archivos**: `test/OpenScrape.App.Tests/ThemeServiceTests.cs` (nuevo)
-- [x] **Cubre**: 10 tests — InitializeVisualStyles (BackColor, Font), ApplyModernTabStyle (Appearance, Font, iteración por Name), ApplyGameTabStyle (card PictureBoxes), ApplyConfigTabStyle (twRegionsConfig), ApplyTablesTabStyle (dgvHands), ApplyLogsTabStyle (tbResume), ApplyHistorialTabStyle (dgvSessions), ApplyBankrollTabStyle (dgvBankrollHistory).
-- [x] **Deps**: 6.2.
+#### 6.3 Tests de `ThemeService`
+- **Archivos**: `test/OpenScrape.App.Tests/ThemeServiceTests.cs` (nuevo)
+- **Cubre**: Escenario RF6 (paleta, fuentes, padding de TabControl). Controles WinForms reales en test.
+- **Deps**: 6.2.
 
-#### [x] 6.4 Registrar en DI (`Program.cs`)
-- [x] Lifetime: **Singleton**.
-- [x] **Deps**: 6.2.
+#### 6.4 Registrar en DI (`Program.cs`)
+- Lifetime: **Singleton** (estilos puros sin estado).
+- **Deps**: 6.2.
 
-#### [x] 6.5 Inyectar y delegar en `FrmMain`
-- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- [x] **Cambio**: campo `_themeService`, parámetro en constructor, `FrmMain_Load` llama `_themeService.InitializeVisualStyles(this)` + `_themeService.ApplyModernTabStyle(tbControl)` + `this.SetStyle(...)`.
-- [x] **Deps**: 6.4.
+#### 6.5 Inyectar y delegar en `FrmMain`
+- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
+- **Cambio**: `FrmMain_Load` llama a `_themeService.InitializeVisualStyles(this)` y aplica estilos por tab; pasa referencias explícitas.
+- **Deps**: 6.4.
 
-#### [x] 6.6 Limpiar `FrmMain`
-- [x] **Eliminar**: 8 métodos de styling (~357 LOC): `#region [Visual Styling Methods]`, `InitializeVisualStyles`, `ApplyModernTabStyle`, `ApplyGameTabStyle`, `ApplyConfigTabStyle`, `ApplyTablesTabStyle`, `ApplyLogsTabStyle`, `ApplyHistorialTabStyle`, `ApplyBankrollTabStyle`, `#endregion`.
-- [x] **Deps**: 6.5.
+#### 6.6 Limpiar `FrmMain`
+- **Eliminar**: métodos de styling extraídos.
+- **Deps**: 6.5.
 
-#### [x] 6.7 Gate de Fase 6
-- [x] `dotnet build OpenScrape.sln` → exit 0 (0 errores)
-- [x] `dotnet test` → 1263/1263 tests verdes (1253 baseline + 10 nuevos)
-- [x] `IThemeService`/`ThemeService` creados con 8 métodos de estilo
-- [x] FrmMain modificado: constructor + FrmMain_Load
-- [x] Métodos legacy de styling eliminados de FrmMain
-- [x] Commit: `refactor(frmmain): extraer ThemeService (fase 6)`
+#### 6.7 Gate de Fase 6
+- Build + tests verdes + verificación visual (comparar screenshot antes/después). Commit: `refactor(frmmain): extraer ThemeService (fase 6)`.
 
 ---
 

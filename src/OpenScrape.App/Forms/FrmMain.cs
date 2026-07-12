@@ -190,8 +190,6 @@ namespace OpenScrape.App
         private readonly ITableReaderService _tableReaderService;
         // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults/UpdateOverlay/etc.
         private readonly IUiUpdateService _uiUpdateService;
-        // refactor-frmmain Fase 6: ThemeService extraído de métodos de styling
-        private readonly IThemeService _themeService;
         #endregion
 
         /// <summary>
@@ -243,8 +241,7 @@ namespace OpenScrape.App
                         IDetectionLoopService detectionLoopService,
                         ICaptureService captureService,
                         ITableReaderService tableReaderService,
-                        IUiUpdateService uiUpdateService,
-                        IThemeService themeService)
+                        IUiUpdateService uiUpdateService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -257,6 +254,9 @@ namespace OpenScrape.App
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _textBoxLoggerProvider = textBoxLoggerProvider ?? throw new ArgumentNullException(nameof(textBoxLoggerProvider));
             _textBoxLoggerProvider.SetTextBoxTarget(tbResume);
+
+            // NUEVO: Aplicar estilos visuales ANTES de la inicialización
+            //InitializeVisualStyles();
 
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
             _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
@@ -296,7 +296,6 @@ namespace OpenScrape.App
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
             _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
-            _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -389,14 +388,6 @@ namespace OpenScrape.App
                 _formImage = new FormImage();
                 _frmOverlay = new FrmOverlay(_overlayConfig);
                 cbSpeed.SelectedIndex = 0;
-
-                // Aplicar estilos visuales (Fase 6: extraído a ThemeService)
-                _themeService.InitializeVisualStyles(this);
-                _themeService.ApplyModernTabStyle(tbControl);
-                this.SetStyle(ControlStyles.AllPaintingInWmPaint |
-                              ControlStyles.UserPaint |
-                              ControlStyles.DoubleBuffer |
-                              ControlStyles.ResizeRedraw, true);
 
                 await using var sessionDB = _dataBase.LightweightSession();
                 await LoadRegionTableMapAsync(sessionDB);
@@ -3339,6 +3330,364 @@ namespace OpenScrape.App
         }
 
         #endregion
+
+        #region [Visual Styling Methods]
+
+        /// <summary>
+        /// Inicializa todos los estilos visuales
+        /// </summary>
+        private void InitializeVisualStyles()
+        {
+            this.SuspendLayout();
+
+            // Configuración del formulario principal
+            this.BackColor = AppThemeHelper.BackgroundMain;
+            this.Font = new Font("Segoe UI", 9F);
+
+            // Aplicar estilos
+            ApplyModernTabStyle();
+
+            // Configurar renderizado optimizado
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint |
+                          ControlStyles.UserPaint |
+                          ControlStyles.DoubleBuffer |
+                          ControlStyles.ResizeRedraw, true);
+
+            this.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno al TabControl
+        /// </summary>
+        private void ApplyModernTabStyle()
+        {
+            tbControl.SuspendLayout();
+
+            // Configuración del TabControl
+            tbControl.Appearance = TabAppearance.FlatButtons;
+            tbControl.BackColor = AppThemeHelper.BackgroundMain;
+            tbControl.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+
+            // Estilo de las pestañas
+            foreach (TabPage tab in tbControl.TabPages)
+            {
+                tab.BackColor = AppThemeHelper.BackgroundMain;
+                tab.Padding = new Padding(10);
+
+                // Aplicar estilo específico por pestaña
+                switch (tab.Name)
+                {
+                    case "tbJuego":
+                        ApplyGameTabStyle(tab);
+                        break;
+                    case "tbConfig":
+                        ApplyConfigTabStyle(tab);
+                        break;
+                    case "tbTables":
+                        ApplyTablesTabStyle(tab);
+                        break;
+                    case "tbLogs":
+                        ApplyLogsTabStyle(tab);
+                        break;
+                    case "tpHistorial":
+                        ApplyHistorialTabStyle(tab);
+                        break;
+                    case "tpBankroll":
+                        ApplyBankrollTabStyle(tab);
+                        break;
+                }
+            }
+
+            tbControl.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de juego
+        /// </summary>
+        private void ApplyGameTabStyle(TabPage gameTab)
+        {
+            gameTab.SuspendLayout();
+
+            // Mejorar visualización de cartas
+            var cardPictureBoxes = new[] { pbHeroCard0, pbHeroCard1, pbBoard1, pbBoard2, pbBoard3, pbBoard4, pbBoard5 };
+            foreach (var pb in cardPictureBoxes)
+            {
+                pb.BackColor = AppThemeHelper.BackgroundCard;
+                pb.BorderStyle = BorderStyle.None;
+                pb.SizeMode = PictureBoxSizeMode.StretchImage;
+
+                // Agregar borde redondeado visual
+                pb.Paint += (s, e) =>
+                {
+                    using var pen = new Pen(AppThemeHelper.BorderLight, 2f);
+                    e.Graphics.DrawRectangle(pen, 0, 0, pb.Width - 1, pb.Height - 1);
+                };
+            }
+
+            // Mejorar paneles de información
+            var infoPanels = new[] { pnNamePlayerFive, panel2, panel3, panel4, panel5, panel6, panel7, panel8, panel9, panel10,
+                            pnNameHero, pnNamePlayerOne, pnNamePlayerTwo, pnNamePlayerThree, pnNamePlayerFour };
+
+            foreach (Panel panel in infoPanels)
+            {
+                panel.BackColor = AppThemeHelper.BackgroundCard;
+                panel.BorderStyle = BorderStyle.None;
+                panel.Padding = new Padding(5);
+
+                // Sombra sutil
+                panel.Paint += (s, e) =>
+                {
+                    using var brush = new SolidBrush(AppThemeHelper.BorderLight);
+                    e.Graphics.FillRectangle(brush, 0, panel.Height - 1, panel.Width, 1);
+                    e.Graphics.FillRectangle(brush, panel.Width - 1, 0, 1, panel.Height);
+                };
+            }
+
+            // Mejorar botones de acción
+            var actionButtons = new[] { btnCapture, btnWindow };
+            foreach (Button btn in actionButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.BackColor = AppThemeHelper.Accent;
+                btn.ForeColor = Color.White;
+                btn.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+                btn.Cursor = Cursors.Hand;
+
+                // Efecto hover
+                btn.MouseEnter += (s, e) => btn.BackColor = Color.FromArgb(0, 100, 160);
+                btn.MouseLeave += (s, e) => btn.BackColor = AppThemeHelper.Accent;
+            }
+
+            // Mejorar label de acción principal
+            lbAction.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            lbAction.ForeColor = AppThemeHelper.PrimaryDark;
+            lbAction.BackColor = Color.Transparent;
+
+            gameTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de configuración
+        /// </summary>
+        private void ApplyConfigTabStyle(TabPage configTab)
+        {
+            configTab.SuspendLayout();
+
+            // Mejorar TreeView de regiones
+            twRegionsConfig.BackColor = AppThemeHelper.BackgroundCard;
+            twRegionsConfig.BorderStyle = BorderStyle.None;
+            twRegionsConfig.Font = new Font("Segoe UI", 9F);
+            twRegionsConfig.ForeColor = AppThemeHelper.PrimaryDark;
+            twRegionsConfig.LineColor = AppThemeHelper.BorderLight;
+
+            // Mejorar GroupBox de región
+            rgRegion.BackColor = AppThemeHelper.BackgroundCard;
+            rgRegion.ForeColor = AppThemeHelper.PrimaryDark;
+            rgRegion.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+
+            // Mejorar controles de movimiento
+            var movementButtons = new[] { btnUp, btnDown, btnLeft, btnRight, btnUpLeft, btnUpRight, btnDownLeft, btnDownRight };
+            foreach (Button btn in movementButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 1;
+                btn.FlatAppearance.BorderColor = AppThemeHelper.BorderLight;
+                btn.BackColor = AppThemeHelper.BackgroundCard;
+                btn.ForeColor = AppThemeHelper.PrimaryDark;
+                btn.Font = new Font("Segoe UI", 10F);
+                btn.Cursor = Cursors.Hand;
+
+                // Efecto hover
+                btn.MouseEnter += (s, e) =>
+                {
+                    btn.BackColor = AppThemeHelper.PrimaryLight;
+                    btn.ForeColor = Color.White;
+                };
+                btn.MouseLeave += (s, e) =>
+                {
+                    btn.BackColor = AppThemeHelper.BackgroundCard;
+                    btn.ForeColor = AppThemeHelper.PrimaryDark;
+                };
+            }
+
+            // Mejorar botones de tamaño
+            var sizeButtons = new[] { btnPlusWidth, btnMinusWidth, btnPlusHeight, btnMinusHeight };
+            foreach (Button btn in sizeButtons)
+            {
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.BackColor = AppThemeHelper.Accent;
+                btn.ForeColor = Color.White;
+                btn.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+                btn.Cursor = Cursors.Hand;
+            }
+
+            // Mejorar TextBoxes
+            var textBoxes = new[] { tbX, tbY, tbWidth, tbHeight, tbColor, tbRegionUmbral, tbRegionInactUmbral };
+            foreach (TextBox tb in textBoxes)
+            {
+                tb.BorderStyle = BorderStyle.FixedSingle;
+                tb.BackColor = AppThemeHelper.BackgroundCard;
+                tb.ForeColor = AppThemeHelper.PrimaryDark;
+                tb.Font = new Font("Segoe UI", 9F);
+            }
+
+            // Mejorar CheckBoxes
+            var checkBoxes = new[] { cbRegionColor, cbRegionHash, cbRegionBoard, cbRegionNumber };
+            foreach (CheckBox cb in checkBoxes)
+            {
+                cb.FlatStyle = FlatStyle.System;
+                cb.BackColor = Color.Transparent;
+                cb.ForeColor = AppThemeHelper.PrimaryDark;
+                cb.Font = new Font("Segoe UI", 9F);
+            }
+
+            configTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de tablas
+        /// </summary>
+        private void ApplyTablesTabStyle(TabPage tablesTab)
+        {
+            tablesTab.SuspendLayout();
+
+            // Mejorar TreeView de tablas
+            twTables.BackColor = AppThemeHelper.BackgroundCard;
+            twTables.BorderStyle = BorderStyle.None;
+            twTables.Font = new Font("Segoe UI", 9F);
+            twTables.ForeColor = AppThemeHelper.PrimaryDark;
+
+            // Mejorar DataGridView
+            dgvHands.EnableHeadersVisualStyles = false;
+            dgvHands.BackgroundColor = AppThemeHelper.BackgroundMain;
+            dgvHands.BorderStyle = BorderStyle.None;
+            dgvHands.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvHands.GridColor = AppThemeHelper.BorderLight;
+            dgvHands.Font = new Font("Segoe UI", 9F);
+
+            // Estilo de headers
+            dgvHands.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+            dgvHands.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvHands.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            dgvHands.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+            dgvHands.ColumnHeadersHeight = 35;
+
+            // Estilo de celdas
+            dgvHands.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+            dgvHands.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+            dgvHands.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+            dgvHands.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvHands.RowTemplate.Height = 28;
+
+            // Estilo alternado
+            dgvHands.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+
+            tablesTab.ResumeLayout(true);
+        }
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de logs
+        /// </summary>
+        private void ApplyLogsTabStyle(TabPage logsTab)
+        {
+            logsTab.SuspendLayout();
+
+            // Mejorar TextBox de logs
+            tbResume.BackColor = AppThemeHelper.PrimaryDark;
+            tbResume.ForeColor = Color.FromArgb(220, 220, 220);
+            tbResume.Font = new Font("Consolas", 9F);
+            tbResume.BorderStyle = BorderStyle.None;
+
+            logsTab.ResumeLayout(true);
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Aplica estilo moderno a la pestaña de historial
+        /// </summary>
+        private void ApplyHistorialTabStyle(TabPage historialTab)
+        {
+            historialTab.SuspendLayout();
+
+            // Labels título
+            foreach (var lbl in new[] { lblSesionesTitle, lblManosTitle })
+            {
+                lbl.BackColor = AppThemeHelper.PrimaryDark;
+                lbl.ForeColor = Color.White;
+                lbl.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+                lbl.Padding = new Padding(6, 0, 0, 0);
+            }
+
+            // Estilizar ambas grillas
+            foreach (var dgv in new[] { dgvSessions, dgvSessionHands })
+            {
+                dgv.EnableHeadersVisualStyles = false;
+                dgv.BackgroundColor = AppThemeHelper.BackgroundMain;
+                dgv.BorderStyle = BorderStyle.None;
+                dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+                dgv.GridColor = AppThemeHelper.BorderLight;
+                dgv.Font = new Font("Segoe UI", 9F);
+                dgv.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+                dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+                dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+                dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+                dgv.ColumnHeadersHeight = 35;
+                dgv.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+                dgv.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+                dgv.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+                dgv.DefaultCellStyle.SelectionForeColor = Color.White;
+                dgv.RowTemplate.Height = 28;
+                dgv.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+            }
+
+            // Label de stats
+            lblSessionStats.BackColor = AppThemeHelper.BackgroundMain;
+            lblSessionStats.ForeColor = AppThemeHelper.PrimaryDark;
+            lblSessionStats.Font = new Font("Segoe UI", 9F);
+
+            historialTab.ResumeLayout(true);
+        }
+
+        private void ApplyBankrollTabStyle(TabPage bankrollTab)
+        {
+            bankrollTab.SuspendLayout();
+
+            // Paneles con fondo blanco y borde sutil
+            foreach (var panel in new[] { pnlBankrollInfo, pnlRiskInfo, pnlPerformance })
+            {
+                panel.BackColor = AppThemeHelper.BackgroundCard;
+                panel.BorderStyle = BorderStyle.None;
+                panel.Paint += (s, e) =>
+                {
+                    using var pen = new Pen(AppThemeHelper.BorderLight, 1f);
+                    e.Graphics.DrawRectangle(pen, 0, 0, ((Panel)s!).Width - 1, ((Panel)s!).Height - 1);
+                };
+            }
+
+            // DataGridView con mismo estilo que historial
+            dgvBankrollHistory.EnableHeadersVisualStyles = false;
+            dgvBankrollHistory.BackgroundColor = AppThemeHelper.BackgroundMain;
+            dgvBankrollHistory.BorderStyle = BorderStyle.None;
+            dgvBankrollHistory.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvBankrollHistory.GridColor = AppThemeHelper.BorderLight;
+            dgvBankrollHistory.Font = new Font("Segoe UI", 9F);
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.ColumnHeadersHeight = 32;
+            dgvBankrollHistory.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
+            dgvBankrollHistory.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
+            dgvBankrollHistory.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
+            dgvBankrollHistory.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvBankrollHistory.RowTemplate.Height = 26;
+            dgvBankrollHistory.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
+
+            bankrollTab.ResumeLayout(true);
+        }
 
         private void tbJuego_Click(object sender, EventArgs e)
         {
