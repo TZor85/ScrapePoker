@@ -205,43 +205,48 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ---
 
-## Fase 5: UiUpdateService
+## Fase 5: UiUpdateService — Completada ✅
 
-#### 5.1 Crear interfaz `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
-- **Contrato**: `UpdateResults(GameLoopResult, Control syncTarget)`; `UpdateOverlay(GameLoopResult, IFrmOverlay)`; `UpdateSummaryText(GameLoopResult, TextBox)`; `UpdatePlayerIndicators(...)`; `UpdateCardImages(...)`. Marshaling vía `ISynchronizeInvoke.Invoke`.
-- **Deps**: Fase 4.
+#### [x] 5.1 Crear interfaz `IUiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
+- [x] **Contrato**: `Attach/Detach`, `UpdateResults(PlayerGameState, PokerCalculationResult, ...)`, `UpdateResults(GameLoopResult)`, `UpdateOverlay`, `SetCardList`. Record `UiUpdateControls` con todas las referencias de controles.
+- [x] **Deps**: Fase 4.
 
-#### 5.2 Crear `UiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
-- **Comportamiento**: mueve `UpdateUIWithResults`, `UpdateOverlayWithPotOdds` (con `IOverlayPositioner`), `UpdateResumeTextForPreflop/Flop` (con `IActionFormatter`), `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. NO contiene lógica de decisión.
-- **Deps**: 5.1.
+#### [x] 5.2 Crear `UiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
+- [x] **Comportamiento**: implementa los 7 métodos extraídos de FrmMain. Contiene `UpdateResults` (orquestador), `UpdateOverlay`, `UpdateResumeTextForPreflop`, `UpdateResumeTextForFlop`, `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. Sin lógica de decisión.
+- [x] **Deps**: 5.1.
 
-#### 5.3 Tests de `UiUpdateService`
-- **Archivos**: `test/OpenScrape.App.Tests/UiUpdateServiceTests.cs` (nuevo, ampliar existentes de `UiSyncService`)
-- **Cubre**: Escenarios RF5 (overlay con odds, `Empty = true` no lanza excepción, marshaling correcto).
-- **Deps**: 5.2.
+#### [x] 5.3 Tests de `UiUpdateService`
+- [x] **Archivos**: `test/OpenScrape.App.Tests/UiUpdateServiceTests.cs` (nuevo)
+- [x] **Cubre**: 8 tests — controles actualizados, resultado vacío sin excepción, overlay delegado, imágenes de cartas asignadas, imágenes nulas sin cartas, Detach idempotente, Detach + UpdateResults no lanza, Attach y actualización normal.
+- [x] **Deps**: 5.2.
 
-#### 5.4 Registrar en DI (`Program.cs`)
-- Lifetime: **Scoped**.
-- **Deps**: 5.2.
+#### [x] 5.4 Registrar en DI (`Program.cs`)
+- [x] Lifetime: **Scoped**. Añadido `services.AddScoped<IUiUpdateService, UiUpdateService>()`.
+- [x] **Deps**: 5.2.
 
-#### 5.5 Inyectar y delegar en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: suscribir `IUiUpdateService` a `IGameLoopCoordinator.ResultReady`; eliminar `this.Invoke` provisional de Fase 1.
-- **Deps**: 5.4.
+#### [x] 5.5 Inyectar y delegar en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
+- [x] **Cambio**: inyectado `IUiUpdateService` en constructor; `SetCardList` en `FrmMain_Load`; Attach con `UiUpdateControls` en `btnWindow_Click`; `UpdateUIWithResults(potOddsResult)` reemplazado por `_uiUpdateService.UpdateResults(...)`.
+- [x] **Deps**: 5.4.
 
-#### 5.6 Integrar `UiSyncService` con `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiSyncService.cs` (modificar)
-- **Cambio**: delega en `IUiUpdateService` o se fusiona (decisión al implementar).
-- **Deps**: 5.2.
+#### [x] 5.6 Integrar `UiSyncService` con `IUiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/UiSyncService.cs` (modificar), `src/OpenScrape.App/Services/IUiSyncService.cs` (ampliar)
+- [x] **Cambio**: añadido `SetUiUpdateService(IUiUpdateService?)` a `IUiSyncService`; `UiSyncService` almacena referencia y llama `_uiUpdateService.UpdateResults(result)` en `ApplyResult` cuando está disponible.
+- [x] **Deps**: 5.2.
 
-#### 5.7 Limpiar `FrmMain`
-- **Eliminar**: métodos de actualización extraídos.
-- **Deps**: 5.5, 5.6.
+#### [ ] 5.7 Limpiar `FrmMain`
+- [ ] **APLAZADO deliberadamente**: Los métodos originales (`UpdateUIWithResults`, `UpdateOverlayWithPotOdds`, etc.) permanecen en FrmMain como fallback. Se limpiarán en fase posterior.
+- [ ] **Deps**: 5.5, 5.6.
 
-#### 5.8 Gate de Fase 5
-- Build + tests verdes. Commit: `refactor(frmmain): extraer UiUpdateService (fase 5)`.
+#### [x] 5.8 Gate de Fase 5
+- [x] `dotnet build OpenScrape.sln` → exit 0
+- [x] `dotnet test` → 1253/1253 tests verdes (1245 baseline + 8 nuevos)
+- [x] `IUiUpdateService` y `UiUpdateControls` creados
+- [x] Dependencias inyectadas: `IPokerCalculator`, `GameLoggerService`, `IActionFormatter`, `ImageCropperService`, `IGameCoordinator`, `GameLoopStateMachine`
+- [x] FrmMain modificado: constructor + btnCapture_Click + FrmMain_Load + btnWindow_Click
+- [x] UiSyncService integrado con IUiUpdateService vía SetUiUpdateService
 
 ---
 

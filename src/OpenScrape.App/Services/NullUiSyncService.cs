@@ -14,5 +14,7 @@ public sealed class NullUiSyncService : IUiSyncService
 
     public void Detach() { }
 
+    public void SetUiUpdateService(IUiUpdateService? service) { }
+
     public void Dispose() { }
 }

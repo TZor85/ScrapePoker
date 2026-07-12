@@ -20,11 +20,21 @@ public sealed class UiSyncService : IUiSyncService
     private ISynchronizeInvoke? _syncTarget;
     private IFrmOverlay? _overlay;
     private TextBox? _logsBox;
+    private IUiUpdateService? _uiUpdateService;
     private bool _disposed;
 
     public UiSyncService(ILogger<UiSyncService> logger)
     {
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Conecta opcionalmente el <see cref="IUiUpdateService"/> para que el
+    /// coordinator (feature flag) también actualice los controles de FrmMain.
+    /// </summary>
+    public void SetUiUpdateService(IUiUpdateService? service)
+    {
+        _uiUpdateService = service;
     }
 
     public void Attach(IGameLoopCoordinator coordinator, ISynchronizeInvoke syncTarget, IFrmOverlay overlay, object? logsBox)
@@ -94,20 +104,30 @@ public sealed class UiSyncService : IUiSyncService
             if (result.Empty)
                 return;
 
-            var overlay = _overlay;
-            if (overlay is not null)
+            // Fase 5: Si hay UiUpdateService conectado, delegar actualización completa de UI
+            var uiUpdate = _uiUpdateService;
+            if (uiUpdate is not null)
             {
-                if (!string.IsNullOrEmpty(result.RecommendedAction))
-                    overlay.UpdateAction(result.RecommendedAction);
-                if (result.DecisionResult is { } decision)
+                uiUpdate.UpdateResults(result);
+            }
+            else
+            {
+                // Fallback: actualización parcial de overlay (comportamiento legacy)
+                var overlay = _overlay;
+                if (overlay is not null)
                 {
-                    overlay.UpdateEquityPercentage($"{decision.EquityPercent:F1}%");
-                    overlay.UpdatePotOddsPercentage($"{decision.PotOddsPercent:F1}%");
-                    if (!string.IsNullOrEmpty(decision.BoardTexture))
-                        overlay.UpdateStreetPhase(decision.BoardTexture);
+                    if (!string.IsNullOrEmpty(result.RecommendedAction))
+                        overlay.UpdateAction(result.RecommendedAction);
+                    if (result.DecisionResult is { } decision)
+                    {
+                        overlay.UpdateEquityPercentage($"{decision.EquityPercent:F1}%");
+                        overlay.UpdatePotOddsPercentage($"{decision.PotOddsPercent:F1}%");
+                        if (!string.IsNullOrEmpty(decision.BoardTexture))
+                            overlay.UpdateStreetPhase(decision.BoardTexture);
+                    }
+                    if (result.Street is { } street)
+                        overlay.UpdateStreetIndicator(street.ToString());
                 }
-                if (result.Street is { } street)
-                    overlay.UpdateStreetIndicator(street.ToString());
             }
 
             if (!string.IsNullOrEmpty(result.LogText))
