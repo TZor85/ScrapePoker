@@ -139,6 +139,9 @@ namespace OpenScrape.App
                     // UI sync (refactor-frmmain-coordinators Fase 5)
                     services.AddScoped<IUiSyncService, UiSyncService>();
 
+                    // UiUpdateService (Fase 5: extraído de FrmMain.UpdateUIWithResults y relacionados)
+                    services.AddScoped<IUiUpdateService, UiUpdateService>();
+
                     // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
                     services.AddSingleton<IActionFormatter, ActionFormatter>();
                     services.AddSingleton<IOverlayPositioner, OverlayPositioner>();

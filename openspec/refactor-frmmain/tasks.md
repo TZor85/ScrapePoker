@@ -205,43 +205,44 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ---
 
-## Fase 5: UiUpdateService
+## Fase 5: UiUpdateService — Completada ✅
 
-#### 5.1 Crear interfaz `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
-- **Contrato**: `UpdateResults(GameLoopResult, Control syncTarget)`; `UpdateOverlay(GameLoopResult, IFrmOverlay)`; `UpdateSummaryText(GameLoopResult, TextBox)`; `UpdatePlayerIndicators(...)`; `UpdateCardImages(...)`. Marshaling vía `ISynchronizeInvoke.Invoke`.
-- **Deps**: Fase 4.
+#### [x] 5.1 Crear interfaz `IUiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
+- [x] **Contrato**: `Attach/Detach`, `UpdateResults(PlayerGameState, PokerCalculationResult, ...)`, `SetCardList`, `SetOverlay`. Record `UiUpdateControls` con 30 controles.
+- [x] **Deps**: Fase 4.
 
-#### 5.2 Crear `UiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
-- **Comportamiento**: mueve `UpdateUIWithResults`, `UpdateOverlayWithPotOdds` (con `IOverlayPositioner`), `UpdateResumeTextForPreflop/Flop` (con `IActionFormatter`), `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. NO contiene lógica de decisión.
-- **Deps**: 5.1.
+#### [x] 5.2 Crear `UiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
+- [x] **Comportamiento**: implementa `UpdateResults` (orquestador), `UpdateResumeTextForPreflop`, `UpdateResumeTextForFlop`, `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. Sin lógica de decisión. Sin integración con UiSyncService.
+- [x] **Deps**: 5.1.
 
-#### 5.3 Tests de `UiUpdateService`
-- **Archivos**: `test/OpenScrape.App.Tests/UiUpdateServiceTests.cs` (nuevo, ampliar existentes de `UiSyncService`)
-- **Cubre**: Escenarios RF5 (overlay con odds, `Empty = true` no lanza excepción, marshaling correcto).
-- **Deps**: 5.2.
+#### [x] 5.3 Tests de `UiUpdateService`
+- [x] 8 tests: Attach/Detach, null-safety, lbAction, lbPot, tableHand/tableName, SetCardList, SetOverlay.
+- [x] Fakes manuales: FakeActionFormatter, FakePokerCalculator, FakeGameCoordinator, FakeOverlay.
+- [x] **Deps**: 5.2.
 
-#### 5.4 Registrar en DI (`Program.cs`)
-- Lifetime: **Scoped**.
-- **Deps**: 5.2.
+#### [x] 5.4 Registrar en DI (`Program.cs`)
+- [x] Lifetime: **Scoped**. `services.AddScoped<IUiUpdateService, UiUpdateService>()`.
+- [x] **Deps**: 5.2.
 
-#### 5.5 Inyectar y delegar en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: suscribir `IUiUpdateService` a `IGameLoopCoordinator.ResultReady`; eliminar `this.Invoke` provisional de Fase 1.
-- **Deps**: 5.4.
+#### [x] 5.5 Inyectar y delegar en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
+- [x] **Cambio**: inyectado `IUiUpdateService` en constructor; `SetOverlay`/`SetCardList` en `FrmMain_Load`; `Attach` en `btnWindow_Click`; `UpdateUIWithResults(potOddsResult)` → `_uiUpdateService.UpdateResults(...)`.
+- [x] **Deps**: 5.4.
 
-#### 5.6 Integrar `UiSyncService` con `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiSyncService.cs` (modificar)
-- **Cambio**: delega en `IUiUpdateService` o se fusiona (decisión al implementar).
-- **Deps**: 5.2.
+#### [x] 5.6 No integrar con `UiSyncService` (decisión)
+- [x] **DELIBERADAMENTE NO IMPLEMENTADO**: Bug detectado en Fase 5 original — `UiSyncService.ApplyResult` construía un `PlayerGameState` sintético incompleto. Se eliminó la integración. El coordinator sigue actualizando solo overlay como antes.
+- [x] `IUiSyncService`, `UiSyncService`, `NullUiSyncService` intactos.
+- [x] **Deps**: 5.2.
 
-#### 5.7 Limpiar `FrmMain`
-- **Eliminar**: métodos de actualización extraídos.
-- **Deps**: 5.5, 5.6.
+#### [ ] 5.7 Limpiar `FrmMain`
+- [ ] **APLAZADO**: Los métodos originales (`UpdateUIWithResults`, `UpdateResumeTextForPreflop`, etc.) permanecen en FrmMain como fallback.
+- [ ] **Deps**: 5.5.
 
-#### 5.8 Gate de Fase 5
-- Build + tests verdes. Commit: `refactor(frmmain): extraer UiUpdateService (fase 5)`.
+#### [x] 5.8 Gate de Fase 5
+- [x] Build + tests verdes.
+- [x] Sin integración con UiSyncService.
 
 ---
 

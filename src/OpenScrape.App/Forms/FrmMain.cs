@@ -188,6 +188,8 @@ namespace OpenScrape.App
         private readonly ICaptureService _captureService;
         // refactor-frmmain Fase 3: TableReaderService extraído de SetBetPlayer/SetHeroStack/etc.
         private readonly ITableReaderService _tableReaderService;
+        // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults y relacionados
+        private readonly IUiUpdateService _uiUpdateService;
         #endregion
 
         /// <summary>
@@ -238,7 +240,8 @@ namespace OpenScrape.App
                         IMetricsCollector metrics,
                         IDetectionLoopService detectionLoopService,
                         ICaptureService captureService,
-                        ITableReaderService tableReaderService)
+                        ITableReaderService tableReaderService,
+                        IUiUpdateService uiUpdateService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -292,6 +295,7 @@ namespace OpenScrape.App
             _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
+            _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -383,6 +387,7 @@ namespace OpenScrape.App
             {
                 _formImage = new FormImage();
                 _frmOverlay = new FrmOverlay(_overlayConfig);
+                _uiUpdateService.SetOverlay(_frmOverlay);
                 cbSpeed.SelectedIndex = 0;
 
                 await using var sessionDB = _dataBase.LightweightSession();
@@ -391,6 +396,19 @@ namespace OpenScrape.App
 
                 var allCards = await sessionDB.Query<Card>().ToListAsync();
                 _cards.AddRange(allCards);
+                _uiUpdateService.SetCardList(_cards);
+
+                // Fase 5: Attach controles para que UiUpdateService pueda actualizar la UI
+                // Se hace aquí (FrmMain_Load) y no en btnWindow_Click porque en test mode
+                // no se ejecuta btnWindow_Click.
+                _uiUpdateService.Attach(new UiUpdateControls(
+                    tbResume, pbHeroCard0, pbHeroCard1, pbBoard1, pbBoard2, pbBoard3, pbBoard4, pbBoard5,
+                    lbNamePlayerOne, lbNamePlayerTwo, lbNamePlayerThree, lbNamePlayerFour, lbNamePlayerFive,
+                    lbBetPlayerOne, lbBetPlayerTwo, lbBetPlayerThree, lbBetPlayerFour, lbBetPlayerFive,
+                    lbBetHero, lbPot,
+                    pbbuttonPlayerOne, pbButtonPlayerTwo, pbButtonPlayerThree, pbButtonPlayerFour, pbButtonPlayerFive, pbButtonHero,
+                    lbAction, lbPositionAction, lbTableHand, lbTableName
+                ));
 
                 _formImage.Location = new Point(Width, Location.Y);
                 _formImage.Show();
@@ -831,7 +849,7 @@ namespace OpenScrape.App
                 await ProcessTableInfoAsync(potOddsResult);
 
                 // Actualizar la interfaz con los resultados
-                UpdateUIWithResults(potOddsResult);
+                _uiUpdateService.UpdateResults(_playerGameState, potOddsResult, _responseAction, _tableHand, _tableName);
 
                 // Telemetry: medir render del overlay
                 using var _overlayTimer = _metrics?.Measure(TelemetryCategories.OverlayRender);
@@ -2614,6 +2632,7 @@ namespace OpenScrape.App
                     _ = _gameLoopCoordinator.StartAsync(_gameLoopCts.Token);
                     _logger.LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
                 }
+
             }
             catch (Exception ex)
             {
