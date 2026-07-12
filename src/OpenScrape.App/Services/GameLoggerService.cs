@@ -306,7 +306,7 @@ public class GameLoggerService
     /// <summary>
     /// Extrae las manos más recientes consultando directamente la colección HandRecord.
     /// </summary>
-    public async Task<List<HandRecord>> GetRecentHandsAsync(int maxHands = 500)
+    public virtual async Task<List<HandRecord>> GetRecentHandsAsync(int maxHands = 500)
     {
         await using var session = _store.QuerySession();
         var results = await session.Query<HandRecord>()
@@ -319,7 +319,7 @@ public class GameLoggerService
     /// <summary>
     /// Obtiene todas las manos de una sesión específica.
     /// </summary>
-    public async Task<List<HandRecord>> GetHandsForSessionAsync(string gameSessionId)
+    public virtual async Task<List<HandRecord>> GetHandsForSessionAsync(string gameSessionId)
     {
         await using var session = _store.QuerySession();
         var results = await session.Query<HandRecord>()
@@ -332,7 +332,7 @@ public class GameLoggerService
     /// <summary>
     /// Obtiene las sesiones recientes con estadísticas agregadas calculadas desde HandRecord.
     /// </summary>
-    public async Task<List<SessionStatsDto>> GetRecentSessionsWithStatsAsync(int count = 50)
+    public virtual async Task<List<SessionStatsDto>> GetRecentSessionsWithStatsAsync(int count = 50)
     {
         await using var session = _store.QuerySession();
         var sessions = await session.Query<GameSession>()

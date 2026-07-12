@@ -11,6 +11,7 @@ using OpenScrape.App.Helpers;
 using OpenScrape.App.Helpers.FlopHelper;
 using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
+using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Telemetry;
@@ -27,7 +28,6 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features.ActionScenario;
 using OpenScrape.Features.Card;
 using OpenScrape.Features.RegionsTableMap;
-using OpenScrape.Features.RegionsTableMap.Update;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics;
@@ -71,17 +71,14 @@ namespace OpenScrape.App
         #region [Private Fields]
         private List<Card> _cards = new();
         private RadioButton? _lastChecked;
-        private Image? _img;
         private PlayerGameState _playerGameState = new();
         private TableScrapeFlopResult _scrapeFlopResult = new();
         private ResponseAction _responseAction = new();
-        private int _speed = 1;
         private string _folderPath = string.Empty;
         private string _tableHand = string.Empty;
         private List<RegionTableMap>? _regionsTableMap;
         private readonly RegionLookupCache _regionLookupCache;
         private readonly CardCacheService _cardCacheService;
-        private Domain.ValueObjects.Region? _selectedRegion;
         private readonly string _pathResume;
         private Dictionary<TablePosition, Dictionary<TablePosition, decimal>> _preflopHeroPosition = new();
         private string _session = string.Empty;
@@ -122,6 +119,8 @@ namespace OpenScrape.App
 
         private (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(decimal maxBet, bool isHeroInPosition, HandSituation currentSituation)
             => _coordinator.DetectDonkBet(_playerGameState, maxBet, isHeroInPosition, currentSituation);
+        private int _cycleCounter;
+        private IMetricsCollector? _metrics;
         private volatile bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
@@ -138,7 +137,6 @@ namespace OpenScrape.App
         private readonly RegionTableMapUseCases _regionTableMapUseCases;
         private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
         private readonly ImageCropperService _imageCropperService;
-        private List<CardDTO>? _cardsImages;
         private readonly IDocumentStore _dataBase;
         // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
         private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase;
@@ -188,6 +186,14 @@ namespace OpenScrape.App
         private readonly ICaptureService _captureService;
         // refactor-frmmain Fase 3: TableReaderService extraído de SetBetPlayer/SetHeroStack/etc.
         private readonly ITableReaderService _tableReaderService;
+        // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults y relacionados
+        private readonly IUiUpdateService _uiUpdateService;
+        // refactor-frmmain Fase 7: UserControls de TabPageContributions
+        private readonly HistorialTabControl _historialTab;
+        private readonly BankrollTabControl _bankrollTab;
+        private readonly MetricsTabControl _metricsTab;
+        // refactor-frmmain Fase 8: RegionEditorControl extraído de FrmMain
+        private readonly RegionEditorControl _regionEditor;
         #endregion
 
         /// <summary>
@@ -238,7 +244,12 @@ namespace OpenScrape.App
                         IMetricsCollector metrics,
                         IDetectionLoopService detectionLoopService,
                         ICaptureService captureService,
-                        ITableReaderService tableReaderService)
+                        ITableReaderService tableReaderService,
+                         IUiUpdateService uiUpdateService,
+                         HistorialTabControl historialTab,
+                         BankrollTabControl bankrollTab,
+                         MetricsTabControl metricsTab,
+                         RegionEditorControl regionEditor)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -292,6 +303,11 @@ namespace OpenScrape.App
             _detectionLoopService = detectionLoopService ?? throw new ArgumentNullException(nameof(detectionLoopService));
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
+            _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
+            _historialTab = historialTab ?? throw new ArgumentNullException(nameof(historialTab));
+            _bankrollTab = bankrollTab ?? throw new ArgumentNullException(nameof(bankrollTab));
+            _metricsTab = metricsTab ?? throw new ArgumentNullException(nameof(metricsTab));
+            _regionEditor = regionEditor ?? throw new ArgumentNullException(nameof(regionEditor));
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -305,9 +321,22 @@ namespace OpenScrape.App
 
             FormClosing += FrmMain_FormClosing;
 
-            InitializeHistorialTab();
-            InitializeBankrollTab();
-            InitializeMetricsTab();
+            // Fase 7: Inicializar UserControls en lugar de llamadas directas
+            _historialTab.Initialize(dgvSessions, dgvSessionHands, btnBacktest, lblSessionStats);
+            tpHistorial.Enter += async (s, e) => await _historialTab.OnTabEnterAsync();
+            _bankrollTab.Initialize(dgvBankrollHistory, tpBankroll,
+                lblBankrollCurrent, lblBankrollPeak, lblBankrollMaxDD,
+                lblWinRate, lblStdDev, lblTotalSessions, lblTotalHands,
+                lblAvgSessionProfit, lblRiskOfRuin, lblRecommendation);
+            _metricsTab.Initialize(dgvMetrics, btnResetMetrics, lblCurrentHand,
+                lblCycleCount, lblLastUpdate, tbControl, tabMetrics, () => _cycleCounter);
+
+            // Fase 8: Suscribir evento de guardado de regiones para recargar datos
+            _regionEditor.RegionsSaved += async (s, args) =>
+            {
+                await LoadRegionTableMapAsync();
+                _regionEditor.LoadTreeViewRegions(_regionsTableMap);
+            };
         }
 
         /// <summary>
@@ -383,6 +412,7 @@ namespace OpenScrape.App
             {
                 _formImage = new FormImage();
                 _frmOverlay = new FrmOverlay(_overlayConfig);
+                _uiUpdateService.SetOverlay(_frmOverlay);
                 cbSpeed.SelectedIndex = 0;
 
                 await using var sessionDB = _dataBase.LightweightSession();
@@ -391,9 +421,38 @@ namespace OpenScrape.App
 
                 var allCards = await sessionDB.Query<Card>().ToListAsync();
                 _cards.AddRange(allCards);
+                _uiUpdateService.SetCardList(_cards);
+
+                // Fase 5: Attach controles para que UiUpdateService pueda actualizar la UI
+                // Se hace aquí (FrmMain_Load) y no en btnWindow_Click porque en test mode
+                // no se ejecuta btnWindow_Click.
+                _uiUpdateService.Attach(new UiUpdateControls(
+                    tbResume, pbHeroCard0, pbHeroCard1, pbBoard1, pbBoard2, pbBoard3, pbBoard4, pbBoard5,
+                    lbNamePlayerOne, lbNamePlayerTwo, lbNamePlayerThree, lbNamePlayerFour, lbNamePlayerFive,
+                    lbBetPlayerOne, lbBetPlayerTwo, lbBetPlayerThree, lbBetPlayerFour, lbBetPlayerFive,
+                    lbBetHero, lbPot,
+                    pbbuttonPlayerOne, pbButtonPlayerTwo, pbButtonPlayerThree, pbButtonPlayerFour, pbButtonPlayerFive, pbButtonHero,
+                    lbAction, lbPositionAction, lbTableHand, lbTableName
+                ));
 
                 _formImage.Location = new Point(Width, Location.Y);
                 _formImage.Show();
+
+                // Fase 8: Inicializar RegionEditorControl con controles de la pestaña de configuración
+                _regionEditor.Initialize(
+                    twRegionsConfig, _formImage.pbImage,
+                    tbX, tbY, tbWidth, tbHeight, tbColor, tbRegionName,
+                    tbRegionUmbral, tbRegionInactUmbral,
+                    btnUpdateMap, btnTestColor, btnTestTexto, btnTestCarta,
+                    rgRegion,
+                    cbRegionColor, cbRegionHash, cbRegionBoard, cbRegionNumber,
+                    btnUp, btnDown, btnLeft, btnRight,
+                    btnUpLeft, btnUpRight, btnDownLeft, btnDownRight,
+                    btnPlusWidth, btnMinusWidth, btnPlusHeight, btnMinusHeight,
+                    cbSpeed,
+                    pbColorDebug, tbTestColor, tbTestTexto, pbTestCarta,
+                    pictureBox1, pbRegionColor,
+                    _regionsTableMap);
 
                 UpdateBankrollDashboard();
             }
@@ -428,8 +487,7 @@ namespace OpenScrape.App
                 regions.AddRange(categories);
                 _regionsTableMap = regionsTableMap.ToList();
                 _regionLookupCache.Initialize(_regionsTableMap);
-
-                LoadTreeViewRegions(regionsTableMap);
+                // LoadTreeViewRegions movido a RegionEditorControl (Fase 8)
             }
             catch (Exception ex)
             {
@@ -492,177 +550,6 @@ namespace OpenScrape.App
                 }
             }
         }
-
-        /// <summary>
-        /// Carga el TreeView con las regiones de configuración
-        /// </summary>
-        private void LoadTreeViewRegions(IReadOnlyList<RegionTableMap> categories)
-        {
-            twRegionsConfig.Nodes.Clear();
-
-            foreach (var category in categories)
-            {
-                // Añadir nodo principal (categoría)
-                TreeNode regionsConfigNode = twRegionsConfig.Nodes.Add(category.Id);
-
-                // Añadir sub-nodos (regiones)
-                if (category.Regions != null)
-                {
-                    foreach (var region in category.Regions)
-                    {
-                        regionsConfigNode.Nodes.Add(region.Name);
-                    }
-                }
-            }
-        }
-
-        #region [Event Handlers]
-
-        /// <summary>
-        /// Handles double-click event on the regions TreeView.
-        /// </summary>
-        private void twRegions_DoubleClick(object sender, EventArgs e)
-        {
-            try
-            {
-                EnableButtons();
-                _formImage.pbImage.Refresh();
-
-                // Colapsar nodos no relacionados
-                if (twRegionsConfig?.SelectedNode?.Parent != null)
-                {
-                    foreach (TreeNode rootNode in twRegionsConfig.Nodes)
-                    {
-                        if (rootNode != twRegionsConfig?.SelectedNode?.Parent)
-                        {
-                            rootNode.Collapse();
-                        }
-                    }
-                }
-
-                if (twRegionsConfig?.SelectedNode != null)
-                {
-                    _selectedRegion = GetRegionFromNode(twRegionsConfig.SelectedNode);
-                    if (_selectedRegion != null && _formImage.pbImage.Image != null)
-                    {
-                        UpdateRegionDisplay();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error selecting region");
-            }
-        }
-
-        /// <summary>
-        /// Actualiza la visualización de la región seleccionada
-        /// </summary>
-        private void UpdateRegionDisplay()
-        {
-            using (var lapiz = new Pen(Color.Red))
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY,
-                    _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            // Actualizar campos de texto con los valores de la región
-            tbX.Text = _selectedRegion.PosX.ToString();
-            tbY.Text = _selectedRegion.PosY.ToString();
-            tbWidth.Text = _selectedRegion.Width.ToString();
-            tbHeight.Text = _selectedRegion.Height.ToString();
-            tbRegionName.Text = _selectedRegion.Name;
-            tbColor.Text = _selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty;
-            tbRegionUmbral.Text = _selectedRegion.Umbral.ToString();
-            tbRegionInactUmbral.Text = _selectedRegion.InactiveUmbral.ToString();
-
-            // Actualizar checkboxes
-            cbRegionColor.Checked = _selectedRegion.IsColor.GetValueOrDefault();
-            cbRegionHash.Checked = _selectedRegion.IsHash.GetValueOrDefault();
-            cbRegionBoard.Checked = _selectedRegion.IsBoard.GetValueOrDefault();
-            cbRegionNumber.Checked = _selectedRegion.IsOnlyNumber.GetValueOrDefault();
-
-            SetPictureBoxColor(_selectedRegion.Color != null ? _selectedRegion.Color.ToUpper() : string.Empty);
-
-            // Habilitar botones según propiedades de la región
-            btnTestColor.Enabled = _selectedRegion.IsColor.GetValueOrDefault();
-            btnTestTexto.Enabled = _selectedRegion.Umbral != null;
-            btnTestCarta.Enabled = _selectedRegion.IsHash.GetValueOrDefault();
-        }
-
-        /// <summary>
-        /// Obtiene la región correspondiente al nodo seleccionado
-        /// </summary>
-        private Domain.ValueObjects.Region? GetRegionFromNode(TreeNode node)
-        {
-            return _regionsTableMap?
-                .SelectMany(c => c.Regions ?? new List<Domain.ValueObjects.Region>())
-                .FirstOrDefault(r => r.Name == node.Text);
-        }
-
-        /// <summary>
-        /// Maneja el cambio en la velocidad de movimiento
-        /// </summary>
-        private void cbSpeed_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (int.TryParse(cbSpeed.Text, out var speed))
-            {
-                _speed = speed;
-            }
-        }
-
-        /// <summary>
-        /// Guarda los cambios en la configuración de la región
-        /// </summary>
-        private async void btnSaveMap_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                // Validación de entrada mejorada
-                var umbral = string.IsNullOrEmpty(tbRegionUmbral.Text) ? "0" : tbRegionUmbral.Text;
-                var inactUmbral = string.IsNullOrEmpty(tbRegionInactUmbral.Text) ? "0" : tbRegionInactUmbral.Text;
-
-                if (!double.TryParse(umbral, out double regionUmbral) ||
-                    !double.TryParse(inactUmbral, out double regionInactUmbral) ||
-                    !int.TryParse(tbX.Text, out int x) ||
-                    !int.TryParse(tbY.Text, out int y) ||
-                    !int.TryParse(tbWidth.Text, out int width) ||
-                    !int.TryParse(tbHeight.Text, out int height) ||
-                    _selectedRegion == null)
-                {
-                    _logger.LogInformation("Error de validación: umbral={Umbral}, inact={Inact}, X={X}, Y={Y}, W={W}, H={H}", umbral, inactUmbral, tbX.Text, tbY.Text, tbWidth.Text, tbHeight.Text);
-                    return;
-                }
-
-                await Task.Run(async () =>
-                {
-                    await _regionTableMapUseCases.UpdateRegionTableMap.ExecuteAsync(
-                        new UpdateRegionTableMapRequest(
-                            _selectedRegion.Category,
-                            _selectedRegion.Name,
-                            x, y, width, height,
-                            regionUmbral,
-                            regionInactUmbral,
-                            tbColor.Text,
-                            cbRegionColor.Checked,
-                            cbRegionHash.Checked,
-                            cbRegionNumber.Checked,
-                            cbRegionBoard.Checked
-                        )
-                    );
-                });
-
-                await LoadRegionTableMapAsync();
-                _logger.LogInformation("Región actualizada: {Region}", _selectedRegion.Name);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al guardar la región");
-            }
-        }
-
-        #endregion
 
         /// <summary>
         /// Captura y procesa la información de la mesa de póker
@@ -831,7 +718,7 @@ namespace OpenScrape.App
                 await ProcessTableInfoAsync(potOddsResult);
 
                 // Actualizar la interfaz con los resultados
-                UpdateUIWithResults(potOddsResult);
+                _uiUpdateService.UpdateResults(_playerGameState, potOddsResult, _responseAction, _tableHand, _tableName);
 
                 // Telemetry: medir render del overlay
                 using var _overlayTimer = _metrics?.Measure(TelemetryCategories.OverlayRender);
@@ -2570,6 +2457,9 @@ namespace OpenScrape.App
 
                 if (_handle != IntPtr.Zero)
                 {
+                    // Fase 4: Propagar el handle al CaptureService para HandProcessor
+                    _captureService.WindowHandle = _handle;
+
                     User32.GetWindowRect(_handle, ref windowRect);
 
                     // Extracción de condición compleja a variable
@@ -2611,6 +2501,7 @@ namespace OpenScrape.App
                     _ = _gameLoopCoordinator.StartAsync(_gameLoopCts.Token);
                     _logger.LogInformation("[Fase 6] GameLoopCoordinator arrancado (feature flag ON)");
                 }
+
             }
             catch (Exception ex)
             {
@@ -2626,393 +2517,6 @@ namespace OpenScrape.App
         // ReadPixelFromBuffer       → movido a DetectionLoopService.ReadPixelFromBuffer
         // DetectionResult           → movido a DetectionLoopService (record público)
         // ============================================================================
-
-        /// <summary>
-        /// Habilita los botones de control
-        /// </summary>
-        private void EnableButtons()
-        {
-            var buttons = new[]
-            {
-                btnPlusHeight, btnPlusWidth, btnMinusHeight, btnMinusWidth,
-                btnUp, btnUpRight, btnRight, btnDownRight, btnDown,
-                btnDownLeft, btnLeft, btnUpLeft
-            };
-
-            foreach (var button in buttons)
-            {
-                button.Enabled = true;
-            }
-        }
-
-        #endregion
-
-
-        #region [Regions manipulation methods]
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón para aumentar el ancho
-        /// </summary>
-        private void btnPlusWidth_Click(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null)
-                return;
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Width = _selectedRegion.Width + _speed };
-                _selectedRegion = updatedRegion;
-                tbWidth.Text = _selectedRegion.Width.ToString();
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón para disminuir el ancho
-        /// </summary>
-        private void btnMinusWidth_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion == null)
-                return;
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Width = Math.Max(1, _selectedRegion.Width - _speed) };
-                _selectedRegion = updatedRegion;
-                tbWidth.Text = _selectedRegion.Width.ToString();
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón para aumentar la altura
-        /// </summary>
-        private void btnPlusHeight_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion == null)
-                return;
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Height = _selectedRegion.Height + _speed };
-                _selectedRegion = updatedRegion;
-                tbHeight.Text = _selectedRegion.Height.ToString();
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón para disminuir la altura
-        /// </summary>
-        private void btnMinusHeight_Click(object sender, EventArgs e)
-        {
-            if (_selectedRegion == null)
-                return;
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Height = Math.Max(1, _selectedRegion.Height - _speed) };
-                _selectedRegion = updatedRegion;
-                tbHeight.Text = _selectedRegion.Height.ToString();
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Handles the click event for the move right button
-        /// </summary>
-        private void btnRigth_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: _speed, offsetY: 0);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move left button
-        /// </summary>
-        private void btnLeft_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: -_speed, offsetY: 0);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move down button
-        /// </summary>
-        private void btnDown_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: 0, offsetY: _speed);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move up button
-        /// </summary>
-        private void btnUp_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: 0, offsetY: -_speed);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move up-left button
-        /// </summary>
-        private void btnUpLeft_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: -_speed, offsetY: -_speed);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move up-right button
-        /// </summary>
-        private void btnUpRight_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: _speed, offsetY: -_speed);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move down-left button
-        /// </summary>
-        private void btnDownLeft_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: -_speed, offsetY: _speed);
-        }
-
-        /// <summary>
-        /// Handles the click event for the move down-right button
-        /// </summary>
-        private void btnDownRight_Click(object sender, EventArgs e)
-        {
-            // Extracción a método común
-            MoveRegion(offsetX: _speed, offsetY: _speed);
-        }
-
-        /// <summary>
-        /// Método común para mover la región seleccionada
-        /// </summary>
-        /// <param name="offsetX">Desplazamiento en X</param>
-        /// <param name="offsetY">Desplazamiento en Y</param>
-        private void MoveRegion(int offsetX, int offsetY)
-        {
-            // Método común para mover región
-            if (_selectedRegion == null || _formImage.pbImage.Image == null)
-                return;
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                // Obtener información de color
-                var rgbResponse = GetColorResponse();
-
-                var updateRegion = _selectedRegion with
-                {
-                    PosX = _selectedRegion.PosX + offsetX,
-                    PosY = _selectedRegion.PosY + offsetY
-                };
-
-                // Actualizar UI
-                tbY.Text = updateRegion.PosY.ToString();
-                tbX.Text = updateRegion.PosX.ToString();
-                _papel.DrawRectangle(lapiz, updateRegion.PosX, updateRegion.PosY, updateRegion.Width, updateRegion.Height);
-
-                // Actualizar color si es necesario
-                if (updateRegion.IsColor.GetValueOrDefault())
-                {
-                    updateRegion = updateRegion with
-                    {
-                        Color = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}"
-                    };
-                }
-
-                _selectedRegion = updateRegion;
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Obtiene la respuesta de color RGB para la región seleccionada
-        /// </summary>
-        /// <returns>Respuesta con valores RGB</returns>
-        private GetRGBColorResponse GetColorResponse()
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImage.Image == null)
-                return new GetRGBColorResponse();
-
-            var rgbRequest = new GetRGBColorRequest
-            {
-                Image = (Bitmap)_formImage.pbImage.Image,
-                X = _selectedRegion.PosX,
-                Y = _selectedRegion.PosY,
-                IsColor = _selectedRegion.IsColor.GetValueOrDefault()
-            };
-
-            var rgbResponse = ColorHelper.GetRGBColor(rgbRequest);
-
-            if (_selectedRegion.IsColor.GetValueOrDefault())
-            {
-                tbColor.Text = $"{rgbResponse.RColor}{rgbResponse.GColor}{rgbResponse.BColor}";
-            }
-
-            return rgbResponse;
-        }
-
-        #endregion
-
-        #region [TextBox Events]
-
-
-        /// <summary>
-        /// Maneja el evento de salida del textbox de ancho
-        /// </summary>
-        private void tbWidth_Leave(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null)
-                return;
-
-            // Validación de entrada
-            if (!int.TryParse(tbWidth.Text, out int width))
-            {
-                tbWidth.Text = _selectedRegion.Width.ToString();
-                return;
-            }
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Width = Math.Max(1, width) };
-                _selectedRegion = updatedRegion;
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de salida del textbox de altura
-        /// </summary>
-        private void tbHeight_Leave(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null)
-                return;
-
-            // Validación de entrada
-            if (!int.TryParse(tbHeight.Text, out int height))
-            {
-                tbHeight.Text = _selectedRegion.Height.ToString();
-                return;
-            }
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { Height = Math.Max(1, height) };
-                _selectedRegion = updatedRegion;
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el textbox de posición X
-        /// </summary>
-        private void tbX_Leave(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null)
-                return;
-
-            // Validación de entrada
-            if (!int.TryParse(tbX.Text, out int posX))
-            {
-                tbX.Text = _selectedRegion.PosX.ToString();
-                return;
-            }
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { PosX = posX };
-                _selectedRegion = updatedRegion;
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
-
-        /// <summary>
-        /// Maneja el evento de salida del textbox de posición Y
-        /// </summary>
-        private void tbY_Leave(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null)
-                return;
-
-            // Validación de entrada
-            if (!int.TryParse(tbY.Text, out int posY))
-            {
-                tbY.Text = _selectedRegion.PosY.ToString();
-                return;
-            }
-
-            _formImage.pbImage.Refresh();
-
-            using (_papel = _formImage.pbImage.CreateGraphics())
-            {
-                using var lapiz = new Pen(Color.Red);
-
-                var updatedRegion = _selectedRegion with { PosY = posY };
-                _selectedRegion = updatedRegion;
-                _papel.DrawRectangle(lapiz, _selectedRegion.PosX, _selectedRegion.PosY, _selectedRegion.Width, _selectedRegion.Height);
-            }
-
-            _img = _formImage.pbImage.Image;
-        }
 
         #endregion
 
@@ -3110,156 +2614,6 @@ namespace OpenScrape.App
                 {
                     sibling.Collapse();
                 }
-            }
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón de prueba de color
-        /// </summary>
-        private void btnTestColor_Click(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImage.Image == null)
-                return;
-
-            var color = _colorDetectionService.GetPixelColor(
-                _formImage.pbImage.Image,
-                _selectedRegion.PosX,
-                _selectedRegion.PosY);
-
-            pbColorDebug.BackColor = Color.FromArgb(color.Alpha, color.Red, color.Green, color.Blue);
-            tbTestColor.Text = $"#{color.Red:X2}{color.Green:X2}{color.Blue:X2}";
-        }
-
-        /// <summary>
-        /// Establece el color del PictureBox
-        /// </summary>
-        /// <param name="hexColor">Color en formato hexadecimal</param>
-        private void SetPictureBoxColor(string hexColor)
-        {
-            if (string.IsNullOrEmpty(hexColor))
-                return;
-
-            // Asegurarse que el valor hex tenga el formato correcto
-            hexColor = hexColor.Replace("#", "");
-
-            try
-            {
-                Color color = ColorTranslator.FromHtml("#" + hexColor);
-                using (Bitmap bmp = new Bitmap(pbRegionColor.Width, pbRegionColor.Height))
-                {
-                    using (Graphics g = Graphics.FromImage(bmp))
-                    {
-                        g.Clear(color);
-                    }
-                    pbRegionColor.Image?.Dispose();
-                    pbRegionColor.Image = new Bitmap(bmp);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al establecer color");
-            }
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón de prueba de texto
-        /// </summary>
-        private void btnTestTexto_Click(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImage.Image == null)
-                return;
-
-            var firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                _selectedRegion.PosX, _selectedRegion.PosY,
-                _selectedRegion.Width, _selectedRegion.Height,
-                _selectedRegion.Umbral ?? 0,
-                _selectedRegion.IsOnlyNumber ?? false);
-
-            using var secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-                _formImage.pbImage.Image,
-                _selectedRegion.PosX, _selectedRegion.PosY,
-                _selectedRegion.Width, _selectedRegion.Height,
-                _selectedRegion.InactiveUmbral ?? 0,
-                _selectedRegion.IsOnlyNumber ?? false);
-
-            var result = string.Empty;
-
-            if (_selectedRegion.IsOnlyNumber == true)
-            {
-                if (string.IsNullOrEmpty(firstOcr.Text))
-                    firstOcr.Text = "0";
-
-                if (string.IsNullOrEmpty(secondOcr.Text))
-                    secondOcr.Text = "0";
-
-                var ocr1 = decimal.TryParse(firstOcr.Text, out var v1) ? v1 : 0m;
-                var ocr2 = decimal.TryParse(secondOcr.Text, out var v2) ? v2 : 0m;
-
-                if (ocr2 >= ocr1)
-                    result = ocr2.ToString();
-                else
-                    result = ocr1.ToString();
-            }
-
-            tbTestTexto.Text = !string.IsNullOrEmpty(result) ? result : "Sin resultado";
-
-            // Liberar imagen anterior y transferir la de firstOcr al PictureBox
-            pictureBox1.Image?.Dispose();
-            pictureBox1.Image = firstOcr.Image;
-            firstOcr.Image = null; // Evitar que Dispose libere la imagen transferida
-            firstOcr.Dispose();
-        }
-
-        /// <summary>
-        /// Maneja el evento de clic en el botón de prueba de carta
-        /// </summary>
-        private async void btnTestCarta_Click(object sender, EventArgs e)
-        {
-            // Validación de región seleccionada
-            if (_selectedRegion == null || _formImage.pbImage.Image == null)
-            {
-                _logger.LogError("No se ha seleccionado una región o la imagen es nula.");
-                return;
-            }
-
-            try
-            {
-                var imageToBase64 = _imageCropperService.CropImageToBase64(
-                    _formImage.pbImage.Image,
-                    _selectedRegion.PosX,
-                    _selectedRegion.PosY,
-                    _selectedRegion.Width,
-                    _selectedRegion.Height);
-
-                // Carga de cartas desde cache singleton
-                _cardsImages ??= await _cardCacheService.GetCardsAsync();
-
-                if (_cardsImages?.Any() == true)
-                {
-                    var bestMatch = _cardsImages
-                        .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-                        .Select(item => new
-                        {
-                            Card = item,
-                            Percentage = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64)
-                        })
-                        .OrderByDescending(x => x.Percentage)
-                        .FirstOrDefault();
-
-                    if (bestMatch != null)
-                    {
-                        // Liberar imagen anterior
-                        pbTestCarta.Image?.Dispose();
-                        pbTestCarta.Image = _imageCropperService.Base64ToImage(bestMatch.Card.ImageBase64);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al probar carta");
             }
         }
 
@@ -3655,380 +3009,7 @@ namespace OpenScrape.App
         private string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
             => _coordinator.AdjustBetSize(action, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
 
-        #region Pestaña Historial
-
-        private bool _historialLoaded;
-        private List<SessionStatsDto>? _loadedSessions;
-        private List<HandRecord>? _loadedHands;
-
-        /// <summary>
-        /// Inicializa la pestaña Historial: columnas, estilos y eventos
-        /// </summary>
-        private void InitializeHistorialTab()
-        {
-            // Configurar columnas de sesiones
-            dgvSessions.AutoGenerateColumns = false;
-            dgvSessions.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "TableName", HeaderText = "Mesa", DataPropertyName = "TableName", Width = 120 },
-                new DataGridViewTextBoxColumn { Name = "StartTime", HeaderText = "Inicio", DataPropertyName = "StartTime", Width = 130 },
-                new DataGridViewTextBoxColumn { Name = "Duration", HeaderText = "Duración", DataPropertyName = "Duration", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "TotalHands", HeaderText = "Manos", DataPropertyName = "TotalHands", Width = 60 }
-                //new DataGridViewTextBoxColumn { Name = "TotalProfit", HeaderText = "Profit", DataPropertyName = "TotalProfit", Width = 80 },
-                //new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 }
-            );
-
-            // Configurar columnas de manos
-            dgvSessionHands.AutoGenerateColumns = false;
-            dgvSessionHands.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "HandNumber", HeaderText = "Hand#", DataPropertyName = "HandNumber", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "Cards", HeaderText = "Cartas", DataPropertyName = "Cards", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "Position", HeaderText = "Pos", DataPropertyName = "Position", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "LastStreet", HeaderText = "Street", DataPropertyName = "LastStreet", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "Result", HeaderText = "Resultado", DataPropertyName = "Result", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "ProfitLoss", HeaderText = "P/L", DataPropertyName = "ProfitLoss", Width = 70 }
-            );
-
-            // Eventos
-            tpHistorial.Enter += async (s, e) =>
-            {
-                if (!_historialLoaded)
-                    await LoadSessionsWithStatsAsync();
-            };
-            dgvSessions.SelectionChanged += DgvSessions_SelectionChanged;
-            dgvSessionHands.CellDoubleClick += DgvSessionHands_CellDoubleClick;
-            dgvSessions.CellFormatting += DgvSessions_CellFormatting;
-            dgvSessionHands.CellFormatting += DgvSessionHands_CellFormatting;
-            btnBacktest.Click += BtnBacktest_Click;
-        }
-
-        /// <summary>
-        /// Carga las sesiones recientes con sus estadísticas
-        /// </summary>
-        private async Task LoadSessionsWithStatsAsync()
-        {
-            try
-            {
-                _loadedSessions = await _gameLoggerService.GetRecentSessionsWithStatsAsync(50);
-
-                var displayData = _loadedSessions.Select(s => new
-                {
-                    s.TableName,
-                    StartTime = s.StartTime.ToString("dd/MM HH:mm"),
-                    Duration = FormatDuration(s.EndTime - s.StartTime),
-                    s.TotalHands,
-                    TotalProfit = s.TotalProfit.ToString("+0.00;-0.00"),
-                    BBPer100 = s.BBPer100.ToString("+0.0;-0.0")
-                }).ToList();
-
-                dgvSessions.DataSource = displayData;
-                _historialLoaded = true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cargando sesiones");
-            }
-        }
-
-        private static string FormatDuration(TimeSpan duration)
-        {
-            if (duration.TotalMinutes < 1)
-                return "< 1m";
-            return duration.TotalHours >= 1
-                ? $"{(int)duration.TotalHours}h {duration.Minutes}m"
-                : $"{duration.Minutes}m";
-        }
-
-        private async void DgvSessions_SelectionChanged(object? sender, EventArgs e)
-        {
-            if (dgvSessions.SelectedRows.Count == 0 || _loadedSessions == null)
-                return;
-
-            int idx = dgvSessions.SelectedRows[0].Index;
-            if (idx < 0 || idx >= _loadedSessions.Count)
-                return;
-
-            var session = _loadedSessions[idx];
-
-            try
-            {
-                _loadedHands = await _gameLoggerService.GetHandsForSessionAsync(session.Id);
-
-                var displayData = _loadedHands.Select(h => new
-                {
-                    h.HandNumber,
-                    Cards = $"{h.HeroCard1} {h.HeroCard2}",
-                    Position = FormatPosition(h.HeroPosition),
-                    LastStreet = h.LastStreetPlayed.ToString(),
-                    Result = h.Result.ToString(),
-                    ProfitLoss = (h.HeroStackEnd - h.HeroStackStart).ToString("+0.00;-0.00")
-                }).ToList();
-
-                dgvSessionHands.DataSource = displayData;
-
-                lblSessionStats.Text = $"Sesión: {session.TableName} | {session.TotalHands} manos | " +
-                    $"{session.TotalProfit:+0.00;-0.00} | {session.BBPer100:+0.0;-0.0} BB/100";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error cargando manos");
-            }
-        }
-
-        private static string FormatPosition(TablePosition pos) => pos switch
-        {
-            TablePosition.Button => "BTN",
-            TablePosition.CutOff => "CO",
-            TablePosition.Middle => "MP",
-            TablePosition.Early => "EP",
-            TablePosition.SmallBlind => "SB",
-            TablePosition.BigBlind => "BB",
-            _ => pos.ToString()
-        };
-
-        private void DgvSessionHands_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0 || _loadedHands == null || e.RowIndex >= _loadedHands.Count)
-                return;
-
-            var hand = _loadedHands[e.RowIndex];
-            decimal bigBlind = _loadedSessions != null && dgvSessions.SelectedRows.Count > 0
-                ? _loadedSessions[dgvSessions.SelectedRows[0].Index].BigBlind
-                : 0.50m;
-
-            using var frm = new FrmHandDetail(hand, bigBlind);
-            frm.ShowDialog(this);
-        }
-
-        /// <summary>
-        /// Aplica colores condicionales verde/rojo a las columnas Profit y BB/100
-        /// </summary>
-        private void DgvSessions_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (e.Value == null) return;
-
-            string colName = dgvSessions.Columns[e.ColumnIndex].Name;
-            if (colName is "TotalProfit" or "BBPer100")
-            {
-                string val = e.Value.ToString() ?? "";
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        /// <summary>
-        /// Aplica colores condicionales a Result y P/L en la grilla de manos
-        /// </summary>
-        private void DgvSessionHands_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            if (e.Value == null) return;
-
-            string colName = dgvSessionHands.Columns[e.ColumnIndex].Name;
-            string val = e.Value.ToString() ?? "";
-
-            if (colName == "Result")
-            {
-                e.CellStyle.ForeColor = val switch
-                {
-                    "Won" => AppThemeHelper.Success,
-                    "Lost" => AppThemeHelper.Danger,
-                    _ => AppThemeHelper.PrimaryLight
-                };
-            }
-            else if (colName == "ProfitLoss")
-            {
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        /// <summary>
-        /// Ejecuta backtest A/B comparando decisiones históricas con el motor actual.
-        /// </summary>
-        private async void BtnBacktest_Click(object? sender, EventArgs e)
-        {
-            btnBacktest.Enabled = false;
-            btnBacktest.Text = "Analizando...";
-
-            try
-            {
-                // Cargar todas las manos disponibles
-                var hands = await _gameLoggerService.GetRecentHandsAsync(500);
-
-                if (hands == null || hands.Count == 0)
-                {
-                    MessageBox.Show("No hay manos en el historial para analizar.",
-                        "Backtest", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    return;
-                }
-
-                // Determinar BigBlind de la sesión
-                decimal bigBlind = _loadedSessions?.FirstOrDefault()?.BigBlind ?? 0.50m;
-
-                // Ejecutar backtest
-                var backtester = new DecisionMaker.Services.StrategyBacktester(_postflopDecisionService);
-                var result = backtester.RunBacktest(hands, bigBlind);
-
-                // Mostrar resultado en popup
-                var msg = result.ToString();
-                MessageBox.Show(msg, $"Backtest A/B — {hands.Count} manos",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error en backtest: {ex.Message}",
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                btnBacktest.Enabled = true;
-                btnBacktest.Text = "Backtest A/B";
-            }
-        }
-
-        #endregion
-
-        #region Pestaña Bankroll
-
-        private bool _bankrollLoaded;
-
-        private void InitializeBankrollTab()
-        {
-            dgvBankrollHistory.Columns.AddRange(
-                new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Fecha", DataPropertyName = "Date", Width = 100 },
-                new DataGridViewTextBoxColumn { Name = "Hands", HeaderText = "Manos", DataPropertyName = "Hands", Width = 60 },
-                new DataGridViewTextBoxColumn { Name = "Profit", HeaderText = "Profit", DataPropertyName = "Profit", Width = 80 },
-                new DataGridViewTextBoxColumn { Name = "BBPer100", HeaderText = "BB/100", DataPropertyName = "BBPer100", Width = 70 },
-                new DataGridViewTextBoxColumn { Name = "BankrollAfter", HeaderText = "Bankroll", DataPropertyName = "BankrollAfter", Width = 90 }
-            );
-
-            tpBankroll.Enter += (s, e) =>
-            {
-                if (!_bankrollLoaded)
-                {
-                    UpdateBankrollDashboard();
-                    _bankrollLoaded = true;
-                }
-            };
-
-            dgvBankrollHistory.CellFormatting += DgvBankrollHistory_CellFormatting;
-        }
-
-        private void DgvBankrollHistory_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
-        {
-            var colName = dgvBankrollHistory.Columns[e.ColumnIndex].Name;
-            if (colName == "Profit" && e.Value is string val)
-            {
-                if (val.StartsWith('+'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Success;
-                else if (val.StartsWith('-'))
-                    e.CellStyle.ForeColor = AppThemeHelper.Danger;
-            }
-        }
-
-        #endregion
-
-        #region Pestaña Métricas
-
-        private System.Windows.Forms.Timer? _metricsRefreshTimer;
-        private int _cycleCounter;
-        private IMetricsCollector? _metrics;
-
-        private void InitializeMetricsTab()
-        {
-            dgvMetrics.Columns.Clear();
-            dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "Fase",
-                HeaderText = "Fase",
-                FillWeight = 180f,
-                ReadOnly = true,
-            });
-            foreach (var prefix in new[] { "Last", "Session" })
-                foreach (var suffix in new[] { "P50", "P95", "Max", "Count" })
-                {
-                    dgvMetrics.Columns.Add(new DataGridViewTextBoxColumn
-                    {
-                        Name = $"{prefix}{suffix}",
-                        HeaderText = prefix == "Last" ? $"Últ. {suffix}" : $"Ses. {suffix}",
-                        FillWeight = 60f,
-                        ReadOnly = true,
-                        DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight },
-                    });
-                }
-
-            foreach (var cat in TelemetryCategories.DisplayOrder)
-            {
-                int rowIdx = dgvMetrics.Rows.Add(cat, "—", "—", "—", "0", "—", "—", "—", "0");
-                dgvMetrics.Rows[rowIdx].Tag = cat;
-            }
-
-            _metricsRefreshTimer = new System.Windows.Forms.Timer { Interval = 1000 };
-            _metricsRefreshTimer.Tick += (s, e) => RefreshMetricsGrid();
-
-            tbControl.Selected += TabControl_Selected;
-            btnResetMetrics.Click += BtnResetMetrics_Click;
-        }
-
-        private void TabControl_Selected(object? sender, TabControlEventArgs e)
-        {
-            if (e.TabPage == tabMetrics)
-            {
-                RefreshMetricsGrid();
-                _metricsRefreshTimer?.Start();
-            }
-            else
-            {
-                _metricsRefreshTimer?.Stop();
-            }
-        }
-
-        private void RefreshMetricsGrid()
-        {
-            if (_metrics == null) return;
-
-            var snap = _metrics.SnapshotSession();
-
-            lblCurrentHand.Text = $"Mano actual: {snap.CurrentHandId ?? "—"}";
-            lblCycleCount.Text = $"Ciclos: {_cycleCounter:N0}";
-            lblLastUpdate.Text = $"Actualizado: {DateTime.Now:HH:mm:ss}";
-
-            foreach (DataGridViewRow row in dgvMetrics.Rows)
-            {
-                if (row.Tag is not string category) continue;
-
-                FillCells(row, 1, snap.LastHand.TryGetValue(category, out var last) ? last : null);
-                FillCells(row, 5, snap.Session.TryGetValue(category, out var session) ? session : null);
-            }
-        }
-
-        private static void FillCells(DataGridViewRow row, int startCol, CategoryStats? stats)
-        {
-            if (stats is null)
-            {
-                row.Cells[startCol + 0].Value = "—";
-                row.Cells[startCol + 1].Value = "—";
-                row.Cells[startCol + 2].Value = "—";
-                row.Cells[startCol + 3].Value = "0";
-                return;
-            }
-            row.Cells[startCol + 0].Value = stats.P50Ms.ToString("N0");
-            row.Cells[startCol + 1].Value = stats.P95Ms.ToString("N0");
-            row.Cells[startCol + 2].Value = stats.MaxMs.ToString("N0");
-            row.Cells[startCol + 3].Value = stats.Count.ToString("N0");
-        }
-
-        private void BtnResetMetrics_Click(object? sender, EventArgs e)
-        {
-            _metrics?.ResetSession();
-            RefreshMetricsGrid();
-            _logger.LogInformation("Telemetría: sesión reseteada por el usuario");
-        }
-
-        #endregion
+        // Pestañas Bankroll/Métricas delegadas a UserControls (Fase 7)
 
         // ============================================================================
         // INVENTARIO DE ESTADO MUTABLE — refactor-frmmain-coordinators (Fase 1.4)

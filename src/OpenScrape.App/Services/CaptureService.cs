@@ -19,6 +19,15 @@ public sealed class CaptureService : ICaptureService
     private int _lastCaptureWidth;
     private int _lastCaptureHeight;
 
+    /// <inheritdoc />
+    public IntPtr WindowHandle { get; set; }
+
+    /// <inheritdoc />
+    public Bitmap? CaptureWindow()
+    {
+        return CaptureWindow(WindowHandle);
+    }
+
     public CaptureService(
         IGetWindowsScreenUseCase useCase,
         ICoordinateScaler coordinateScaler,

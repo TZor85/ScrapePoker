@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Marten;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Configuration;
+using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Logging;
@@ -125,11 +126,22 @@ namespace OpenScrape.App
                     services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
 
                     // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
-                    services.AddSingleton<IGameLoopTickProcessor>(EmptyGameLoopTickProcessor.Instance);
+                    // Fase 4: factory condicional — HandProcessor si flag=true, EmptyGameLoopTickProcessor si flag=false
+                    services.AddScoped<HandProcessor>();
+                    services.AddScoped<IGameLoopTickProcessor>(sp =>
+                    {
+                        var flags = sp.GetRequiredService<IOptions<FeatureFlags>>().Value;
+                        return flags.UseGameLoopCoordinator
+                            ? sp.GetRequiredService<HandProcessor>()
+                            : EmptyGameLoopTickProcessor.Instance;
+                    });
                     services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
 
                     // UI sync (refactor-frmmain-coordinators Fase 5)
                     services.AddScoped<IUiSyncService, UiSyncService>();
+
+                    // UiUpdateService (Fase 5: extraído de FrmMain.UpdateUIWithResults y relacionados)
+                    services.AddScoped<IUiUpdateService, UiUpdateService>();
 
                     // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
                     services.AddSingleton<IActionFormatter, ActionFormatter>();
@@ -195,6 +207,14 @@ namespace OpenScrape.App
                     services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
                     services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
                     services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
+
+                    // Fase 7: UserControls de TabPageContributions
+                    services.AddTransient<HistorialTabControl>();
+                    services.AddTransient<BankrollTabControl>();
+                    services.AddTransient<MetricsTabControl>();
+
+                    // Fase 8: RegionEditorControl extraído de FrmMain
+                    services.AddTransient<RegionEditorControl>();
 
                     //// Registrar tu formulario principal
                     services.AddTransient<FrmMain>();

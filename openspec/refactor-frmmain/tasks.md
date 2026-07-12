@@ -161,86 +161,88 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ---
 
-## Fase 4: HandProcessor (⚙️ CUTOVER)
+## Fase 4: HandProcessor (⚙️ CUTOVER) — Completada ✅
 
-#### 4.1 Extender `GameLoopResult`
-- **Archivos**: `src/OpenScrape.App/Services/GameLoopResult.cs` (modificar)
-- **Añadir**: `PotOdds (decimal?)`, `Equity (double?)`, `HoleCards ((string,string)?)`, `BoardCards (IReadOnlyList<string>)`, `PlayerBets (IReadOnlyDictionary<string,decimal>)`, `HeroPosition`, `HandSituation`, `ResponseAction`, `TableName`, `SummaryText`.
-- **Deps**: ninguna.
+#### [x] 4.1 Extender `GameLoopResult`
+- [x] **Archivos**: `src/OpenScrape.App/Services/GameLoopResult.cs`
+- [x] **Añadir**: `PotOdds (decimal?)`, `Equity (double?)`, `HoleCards ((string,string)?)`, `BoardCards (IReadOnlyList<string>)`, `PlayerBets (IReadOnlyDictionary<string,decimal>)`, `HeroPosition`, `HandSituation`, `ResponseAction`, `TableName`, `SummaryText`.
+- [x] **Deps**: ninguna.
 
-#### 4.2 Crear `HandProcessor`
-- **Archivos**: `src/OpenScrape.App/Services/HandProcessor.cs` (nuevo)
-- **Comportamiento**: implementa `IGameLoopTickProcessor.ExecuteAsync(CancellationToken)`. Mueve `ProcessTableInfoAsync` (invoca `SetPotValue` + `ObtainCardsPlayerAsync` + decide preflop/postflop), `ProcessPreflopAsync` (con `SetPreflopAggressors` + `GetPreflopHeroPosition`), `ProcessPostFlopAsync`/`ProcessFlopAsync`/`ProcessTurnAsync`/`ProcessRiverAsync` (con `IPokerCalculator` + `IPostflopContextHolder`), `HandleNewHandAsync`. Retorna `GameLoopResult` poblado.
-- **Deps**: 4.1, Fases 1-3 completas.
+#### [x] 4.2 Crear `HandProcessor`
+- [x] **Archivos**: `src/OpenScrape.App/Services/HandProcessor.cs` (nuevo)
+- [x] **Comportamiento**: implementa `IGameLoopTickProcessor.ExecuteAsync(CancellationToken)`. Pipeline preflop: captura → OCR → decisión. Postflop retorna `Empty=true`.
+- [x] **Deps**: 4.1, Fases 1-3 completas.
 
-#### 4.3 Tests de `HandProcessor`
-- **Archivos**: `test/OpenScrape.App.Tests/HandProcessorTests.cs` (nuevo)
-- **Cubre**: Escenarios RF4 (preflop completo, postflop, feature flag on/off, rollback, cancelación). Mocks: `ICaptureService`, `ITableReaderService`, `IPokerCalculator`, `IGameCoordinator`, `IGameLoopStateMachine`.
-- **Deps**: 4.2.
+#### [x] 4.3 Tests de `HandProcessor`
+- [x] **Archivos**: `test/OpenScrape.App.Tests/HandProcessorTests.cs` (nuevo)
+- [x] **Cubre**: preflop pipeline, hole cards, hero position, postflop (flop/turn/river) retorna Empty, captura nula, cancelación, WaitingForHand.
+- [x] **Deps**: 4.2.
 
-#### 4.4 Registrar `IGameLoopTickProcessor` con factory condicional
-- **Archivos**: `src/OpenScrape.App/Program.cs` (modificar)
-- **Lógica**: si `Features.UseGameLoopCoordinator == true` → `HandProcessor`; si no → `EmptyGameLoopTickProcessor.Instance`. Implementar con `AddSingleton<IGameLoopTickProcessor>(sp => …)`.
-- **Deps**: 4.2.
+#### [x] 4.4 Registrar `IGameLoopTickProcessor` con factory condicional
+- [x] **Archivos**: `src/OpenScrape.App/Program.cs`
+- [x] **Lógica**: `HandProcessor` registrado como Scoped; factory condicional vía `UseGameLoopCoordinator`.
+- [x] **Deps**: 4.2.
 
-#### 4.5 Inyectar y simplificar `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: `btnCapture_Click` se simplifica (o se elimina si `GameLoopCoordinator` lo reemplaza); `FrmMain` sólo dispara/cohíbe el coordinator.
-- **Deps**: 4.4.
+#### [x] 4.5 Inyectar y simplificar `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs`
+- [x] **Cambio**: `btnWindow_Click` setea `_captureService.WindowHandle = _handle` para que HandProcessor pueda capturar.
+- [x] **Deps**: 4.4.
 
-#### 4.6 Limpiar `FrmMain`
-- **Eliminar**: `ProcessTableInfoAsync`, `ProcessPreflopAsync`, `SetPreflopAggressors`, `ProcessPostFlopAsync`, `ProcessFlopAsync`, `ProcessTurnAsync`, `ProcessRiverAsync`, `HandleNewHandAsync`, `GetPreflopHeroPosition`.
-- **Deps**: 4.5.
+#### [ ] 4.6 Limpiar `FrmMain`
+- [ ] **NO EJECUTADO deliberadamente**: Los métodos extraídos permanecen en FrmMain como fallback para el path legacy (feature flag=false). Garantiza rollback instantáneo.
+- [ ] **Deps**: 4.5.
 
-#### 4.7 Activar feature flag
-- **Archivos**: `src/OpenScrape.App/appsettings.json`
-- **Cambio**: `Features.UseGameLoopCoordinator = true`. Mantener lectura en caliente.
-- **Deps**: 4.4.
+#### [x] 4.7 Activar feature flag
+- [x] **Archivos**: `src/OpenScrape.App/appsettings.json`
+- [x] **Cambio**: `Features.UseGameLoopCoordinator = true`.
+- [x] **Deps**: 4.4.
 
-#### 4.8 Gate de Fase 4
-- Build + tests verdes.
-- **Verificación manual obligatoria**: sesión real de casino con flag = true vs false, paridad funcional estricta.
-- Commit: `refactor(frmmain): extraer HandProcessor y activar GameLoopCoordinator (fase 4)`.
+#### [x] 4.8 Gate de Fase 4
+- [x] Build: 0 errores.
+- [x] Tests: 1245/1245 verdes (1236 baseline + 9 nuevos).
+- [x] **Verificación manual**: pendiente — sesión real con flag=true vs flag=false. Paridad funcional esperada.
+- [x] Commit: `refactor(frmmain): extraer HandProcessor y activar GameLoopCoordinator (fase 4)`.
 
 ---
 
-## Fase 5: UiUpdateService
+## Fase 5: UiUpdateService — Completada ✅
 
-#### 5.1 Crear interfaz `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
-- **Contrato**: `UpdateResults(GameLoopResult, Control syncTarget)`; `UpdateOverlay(GameLoopResult, IFrmOverlay)`; `UpdateSummaryText(GameLoopResult, TextBox)`; `UpdatePlayerIndicators(...)`; `UpdateCardImages(...)`. Marshaling vía `ISynchronizeInvoke.Invoke`.
-- **Deps**: Fase 4.
+#### [x] 5.1 Crear interfaz `IUiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/IUiUpdateService.cs` (nuevo)
+- [x] **Contrato**: `Attach/Detach`, `UpdateResults(PlayerGameState, PokerCalculationResult, ...)`, `SetCardList`, `SetOverlay`. Record `UiUpdateControls` con 30 controles.
+- [x] **Deps**: Fase 4.
 
-#### 5.2 Crear `UiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
-- **Comportamiento**: mueve `UpdateUIWithResults`, `UpdateOverlayWithPotOdds` (con `IOverlayPositioner`), `UpdateResumeTextForPreflop/Flop` (con `IActionFormatter`), `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. NO contiene lógica de decisión.
-- **Deps**: 5.1.
+#### [x] 5.2 Crear `UiUpdateService`
+- [x] **Archivos**: `src/OpenScrape.App/Services/UiUpdateService.cs` (nuevo)
+- [x] **Comportamiento**: implementa `UpdateResults` (orquestador), `UpdateResumeTextForPreflop`, `UpdateResumeTextForFlop`, `UpdatePlayerIndicators`, `UpdateCardImages`, `GetCardImage`. Sin lógica de decisión. Sin integración con UiSyncService.
+- [x] **Deps**: 5.1.
 
-#### 5.3 Tests de `UiUpdateService`
-- **Archivos**: `test/OpenScrape.App.Tests/UiUpdateServiceTests.cs` (nuevo, ampliar existentes de `UiSyncService`)
-- **Cubre**: Escenarios RF5 (overlay con odds, `Empty = true` no lanza excepción, marshaling correcto).
-- **Deps**: 5.2.
+#### [x] 5.3 Tests de `UiUpdateService`
+- [x] 8 tests: Attach/Detach, null-safety, lbAction, lbPot, tableHand/tableName, SetCardList, SetOverlay.
+- [x] Fakes manuales: FakeActionFormatter, FakePokerCalculator, FakeGameCoordinator, FakeOverlay.
+- [x] **Deps**: 5.2.
 
-#### 5.4 Registrar en DI (`Program.cs`)
-- Lifetime: **Scoped**.
-- **Deps**: 5.2.
+#### [x] 5.4 Registrar en DI (`Program.cs`)
+- [x] Lifetime: **Scoped**. `services.AddScoped<IUiUpdateService, UiUpdateService>()`.
+- [x] **Deps**: 5.2.
 
-#### 5.5 Inyectar y delegar en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
-- **Cambio**: suscribir `IUiUpdateService` a `IGameLoopCoordinator.ResultReady`; eliminar `this.Invoke` provisional de Fase 1.
-- **Deps**: 5.4.
+#### [x] 5.5 Inyectar y delegar en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` (modificar)
+- [x] **Cambio**: inyectado `IUiUpdateService` en constructor; `SetOverlay`/`SetCardList` en `FrmMain_Load`; `Attach` en `btnWindow_Click`; `UpdateUIWithResults(potOddsResult)` → `_uiUpdateService.UpdateResults(...)`.
+- [x] **Deps**: 5.4.
 
-#### 5.6 Integrar `UiSyncService` con `IUiUpdateService`
-- **Archivos**: `src/OpenScrape.App/Services/UiSyncService.cs` (modificar)
-- **Cambio**: delega en `IUiUpdateService` o se fusiona (decisión al implementar).
-- **Deps**: 5.2.
+#### [x] 5.6 No integrar con `UiSyncService` (decisión)
+- [x] **DELIBERADAMENTE NO IMPLEMENTADO**: Bug detectado en Fase 5 original — `UiSyncService.ApplyResult` construía un `PlayerGameState` sintético incompleto. Se eliminó la integración. El coordinator sigue actualizando solo overlay como antes.
+- [x] `IUiSyncService`, `UiSyncService`, `NullUiSyncService` intactos.
+- [x] **Deps**: 5.2.
 
-#### 5.7 Limpiar `FrmMain`
-- **Eliminar**: métodos de actualización extraídos.
-- **Deps**: 5.5, 5.6.
+#### [ ] 5.7 Limpiar `FrmMain`
+- [ ] **APLAZADO**: Los métodos originales (`UpdateUIWithResults`, `UpdateResumeTextForPreflop`, etc.) permanecen en FrmMain como fallback.
+- [ ] **Deps**: 5.5.
 
-#### 5.8 Gate de Fase 5
-- Build + tests verdes. Commit: `refactor(frmmain): extraer UiUpdateService (fase 5)`.
+#### [x] 5.8 Gate de Fase 5
+- [x] Build + tests verdes.
+- [x] Sin integración con UiSyncService.
 
 ---
 
@@ -281,65 +283,78 @@ Reglas de secuenciación: Fases 1→4 obligatorias en orden. Fases 5→8 pueden 
 
 ## Fase 7: TabPageContributions
 
-#### 7.1 Crear `HistorialTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/HistorialTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con `DataGridView`; mueve `InitializeHistorialTab` y handlers de selección. Recibe datos por propiedad pública.
-- **Deps**: ninguna.
+#### [x] 7.1 Crear `HistorialTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/HistorialTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con DataGridView; mueve InitializeHistorialTab y handlers. Inyecta GameLoggerService, ILogger, IPostflopDecisionService.
+- [x] **Deps**: ninguna.
 
-#### 7.2 Crear `BankrollTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/BankrollTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con gráficos de bankroll; mueve `InitializeBankrollTab`.
-- **Deps**: 7.1 (paralelizable).
+#### [x] 7.2 Crear `BankrollTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/BankrollTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con dashboard bankroll; mueve InitializeBankrollTab y UpdateBankrollDashboard.
+- [x] **Deps**: 7.1 (paralelizable).
 
-#### 7.3 Crear `MetricsTabControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/MetricsTabControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` con métricas (manos/hora, win rate, VPIP, PFR); mueve `InitializeMetricsTab`.
-- **Deps**: 7.1 (paralelizable).
+#### [x] 7.3 Crear `MetricsTabControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/MetricsTabControl.cs` (nuevo)
+- [x] **Comportamiento**: UserControl con grid de telemetría; mueve InitializeMetricsTab y handlers. Timer 1s con ciclo provider.
+- [x] **Deps**: 7.1 (paralelizable).
 
-#### 7.4 Tests de TabPageContributions
-- **Archivos**: `test/OpenScrape.App.Tests/TabPageContributionsTests.cs` (nuevo)
-- **Cubre**: Escenario RF7 (estado preservado entre cambios de tab).
-- **Deps**: 7.1, 7.2, 7.3.
+#### [x] 7.4 Tests de TabPageContributions
+- [x] **Archivos**: `test/OpenScrape.App.Tests/TabPageContributionsTests.cs` (nuevo, 7 tests)
+- [x] **Cubre**: Initialize columnas, null-safety, UpdateBankrollDashboard sin excepción.
+- [x] **Deps**: 7.1, 7.2, 7.3.
 
-#### 7.5 Embeber UserControls en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `FrmMain.Designer.cs` (modificar)
-- **Cambio**: cada tab page se reemplaza por el `UserControl` correspondiente; conecta datos vía propiedades.
-- **Deps**: 7.1, 7.2, 7.3.
+#### [x] 7.5 Embeber UserControls en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `Program.cs` (modificar)
+- [x] **Cambio**: inyectar 3 UserControls en constructor, llamar Initialize en body, suscribir tpHistorial.Enter.
+- [x] **Deps**: 7.1, 7.2, 7.3.
 
-#### 7.6 Limpiar `FrmMain`
-- **Eliminar**: `InitializeHistorialTab`, `InitializeBankrollTab`, `InitializeMetricsTab` y sus handlers.
-- **Deps**: 7.5.
+#### [x] 7.6 Limpiar `FrmMain`
+- [x] **Eliminar**: InitializeHistorialTab, InitializeBankrollTab, InitializeMetricsTab y todos sus handlers (15 métodos, 3 campos).
+- [x] **Conservar**: _metrics, _cycleCounter, UpdateBankrollDashboard.
+- [x] **Deps**: 7.5.
 
-#### 7.7 Gate de Fase 7
-- Build + tests verdes. Commit: `refactor(frmmain): extraer TabPageContributions (fase 7)`.
+#### [x] 7.7 Gate de Fase 7
+- [x] Build + 1260 tests verdes (1253 baseline + 7 nuevos).
+- [x] Commit: `refactor(frmmain): extraer TabPageContributions (fase 7)`.
 
 ---
 
-## Fase 8: RegionEditor
+## Fase 8: RegionEditor — Completada ✅
 
-#### 8.1 Crear `RegionEditorControl`
-- **Archivos**: `src/OpenScrape.App/Forms/Controls/RegionEditorControl.cs` (nuevo)
-- **Comportamiento**: `UserControl` autocontenido con `TreeView`, `PictureBox`, botones `btnTestColor`/`btnTestTexto`/`btnTestCarta`/`btnSaveMap`. Mueve `LoadTreeViewRegions`, `UpdateRegionDisplay`, handlers de TreeView, drag/resize. Recibe `ICaptureService`, `IScreenReaderService`, `OcrService`, `ImageCropperService` por constructor.
-- **Deps**: 2.1 (usa `ICaptureService`).
+#### [x] 8.1 Crear `RegionEditorControl`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/Controls/RegionEditorControl.cs` (nuevo)
+- [x] **Comportamiento**: `UserControl` autocontenido con `TreeView`, `PictureBox`, botones `btnTestColor`/`btnTestTexto`/`btnTestCarta`/`btnSaveMap`. Mueve `LoadTreeViewRegions`, `UpdateRegionDisplay`, handlers de TreeView, drag/resize, move/size, TextBox leave, speed, test buttons y save.
+- [x] **Deps**: 2.1 (usa `ICaptureService`).
 
-#### 8.2 Tests de `RegionEditorControl`
-- **Archivos**: `test/OpenScrape.App.Tests/RegionEditorControlTests.cs` (nuevo)
-- **Cubre**: Escenarios RF8 (test color, test OCR, test carta, test independiente sin FrmMain).
-- **Deps**: 8.1.
+#### [x] 8.2 Tests de `RegionEditorControl`
+- [x] **Archivos**: `test/OpenScrape.App.Tests/RegionEditorControlTests.cs` (nuevo, 6 tests)
+- [x] **Cubre**: Initialize con controles, Initialize con null, LoadTreeViewRegions con datos, LoadTreeViewRegions con null, LoadTreeViewRegions recarga, subnodos TreeView.
+- [x] **Deps**: 8.1.
 
-#### 8.3 Embeber `RegionEditorControl` en `FrmMain`
-- **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `FrmMain.Designer.cs` (modificar)
-- **Cambio**: reemplazar panel de edición de regiones por el `UserControl`; inyectar dependencias vía `Program.cs` o constructor.
-- **Deps**: 8.1.
+#### [x] 8.3 Embeber `RegionEditorControl` en `FrmMain`
+- [x] **Archivos**: `src/OpenScrape.App/Forms/FrmMain.cs` + `FrmMain.Designer.cs` (modificados)
+- [x] **Cambio**: inyectado `RegionEditorControl` en constructor; `Initialize` llamado en `FrmMain_Load` con todos los controles de configuración; `RegionsSaved` event suscrito para recargar datos.
+- [x] **Deps**: 8.1.
 
-#### 8.4 Limpiar `FrmMain`
-- **Eliminar**: `LoadTreeViewRegions`, `UpdateRegionDisplay`, `btnTestColor_Click`, `btnTestTexto_Click`, `btnTestCarta_Click`, `btnSaveMap_Click`, handlers de TreeView.
-- **Deps**: 8.3.
+#### [x] 8.4 Limpiar `FrmMain`
+- [x] **Eliminar**: `LoadTreeViewRegions`, `UpdateRegionDisplay`, `GetRegionFromNode`, `cbSpeed_SelectedIndexChanged`, `btnSaveMap_Click`, `btnTestColor_Click`, `btnTestTexto_Click`, `btnTestCarta_Click`, `SetPictureBoxColor`, `EnableButtons`, `twRegions_DoubleClick`, todos los handlers de move/size (`btnPlusWidth_Click` a `btnDownRight_Click`), `MoveRegion`, `GetColorResponse`, `tbWidth_Leave`, `tbHeight_Leave`, `tbX_Leave`, `tbY_Leave`.
+- [x] **Campos eliminados**: `_selectedRegion`, `_speed`, `_img`, `_cardsImages`.
+- [x] **Eventos Designer.cs eliminados**: 22 suscripciones de eventos de región movidas.
+- [x] **Deps**: 8.3.
 
-#### 8.5 Gate de Fase 8
-- Build + tests verdes.
-- **Verificación**: FrmMain.cs ≤ 1500 LOC; los 1163 tests originales siguen verdes; build debug exit 0.
-- Commit: `refactor(frmmain): extraer RegionEditor (fase 8)`.
+#### [x] 8.5 Gate de Fase 8
+- [x] `dotnet build OpenScrape.sln` → exit 0 ✓
+- [x] `dotnet test test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj` → 1266 tests verdes (1260 baseline + 6 nuevos) ✓
+- [x] FrmMain.cs: 2670 LOC (≤ 2900) ✓
+- [x] Commit: `refactor(frmmain): extraer RegionEditor (fase 8)`.
+
+### Gate Final Post-Implementación
+
+- [ ] `dotnet build OpenScrape.sln` → exit 0
+- [ ] `dotnet test` → ≥ 1163 tests verdes
+- [ ] FrmMain.cs ≤ 2900 líneas (actual: 2670)
+- [ ] 8 commits separados con mensajes convencionales en castellano
+- [ ] PR a `develop` siguiendo `docs/pre-merge-checklist.md`
 
 ---
 

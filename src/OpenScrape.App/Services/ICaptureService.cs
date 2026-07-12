@@ -11,10 +11,22 @@ namespace OpenScrape.App.Services;
 public interface ICaptureService
 {
     /// <summary>
+    /// Handle de la ventana de póker a capturar.
+    /// Se establece desde FrmMain cuando se selecciona la ventana.
+    /// </summary>
+    IntPtr WindowHandle { get; set; }
+
+    /// <summary>
     /// Captura la ventana de póker y retorna el screenshot como Bitmap.
     /// Si el handle es IntPtr.Zero, loguea error y retorna null sin lanzar excepción.
     /// </summary>
     Bitmap? CaptureWindow(IntPtr handle);
+
+    /// <summary>
+    /// Captura usando <see cref="WindowHandle"/> (parámetro setteado previamente).
+    /// Equivalente a llamar CaptureWindow(WindowHandle).
+    /// </summary>
+    Bitmap? CaptureWindow();
 
     /// <summary>
     /// Escala las coordenadas de una región según las dimensiones de referencia.
