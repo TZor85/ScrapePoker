@@ -101,7 +101,7 @@ public class CardRecognitionEngineTests
     }
 
     [Test]
-    public void DHashCalculator_DifferentPatterns_LargeDistance()
+    public void DHashCalculator_DifferentPatterns_ExceedShortlistThreshold()
     {
         var ba = CreatePatternBgra(30, 40, seed: 1);
         var bb = CreatePatternBgra(30, 40, seed: 99);
@@ -110,7 +110,31 @@ public class CardRecognitionEngineTests
             DHashCalculator.Compute(ba, 30, 40),
             DHashCalculator.Compute(bb, 30, 40));
 
-        Assert.That(distance, Is.GreaterThan(0));
+        Assert.That(distance, Is.GreaterThan(15),
+            "Patrones claramente distintos deben superar el umbral de shortlist (15)");
+    }
+
+    [Test]
+    public void DHashCalculator_NearIdentical_TinyChange_StaysUnderThreshold()
+    {
+        var original = CreatePatternBgra(30, 40, seed: 5);
+        var modified = (byte[])original.Clone();
+        // cambia un solo píxel de forma leve (dentro del rango perceptual)
+        modified[0] = (byte)Math.Min(255, modified[0] + 5);
+
+        var distance = PixelComparer.HammingDistance(
+            DHashCalculator.Compute(original, 30, 40),
+            DHashCalculator.Compute(modified, 30, 40));
+
+        Assert.That(distance, Is.LessThanOrEqualTo(15));
+    }
+
+    [Test]
+    public void DHashCalculator_InvalidInputs_ReturnsZero()
+    {
+        Assert.That(DHashCalculator.Compute(new byte[16], 0, 10), Is.EqualTo(0UL));
+        Assert.That(DHashCalculator.Compute(new byte[16], 10, -1), Is.EqualTo(0UL));
+        Assert.That(DHashCalculator.Compute(new byte[4], 10, 10), Is.EqualTo(0UL));
     }
 
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)

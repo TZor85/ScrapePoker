@@ -16,7 +16,7 @@ public static class DHashCalculator
         if (width <= 0 || height <= 0 || bgra.Length < (long)width * height * 4)
             return 0;
 
-        var gray = new int[TargetWidth * TargetHeight];
+        Span<int> gray = stackalloc int[TargetWidth * TargetHeight];
 
         for (int ty = 0; ty < TargetHeight; ty++)
         {
