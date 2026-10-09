@@ -188,6 +188,9 @@ namespace OpenScrape.App
                     services.AddSingleton<IRegionLookupCache>(sp => sp.GetRequiredService<RegionLookupCache>());
                     services.AddSingleton<IImageCropperService>(sp => sp.GetRequiredService<ImageCropperService>());
                     services.AddSingleton<ICardCacheService>(sp => sp.GetRequiredService<CardCacheService>());
+                    // Reconocimiento de cartas centralizado (plantillas precomputadas + dHash shortlist)
+                    services.AddSingleton<CardTemplateIndex>();
+                    services.AddSingleton<ICardRecognizer, CardRecognitionEngine>();
                     services.AddSingleton<IOcrService>(sp => sp.GetRequiredService<OcrService>());
                     services.AddScoped<ITableReaderService, TableReaderService>();
 
@@ -248,6 +251,9 @@ namespace OpenScrape.App
                 var scaler = host.Services.GetRequiredService<ICoordinateScaler>();
                 scaler.Initialize(refWidth, refHeight);
             }
+
+            // Precomputar plantillas de cartas antes de arrancar la UI (evita latencia en la primera mano)
+            host.Services.GetRequiredService<CardTemplateIndex>().InitializeAsync().GetAwaiter().GetResult();
 
             // Obtener el formulario principal desde un scope async para resolver dependencias scoped.
             // CreateAsyncScope es necesario porque algunos servicios (p. ej. GameLoopCoordinator) sólo
