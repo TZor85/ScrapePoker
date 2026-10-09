@@ -171,6 +171,48 @@ public class CardRecognitionEngineTests
         Assert.That(RegionPixelExtractor.ExtractBgra(bmp, 0, 0, 10, -1), Is.Null);
     }
 
+    [Test]
+    public async Task CardTemplateIndex_Initialize_BuildsTemplatesFromCache()
+    {
+        var cards = new List<CardDTO>
+        {
+            new() { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 },
+            new() { Name = "King Spades", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 2)), Force = 13, Suit = 3 },
+            new() { Name = "NoImage", ImageBase64 = null, Force = 0, Suit = 0 }
+        };
+        var index = new CardTemplateIndex(new FakeCardCacheService(cards));
+
+        await index.InitializeAsync();
+
+        Assert.That(index.IsInitialized, Is.True);
+        Assert.That(index.Templates.Count, Is.EqualTo(2), "Las cartas sin ImageBase64 se omiten");
+        Assert.That(index.Templates[0].Width, Is.EqualTo(30));
+        Assert.That(index.Templates[0].Height, Is.EqualTo(40));
+    }
+
+    [Test]
+    public async Task CardTemplateIndex_Initialize_IsIdempotent()
+    {
+        var cards = new List<CardDTO>
+        {
+            new() { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 }
+        };
+        var index = new CardTemplateIndex(new FakeCardCacheService(cards));
+
+        await index.InitializeAsync();
+        await index.InitializeAsync();
+
+        Assert.That(index.Templates.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void CardTemplateIndex_Templates_ThrowsBeforeInitialize()
+    {
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO>()));
+
+        Assert.That(() => _ = index.Templates, Throws.InvalidOperationException);
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
@@ -230,5 +272,12 @@ public class CardRecognitionEngineTests
         using var ms = new MemoryStream();
         bitmap.Save(ms, ImageFormat.Png);
         return Convert.ToBase64String(ms.ToArray());
+    }
+
+    private sealed class FakeCardCacheService : ICardCacheService
+    {
+        private readonly List<CardDTO> _cards;
+        public FakeCardCacheService(List<CardDTO> cards) => _cards = cards;
+        public Task<List<CardDTO>> GetCardsAsync() => Task.FromResult(_cards);
     }
 }
