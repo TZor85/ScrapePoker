@@ -1,4 +1,5 @@
 using System.Drawing;
+using Microsoft.Extensions.Logging;
 using OpenScrape.Domain.Dtos;
 
 namespace OpenScrape.App.Services;
@@ -10,12 +11,14 @@ namespace OpenScrape.App.Services;
 public sealed class CardTemplateIndex
 {
     private readonly ICardCacheService _cardCacheService;
+    private readonly ILogger<CardTemplateIndex>? _logger;
     private readonly SemaphoreSlim _initLock = new(1, 1);
-    private IReadOnlyList<CardTemplate>? _templates;
+    private volatile IReadOnlyList<CardTemplate>? _templates;
 
-    public CardTemplateIndex(ICardCacheService cardCacheService)
+    public CardTemplateIndex(ICardCacheService cardCacheService, ILogger<CardTemplateIndex>? logger = null)
     {
         _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
+        _logger = logger;
     }
 
     public bool IsInitialized => _templates != null;
@@ -59,7 +62,7 @@ public sealed class CardTemplateIndex
         }
     }
 
-    private static CardTemplate? BuildTemplate(CardDTO card)
+    private CardTemplate? BuildTemplate(CardDTO card)
     {
         if (string.IsNullOrEmpty(card.ImageBase64))
             return null;
@@ -78,8 +81,9 @@ public sealed class CardTemplateIndex
             ulong dHash = DHashCalculator.Compute(bgra, bitmap.Width, bitmap.Height);
             return new CardTemplate(card, bgra, bitmap.Width, bitmap.Height, dHash);
         }
-        catch
+        catch (Exception ex) when (ex is FormatException or ArgumentException or System.Runtime.InteropServices.ExternalException)
         {
+            _logger?.LogWarning(ex, "No se pudo construir la plantilla para la carta {CardName}", card.Name);
             return null;
         }
     }

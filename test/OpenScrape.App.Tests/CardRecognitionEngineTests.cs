@@ -213,6 +213,37 @@ public class CardRecognitionEngineTests
         Assert.That(() => _ = index.Templates, Throws.InvalidOperationException);
     }
 
+    [Test]
+    public async Task CardTemplateIndex_Initialize_ConcurrentCalls_BuildOnce()
+    {
+        var cards = new List<CardDTO>
+        {
+            new() { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 }
+        };
+        var index = new CardTemplateIndex(new FakeCardCacheService(cards));
+
+        await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => index.InitializeAsync()));
+
+        Assert.That(index.IsInitialized, Is.True);
+        Assert.That(index.Templates.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task CardTemplateIndex_Initialize_SkipsMalformedBase64()
+    {
+        var cards = new List<CardDTO>
+        {
+            new() { Name = "Broken", ImageBase64 = "not-base64!!", Force = 0, Suit = 0 },
+            new() { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 }
+        };
+        var index = new CardTemplateIndex(new FakeCardCacheService(cards));
+
+        await index.InitializeAsync();
+
+        Assert.That(index.Templates.Count, Is.EqualTo(1));
+        Assert.That(index.Templates[0].Card.Name, Is.EqualTo("Ace Hearts"));
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
