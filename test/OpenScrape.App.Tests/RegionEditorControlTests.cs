@@ -204,7 +204,7 @@ public class RegionEditorControlTests
             new FakeScreenReaderService(),
             null, // OcrService — no disponible en tests (requiere Tesseract)
             new ImageCropperService(),
-            new FakeCardCacheService(),
+            new FakeCardRecognizer(),
             new ColorDetectionService(),
             new FakeRegionLookupCache(),
             new FakeRegionTableMapUseCases(),
@@ -262,12 +262,11 @@ internal sealed class FakeScreenReaderService : IScreenReaderService
     public decimal NormalizeStackValue(decimal rawValue) => rawValue;
 }
 
-internal sealed class FakeCardCacheService : CardCacheService
+internal sealed class FakeCardRecognizer : ICardRecognizer
 {
-    public FakeCardCacheService()
-        : base(DocumentStore.For("host=localhost;database=fake;password=fake;username=fake"))
-    {
-    }
+    public CardMatch Recognize(Bitmap screenshot, int x, int y, int width, int height) => new(null, 0);
+    public IReadOnlyList<CardMatch> RankCandidates(Bitmap screenshot, int x, int y, int width, int height) => Array.Empty<CardMatch>();
+    public bool IsVisible(Bitmap screenshot, int x, int y, int width, int height, double minScore = 80.0) => false;
 }
 
 internal sealed class FakeRegionLookupCache : IRegionLookupCache

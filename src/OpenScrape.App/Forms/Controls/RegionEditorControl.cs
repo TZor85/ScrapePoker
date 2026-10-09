@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
-using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Features.RegionsTableMap;
 using OpenScrape.Features.RegionsTableMap.Update;
@@ -22,7 +21,7 @@ public sealed class RegionEditorControl : UserControl
     private readonly IScreenReaderService _screenReader;
     private readonly OcrService? _ocrService;
     private readonly ImageCropperService _imageCropper;
-    private readonly CardCacheService _cardCache;
+    private readonly ICardRecognizer _cardRecognizer;
     private readonly ColorDetectionService _colorDetection;
     private readonly IRegionLookupCache _regionLookup;
     private readonly RegionTableMapUseCases _regionUseCases;
@@ -52,7 +51,6 @@ public sealed class RegionEditorControl : UserControl
 
     private IReadOnlyList<RegionTableMap>? _categories;
     private DomainRegion? _selectedRegion;
-    private List<CardDTO>? _cardsImages;
     private Image? _img;
     private int _speed = 1;
 
@@ -73,7 +71,7 @@ public sealed class RegionEditorControl : UserControl
         IScreenReaderService screenReader,
         OcrService? ocrService,
         ImageCropperService imageCropper,
-        CardCacheService cardCache,
+        ICardRecognizer cardRecognizer,
         ColorDetectionService colorDetection,
         IRegionLookupCache regionLookup,
         RegionTableMapUseCases regionUseCases,
@@ -83,7 +81,7 @@ public sealed class RegionEditorControl : UserControl
         _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
         _ocrService = ocrService;
         _imageCropper = imageCropper ?? throw new ArgumentNullException(nameof(imageCropper));
-        _cardCache = cardCache ?? throw new ArgumentNullException(nameof(cardCache));
+        _cardRecognizer = cardRecognizer ?? throw new ArgumentNullException(nameof(cardRecognizer));
         _colorDetection = colorDetection ?? throw new ArgumentNullException(nameof(colorDetection));
         _regionLookup = regionLookup ?? throw new ArgumentNullException(nameof(regionLookup));
         _regionUseCases = regionUseCases ?? throw new ArgumentNullException(nameof(regionUseCases));
@@ -385,9 +383,9 @@ public sealed class RegionEditorControl : UserControl
         firstOcr.Dispose();
     }
 
-    private async void BtnTestCarta_Click(object? sender, EventArgs e)
+    private void BtnTestCarta_Click(object? sender, EventArgs e)
     {
-        if (_selectedRegion == null || _pbImage?.Image == null)
+        if (_selectedRegion == null || _pbImage?.Image is not Bitmap bitmap)
         {
             _logger.LogError("No se ha seleccionado una región o la imagen es nula.");
             return;
@@ -395,32 +393,17 @@ public sealed class RegionEditorControl : UserControl
 
         try
         {
-            var imageToBase64 = _imageCropper.CropImageToBase64(
-                _pbImage.Image,
+            var match = _cardRecognizer.Recognize(
+                bitmap,
                 _selectedRegion.PosX,
                 _selectedRegion.PosY,
                 _selectedRegion.Width,
                 _selectedRegion.Height);
 
-            _cardsImages ??= await _cardCache.GetCardsAsync();
-
-            if (_cardsImages?.Any() == true)
+            if (match.Card?.ImageBase64 is { Length: > 0 } imageBase64)
             {
-                var bestMatch = _cardsImages
-                    .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-                    .Select(item => new
-                    {
-                        Card = item,
-                        Percentage = _imageCropper.CompareCardsBase64(item.ImageBase64, imageToBase64)
-                    })
-                    .OrderByDescending(x => x.Percentage)
-                    .FirstOrDefault();
-
-                if (bestMatch != null)
-                {
-                    _pbTestCarta!.Image?.Dispose();
-                    _pbTestCarta.Image = _imageCropper.Base64ToImage(bestMatch.Card.ImageBase64);
-                }
+                _pbTestCarta!.Image?.Dispose();
+                _pbTestCarta.Image = _imageCropper.Base64ToImage(imageBase64);
             }
         }
         catch (Exception ex)
