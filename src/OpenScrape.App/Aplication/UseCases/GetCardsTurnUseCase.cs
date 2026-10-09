@@ -1,3 +1,4 @@
+using System.Drawing;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
@@ -8,26 +9,22 @@ namespace OpenScrape.App.Aplication.UseCases;
 
 public class GetCardsTurnUseCase : IGetCardsTurnUseCase
 {
-    private readonly CardCacheService _cardCache;
-    private readonly ImageCropperService _imageCropperService;
+    private readonly ICardRecognizer _cardRecognizer;
     private readonly ICoordinateScaler _coordinateScaler;
 
-    public GetCardsTurnUseCase(CardCacheService cardCache, ImageCropperService imageCropperService, ICoordinateScaler coordinateScaler)
+    public GetCardsTurnUseCase(ICardRecognizer cardRecognizer, ICoordinateScaler coordinateScaler)
     {
-        _cardCache = cardCache;
-        _imageCropperService = imageCropperService;
+        _cardRecognizer = cardRecognizer;
         _coordinateScaler = coordinateScaler;
     }
 
-    public async Task<GetCardsTurnUseCaseResponse> ExecuteAsync(GetCardsTurnUseCaseRequest request)
+    public Task<GetCardsTurnUseCaseResponse> ExecuteAsync(GetCardsTurnUseCaseRequest request)
     {
         var response = new GetCardsTurnUseCaseResponse();
 
         var regionTableMap = request.RegionsTableMap?.FirstOrDefault(f => f.Id == "Board");
-        if (regionTableMap == null || regionTableMap.Regions == null || request.Image == null)
-            return response;
-
-        var cardsImages = await _cardCache.GetCardsAsync();
+        if (regionTableMap == null || regionTableMap.Regions == null || request.Image is not Bitmap bitmap)
+            return Task.FromResult(response);
 
         foreach (var region in regionTableMap.Regions.Where(w => w.IsHash == true))
         {
@@ -35,29 +32,13 @@ public class GetCardsTurnUseCase : IGetCardsTurnUseCase
                 region.PosX, region.PosY, region.Width, region.Height,
                 request.CurrentImageWidth, request.CurrentImageHeight);
 
-            var imageToBase64 = _imageCropperService.CropImageToBase64(request.Image, x, y, width, height);
-
-            var maxPorcentaje = 0.0;
-            var card = new CardDTO { Name = string.Empty };
+            var match = _cardRecognizer.Recognize(bitmap, x, y, width, height);
+            var card = match.Card ?? new CardDTO { Name = string.Empty };
 
             var name = string.Empty;
             var force = 0;
             var suit = 0;
             var location = 0;
-
-            foreach (var item in cardsImages)
-            {
-                if (!string.IsNullOrEmpty(item.ImageBase64))
-                {
-                    var pocentaje = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64);
-
-                    if (pocentaje > maxPorcentaje)
-                    {
-                        maxPorcentaje = pocentaje;
-                        card = item;
-                    }
-                }
-            }
 
             switch (region.Name)
             {
@@ -89,7 +70,7 @@ public class GetCardsTurnUseCase : IGetCardsTurnUseCase
             }
         }
 
-        return response;
+        return Task.FromResult(response);
     }
 
     private (int X, int Y, int Width, int Height) ScaleCoordinates(
