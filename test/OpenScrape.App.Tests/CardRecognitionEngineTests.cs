@@ -137,6 +137,35 @@ public class CardRecognitionEngineTests
         Assert.That(DHashCalculator.Compute(new byte[4], 10, 10), Is.EqualTo(0UL));
     }
 
+    [Test]
+    public void RegionPixelExtractor_ExtractsRequestedRectangle()
+    {
+        using var bmp = new Bitmap(50, 50, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(bmp))
+            g.Clear(Color.Green);
+        using (var g = Graphics.FromImage(bmp))
+            g.FillRectangle(Brushes.Red, new Rectangle(10, 10, 20, 20));
+
+        var buffer = RegionPixelExtractor.ExtractBgra(bmp, 10, 10, 20, 20);
+
+        Assert.That(buffer, Is.Not.Null);
+        Assert.That(buffer!.Length, Is.EqualTo(20 * 20 * 4));
+        // Primer píxel de la región debe ser rojo (B=0, G=0, R=255)
+        Assert.That(buffer[2], Is.EqualTo(255)); // R
+        Assert.That(buffer[1], Is.EqualTo(0));   // G
+        Assert.That(buffer[0], Is.EqualTo(0));   // B
+    }
+
+    [Test]
+    public void RegionPixelExtractor_OutOfBounds_ReturnsNull()
+    {
+        using var bmp = new Bitmap(50, 50, PixelFormat.Format32bppArgb);
+
+        Assert.That(RegionPixelExtractor.ExtractBgra(bmp, 40, 40, 20, 20), Is.Null);
+        Assert.That(RegionPixelExtractor.ExtractBgra(bmp, 0, 0, 0, 10), Is.Null);
+        Assert.That(RegionPixelExtractor.ExtractBgra(bmp, 0, 0, 10, -1), Is.Null);
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
