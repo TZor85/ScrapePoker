@@ -446,6 +446,74 @@ public class CardRecognitionEngineTests
         return Convert.ToBase64String(ms.ToArray());
     }
 
+    [Test]
+    public void Recognize_OnRealSampleScreenshot_MatchesCompareCardsBase64Baseline()
+    {
+        string? screenshotPath = FindSampleScreenshot();
+        Assert.That(screenshotPath, Is.Not.Null, "No se encontró una captura PNG en output/samples/grab.");
+
+        using var screenshot = new Bitmap(screenshotPath!);
+
+        int cardWidth = Math.Min(60, screenshot.Width / 6);
+        int cardHeight = Math.Min(80, screenshot.Height / 3);
+        int rowY = screenshot.Height / 3;
+        var winnerRect = new Rectangle(screenshot.Width / 6, rowY, cardWidth, cardHeight);
+        var decoy1Rect = new Rectangle(screenshot.Width / 2, rowY, cardWidth, cardHeight);
+        var decoy2Rect = new Rectangle(screenshot.Width * 5 / 6 - cardWidth, rowY, cardWidth, cardHeight);
+
+        var cards = new List<CardDTO>();
+        using (var winnerBmp = screenshot.Clone(winnerRect, PixelFormat.Format32bppArgb))
+        using (var decoy1Bmp = screenshot.Clone(decoy1Rect, PixelFormat.Format32bppArgb))
+        using (var decoy2Bmp = screenshot.Clone(decoy2Rect, PixelFormat.Format32bppArgb))
+        {
+            cards.Add(new CardDTO { Name = "Winner", ImageBase64 = ToBase64(winnerBmp), Force = 1, Suit = 0 });
+            cards.Add(new CardDTO { Name = "Decoy1", ImageBase64 = ToBase64(decoy1Bmp), Force = 2, Suit = 0 });
+            cards.Add(new CardDTO { Name = "Decoy2", ImageBase64 = ToBase64(decoy2Bmp), Force = 3, Suit = 0 });
+        }
+
+        var index = new CardTemplateIndex(new FakeCardCacheService(cards));
+        index.InitializeAsync().GetAwaiter().GetResult();
+        var engine = new CardRecognitionEngine(index);
+
+        var match = engine.Recognize(screenshot, winnerRect.X, winnerRect.Y, winnerRect.Width, winnerRect.Height);
+        Assert.That(match.Card, Is.Not.Null);
+        Assert.That(match.Card!.Name, Is.EqualTo("Winner"));
+
+        var cropper = new ImageCropperService();
+        string regionBase64 = cropper.CropImageToBase64(screenshot, winnerRect.X, winnerRect.Y, winnerRect.Width, winnerRect.Height);
+        string? bestName = null;
+        double bestScore = 0;
+        foreach (var card in cards)
+        {
+            double score = cropper.CompareCardsBase64(card.ImageBase64, regionBase64);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestName = card.Name;
+            }
+        }
+
+        Assert.That(bestName, Is.EqualTo("Winner"), "El baseline base64 debe elegir la misma carta.");
+        Assert.That(match.Score, Is.EqualTo(bestScore).Within(0.001));
+    }
+
+    private static string? FindSampleScreenshot()
+    {
+        var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
+        while (dir != null)
+        {
+            string grabDir = Path.Combine(dir.FullName, "output", "samples", "grab");
+            if (Directory.Exists(grabDir))
+            {
+                string? file = Directory.GetFiles(grabDir, "*.png").OrderBy(f => f).FirstOrDefault();
+                if (file != null)
+                    return file;
+            }
+            dir = dir.Parent;
+        }
+        return null;
+    }
+
     private sealed class FakeCardCacheService : ICardCacheService
     {
         private readonly List<CardDTO> _cards;
