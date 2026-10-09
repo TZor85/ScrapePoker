@@ -244,6 +244,78 @@ public class CardRecognitionEngineTests
         Assert.That(index.Templates[0].Card.Name, Is.EqualTo("Ace Hearts"));
     }
 
+    [Test]
+    public async Task Recognize_IdenticalRegion_ReturnsScore100()
+    {
+        var cardBmp = CreatePatternBitmap(30, 40, seed: 1);
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = ToBase64(cardBmp), Force = 14, Suit = 1 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card }));
+        await index.InitializeAsync();
+        var engine = new CardRecognitionEngine(index);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.DrawImage(cardBmp, 20, 30);
+
+        var match = engine.Recognize(screenshot, 20, 30, 30, 40);
+
+        Assert.That(match.Card, Is.Not.Null);
+        Assert.That(match.Card!.Name, Is.EqualTo("Ace Hearts"));
+        Assert.That(match.Score, Is.EqualTo(100.0).Within(0.001));
+    }
+
+    [Test]
+    public async Task Recognize_DimensionMismatch_ReturnsNullCard()
+    {
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card }));
+        await index.InitializeAsync();
+        var engine = new CardRecognitionEngine(index);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.Clear(Color.Green);
+
+        var match = engine.Recognize(screenshot, 0, 0, 10, 10);
+
+        Assert.That(match.Card, Is.Null);
+        Assert.That(match.Score, Is.EqualTo(0.0));
+    }
+
+    [Test]
+    public async Task IsVisible_ReturnsTrue_When_ScoreAboveMin()
+    {
+        var cardBmp = CreatePatternBitmap(30, 40, seed: 1);
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = ToBase64(cardBmp), Force = 14, Suit = 1 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card }));
+        await index.InitializeAsync();
+        var engine = new CardRecognitionEngine(index);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.DrawImage(cardBmp, 20, 30);
+
+        Assert.That(engine.IsVisible(screenshot, 20, 30, 30, 40, 80.0), Is.True);
+    }
+
+    [Test]
+    public async Task Recognize_RecordsTelemetry_OcrCards()
+    {
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, 1)), Force = 14, Suit = 1 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card }));
+        await index.InitializeAsync();
+        var metrics = new FakeMetricsCollector();
+        var engine = new CardRecognitionEngine(index, metrics);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.DrawImage(CreatePatternBitmap(30, 40, 1), 20, 30);
+
+        engine.Recognize(screenshot, 20, 30, 30, 40);
+
+        Assert.That(metrics.MeasuredCategories, Contains.Item(TelemetryCategories.OcrCards));
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
@@ -310,5 +382,31 @@ public class CardRecognitionEngineTests
         private readonly List<CardDTO> _cards;
         public FakeCardCacheService(List<CardDTO> cards) => _cards = cards;
         public Task<List<CardDTO>> GetCardsAsync() => Task.FromResult(_cards);
+    }
+
+    private sealed class FakeMetricsCollector : IMetricsCollector
+    {
+        public List<string> MeasuredCategories { get; } = new();
+
+        public ScopedMeasurement Measure(string category)
+        {
+            MeasuredCategories.Add(category);
+            return default;
+        }
+
+        public void Record(string category, TimeSpan elapsed) { }
+        public ScopedMeasurement MeasureSessionOnly(string category)
+        {
+            MeasuredCategories.Add(category);
+            return default;
+        }
+        public void RecordSessionOnly(string category, TimeSpan elapsed) { }
+        public void StartHand(string handId) { }
+        public OpenScrape.Domain.ValueObjects.TelemetryAggregate? EndHand() => null;
+        public MetricsSnapshot SnapshotSession() =>
+            new(null,
+                new Dictionary<string, OpenScrape.Domain.ValueObjects.CategoryStats>(),
+                new Dictionary<string, OpenScrape.Domain.ValueObjects.CategoryStats>());
+        public void ResetSession() { }
     }
 }
