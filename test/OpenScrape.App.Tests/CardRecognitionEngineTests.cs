@@ -43,4 +43,71 @@ public class CardRecognitionEngineTests
         Assert.That(PixelComparer.HammingDistance(0b1011UL, 0b1001UL), Is.EqualTo(1));
         Assert.That(PixelComparer.HammingDistance(ulong.MaxValue, 0UL), Is.EqualTo(64));
     }
+
+    [Test]
+    public void PixelComparer_EarlyTermination_Returns0_When_ManyDissimilarFirst()
+    {
+        // 100 pixels: first 50 completely different, last 50 identical.
+        // At the 32-pixel checkpoint similarPixels=0 and remaining=68 < 90 → early exit.
+        var a = new byte[100 * 4];
+        var b = new byte[100 * 4];
+        for (int p = 0; p < 100; p++)
+        {
+            int o = p * 4;
+            if (p < 50)
+            {
+                a[o] = 0; a[o + 1] = 0; a[o + 2] = 0;
+                b[o] = 255; b[o + 1] = 255; b[o + 2] = 255;
+            }
+            else
+            {
+                a[o] = 10; a[o + 1] = 20; a[o + 2] = 30;
+                b[o] = 10; b[o + 1] = 20; b[o + 2] = 30;
+            }
+        }
+
+        var score = PixelComparer.CalculateSimilarity(a, b, 10, 10);
+
+        Assert.That(score, Is.EqualTo(0.0));
+    }
+
+    [Test]
+    public void PixelComparer_At89Percent_Returns0_At91Percent_Returns91()
+    {
+        // 89 similar + 11 different → 89 < 90 → 0
+        var below = BuildMixed(10, 10, similarPixels: 89);
+        Assert.That(PixelComparer.CalculateSimilarity(below.Item1, below.Item2, 10, 10), Is.EqualTo(0.0));
+
+        // 91 similar + 9 different → 91 >= 90 → 91
+        var above = BuildMixed(10, 10, similarPixels: 91);
+        Assert.That(PixelComparer.CalculateSimilarity(above.Item1, above.Item2, 10, 10), Is.EqualTo(91.0).Within(0.001));
+    }
+
+    [Test]
+    public void PixelComparer_BufferShorterThanDeclared_Returns0()
+    {
+        Assert.That(PixelComparer.CalculateSimilarity(new byte[4], new byte[4], 100, 100), Is.EqualTo(0.0));
+    }
+
+    private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
+    {
+        int total = width * height;
+        var a = new byte[total * 4];
+        var b = new byte[total * 4];
+        for (int p = 0; p < total; p++)
+        {
+            int o = p * 4;
+            if (p < similarPixels)
+            {
+                a[o] = 10; a[o + 1] = 20; a[o + 2] = 30;
+                b[o] = 10; b[o + 1] = 20; b[o + 2] = 30;
+            }
+            else
+            {
+                a[o] = 0; a[o + 1] = 0; a[o + 2] = 0;
+                b[o] = 255; b[o + 1] = 255; b[o + 2] = 255;
+            }
+        }
+        return (a, b);
+    }
 }
