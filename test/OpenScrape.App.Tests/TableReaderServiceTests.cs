@@ -19,10 +19,8 @@ public class TableReaderServiceTests
     #region IsBoardCardVisible Tests
 
     [Test]
-    public async Task IsBoardCardVisible_ReturnsTrue_When_ImageMatchesAboveThreshold()
+    public void IsBoardCardVisible_ReturnsTrue_When_ImageMatchesAboveThreshold()
     {
-        // Arrange: imagen sintética + region + fake cropper retorna match > 80%
-        // Primero poblamos _cardsImages via ObtainCardsPlayerAsync
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
         var regionCache = new FakeRegionLookupCache();
         regionCache.AddRegion("Board", "Card1", new DomainRegion(
@@ -31,42 +29,24 @@ public class TableReaderServiceTests
             IsHash: true, IsColor: null, IsBoard: null,
             Color: null, IsOnlyNumber: null,
             InactiveUmbral: null, Umbral: null));
-        regionCache.AddRegion("User", "u0cardface0", new DomainRegion(
-            Category: "User", Name: "u0cardface0",
-            PosX: 10, PosY: 10, Width: 25, Height: 35,
-            IsHash: true, IsColor: null, IsBoard: null,
-            Color: null, IsOnlyNumber: null,
-            InactiveUmbral: null, Umbral: null));
 
-        var imageCropper = new FakeImageCropperService(base64Result: "fake-base64");
-        imageCropper.SetCompareResult(85.0); // > 80% threshold
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.SetResult(card, 85.0);
 
-        var cards = new List<CardDTO>
-        {
-            new() { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 }
-        };
-        var cardCache = new FakeCardCacheService(cards);
-        var captureService = new FakeCaptureService();
         var service = CreateService(
             regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService,
-            cardCache: cardCache);
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
 
-        // Priming: cargar _cardsImages desde ObtainCardsPlayerAsync
-        await service.ObtainCardsPlayerAsync(screenshot, new PlayerGameState());
-
-        // Act
         var result = service.IsBoardCardVisible(screenshot, "Card1");
 
-        // Assert
-        Assert.That(result, Is.True, "Debe retornar true con match > 80%");
+        Assert.That(result, Is.True, "Debe retornar true con score > 80");
     }
 
     [Test]
-    public async Task IsBoardCardVisible_ReturnsFalse_When_ImageMatchesBelowThreshold()
+    public void IsBoardCardVisible_ReturnsFalse_When_ImageMatchesBelowThreshold()
     {
-        // Arrange: match < 80%
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
         var regionCache = new FakeRegionLookupCache();
         regionCache.AddRegion("Board", "Card1", new DomainRegion(
@@ -75,84 +55,49 @@ public class TableReaderServiceTests
             IsHash: true, IsColor: null, IsBoard: null,
             Color: null, IsOnlyNumber: null,
             InactiveUmbral: null, Umbral: null));
-        regionCache.AddRegion("User", "u0cardface0", new DomainRegion(
-            Category: "User", Name: "u0cardface0",
-            PosX: 10, PosY: 10, Width: 25, Height: 35,
-            IsHash: true, IsColor: null, IsBoard: null,
-            Color: null, IsOnlyNumber: null,
-            InactiveUmbral: null, Umbral: null));
 
-        var imageCropper = new FakeImageCropperService(base64Result: "fake-base64");
-        imageCropper.SetCompareResult(70.0); // < 80% threshold
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.SetResult(card, 70.0);
 
-        var cards = new List<CardDTO>
-        {
-            new() { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 }
-        };
-        var cardCache = new FakeCardCacheService(cards);
-        var captureService = new FakeCaptureService();
         var service = CreateService(
             regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService,
-            cardCache: cardCache);
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
 
-        // Priming
-        await service.ObtainCardsPlayerAsync(screenshot, new PlayerGameState());
-
-        // Act
         var result = service.IsBoardCardVisible(screenshot, "Card1");
 
-        // Assert
-        Assert.That(result, Is.False, "Debe retornar false con match < 80%");
+        Assert.That(result, Is.False, "Debe retornar false con score < 80");
     }
 
     [Test]
     public void IsBoardCardVisible_ReturnsFalse_When_RegionNotFound()
     {
-        // Arrange: región no existe en el cache
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
-        var regionCache = new FakeRegionLookupCache(); // empty cache
+        var regionCache = new FakeRegionLookupCache();
+        var service = CreateService(regionCache: regionCache, captureService: new FakeCaptureService());
 
-        var imageCropper = new FakeImageCropperService(base64Result: "fake-base64");
-        var captureService = new FakeCaptureService();
-        var service = CreateService(
-            regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService);
-
-        // Act
         var result = service.IsBoardCardVisible(screenshot, "NonExistent");
 
-        // Assert
         Assert.That(result, Is.False, "Debe retornar false si la región no existe");
     }
 
     [Test]
     public void IsBoardCardVisible_ReturnsFalse_When_RegionIsNotHash()
     {
-        // Arrange: región existe pero IsHash != true
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
         var regionCache = new FakeRegionLookupCache();
         regionCache.AddRegion("Board", "Card2", new DomainRegion(
             Category: "Board", Name: "Card2",
             PosX: 50, PosY: 20, Width: 30, Height: 40,
-            IsHash: false, // NOT a hash region → should be ignored
-            IsColor: null, IsBoard: null,
+            IsHash: false, IsColor: null, IsBoard: null,
             Color: null, IsOnlyNumber: null,
             InactiveUmbral: null, Umbral: null));
 
-        var imageCropper = new FakeImageCropperService(base64Result: "fake-base64");
-        var captureService = new FakeCaptureService();
-        var service = CreateService(
-            regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService);
+        var service = CreateService(regionCache: regionCache, captureService: new FakeCaptureService());
 
-        // Act
         var result = service.IsBoardCardVisible(screenshot, "Card2");
 
-        // Assert: IsHash=false → region is nullified before checking → should return false
         Assert.That(result, Is.False, "Debe retornar false para región no-hash");
     }
 
@@ -161,12 +106,10 @@ public class TableReaderServiceTests
     #region CountVisibleBoardCards Tests
 
     [Test]
-    public async Task CountVisibleBoardCards_Returns3_When_ThreeCardsVisible()
+    public void CountVisibleBoardCards_Returns5_When_AllVisible()
     {
-        // Arrange: Card1, Card2, Card3 visibles (>80%), Card4 no visible (<80%)
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
         var regionCache = new FakeRegionLookupCache();
-
         for (int i = 1; i <= 5; i++)
         {
             regionCache.AddRegion("Board", $"Card{i}", new DomainRegion(
@@ -176,46 +119,24 @@ public class TableReaderServiceTests
                 Color: null, IsOnlyNumber: null,
                 InactiveUmbral: null, Umbral: null));
         }
-        // Necesita al menos una región User para ObtainCardsPlayerAsync (priming)
-        regionCache.AddRegion("User", "u0cardface0", new DomainRegion(
-            Category: "User", Name: "u0cardface0",
-            PosX: 10, PosY: 10, Width: 25, Height: 35,
-            IsHash: true, IsColor: null, IsBoard: null,
-            Color: null, IsOnlyNumber: null,
-            InactiveUmbral: null, Umbral: null));
 
-        var cards = new List<CardDTO>
-        {
-            new() { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 }
-        };
-        var cardCache = new FakeCardCacheService(cards);
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.SetResult(card, 85.0);
 
-        // ImageCropper retorna 85% para todas las llamadas
-        var imageCropper = new FakeImageCropperService(base64Result: "cropped-base64");
-        imageCropper.SetCompareResult(85.0);
-
-        var captureService = new FakeCaptureService();
         var service = CreateService(
             regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService,
-            cardCache: cardCache);
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
 
-        // Priming: cargar _cardsImages
-        await service.ObtainCardsPlayerAsync(screenshot, new PlayerGameState());
-
-        // Act: con el mismo compareResult 85% (>80%), TODAS las cartas serían visibles
-        // Probemos 5 visibles (dado que IsBoardCardVisible usa cards ya cargadas)
         var count = service.CountVisibleBoardCards(screenshot);
 
-        // Assert: con todas las cartas > 80%, cuenta las 5 (secuencial todas pasan)
-        Assert.That(count, Is.EqualTo(5), "Debe contar 5 cartas visibles (todas > 80%)");
+        Assert.That(count, Is.EqualTo(5), "Debe contar 5 cartas visibles (score > 80)");
     }
 
     [Test]
-    public async Task CountVisibleBoardCards_Returns0_When_NoCardsVisible()
+    public void CountVisibleBoardCards_Returns0_When_NoCardsVisible()
     {
-        // Arrange: ninguna carta visible
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
         var regionCache = new FakeRegionLookupCache();
         regionCache.AddRegion("Board", "Card1", new DomainRegion(
@@ -224,36 +145,18 @@ public class TableReaderServiceTests
             IsHash: true, IsColor: null, IsBoard: null,
             Color: null, IsOnlyNumber: null,
             InactiveUmbral: null, Umbral: null));
-        regionCache.AddRegion("User", "u0cardface0", new DomainRegion(
-            Category: "User", Name: "u0cardface0",
-            PosX: 10, PosY: 10, Width: 25, Height: 35,
-            IsHash: true, IsColor: null, IsBoard: null,
-            Color: null, IsOnlyNumber: null,
-            InactiveUmbral: null, Umbral: null));
 
-        var cards = new List<CardDTO>
-        {
-            new() { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 }
-        };
-        var cardCache = new FakeCardCacheService(cards);
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.SetResult(card, 10.0);
 
-        var imageCropper = new FakeImageCropperService(base64Result: "fake-base64");
-        imageCropper.SetCompareResult(10.0); // muy por debajo del umbral
-
-        var captureService = new FakeCaptureService();
         var service = CreateService(
             regionCache: regionCache,
-            imageCropper: imageCropper,
-            captureService: captureService,
-            cardCache: cardCache);
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
 
-        // Priming
-        await service.ObtainCardsPlayerAsync(screenshot, new PlayerGameState());
-
-        // Act
         var count = service.CountVisibleBoardCards(screenshot);
 
-        // Assert
         Assert.That(count, Is.EqualTo(0), "Debe retornar 0 si ninguna carta es visible");
     }
 
@@ -334,54 +237,37 @@ public class TableReaderServiceTests
             Color: null, IsOnlyNumber: null,
             InactiveUmbral: null, Umbral: null));
 
-        var cards = new List<CardDTO>
-        {
-            new() { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 },
-            new() { Name = "King Spades", ImageBase64 = "kings-base64", Force = 13, Suit = 3 }
-        };
+        var ace = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var king = new CardDTO { Name = "King Spades", ImageBase64 = "kings-base64", Force = 13, Suit = 3 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.Enqueue(new CardMatch(ace, 95.0));
+        recognizer.Enqueue(new CardMatch(king, 95.0));
 
-        var cardCache = new FakeCardCacheService(cards);
-        // ImageCropper retorna match 95% para ambas regiones
-        var imageCropper = new FakeImageCropperService(base64Result: "cropped-base64");
-        imageCropper.SetCompareResult(95.0);
-
-        var captureService = new FakeCaptureService();
         var service = CreateService(
             regionCache: regionCache,
-            imageCropper: imageCropper,
-            cardCache: cardCache,
-            captureService: captureService);
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
 
         var state = new PlayerGameState();
 
-        // Act
         await service.ObtainCardsPlayerAsync(screenshot, state);
 
-        // Assert: el mejor match (95%) establece las cartas del primer CardDTO de la lista
         Assert.Multiple(() =>
         {
             Assert.That(state.HoleCard1Face, Is.EqualTo("Ace"), "Debe establecer HoleCard1Face");
             Assert.That(state.HoleCard1Rank, Is.EqualTo(14), "Debe establecer HoleCard1Rank");
+            Assert.That(state.HoleCard2Face, Is.EqualTo("King"), "Debe establecer HoleCard2Face");
         });
     }
 
     [Test]
-    public async Task ObtainCardsPlayer_DoesNotThrow_When_NoRegions()
+    public void ObtainCardsPlayer_DoesNotThrow_When_NoRegions()
     {
-        // Arrange
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
-        var regionCache = new FakeRegionLookupCache(); // empty
-        var imageCropper = new FakeImageCropperService(base64Result: "fake");
-        var cardCache = new FakeCardCacheService(new List<CardDTO>());
-        var captureService = new FakeCaptureService();
-        var service = CreateService(
-            regionCache: regionCache,
-            imageCropper: imageCropper,
-            cardCache: cardCache,
-            captureService: captureService);
+        var regionCache = new FakeRegionLookupCache();
+        var service = CreateService(regionCache: regionCache, captureService: new FakeCaptureService());
         var state = new PlayerGameState();
 
-        // Act & Assert
         Assert.DoesNotThrowAsync(() => service.ObtainCardsPlayerAsync(screenshot, state));
     }
 
@@ -396,8 +282,7 @@ public class TableReaderServiceTests
         IRegionLookupCache? regionCache = null,
         IScreenReaderService? screenReader = null,
         ICaptureService? captureService = null,
-        IImageCropperService? imageCropper = null,
-        ICardCacheService? cardCache = null,
+        ICardRecognizer? cardRecognizer = null,
         IOcrService? ocrService = null,
         ILogger<TableReaderService>? logger = null)
     {
@@ -405,8 +290,7 @@ public class TableReaderServiceTests
             regionCache ?? new FakeRegionLookupCache(),
             screenReader ?? new FakeScreenReaderService(),
             captureService ?? new FakeCaptureService(),
-            imageCropper ?? new FakeImageCropperService("fake"),
-            cardCache ?? new FakeCardCacheService(new List<CardDTO>()),
+            cardRecognizer ?? new FakeCardRecognizerService(),
             ocrService ?? new FakeOcrService(),
             logger ?? new FakeLogger<TableReaderService>());
     }
@@ -451,56 +335,26 @@ public class TableReaderServiceTests
         }
     }
 
-    private sealed class FakeImageCropperService : IImageCropperService
+    private sealed class FakeCardRecognizerService : ICardRecognizer
     {
-        private readonly string _base64Result;
-        private double _compareResult = 0;
-        private Dictionary<int, double>? _compareResultsByCallIndex;
+        private CardMatch _result = new(null, 0);
+        private readonly Queue<CardMatch> _queued = new();
 
-        public FakeImageCropperService(string base64Result)
+        public void SetResult(CardDTO? card, double score) => _result = new CardMatch(card, score);
+
+        public void Enqueue(CardMatch match) => _queued.Enqueue(match);
+
+        public CardMatch Recognize(Bitmap screenshot, int x, int y, int width, int height)
+            => _queued.Count > 0 ? _queued.Dequeue() : _result;
+
+        public IReadOnlyList<CardMatch> RankCandidates(Bitmap screenshot, int x, int y, int width, int height)
         {
-            _base64Result = base64Result;
+            var match = Recognize(screenshot, x, y, width, height);
+            return match.Card != null ? new List<CardMatch> { match } : new List<CardMatch>();
         }
 
-        public void SetCompareResult(double percentage)
-        {
-            _compareResult = percentage;
-            _compareResultsByCallIndex = null;
-        }
-
-        /// <summary>
-        /// Configura resultados por índice de llamada. Útil para CountVisibleBoardCards
-        /// donde IsBoardCardVisible se llama secuencialmente para Card1..Card5.
-        /// </summary>
-        public void SetCompareResults(Dictionary<int, double> results)
-        {
-            _compareResultsByCallIndex = results;
-        }
-
-        public string CropImageToBase64(Image sourceImage, int x, int y, int width, int height)
-        {
-            return _base64Result;
-        }
-
-        public double CompareCardsBase64(string? imageBase641, string? imageBase642)
-        {
-            return _compareResult;
-        }
-    }
-
-    private sealed class FakeCardCacheService : ICardCacheService
-    {
-        private readonly List<CardDTO> _cards;
-
-        public FakeCardCacheService(List<CardDTO> cards)
-        {
-            _cards = cards;
-        }
-
-        public Task<List<CardDTO>> GetCardsAsync()
-        {
-            return Task.FromResult(_cards);
-        }
+        public bool IsVisible(Bitmap screenshot, int x, int y, int width, int height, double minScore = 80.0)
+            => Recognize(screenshot, x, y, width, height).Score > minScore;
     }
 
     private sealed class FakeOcrService : IOcrService

@@ -1,9 +1,7 @@
 using System.Drawing;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
-using OpenScrape.Domain.Dtos;
 using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
 
 namespace OpenScrape.App.Services;
@@ -18,27 +16,22 @@ public sealed class TableReaderService : ITableReaderService
     private readonly IRegionLookupCache _regionLookupCache;
     private readonly IScreenReaderService _screenReader;
     private readonly ICaptureService _captureService;
-    private readonly IImageCropperService _imageCropperService;
-    private readonly ICardCacheService _cardCacheService;
+    private readonly ICardRecognizer _cardRecognizer;
     private readonly IOcrService _ocrService;
     private readonly ILogger<TableReaderService> _logger;
-
-    private List<CardDTO>? _cardsImages;
 
     public TableReaderService(
         IRegionLookupCache regionLookupCache,
         IScreenReaderService screenReader,
         ICaptureService captureService,
-        IImageCropperService imageCropperService,
-        ICardCacheService cardCacheService,
+        ICardRecognizer cardRecognizer,
         IOcrService ocrService,
         ILogger<TableReaderService> logger)
     {
         _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
         _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
         _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
-        _imageCropperService = imageCropperService ?? throw new ArgumentNullException(nameof(imageCropperService));
-        _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
+        _cardRecognizer = cardRecognizer ?? throw new ArgumentNullException(nameof(cardRecognizer));
         _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -149,63 +142,41 @@ public sealed class TableReaderService : ITableReaderService
     }
 
     /// <inheritdoc />
-    public async Task ObtainCardsPlayerAsync(Bitmap screenshot, PlayerGameState state)
+    public Task ObtainCardsPlayerAsync(Bitmap screenshot, PlayerGameState state)
     {
         var userRegionsList = _regionLookupCache.GetRegions("User");
         if (userRegionsList == null || screenshot == null)
-            return;
+            return Task.CompletedTask;
 
-        var hashRegions = userRegionsList.Where(w => w.IsHash == true).ToList();
-
-        _cardsImages ??= await _cardCacheService.GetCardsAsync();
-
-        foreach (var region in hashRegions)
+        foreach (var region in userRegionsList.Where(w => w.IsHash == true))
         {
             var scaled = ScaleRegion(region);
-
-            var imageToBase64 = _imageCropperService.CropImageToBase64(
-                screenshot,
-                scaled.X,
-                scaled.Y,
-                scaled.Width,
-                scaled.Height);
-
-            if (_cardsImages == null || !_cardsImages.Any())
-                continue;
-
-            var bestMatch = _cardsImages
-                .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-                .Select(item => new
-                {
-                    Card = item,
-                    Percentage = _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64)
-                })
-                .OrderByDescending(x => x.Percentage)
-                .FirstOrDefault();
-
-            if (bestMatch == null)
+            var match = _cardRecognizer.Recognize(screenshot, scaled.X, scaled.Y, scaled.Width, scaled.Height);
+            if (match.Card is null)
                 continue;
 
             switch (region.Name)
             {
                 case "u0cardface0":
-                    state.HoleCard1Face = bestMatch.Card.Name.Split(" ")[0];
-                    state.HoleCard1Rank = bestMatch.Card.Force;
-                    state.HoleCard1Suit = bestMatch.Card.Suit;
+                    state.HoleCard1Face = match.Card.Name.Split(" ")[0];
+                    state.HoleCard1Rank = match.Card.Force;
+                    state.HoleCard1Suit = match.Card.Suit;
                     break;
                 case "u0cardface1":
-                    state.HoleCard2Face = bestMatch.Card.Name.Split(" ")[0];
-                    state.HoleCard2Rank = bestMatch.Card.Force;
-                    state.HoleCard2Suit = bestMatch.Card.Suit;
+                    state.HoleCard2Face = match.Card.Name.Split(" ")[0];
+                    state.HoleCard2Rank = match.Card.Force;
+                    state.HoleCard2Suit = match.Card.Suit;
                     break;
             }
         }
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public bool IsBoardCardVisible(Bitmap screenshot, string cardRegionName)
     {
-        if (screenshot == null || _cardsImages == null || !_cardsImages.Any())
+        if (screenshot == null)
             return false;
 
         var cardRegion = _regionLookupCache.GetRegion("Board", cardRegionName);
@@ -215,16 +186,7 @@ public sealed class TableReaderService : ITableReaderService
             return false;
 
         var scaled = ScaleRegion(cardRegion);
-        var imageToBase64 = _imageCropperService.CropImageToBase64(
-            screenshot, scaled.X, scaled.Y, scaled.Width, scaled.Height);
-
-        var bestMatch = _cardsImages
-            .Where(item => !string.IsNullOrEmpty(item.ImageBase64))
-            .Select(item => _imageCropperService.CompareCardsBase64(item.ImageBase64, imageToBase64))
-            .DefaultIfEmpty(0)
-            .Max();
-
-        return bestMatch > 80.0;
+        return _cardRecognizer.IsVisible(screenshot, scaled.X, scaled.Y, scaled.Width, scaled.Height, 80.0);
     }
 
     /// <inheritdoc />
