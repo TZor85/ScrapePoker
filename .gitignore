@@ -359,3 +359,6 @@ appsettings.Production.json
 
 # Worktrees
 .worktrees/
+
+# CodeGraph local index
+.codegraph/
