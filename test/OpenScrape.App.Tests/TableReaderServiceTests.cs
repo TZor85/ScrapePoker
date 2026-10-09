@@ -71,6 +71,32 @@ public class TableReaderServiceTests
     }
 
     [Test]
+    public void IsBoardCardVisible_ReturnsFalse_When_ScoreExactlyEighty()
+    {
+        using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
+        var regionCache = new FakeRegionLookupCache();
+        regionCache.AddRegion("Board", "Card1", new DomainRegion(
+            Category: "Board", Name: "Card1",
+            PosX: 10, PosY: 20, Width: 30, Height: 40,
+            IsHash: true, IsColor: null, IsBoard: null,
+            Color: null, IsOnlyNumber: null,
+            InactiveUmbral: null, Umbral: null));
+
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.SetResult(card, 80.0);
+
+        var service = CreateService(
+            regionCache: regionCache,
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
+
+        var result = service.IsBoardCardVisible(screenshot, "Card1");
+
+        Assert.That(result, Is.False, "80.0 no es > 80.0, debe ser false");
+    }
+
+    [Test]
     public void IsBoardCardVisible_ReturnsFalse_When_RegionNotFound()
     {
         using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
@@ -158,6 +184,38 @@ public class TableReaderServiceTests
         var count = service.CountVisibleBoardCards(screenshot);
 
         Assert.That(count, Is.EqualTo(0), "Debe retornar 0 si ninguna carta es visible");
+    }
+
+    [Test]
+    public void CountVisibleBoardCards_Returns3_When_FourthCardNotVisible()
+    {
+        using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
+        var regionCache = new FakeRegionLookupCache();
+        for (int i = 1; i <= 5; i++)
+        {
+            regionCache.AddRegion("Board", $"Card{i}", new DomainRegion(
+                Category: "Board", Name: $"Card{i}",
+                PosX: i * 40, PosY: 20, Width: 30, Height: 40,
+                IsHash: true, IsColor: null, IsBoard: null,
+                Color: null, IsOnlyNumber: null,
+                InactiveUmbral: null, Umbral: null));
+        }
+
+        var card = new CardDTO { Name = "Ace Hearts", ImageBase64 = "aceh-base64", Force = 14, Suit = 1 };
+        var recognizer = new FakeCardRecognizerService();
+        recognizer.Enqueue(new CardMatch(card, 90.0));
+        recognizer.Enqueue(new CardMatch(card, 90.0));
+        recognizer.Enqueue(new CardMatch(card, 90.0));
+        recognizer.Enqueue(new CardMatch(null, 0));
+
+        var service = CreateService(
+            regionCache: regionCache,
+            cardRecognizer: recognizer,
+            captureService: new FakeCaptureService());
+
+        var count = service.CountVisibleBoardCards(screenshot);
+
+        Assert.That(count, Is.EqualTo(3), "Debe cortar en la primera carta no visible");
     }
 
     #endregion
