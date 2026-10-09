@@ -15,7 +15,7 @@ public static class RegionPixelExtractor
     {
         if (source == null || width <= 0 || height <= 0)
             return null;
-        if (x < 0 || y < 0 || x + width > source.Width || y + height > source.Height)
+        if (x < 0 || y < 0 || width > source.Width - x || height > source.Height - y)
             return null;
 
         var rect = new Rectangle(x, y, width, height);
@@ -32,7 +32,7 @@ public static class RegionPixelExtractor
             }
             return buffer;
         }
-        catch
+        catch (Exception ex) when (ex is ArgumentException or ExternalException)
         {
             return null;
         }

@@ -154,6 +154,11 @@ public class CardRecognitionEngineTests
         Assert.That(buffer[2], Is.EqualTo(255)); // R
         Assert.That(buffer[1], Is.EqualTo(0));   // G
         Assert.That(buffer[0], Is.EqualTo(0));   // B
+        // Último píxel de la región también debe ser rojo (valida el avance por Stride)
+        int last = (19 * 20 + 19) * 4;
+        Assert.That(buffer[last + 2], Is.EqualTo(255)); // R
+        Assert.That(buffer[last + 1], Is.EqualTo(0));   // G
+        Assert.That(buffer[last], Is.EqualTo(0));       // B
     }
 
     [Test]
