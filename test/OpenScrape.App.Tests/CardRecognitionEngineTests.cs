@@ -316,6 +316,75 @@ public class CardRecognitionEngineTests
         Assert.That(metrics.MeasuredCategories, Contains.Item(TelemetryCategories.OcrCards));
     }
 
+    [Test]
+    public void PixelComparer_MatchesImageCropperService_ForIdenticalImages()
+    {
+        var bmp = CreatePatternBitmap(30, 40, seed: 7);
+        var base64 = ToBase64(bmp);
+        var cropper = new ImageCropperService();
+
+        var cropperScore = cropper.CompareCardsBase64(base64, base64);
+
+        var bgra = RegionPixelExtractor.ExtractBgra(bmp, 0, 0, 30, 40)!;
+        var comparerScore = PixelComparer.CalculateSimilarity(bgra, bgra, 30, 40);
+
+        Assert.That(cropperScore, Is.EqualTo(100.0).Within(0.001));
+        Assert.That(comparerScore, Is.EqualTo(100.0).Within(0.001));
+    }
+
+    [Test]
+    public void PixelComparer_MatchesImageCropperService_ForDifferentImages()
+    {
+        var bmpA = CreatePatternBitmap(30, 40, seed: 1);
+        var bmpB = CreatePatternBitmap(30, 40, seed: 200);
+        var cropper = new ImageCropperService();
+
+        var cropperScore = cropper.CompareCardsBase64(ToBase64(bmpA), ToBase64(bmpB));
+
+        var bgraA = RegionPixelExtractor.ExtractBgra(bmpA, 0, 0, 30, 40)!;
+        var bgraB = RegionPixelExtractor.ExtractBgra(bmpB, 0, 0, 30, 40)!;
+        var comparerScore = PixelComparer.CalculateSimilarity(bgraA, bgraB, 30, 40);
+
+        Assert.That(cropperScore, Is.EqualTo(0.0));
+        Assert.That(comparerScore, Is.EqualTo(0.0));
+    }
+
+    [Test]
+    public async Task Recognize_AmongMultipleTemplates_ReturnsHighestScoringCard()
+    {
+        var card1 = new CardDTO { Name = "Card1", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, seed: 1)), Force = 14, Suit = 1 };
+        var card2 = new CardDTO { Name = "Card2", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, seed: 2)), Force = 2, Suit = 2 };
+        var card3 = new CardDTO { Name = "Card3", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, seed: 3)), Force = 3, Suit = 3 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card1, card2, card3 }));
+        await index.InitializeAsync();
+        var engine = new CardRecognitionEngine(index);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.DrawImage(CreatePatternBitmap(30, 40, seed: 2), 10, 10);
+
+        var match = engine.Recognize(screenshot, 10, 10, 30, 40);
+
+        Assert.That(match.Card, Is.Not.Null);
+        Assert.That(match.Card!.Name, Is.EqualTo("Card2"));
+        Assert.That(match.Score, Is.EqualTo(100.0).Within(0.001));
+    }
+
+    [Test]
+    public async Task IsVisible_ReturnsFalse_When_RegionDoesNotMatchAnyCard()
+    {
+        var card = new CardDTO { Name = "Card1", ImageBase64 = ToBase64(CreatePatternBitmap(30, 40, seed: 1)), Force = 14, Suit = 1 };
+        var index = new CardTemplateIndex(new FakeCardCacheService(new List<CardDTO> { card }));
+        await index.InitializeAsync();
+        var engine = new CardRecognitionEngine(index);
+
+        using var screenshot = new Bitmap(100, 100, PixelFormat.Format32bppArgb);
+        using (var g = Graphics.FromImage(screenshot))
+            g.Clear(Color.Green);
+
+        Assert.That(engine.IsVisible(screenshot, 10, 10, 30, 40, 80.0), Is.False);
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
