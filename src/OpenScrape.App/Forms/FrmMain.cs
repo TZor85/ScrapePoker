@@ -2509,6 +2509,46 @@ namespace OpenScrape.App
             }
         }
 
+        /// <summary>
+        /// Guarda un screenshot raw de la ventana de poker en output/samples/grab/.
+        /// Útil para recolectar capturas reales durante el juego y usarlas luego en modo test.
+        /// </summary>
+        private void btnGrabScreenshot_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (_handle == IntPtr.Zero)
+                {
+                    _logger.LogWarning("[GRAB] No hay ventana seleccionada. Usá 'Window' primero.");
+                    return;
+                }
+
+                using var bitmap = _captureService.CaptureWindow(_handle);
+                if (bitmap == null)
+                {
+                    _logger.LogError("[GRAB] Falló la captura de la ventana");
+                    return;
+                }
+
+                string grabDir = Path.Combine("C:", "Code", "Poker", "ScrapePoker", "output", "samples", "grab");
+                Directory.CreateDirectory(grabDir);
+
+                string fileName = $"game_{DateTimeOffset.Now.ToUnixTimeMilliseconds()}.png";
+                string filePath = Path.Combine(grabDir, fileName);
+
+                bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
+
+                _logger.LogInformation("[GRAB] Screenshot guardado: {Path}", filePath);
+
+                // Feedback visual: mostrar el nombre del archivo sin pisar _tableHand
+                lbTableHand.Text = $"GRAB: {fileName}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[GRAB] Error al guardar screenshot");
+            }
+        }
+
         // ============================================================================
         // CÓDIGO ELIMINADO — refactor-frmmain Fase 1: DetectionLoopService
         // ----------------------------------------------------------------------------
@@ -2753,7 +2793,7 @@ namespace OpenScrape.App
             }
 
             // Mejorar botones de acción
-            var actionButtons = new[] { btnCapture, btnWindow };
+            var actionButtons = new[] { btnCapture, btnGrabScreenshot, btnWindow };
             foreach (Button btn in actionButtons)
             {
                 btn.FlatStyle = FlatStyle.Flat;

@@ -13,43 +13,109 @@ namespace OpenScrape.App.Helpers
             // Configurar DPI Awareness
             SetProcessDPIAware();
 
-            // Obtener dimensiones
+            // Obtener dimensiones de la ventana
             User32.RECT windowRect = new User32.RECT();
             User32.GetWindowRect(handle, ref windowRect);
             int width = windowRect.right - windowRect.left;
             int height = windowRect.bottom - windowRect.top;
 
-            // Factor de escala para mejor calidad
-            float scaleFactor = 1.0f;
-            int scaledWidth = (int)(width * scaleFactor);
-            int scaledHeight = (int)(height * scaleFactor);
+            if (width <= 0 || height <= 0)
+                throw new InvalidOperationException("La ventana tiene dimensiones inválidas.");
 
-            // Capturar con alta resolución
+            Bitmap? result = null;
+
+            // ESTRATEGIA 1: Capturar desde la pantalla (desktop DC) — obtiene los píxeles REALES
+            // que se están mostrando en el monitor en este instante. Es la única forma de
+            // capturar ventanas con renderizado hardware (DirectX, OpenGL) correctamente.
+            if (TryCaptureFromScreen(handle, windowRect, width, height, out result))
+                return result;
+
+            // ESTRATEGIA 2: Si la ventana está minimizada o cubierta, BitBlt desde la
+            // Window DC puede funcionar. También probar PrintWindow como último recurso.
+            return CaptureFallback(handle, width, height);
+        }
+
+        /// <summary>
+        /// Captura la ventana desde la pantalla (desktop DC).
+        /// Esto obtiene los píxeles REALES visibles en el monitor, no el caché del DWM.
+        /// </summary>
+        private static bool TryCaptureFromScreen(IntPtr handle, User32.RECT windowRect, int width, int height, out Bitmap? result)
+        {
+            result = null;
+
+            // Obtener DC del desktop completo
+            IntPtr hdcScreen = User32.GetDC(IntPtr.Zero);
+            if (hdcScreen == IntPtr.Zero)
+                return false;
+
+            IntPtr hdcDest = IntPtr.Zero;
+            IntPtr hBitmap = IntPtr.Zero;
+            IntPtr hOld = IntPtr.Zero;
+
+            try
+            {
+                hdcDest = GDI32.CreateCompatibleDC(hdcScreen);
+                if (hdcDest == IntPtr.Zero)
+                    return false;
+
+                hBitmap = GDI32.CreateCompatibleBitmap(hdcScreen, width, height);
+                if (hBitmap == IntPtr.Zero)
+                    return false;
+
+                hOld = GDI32.SelectObject(hdcDest, hBitmap);
+
+                // BitBlt desde la posición de la ventana en pantalla
+                bool success = GDI32.BitBlt(hdcDest, 0, 0, width, height,
+                    hdcScreen, windowRect.left, windowRect.top, GDI32.SRCCOPY);
+
+                if (!success)
+                    return false;
+
+                var bitmap = Image.FromHbitmap(hBitmap) as Bitmap;
+                if (bitmap == null || bitmap.Width <= 1 || bitmap.Height <= 1)
+                    return false;
+
+                result = ScaleAndFinish(bitmap, width, height);
+                bitmap.Dispose();
+                return true;
+            }
+            finally
+            {
+                if (hOld != IntPtr.Zero)
+                    GDI32.SelectObject(hdcDest, hOld);
+                if (hdcDest != IntPtr.Zero)
+                    GDI32.DeleteDC(hdcDest);
+                if (hBitmap != IntPtr.Zero)
+                    GDI32.DeleteObject(hBitmap);
+                if (hdcScreen != IntPtr.Zero)
+                    User32.ReleaseDC(IntPtr.Zero, hdcScreen);
+            }
+        }
+
+        /// <summary>
+        /// Fallback: captura desde Window DC o PrintWindow para ventanas
+        /// minimizadas/cubiertas donde BitBlt desde pantalla no funciona.
+        /// </summary>
+        private static Bitmap CaptureFallback(IntPtr handle, int width, int height)
+        {
+            // Intentar BitBlt desde la Window DC
             IntPtr hdcSrc = User32.GetWindowDC(handle);
             IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
             IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
             IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
 
-            // Usar PrintWindow con PW_RENDERFULLCONTENT para mejor calidad
-            bool success = User32.PrintWindow(handle, hdcDest, 0x02); // 0x02 = PW_RENDERFULLCONTENT
-            if (!success) GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, 0x00CC0020);
+            bool success = GDI32.BitBlt(hdcDest, 0, 0, width, height,
+                hdcSrc, 0, 0, GDI32.SRCCOPY);
 
-            // Convertir a Bitmap
-            var bitmap = (Bitmap)Image.FromHbitmap(hBitmap);
-
-            // Escalar la imagen para mejor OCR
-            Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight);
-            using (Graphics g = Graphics.FromImage(scaledBitmap))
+            if (!success)
             {
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
-                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
-                g.DrawImage(bitmap, 0, 0, scaledWidth, scaledHeight);
+                // Último recurso: PrintWindow con PW_RENDERFULLCONTENT
+                // (puede devolver contenido cacheado del DWM para ventanas HW)
+                User32.PrintWindow(handle, hdcDest, 0x02);
             }
 
-            // Establecer DPI alto
-            scaledBitmap.SetResolution(600, 600); // Aumentado a 600 DPI
+            var bitmap = Image.FromHbitmap(hBitmap) as Bitmap ?? new Bitmap(width, height);
+            var result = ScaleAndFinish(bitmap, width, height);
 
             // Limpieza
             GDI32.SelectObject(hdcDest, hOld);
@@ -58,38 +124,32 @@ namespace OpenScrape.App.Helpers
             GDI32.DeleteObject(hBitmap);
             bitmap.Dispose();
 
-            return scaledBitmap;
+            return result;
         }
 
-        //public static Image CaptureWindow(IntPtr handle)
-        //{
-        //    // obtener hDC de la ventana deseada
-        //    IntPtr hdcSrc = User32.GetWindowDC(handle);
-        //    // Obtener el tamano
-        //    User32.RECT windowRect = new User32.RECT();
-        //    User32.GetWindowRect(handle, ref windowRect);
-        //    int width = windowRect.right - windowRect.left;
-        //    int height = windowRect.bottom - windowRect.top;
-        //    // Crea un contexto en el que se copiara la imagen
-        //    IntPtr hdcDest = GDI32.CreateCompatibleDC(hdcSrc);
-        //    // create a bitmap we can copy it to,
-        //    // using GetDeviceCaps to get the width/height
-        //    IntPtr hBitmap = GDI32.CreateCompatibleBitmap(hdcSrc, width, height);
-        //    // Seleccionar el objeto bitmap 
-        //    IntPtr hOld = GDI32.SelectObject(hdcDest, hBitmap);
-        //    // finalizar bitblt
-        //    GDI32.BitBlt(hdcDest, 0, 0, width, height, hdcSrc, 0, 0, GDI32.SRCCOPY);
-        //    // Restaurar seleccion
-        //    GDI32.SelectObject(hdcDest, hOld);
-        //    // Limpiar
-        //    GDI32.DeleteDC(hdcDest);
-        //    User32.ReleaseDC(handle, hdcSrc);
-        //    // Obtener una imagen .NET image del bitmap
-        //    Image img = Image.FromHbitmap(hBitmap);
-        //    // Liberar objeto Bitmab
-        //    GDI32.DeleteObject(hBitmap);
-        //    return img;
-        //}
+        /// <summary>
+        /// Escala la imagen y establece DPI alto para mejor OCR.
+        /// </summary>
+        private static Bitmap ScaleAndFinish(Bitmap source, int width, int height)
+        {
+            float scaleFactor = 1.0f;
+            int scaledWidth = (int)(width * scaleFactor);
+            int scaledHeight = (int)(height * scaleFactor);
+
+            Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight);
+            using (Graphics g = Graphics.FromImage(scaledBitmap))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+                g.DrawImage(source, 0, 0, scaledWidth, scaledHeight);
+            }
+
+            scaledBitmap.SetResolution(600, 600);
+
+            return scaledBitmap;
+        }
 
         public static Image CaptureWindowByPosition(IntPtr handle)
         {

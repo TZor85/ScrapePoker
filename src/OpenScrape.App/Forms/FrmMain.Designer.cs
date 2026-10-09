@@ -41,6 +41,7 @@
             rbTurn = new RadioButton();
             rbFlop = new RadioButton();
             btnWindow = new Button();
+            btnGrabScreenshot = new Button();
             cbTest = new CheckBox();
             panel10 = new Panel();
             lbTableHand = new Label();
@@ -248,6 +249,7 @@
             tbJuego.Controls.Add(lbPositionAction);
             tbJuego.Controls.Add(lbAction);
             tbJuego.Controls.Add(gbTest);
+            tbJuego.Controls.Add(btnGrabScreenshot);
             tbJuego.Controls.Add(btnWindow);
             tbJuego.Controls.Add(cbTest);
             tbJuego.Controls.Add(panel10);
@@ -393,6 +395,16 @@
             btnWindow.Text = "Window";
             btnWindow.UseVisualStyleBackColor = true;
             btnWindow.Click += btnWindow_Click;
+            // 
+            // btnGrabScreenshot
+            // 
+            btnGrabScreenshot.Location = new Point(398, 325);
+            btnGrabScreenshot.Name = "btnGrabScreenshot";
+            btnGrabScreenshot.Size = new Size(80, 60);
+            btnGrabScreenshot.TabIndex = 87;
+            btnGrabScreenshot.Text = "Grab";
+            btnGrabScreenshot.UseVisualStyleBackColor = true;
+            btnGrabScreenshot.Click += btnGrabScreenshot_Click;
             // 
             // cbTest
             // 
@@ -1920,6 +1932,7 @@
         private Label lbTableName;
         private CheckBox cbTest;
         private Button btnWindow;
+        private Button btnGrabScreenshot;
         private GroupBox gbTest;
         private Label lbAction;
         private RadioButton rbFlop;
