@@ -89,6 +89,30 @@ public class CardRecognitionEngineTests
         Assert.That(PixelComparer.CalculateSimilarity(new byte[4], new byte[4], 100, 100), Is.EqualTo(0.0));
     }
 
+    [Test]
+    public void DHashCalculator_IdenticalBuffers_ReturnsSameHash()
+    {
+        var bgra = CreatePatternBgra(30, 40, seed: 1);
+
+        var h1 = DHashCalculator.Compute(bgra, 30, 40);
+        var h2 = DHashCalculator.Compute(bgra, 30, 40);
+
+        Assert.That(h1, Is.EqualTo(h2));
+    }
+
+    [Test]
+    public void DHashCalculator_DifferentPatterns_LargeDistance()
+    {
+        var ba = CreatePatternBgra(30, 40, seed: 1);
+        var bb = CreatePatternBgra(30, 40, seed: 99);
+
+        var distance = PixelComparer.HammingDistance(
+            DHashCalculator.Compute(ba, 30, 40),
+            DHashCalculator.Compute(bb, 30, 40));
+
+        Assert.That(distance, Is.GreaterThan(0));
+    }
+
     private static (byte[] A, byte[] B) BuildMixed(int width, int height, int similarPixels)
     {
         int total = width * height;
@@ -109,5 +133,44 @@ public class CardRecognitionEngineTests
             }
         }
         return (a, b);
+    }
+
+    private static byte[] CreatePatternBgra(int width, int height, int seed)
+    {
+        var buffer = new byte[width * height * 4];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                int o = (y * width + x) * 4;
+                byte v = (byte)((x * 7 + y * 13 + seed * 53) % 256);
+                buffer[o] = (byte)((v + seed) % 256); // B
+                buffer[o + 1] = (byte)(255 - v);       // G
+                buffer[o + 2] = v;                      // R
+                buffer[o + 3] = 255;                    // A
+            }
+        }
+        return buffer;
+    }
+
+    private static Bitmap CreatePatternBitmap(int width, int height, int seed)
+    {
+        var bmp = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                byte v = (byte)((x * 7 + y * 13 + seed * 53) % 256);
+                bmp.SetPixel(x, y, Color.FromArgb(255, v, (byte)(255 - v), (byte)((v + seed) % 256)));
+            }
+        }
+        return bmp;
+    }
+
+    private static string ToBase64(Bitmap bitmap)
+    {
+        using var ms = new MemoryStream();
+        bitmap.Save(ms, ImageFormat.Png);
+        return Convert.ToBase64String(ms.ToArray());
     }
 }
