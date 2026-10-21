@@ -1,8 +1,7 @@
 # verify-pre-merge.ps1
 param(
     [switch]$SkipSmoke,
-    [switch]$Verbose,
-    [int]$MaxWarnings = 75
+    [switch]$Verbose
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,12 +15,12 @@ function Test-Checkpoint {
             Write-Host "Running: $Name" -ForegroundColor Cyan
         }
         & $ScriptBlock
-        $results += @{ Name = $Name; Status = "PASS" }
+        $script:results += @{ Name = $Name; Status = "PASS" }
         if ($Verbose) {
             Write-Host "  PASS" -ForegroundColor Green
         }
     } catch {
-        $results += @{ Name = $Name; Status = "FAIL"; Error = $_.Exception.Message }
+        $script:results += @{ Name = $Name; Status = "FAIL"; Error = $_.Exception.Message }
         if ($Verbose) {
             Write-Host "  FAIL: $($_.Exception.Message)" -ForegroundColor Red
         }
@@ -49,21 +48,28 @@ Test-Checkpoint "Format" {
 }
 
 # Checkpoint 4: Tests
+# Se usa el exit code y no el texto: la salida del CLI esta localizada y un
+# patron en ingles ("Passed!") no matchea en un sistema en espanol.
 Test-Checkpoint "Tests" {
-    $output = dotnet test OpenScrape.sln --no-build --verbosity quiet 2>&1 | Out-String
-    if ($output -notmatch "Passed!") { throw "Tests failed" }
-    if ($output -match "Failed:\s*0") { return }
-    throw "Some tests failed"
+    dotnet test OpenScrape.sln --no-build --verbosity quiet 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Tests failed (exit $LASTEXITCODE)" }
 }
 
 # Checkpoint 5: Warnings
+# Cero advertencias, mismo criterio que el CI. --no-incremental es obligatorio:
+# un build incremental no recompila y no re-emite las advertencias, con lo que
+# el checkpoint pasaria sin verificar nada.
 Test-Checkpoint "Warnings" {
-    $output = dotnet build OpenScrape.sln 2>&1 | Out-String
-    $warningLines = $output -split "`n" | Where-Object { $_ -match "warning" }
-    $count = ($warningLines | Measure-Object).Count
-    if ($count -gt $MaxWarnings) { throw "Too many warnings: $count (max: $MaxWarnings)" }
+    $flags = @(
+        '-p:TreatWarningsAsErrors=true',
+        '-warnaserror:NU1901;NU1902;NU1903;NU1904'
+    )
+    dotnet build OpenScrape.sln --configuration Release --no-incremental @flags 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "El build reporta advertencias del compilador o paquetes vulnerables"
+    }
     if ($Verbose) {
-        Write-Host "  Warnings: $count" -ForegroundColor Yellow
+        Write-Host "  Warnings: 0" -ForegroundColor Green
     }
 }
 
