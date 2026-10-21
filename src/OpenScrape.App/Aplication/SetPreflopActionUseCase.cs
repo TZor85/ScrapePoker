@@ -2,40 +2,55 @@
 using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
 using OpenScrape.Domain.Enums;
-using OpenScrape.Features.ActionScenario;
 
 namespace OpenScrape.App.Aplication;
 
 public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 {
-    private ActionScenarioUseCases _actionScenarioUseCases;
+    private readonly IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase _heroCallOpenRaiseAndGetSqueezeUseCase;
+    private readonly IGetActionHero3BetAndOpenRaiser4BetUseCase _hero3BetAndOpenRaiser4BetUseCase;
+    private readonly IGetActionVs3BetUseCaseUseCase _vs3BetUseCase;
+    private readonly IGetActionVs3BetAndCallUseCase _vs3BetAndCallUseCase;
+    private readonly IGetActionSqueezeUseCase _squeezeUseCase;
+    private readonly IGetActionOpenRaiseUseCase _openRaiseUseCase;
+    private readonly IGetActionRaiseOverLimperUseCase _raiseOverLimperUseCase;
+    private readonly IGetAction3BetUseCase _threeBetUseCase;
+    private readonly IGetActionRaiseVsSBLimpUseCase _raiseVsSBLimpUseCase;
+    private readonly IGetActionCold4BetUseCase _cold4BetUseCase;
 
-    readonly IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase _heroCallOpenRaiseAndGetSqueezeUseCase;
-    readonly IGetActionHero3BetAndOpenRaiser4BetUseCase _hero3BetAndOpenRaiser4BetUseCase;
-    readonly IGetActionVs3BetUseCaseUseCase _vs3BetUseCase;
-    readonly IGetActionVs3BetAndCallUseCase _vs3BetAndCallUseCase;
-    readonly IGetActionSqueezeUseCase _squeezeUseCase;
-    readonly IGetActionOpenRaiseUseCase _openRaiseUseCase;
-    readonly IGetActionRaiseOverLimperUseCase _raiseOverLimperUseCase;
-    readonly IGetAction3BetUseCase _threeBetUseCase;
-    readonly IGetActionRaiseVsSBLimpUseCase _raiseVsSBLimpUseCase;
-    readonly IGetActionCold4BetUseCase _cold4BetUseCase;
-
-    public SetPreflopActionUseCase(ActionScenarioUseCases actionScenarioUseCases)
+    public SetPreflopActionUseCase(
+        IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase heroCallOpenRaiseAndGetSqueezeUseCase,
+        IGetActionHero3BetAndOpenRaiser4BetUseCase hero3BetAndOpenRaiser4BetUseCase,
+        IGetActionVs3BetUseCaseUseCase vs3BetUseCase,
+        IGetActionVs3BetAndCallUseCase vs3BetAndCallUseCase,
+        IGetActionSqueezeUseCase squeezeUseCase,
+        IGetActionOpenRaiseUseCase openRaiseUseCase,
+        IGetActionRaiseOverLimperUseCase raiseOverLimperUseCase,
+        IGetAction3BetUseCase threeBetUseCase,
+        IGetActionRaiseVsSBLimpUseCase raiseVsSBLimpUseCase,
+        IGetActionCold4BetUseCase cold4BetUseCase)
     {
-        _actionScenarioUseCases = actionScenarioUseCases;
+        ArgumentNullException.ThrowIfNull(heroCallOpenRaiseAndGetSqueezeUseCase);
+        ArgumentNullException.ThrowIfNull(hero3BetAndOpenRaiser4BetUseCase);
+        ArgumentNullException.ThrowIfNull(vs3BetUseCase);
+        ArgumentNullException.ThrowIfNull(vs3BetAndCallUseCase);
+        ArgumentNullException.ThrowIfNull(squeezeUseCase);
+        ArgumentNullException.ThrowIfNull(openRaiseUseCase);
+        ArgumentNullException.ThrowIfNull(raiseOverLimperUseCase);
+        ArgumentNullException.ThrowIfNull(threeBetUseCase);
+        ArgumentNullException.ThrowIfNull(raiseVsSBLimpUseCase);
+        ArgumentNullException.ThrowIfNull(cold4BetUseCase);
 
-        _heroCallOpenRaiseAndGetSqueezeUseCase = new GetActionHeroCallOpenRaiseAndGetSqueezeUseCase(_actionScenarioUseCases);
-        _hero3BetAndOpenRaiser4BetUseCase = new GetActionHero3BetAndOpenRaiser4BetUseCase(_actionScenarioUseCases);
-        _vs3BetUseCase = new GetActionVs3BetUseCaseUseCase(_actionScenarioUseCases);
-        _vs3BetAndCallUseCase = new GetActionVs3BetAndCallUseCase(_actionScenarioUseCases);
-        _squeezeUseCase = new GetActionSqueezeUseCase(_actionScenarioUseCases);
-        _openRaiseUseCase = new GetActionOpenRaiseUseCase(_actionScenarioUseCases);
-        _raiseOverLimperUseCase = new GetActionRaiseOverLimperUseCase(_actionScenarioUseCases);
-        _threeBetUseCase = new GetAction3BetUseCase(_actionScenarioUseCases);
-        _raiseVsSBLimpUseCase = new GetActionRaiseVsSBLimpUseCase(_actionScenarioUseCases);
-        _cold4BetUseCase = new GetActionCold4BetUseCase(_actionScenarioUseCases);
-
+        _heroCallOpenRaiseAndGetSqueezeUseCase = heroCallOpenRaiseAndGetSqueezeUseCase;
+        _hero3BetAndOpenRaiser4BetUseCase = hero3BetAndOpenRaiser4BetUseCase;
+        _vs3BetUseCase = vs3BetUseCase;
+        _vs3BetAndCallUseCase = vs3BetAndCallUseCase;
+        _squeezeUseCase = squeezeUseCase;
+        _openRaiseUseCase = openRaiseUseCase;
+        _raiseOverLimperUseCase = raiseOverLimperUseCase;
+        _threeBetUseCase = threeBetUseCase;
+        _raiseVsSBLimpUseCase = raiseVsSBLimpUseCase;
+        _cold4BetUseCase = cold4BetUseCase;
     }
 
     public async Task<SetPreflopActionUseCaseResponse> Execute(SetPreflopActionUseCaseRequest request)
@@ -46,19 +61,26 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             {
                 if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.Call)
                 {
-                    var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
-                                    request.PreflopHeroPosition[request.PlayerState.Position],
-                                    request.PlayerState.Players.First(f => f.Bet == request.PlayerState.CurrentBet && f.Position < request.PlayerState.Position).Position,
-                                    request.PlayerState.Players.First(w => w.Bet > request.PlayerState.CurrentBet && w.Position > request.PlayerState.Position).Position,
-                                    request.PlayerState);
+                    var raiser = request.PlayerState.Players
+                        .FirstOrDefault(f => f.Bet == request.PlayerState.CurrentBet && f.Position < request.PlayerState.Position);
+                    var squeezer = request.PlayerState.Players
+                        .FirstOrDefault(w => w.Bet > request.PlayerState.CurrentBet && w.Position > request.PlayerState.Position);
 
-                    if (!string.IsNullOrEmpty(action))
+                    if (raiser is not null && squeezer is not null)
                     {
-                        request.ResponseAction.Action = action;
-                        request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
-                        request.ResponseAction.IsSecondAction = false;
-                    }
+                        var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
+                                        request.PreflopHeroPosition[request.PlayerState.Position],
+                                        raiser.Position,
+                                        squeezer.Position,
+                                        request.PlayerState);
 
+                        if (!string.IsNullOrEmpty(action))
+                        {
+                            request.ResponseAction.Action = action;
+                            request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
+                            request.ResponseAction.IsSecondAction = false;
+                        }
+                    }
                 }
 
                 if (request.ResponseAction.Action is not null &&
@@ -231,7 +253,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                             .Select(s => s.Key).ToList();
 
 
-        var betSize = preflopTablePosition.First(f => f.Key == raiserPosition).Value;
+        if (!preflopTablePosition.TryGetValue(raiserPosition, out var betSize))
+            return string.Empty;
 
         var request = new GetActionHero3BetAndOpenRaiser4BetRequest
         {
@@ -426,7 +449,9 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         if (cont == 0)
         {
-            if (playerState.Position == TablePosition.BigBlind && playerState.Players.First(f => f.Name == "P5").Bet == 1)
+            var smallBlind = playerState.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind);
+
+            if (playerState.Position == TablePosition.BigBlind && smallBlind?.Bet == 1)
             {
                 var openRaiseVsLimpSBCommand = new GetActionRaiseVsSBLimpRequest
                 {
@@ -440,7 +465,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 action = resultSBCall.Action;
             }
 
-            if (playerState.Position == TablePosition.BigBlind && playerState.Players.First(f => f.Name == "P5").Bet > 1)
+            if (playerState.Position == TablePosition.BigBlind && smallBlind is not null && smallBlind.Bet > 1)
             {
                 var openRaiseVsLimpSBCommand = new GetActionRaiseVsSBLimpRequest
                 {
@@ -483,8 +508,13 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 (preflopTablePosition.ContainsKey(TablePosition.Early) && preflopTablePosition[TablePosition.Early] == 1))
             {
 
-                if (playerState.Position != TablePosition.SmallBlind && preflopTablePosition[TablePosition.SmallBlind] == 1 && preflopTablePosition.Count == 1)
+                if (playerState.Position != TablePosition.SmallBlind
+                    && preflopTablePosition.TryGetValue(TablePosition.SmallBlind, out var smallBlindBet)
+                    && smallBlindBet == 1
+                    && preflopTablePosition.Count == 1)
+                {
                     limperPosition = TablePosition.SmallBlind;
+                }
 
                 var openRaiseCommand = new GetActionRaiseOverLimperUseCaseRequest
                 {

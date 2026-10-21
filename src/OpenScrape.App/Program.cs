@@ -20,6 +20,7 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
+using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App
@@ -161,6 +162,16 @@ namespace OpenScrape.App
                     services.AddSingleton<DetectionLoggerService>();
                     services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
                     services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
+                    services.AddScoped<IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase, GetActionHeroCallOpenRaiseAndGetSqueezeUseCase>();
+                    services.AddScoped<IGetActionHero3BetAndOpenRaiser4BetUseCase, GetActionHero3BetAndOpenRaiser4BetUseCase>();
+                    services.AddScoped<IGetActionVs3BetUseCaseUseCase, GetActionVs3BetUseCaseUseCase>();
+                    services.AddScoped<IGetActionVs3BetAndCallUseCase, GetActionVs3BetAndCallUseCase>();
+                    services.AddScoped<IGetActionSqueezeUseCase, GetActionSqueezeUseCase>();
+                    services.AddScoped<IGetActionOpenRaiseUseCase, GetActionOpenRaiseUseCase>();
+                    services.AddScoped<IGetActionRaiseOverLimperUseCase, GetActionRaiseOverLimperUseCase>();
+                    services.AddScoped<IGetAction3BetUseCase, GetAction3BetUseCase>();
+                    services.AddScoped<IGetActionRaiseVsSBLimpUseCase, GetActionRaiseVsSBLimpUseCase>();
+                    services.AddScoped<IGetActionCold4BetUseCase, GetActionCold4BetUseCase>();
                     services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
                     services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
                     services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
