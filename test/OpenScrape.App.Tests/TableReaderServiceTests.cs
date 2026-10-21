@@ -255,6 +255,39 @@ public class TableReaderServiceTests
     }
 
     [Test]
+    [SetCulture("en-US")]
+    public void SetPotValue_Parses_Decimal_Independently_Of_CurrentCulture()
+    {
+        // Arrange: en en-US la coma es separador de miles, no decimal.
+        // El valor del bote siempre usa coma decimal en el cliente de póker.
+        using var screenshot = CreateSyntheticBitmap(400, 300, Color.Green);
+        var regionCache = new FakeRegionLookupCache();
+        regionCache.AddRegion("Table", "pot", new DomainRegion(
+            Category: "Table", Name: "pot",
+            PosX: 150, PosY: 10, Width: 80, Height: 20,
+            IsHash: null, IsColor: null, IsBoard: null,
+            Color: null, IsOnlyNumber: null,
+            InactiveUmbral: null, Umbral: null));
+
+        var screenReader = new FakeScreenReaderService();
+        screenReader.SetTextResult("1525");
+
+        var service = CreateService(
+            regionCache: regionCache,
+            screenReader: screenReader,
+            captureService: new FakeCaptureService());
+
+        var state = new PlayerGameState();
+
+        // Act
+        service.SetPotValue(screenshot, state);
+
+        // Assert: "1525" → 15,25 sin importar la cultura del sistema operativo
+        Assert.That(state.PotSize, Is.EqualTo(15.25m),
+            "El parseo del bote no debe depender de CurrentCulture");
+    }
+
+    [Test]
     public void SetPotValue_DoesNotThrow_When_RegionNotFound()
     {
         // Arrange: sin región "pot"
