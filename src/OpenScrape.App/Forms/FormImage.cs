@@ -13,6 +13,13 @@ namespace OpenScrape.App
             InitializeComponent();
         }
 
+        /// <summary>
+        /// Captura actual de la mesa. El pipeline la asigna en cada ciclo; si todavía
+        /// no hay ninguna es un error de flujo, no un estado válido.
+        /// </summary>
+        public Bitmap Screenshot => pbImage.Image as Bitmap
+            ?? throw new InvalidOperationException("No hay captura de la mesa disponible.");
+
         public void Execute(IntPtr window)
         {
             Image img = CaptureWindowsHelper.CaptureWindow(window);

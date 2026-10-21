@@ -7,7 +7,6 @@ namespace OpenScrape.App.Aplication.UseCases
     {
         public LoadTableMapUseCaseResponse Execute(string secret)
         {
-            Stream myStream = null;
             OpenFileDialog theDialog = new OpenFileDialog();
             LoadTableMapUseCaseResponse response = new LoadTableMapUseCaseResponse();
 
@@ -20,7 +19,8 @@ namespace OpenScrape.App.Aplication.UseCases
             if (theDialog.ShowDialog() == DialogResult.OK)
             {
 
-                if ((myStream = theDialog.OpenFile()) != null)
+                var myStream = theDialog.OpenFile();
+                if (myStream != null)
                 {
 
                     var text = string.Empty;

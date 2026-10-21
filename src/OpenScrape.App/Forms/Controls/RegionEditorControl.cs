@@ -342,18 +342,18 @@ public sealed class RegionEditorControl : UserControl
 
     private void BtnTestTexto_Click(object? sender, EventArgs e)
     {
-        if (_selectedRegion == null || _pbImage?.Image == null)
+        if (_selectedRegion == null || _pbImage?.Image is not Bitmap bitmap || _ocrService is null)
             return;
 
         var firstOcr = _ocrService.ExtractTextFromRegionAndDebug(
-            _pbImage.Image,
+            bitmap,
             _selectedRegion.PosX, _selectedRegion.PosY,
             _selectedRegion.Width, _selectedRegion.Height,
             _selectedRegion.Umbral ?? 0,
             _selectedRegion.IsOnlyNumber ?? false);
 
         using var secondOcr = _ocrService.ExtractTextFromRegionAndDebug(
-            _pbImage.Image,
+            bitmap,
             _selectedRegion.PosX, _selectedRegion.PosY,
             _selectedRegion.Width, _selectedRegion.Height,
             _selectedRegion.InactiveUmbral ?? 0,
@@ -432,7 +432,7 @@ public sealed class RegionEditorControl : UserControl
                 _selectedRegion == null)
             {
                 _logger.LogInformation("Error de validación: umbral={Umbral}, inact={Inact}, X={X}, Y={Y}, W={W}, H={H}",
-                    umbral, inactUmbral, _tbX.Text, _tbY.Text, _tbWidth.Text, _tbHeight.Text);
+                    umbral, inactUmbral, _tbX!.Text, _tbY!.Text, _tbWidth!.Text, _tbHeight!.Text);
                 return;
             }
 

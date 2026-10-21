@@ -57,8 +57,9 @@ namespace OpenScrape.App
         #endregion
 
         #region [Forms]
-        FormImage _formImage;
-        FrmOverlay _frmOverlay;
+        // Se instancian en el constructor salvo en modo background (ExecuteInBackground).
+        FormImage _formImage = null!;
+        FrmOverlay _frmOverlay = null!;
         #endregion
 
         #region [Regions]
@@ -121,10 +122,11 @@ namespace OpenScrape.App
         private volatile bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
-        private PokerCalculationResult _flopResult;
-        private PokerCalculationResult _turnResult;
+        // Resultados por calle: nulos hasta que se procesa esa calle.
+        private PokerCalculationResult _flopResult = null!;
+        private PokerCalculationResult _turnResult = null!;
         private TurnBoardTexture _turnBoardTexture;
-        private PokerCalculationResult _riverResult;
+        private PokerCalculationResult _riverResult = null!;
         private RiverBoardTexture _riverBoardTexture;
         #endregion
 
@@ -678,16 +680,16 @@ namespace OpenScrape.App
 
                 if (needsInitialization)
                 {
-                    _tableLayout.SetEmptyPlayer(_formImage.pbImage.Image, _playerGameState);
-                    _tableLayout.SetSitOutPlayer(_formImage.pbImage.Image, _playerGameState);
-                    _tableLayout.SetActivePlayer(_formImage.pbImage.Image, _playerGameState);
-                    _tableLayout.InitializePlayers(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.SetEmptyPlayer(_formImage.Screenshot, _playerGameState);
+                    _tableLayout.SetSitOutPlayer(_formImage.Screenshot, _playerGameState);
+                    _tableLayout.SetActivePlayer(_formImage.Screenshot, _playerGameState);
+                    _tableLayout.InitializePlayers(_formImage.Screenshot, _playerGameState);
                 }
                 else
                 {
-                    _tableLayout.SetEmptyPlayer(_formImage.pbImage.Image, _playerGameState);
-                    _tableLayout.SetActivePlayer(_formImage.pbImage.Image, _playerGameState);
-                    _tableLayout.RefreshPlayerStates(_formImage.pbImage.Image, _playerGameState);
+                    _tableLayout.SetEmptyPlayer(_formImage.Screenshot, _playerGameState);
+                    _tableLayout.SetActivePlayer(_formImage.Screenshot, _playerGameState);
+                    _tableLayout.RefreshPlayerStates(_formImage.Screenshot, _playerGameState);
 
                     int currentActiveCount = _playerGameState.Players.Count(p => !p.Empty && !p.SitOut && p.ValuePosition != 0);
                     bool playerCountChanged = currentActiveCount != _lastActivePlayerCount;
@@ -699,7 +701,7 @@ namespace OpenScrape.App
 
                     if (shouldRecalculate)
                     {
-                        _tableLayout.SetDealerPlayer(_formImage.pbImage.Image, _playerGameState);
+                        _tableLayout.SetDealerPlayer(_formImage.Screenshot, _playerGameState);
                         if (_tableLayout.DealerValuePosition >= 0 && _playerGameState.Position != TablePosition.None)
                             _tableLayout.SetVillainPosition(_playerGameState, _playerGameState.Position, _tableLayout.DealerValuePosition);
                     }
@@ -707,7 +709,7 @@ namespace OpenScrape.App
 
                 SetBetPlayer();
                 SetHeroStack();
-                _tableLayout.RetryEmptyAliases(_formImage.pbImage.Image, _playerGameState);
+                _tableLayout.RetryEmptyAliases(_formImage.Screenshot, _playerGameState);
                 _tableLayout.ValidatePlayerStates(_playerGameState);
 
                 // Procesar la información de la mesa
@@ -1111,7 +1113,7 @@ namespace OpenScrape.App
             _logger.LogInformation("ProcessPostFlopAsync: Estado actual = {State}", _gameLoopStateMachine.CurrentState);
 
             // Detectar villanos que foldearon mid-hand (actualiza Active/numOpponents)
-            _tableLayout.DetectFoldedPlayers(_formImage.pbImage.Image, _playerGameState, _gameLoopStateMachine.CurrentState);
+            _tableLayout.DetectFoldedPlayers(_formImage.Screenshot, _playerGameState, _gameLoopStateMachine.CurrentState);
 
             // Detectar transición a nueva calle verificando cartas visibles en el board.
             // Validar con conteo REAL de cartas (no hardcodeado) para evitar falsos positivos.
@@ -1315,15 +1317,22 @@ namespace OpenScrape.App
         {
             _logger.LogInformation("ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
+            var regionsTableMap = _regionsTableMap;
+            if (regionsTableMap is null)
+            {
+                _logger.LogWarning("ProcessFlopAsync: No hay mapa de regiones cargado, se omite la lectura del flop.");
+                return;
+            }
+
             // Capturar cartas del flop con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                using var bitmap = new Bitmap(_formImage.Screenshot);
                 var flopResponse = await _getCardsFlopUseCase.ExecuteAsync(new GetCardsFlopUseCaseRequest
                 {
                     Image = bitmap,
-                    RegionsTableMap = _regionsTableMap,
+                    RegionsTableMap = regionsTableMap,
                     CurrentImageWidth = bitmap.Width,
                     CurrentImageHeight = bitmap.Height
                 });
@@ -1454,15 +1463,22 @@ namespace OpenScrape.App
         {
             _logger.LogInformation("ProcessTurnAsync: Iniciando procesamiento de turn - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
+            var regionsTableMap = _regionsTableMap;
+            if (regionsTableMap is null)
+            {
+                _logger.LogWarning("ProcessTurnAsync: No hay mapa de regiones cargado, se omite la lectura del turn.");
+                return;
+            }
+
             // Capturar carta del turn con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                using var bitmap = new Bitmap(_formImage.Screenshot);
                 var turnResponse = await _getCardsTurnUseCase.ExecuteAsync(new GetCardsTurnUseCaseRequest
                 {
                     Image = bitmap,
-                    RegionsTableMap = _regionsTableMap,
+                    RegionsTableMap = regionsTableMap,
                     DataBoard = _playerGameState.BoardCards,
                     CurrentImageWidth = bitmap.Width,
                     CurrentImageHeight = bitmap.Height
@@ -1536,15 +1552,22 @@ namespace OpenScrape.App
         {
             _logger.LogInformation("ProcessRiverAsync: Iniciando procesamiento de river - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
+            var regionsTableMap = _regionsTableMap;
+            if (regionsTableMap is null)
+            {
+                _logger.LogWarning("ProcessRiverAsync: No hay mapa de regiones cargado, se omite la lectura del river.");
+                return;
+            }
+
             // Capturar carta del river con retry
             List<BoardData> dataBoard = null!;
             for (int attempt = 0; attempt <= GameLoopStateMachine.MaxOcrRetries; attempt++)
             {
-                using var bitmap = new Bitmap(_formImage.pbImage.Image);
+                using var bitmap = new Bitmap(_formImage.Screenshot);
                 var riverResponse = await _getCardsRiverUseCase.ExecuteAsync(new GetCardsRiverUseCaseRequest
                 {
                     Image = bitmap,
-                    RegionsTableMap = _regionsTableMap,
+                    RegionsTableMap = regionsTableMap,
                     DataBoard = _playerGameState.BoardCards,
                     CurrentImageWidth = bitmap.Width,
                     CurrentImageHeight = bitmap.Height
@@ -1726,14 +1749,14 @@ namespace OpenScrape.App
             }
 
             lbAction.Text = _responseAction?.Action ?? string.Empty;
-            lbPositionAction.Text = _playerGameState.HandSituation.ToString() ?? string.Empty;
+            lbPositionAction.Text = _playerGameState?.HandSituation.ToString() ?? string.Empty;
 
             _frmOverlay.UpdateSituacion(lbPositionAction.Text);
 
             if (_frmOverlay != null)
             {
                 var actionText = _responseAction?.Action ?? string.Empty;
-                var villains = _playerGameState.Players.Where(p => p.Name != "P0").ToList();
+                var villains = _playerGameState?.Players.Where(p => p.Name != "P0").ToList() ?? new List<Player>();
                 _frmOverlay.UpdateAction(_actionFormatter.EnrichActionWithBBAmount(actionText, villains, _gameLoggerService.CurrentBigBlind));
             }
 
@@ -2042,7 +2065,7 @@ namespace OpenScrape.App
                 var scaled = GetScaledRegion(regionTableHand);
                 if (string.IsNullOrEmpty(_tableHand))
                 {
-                    _tableHand = _screenReader.ReadHandNumber(_formImage.pbImage.Image,
+                    _tableHand = _screenReader.ReadHandNumber(_formImage.Screenshot,
                         scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
                     _newHand = true;
@@ -2051,7 +2074,7 @@ namespace OpenScrape.App
                 }
                 else
                 {
-                    var currentHand = _screenReader.ReadHandNumber(_formImage.pbImage.Image,
+                    var currentHand = _screenReader.ReadHandNumber(_formImage.Screenshot,
                         scaled.X, scaled.Y, scaled.Width, scaled.Height,
                         regionTableHand.Umbral, regionTableHand.InactiveUmbral, regionTableHand.IsOnlyNumber);
 
@@ -2145,7 +2168,7 @@ namespace OpenScrape.App
             if (regionTableName != null && string.IsNullOrEmpty(_tableName))
             {
                 var scaledName = GetScaledRegion(regionTableName);
-                _tableName = _screenReader.ReadText(_formImage.pbImage.Image,
+                _tableName = _screenReader.ReadText(_formImage.Screenshot,
                     scaledName.X, scaledName.Y, scaledName.Width, scaledName.Height,
                     regionTableName.Umbral, regionTableName.InactiveUmbral, regionTableName.IsOnlyNumber);
                 // Remove numbers from table name
@@ -2180,7 +2203,7 @@ namespace OpenScrape.App
                         .First();
 
                     string nombreArchivoTexto = $"{directoryInfo.Name}-Revisar.txt";
-                    string rutaArchivoTexto = Path.Combine(ultimaImagen.Directory.FullName, nombreArchivoTexto);
+                    string rutaArchivoTexto = Path.Combine(directoryInfo.FullName, nombreArchivoTexto);
 
                     string contenido = File.Exists(rutaArchivoTexto)
                         ? Environment.NewLine + ultimaImagen.Name
@@ -2345,7 +2368,7 @@ namespace OpenScrape.App
                         if (_detectionLoopService.Detections % 5 == 0)
                         {
                             _detectionLoggerService.SaveDebugScreenshot(
-                                _formImage.pbImage.Image,
+                                _formImage.Screenshot,
                                 new Point(0, 0),
                                 args.ActionColor,
                                 "turn_detected");

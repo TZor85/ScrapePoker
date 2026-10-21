@@ -45,7 +45,7 @@ namespace OpenScrape.App.Services
         private BestHandResult FindBestFiveCardHand(List<NormalizedCard> cards)
         {
             var allCombinations = GetAllFiveCardCombinations(cards);
-            BestHandResult bestHand = null;
+            BestHandResult? bestHand = null;
 
             foreach (var combination in allCombinations)
             {

@@ -67,8 +67,15 @@ public class ImageCropperService : IImageCropperService
         }
     }
 
-    public Image Base64ToImage(string base64String)
+    /// <summary>
+    /// Convierte base64 en imagen. Devuelve <c>null</c> cuando la carta no trae
+    /// imagen, que es el caso normal de una carta reconocida a medias.
+    /// </summary>
+    public Image? Base64ToImage(string? base64String)
     {
+        if (string.IsNullOrEmpty(base64String))
+            return null;
+
         try
         {
             // Usar el base64String como clave del cache
@@ -118,8 +125,12 @@ public class ImageCropperService : IImageCropperService
         }
     }
 
-    public double CompareCardsBase64(string base64Image1, string base64Image2)
+    public double CompareCardsBase64(string? base64Image1, string? base64Image2)
     {
+        // Sin imagen no hay parecido posible: el cache de dHash no admite claves nulas.
+        if (string.IsNullOrEmpty(base64Image1) || string.IsNullOrEmpty(base64Image2))
+            return 0;
+
         try
         {
             // Fase 1: Pre-filtro dHash — O(1) comparación de hashes perceptuales.

@@ -118,6 +118,37 @@ public class SetPreflopActionUseCaseTests
 
         Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
     }
+    /// <summary>
+    /// El mapa de apuestas se arma recorriendo los jugadores con posición asignada.
+    /// Si el héroe no quedó en ese recorrido, no hay entrada para su posición y el
+    /// motor debe concluir "sin acción" en vez de indexar el diccionario.
+    /// </summary>
+    [Test]
+    public async Task Execute_PosicionDelHeroeFueraDelMapa_DevuelveNone()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.CutOff,
+            CurrentBet = 1m,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.CutOff, Bet = 1m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction()
+        };
+
+        var useCase = CreateUseCase();
+
+        var response = await useCase.Execute(request);
+
+        Assert.That(response.ResponseAction.Action, Is.EqualTo("None"));
+    }
+
     [Test]
     public async Task Execute_RaiserSinPosicionEnElMapa_NoLanzaExcepcion()
     {

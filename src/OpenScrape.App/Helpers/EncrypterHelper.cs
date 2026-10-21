@@ -109,6 +109,10 @@ namespace OpenScrape.App.Helpers
 
         public static string GetImageEncrypted(Image? imagen, string secret)
         {
+            // Sin imagen no hay nada que cifrar.
+            if (imagen is null)
+                return string.Empty;
+
             using (MemoryStream ms = new MemoryStream())
             {
                 imagen.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);

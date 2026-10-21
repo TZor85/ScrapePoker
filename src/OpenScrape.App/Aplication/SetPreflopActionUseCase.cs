@@ -55,164 +55,165 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
     public async Task<SetPreflopActionUseCaseResponse> Execute(SetPreflopActionUseCaseRequest request)
     {
-        if (request.PlayerState != null)
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.PlayerState);
+
+        var playerState = request.PlayerState;
+        var responseAction = request.ResponseAction;
+
+        // El mapa se arma recorriendo los jugadores con posición asignada: si el héroe
+        // no quedó en ese recorrido, su posición no existe como clave.
+        var heroBets = request.PreflopHeroPosition.TryGetValue(playerState.Position, out var bets)
+            ? bets
+            : new Dictionary<TablePosition, decimal>();
+
+        if (responseAction.IsSecondAction)
         {
-            if (request.ResponseAction.IsSecondAction)
+            if (responseAction.Action is not null && playerState.HandSituation == HandSituation.Call)
             {
-                if (request.ResponseAction.Action is not null && request.PlayerState.HandSituation == HandSituation.Call)
+                var raiser = playerState.Players
+                    .FirstOrDefault(f => f.Bet == playerState.CurrentBet && f.Position < playerState.Position);
+                var squeezer = playerState.Players
+                    .FirstOrDefault(w => w.Bet > playerState.CurrentBet && w.Position > playerState.Position);
+
+                if (raiser is not null && squeezer is not null)
                 {
-                    var raiser = request.PlayerState.Players
-                        .FirstOrDefault(f => f.Bet == request.PlayerState.CurrentBet && f.Position < request.PlayerState.Position);
-                    var squeezer = request.PlayerState.Players
-                        .FirstOrDefault(w => w.Bet > request.PlayerState.CurrentBet && w.Position > request.PlayerState.Position);
+                    var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
+                                    heroBets,
+                                    raiser.Position,
+                                    squeezer.Position,
+                                    playerState);
 
-                    if (raiser is not null && squeezer is not null)
-                    {
-                        var action = await GetHeroCallOpenRaiseAndGetSqueezeAction(
-                                        request.PreflopHeroPosition[request.PlayerState.Position],
-                                        raiser.Position,
-                                        squeezer.Position,
-                                        request.PlayerState);
-
-                        if (!string.IsNullOrEmpty(action))
-                        {
-                            request.ResponseAction.Action = action;
-                            request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
-                            request.ResponseAction.IsSecondAction = false;
-                        }
-                    }
-                }
-
-                if (request.ResponseAction.Action is not null &&
-                    (request.PlayerState.HandSituation == HandSituation.ThreeBet ||
-                     request.PlayerState.HandSituation == HandSituation.Squeeze))
-                {
-                    var raiser = request.PlayerState.Players.FirstOrDefault(w => w.Bet > request.PlayerState.CurrentBet);
-                    if (raiser != null)
-                    {
-                        var action = await GetHero3BetAndOpenRaiser4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], raiser.Position, request.PlayerState);
-                        if (!string.IsNullOrEmpty(action))
-                        {
-                            request.ResponseAction.Action = action;
-                            request.ResponseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
-                            request.ResponseAction.IsSecondAction = false;
-                        }
-                    }
-                }
-
-                if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper))
-                {
-                    var action = await GetOpenRaiseVs3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.FirstOrDefault(w => w.Bet >= 1 && w.Position != TablePosition.BigBlind)?.Position ?? TablePosition.None, request.PlayerState);
                     if (!string.IsNullOrEmpty(action))
                     {
-                        request.ResponseAction.Action = action;
-                        request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3Bet;
-                        request.ResponseAction.IsSecondAction = false;
+                        responseAction.Action = action;
+                        responseAction.HandSituation = action != "Fold" ? HandSituation.VsSqueeze : HandSituation.None;
+                        responseAction.IsSecondAction = false;
                     }
-
                 }
+            }
 
-                if (request.ResponseAction.Action is not null && (request.PlayerState.HandSituation == HandSituation.OpenRaise || request.PlayerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(request.PlayerState))
+            if (responseAction.Action is not null &&
+                (playerState.HandSituation == HandSituation.ThreeBet ||
+                 playerState.HandSituation == HandSituation.Squeeze))
+            {
+                var raiser = playerState.Players.FirstOrDefault(w => w.Bet > playerState.CurrentBet);
+                if (raiser != null)
                 {
-                    var action = await GetOpenRaiseVs3BetAndCallAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
+                    var action = await GetHero3BetAndOpenRaiser4BetAction(heroBets, raiser.Position, playerState);
                     if (!string.IsNullOrEmpty(action))
                     {
-                        request.ResponseAction.Action = action;
-                        request.ResponseAction.HandSituation = HandSituation.OpenRaiseVs3BetAndCall;
-                        request.ResponseAction.IsSecondAction = false;
+                        responseAction.Action = action;
+                        responseAction.HandSituation = action != "Fold" ? HandSituation.FourBet : HandSituation.None;
+                        responseAction.IsSecondAction = false;
                     }
-
                 }
+            }
+
+            if (responseAction.Action is not null && (playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper))
+            {
+                var action = await GetOpenRaiseVs3BetAction(heroBets, playerState.Players.FirstOrDefault(w => w.Bet >= 1 && w.Position != TablePosition.BigBlind)?.Position ?? TablePosition.None, playerState);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    responseAction.Action = action;
+                    responseAction.HandSituation = HandSituation.OpenRaiseVs3Bet;
+                    responseAction.IsSecondAction = false;
+                }
+
+            }
+
+            if (responseAction.Action is not null && (playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(playerState))
+            {
+                var action = await GetOpenRaiseVs3BetAndCallAction(heroBets, playerState);
+                if (!string.IsNullOrEmpty(action))
+                {
+                    responseAction.Action = action;
+                    responseAction.HandSituation = HandSituation.OpenRaiseVs3BetAndCall;
+                    responseAction.IsSecondAction = false;
+                }
+
             }
         }
 
 
         //SQUEEZE
-        if (request.ResponseAction.Action is null)
+        if (responseAction.Action is null)
         {
-            var action = await GetSqueezeAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
+            var action = await GetSqueezeAction(heroBets, playerState);
             if (!string.IsNullOrEmpty(action))
             {
-                request.ResponseAction.Action = action;
-                request.ResponseAction.HandSituation = HandSituation.Squeeze;
-                request.ResponseAction.IsSecondAction = true;
+                responseAction.Action = action;
+                responseAction.HandSituation = HandSituation.Squeeze;
+                responseAction.IsSecondAction = true;
             }
-            ;
         }
 
 
         //OPEN RAISE
-        if (request.ResponseAction.Action is null)
+        if (responseAction.Action is null)
         {
-            var action = await GetOpenRaiseAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
+            var action = await GetOpenRaiseAction(heroBets, playerState);
             if (!string.IsNullOrEmpty(action))
             {
-                request.ResponseAction.Action = action;
-                request.ResponseAction.HandSituation = HandSituation.OpenRaise;
-                request.ResponseAction.IsSecondAction = true;
+                responseAction.Action = action;
+                responseAction.HandSituation = HandSituation.OpenRaise;
+                responseAction.IsSecondAction = true;
             }
-            ;
         }
 
         //COLD 4BET
-        if (request.ResponseAction.Action is null)
+        if (responseAction.Action is null)
         {
-            var action = await Cold4BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
+            var action = await Cold4BetAction(heroBets, playerState);
             if (!string.IsNullOrEmpty(action))
             {
-                request.ResponseAction.Action = action;
-                request.ResponseAction.HandSituation = HandSituation.Cold4Bet;
-                request.ResponseAction.IsSecondAction = true;
+                responseAction.Action = action;
+                responseAction.HandSituation = HandSituation.Cold4Bet;
+                responseAction.IsSecondAction = true;
             }
-            ;
         }
 
         //GET RAISE OVER LIMPER
-        if (request.ResponseAction.Action is null)
+        if (responseAction.Action is null)
         {
-            var action = await GetRaiseOverLimperAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState);
+            var action = await GetRaiseOverLimperAction(heroBets, playerState);
             if (!string.IsNullOrEmpty(action))
             {
-                request.ResponseAction.Action = action;
-                request.ResponseAction.HandSituation = HandSituation.RaiseOverLimper;
-                request.ResponseAction.IsSecondAction = true;
+                responseAction.Action = action;
+                responseAction.HandSituation = HandSituation.RaiseOverLimper;
+                responseAction.IsSecondAction = true;
             }
-            ;
         }
 
         //GET 3BET
-        if (request.ResponseAction.Action is null)
+        if (responseAction.Action is null)
         {
-            if (request.PlayerState.Players.Count(a => a.Bet > 1) >= 1 && !UserHandHelper.Exist4Bet(request.PlayerState))
+            if (playerState.Players.Count(a => a.Bet > 1) >= 1 && !UserHandHelper.Exist4Bet(playerState))
             {
-                var action = await Get3BetAction(request.PreflopHeroPosition[request.PlayerState.Position], request.PlayerState.Players.First(w => w.Bet > 1).Position, request.PlayerState);
+                var action = await Get3BetAction(heroBets, playerState.Players.First(w => w.Bet > 1).Position, playerState);
                 if (!string.IsNullOrEmpty(action))
                 {
-                    request.ResponseAction.Action = action;
-                    request.ResponseAction.HandSituation = HandSituation.ThreeBet;
-                    request.ResponseAction.IsSecondAction = true;
+                    responseAction.Action = action;
+                    responseAction.HandSituation = HandSituation.ThreeBet;
+                    responseAction.IsSecondAction = true;
                 }
-                ;
             }
         }
 
-        if (string.IsNullOrEmpty(request.ResponseAction?.Action))
+        if (string.IsNullOrEmpty(responseAction.Action))
         {
-
-            request.ResponseAction.Action = "None";
-            request.ResponseAction.HandSituation = HandSituation.None;
-            request.ResponseAction.IsSecondAction = false;
-
+            responseAction.Action = "None";
+            responseAction.HandSituation = HandSituation.None;
+            responseAction.IsSecondAction = false;
         }
 
-        if (request.ResponseAction.Action.Contains("Call"))
-            request.PlayerState.HandSituation = HandSituation.Call;
-
+        if (responseAction.Action.Contains("Call"))
+            playerState.HandSituation = HandSituation.Call;
 
         return new SetPreflopActionUseCaseResponse
         {
-            ResponseAction = request.ResponseAction,
-            PlayerState = request.PlayerState
+            ResponseAction = responseAction,
+            PlayerState = playerState
         };
     }
 
@@ -492,7 +493,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
             }
         }
 
-        return action;
+        return action ?? string.Empty;
     }
     private async Task<string> GetRaiseOverLimperAction(Dictionary<TablePosition, decimal> preflopTablePosition, PlayerGameState playerState)
     {

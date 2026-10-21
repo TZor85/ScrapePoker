@@ -16,19 +16,21 @@ namespace OpenScrape.App.Forms
         private const int WM_NCHITTEST = 0x84;
         private const int HTCLIENT = 1;
 
-        private Label lbPotOdds;
-        private Label lbShouldCall;
-        private Label lbEquity;
-        private Label lbSituacion;
-        private Label lbAction;
-        private Label lbHandStrength;
-        private Label lbBoardTexture;
-        private Label lbFoldEquity;
-        private Label lbEVWithFoldEquity;
-        private Label lbSuggestedBetSize;
-        private Label lbTableName;
-        private Panel actionPanel;
-        private TableLayoutPanel tableLayout;
+        // Campos del layout: se crean en InitializeTableLayoutPanel/ApplyModernDesign,
+        // que corren desde el constructor antes de que el formulario se muestre.
+        private Label lbPotOdds = null!;
+        private Label lbShouldCall = null!;
+        private Label lbEquity = null!;
+        private Label lbSituacion = null!;
+        private Label lbAction = null!;
+        private Label lbHandStrength = null!;
+        private Label lbBoardTexture = null!;
+        private Label lbFoldEquity = null!;
+        private Label lbEVWithFoldEquity = null!;
+        private Label lbSuggestedBetSize = null!;
+        private Label lbTableName = null!;
+        private Panel actionPanel = null!;
+        private TableLayoutPanel tableLayout = null!;
 
         private readonly OverlayConfig _config;
         private Color _streetBorderColor = Color.FromArgb(60, 60, 80);

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using SkiaSharp;
 using System.Collections.Concurrent;
 using System.Drawing.Imaging;
@@ -17,6 +18,7 @@ public class OcrService : IOcrService, IDisposable
     private readonly LruCache<ulong, string> _ocrCache = new(MaxOcrCacheSize);
     private static readonly object _lock = new object();
 
+    [MemberNotNull(nameof(_engine))]
     private void InitializeEngine()
     {
         if (_engine != null && !_engine.IsDisposed)
@@ -148,7 +150,7 @@ public class OcrService : IOcrService, IDisposable
                     InitializeEngine();
                 }
 
-                OcrResult result = null;
+                OcrResult result;
 
                 using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
                 {
@@ -228,7 +230,6 @@ public class OcrService : IOcrService, IDisposable
             catch (Exception ex)
             {
                 _engine?.Dispose();
-                _engine = null;
                 throw new Exception($"Error en OCR: {ex.Message}", ex);
             }
         }
@@ -440,7 +441,6 @@ public class OcrService : IOcrService, IDisposable
     public void Dispose()
     {
         _engine?.Dispose();
-        _engine = null;
     }
 }
 

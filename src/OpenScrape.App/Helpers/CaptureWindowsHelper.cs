@@ -27,7 +27,7 @@ namespace OpenScrape.App.Helpers
             // ESTRATEGIA 1: Capturar desde la pantalla (desktop DC) — obtiene los píxeles REALES
             // que se están mostrando en el monitor en este instante. Es la única forma de
             // capturar ventanas con renderizado hardware (DirectX, OpenGL) correctamente.
-            if (TryCaptureFromScreen(handle, windowRect, width, height, out result))
+            if (TryCaptureFromScreen(handle, windowRect, width, height, out result) && result is not null)
                 return result;
 
             // ESTRATEGIA 2: Si la ventana está minimizada o cubierta, BitBlt desde la

@@ -140,7 +140,7 @@ namespace OpenScrape.App.Aplication.UseCases
                 }
 
                 // 4. Calcular fold equity basado en posición y situación
-                result.FoldEquity = CalculateFoldEquity(result.PotOddsPercentage, isInPosition, handSituation, communityCards.Count, numOpponents);
+                result.FoldEquity = CalculateFoldEquity(result.PotOddsPercentage, isInPosition, handSituation ?? string.Empty, communityCards.Count, numOpponents);
 
                 // 5. Calcular Expected Value mejorado
                 result.ExpectedValue = CalculateExpectedValue(result.EquityPercentage / 100.0,
@@ -152,7 +152,7 @@ namespace OpenScrape.App.Aplication.UseCases
 
                 // 7. Determinar si debe pagar (con factores adicionales para cash games)
                 result.ShouldCall = CalculateShouldCall(result.EquityPercentage, result.PotOddsPercentage,
-                    communityCards.Count, result.TotalOuts > 0, isInPosition, heroStack, currentPotSize, handSituation);
+                    communityCards.Count, result.TotalOuts > 0, isInPosition, heroStack, currentPotSize, handSituation ?? string.Empty);
 
                 // 8. Generar acción recomendada con bet sizing
                 var actionResult = GenerateRecommendedAction(result, isInPosition, heroStack, villainStack, currentPotSize);

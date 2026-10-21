@@ -11,7 +11,7 @@ namespace OpenScrape.App
 
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-        public IAddImage AddImage { get; set; }
+        public IAddImage? AddImage { get; set; }
 
         public IntPtr handle;
 
@@ -50,10 +50,14 @@ namespace OpenScrape.App
 
         private void btnAceptar_Click(object sender, EventArgs e)
         {
-            var selectItem = lbApps.SelectedItem.ToString();
-            AddImage.Execute(_windows.FirstOrDefault(x => x.Key == selectItem).Value);
+            var selectItem = lbApps.SelectedItem?.ToString();
+            if (selectItem is null)
+                return;
 
-            handle = _windows.FirstOrDefault(x => x.Key == selectItem).Value;
+            var window = _windows.FirstOrDefault(x => x.Key == selectItem);
+            AddImage?.Execute(window.Value);
+
+            handle = window.Value;
 
             this.Close();
 

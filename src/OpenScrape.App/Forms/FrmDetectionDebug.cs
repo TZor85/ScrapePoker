@@ -14,7 +14,7 @@ public partial class FrmDetectionDebug : Form
 {
     private IntPtr _pokerWindowHandle;
     private Region? _currentRegion;
-    private Timer _refreshTimer;
+    private readonly Timer _refreshTimer = new();
     private bool _isCapturing = false;
     private List<Color> _capturedColors = new();
     private Point _currentCoordinates;
@@ -42,7 +42,6 @@ public partial class FrmDetectionDebug : Form
 
     private void InitializeTimer()
     {
-        _refreshTimer = new Timer();
         _refreshTimer.Interval = 100; // Actualizar cada 100ms
         _refreshTimer.Tick += RefreshTimer_Tick;
     }
