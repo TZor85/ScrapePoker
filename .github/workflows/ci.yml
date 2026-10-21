@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-test:
+    name: Build y tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore OpenScrape.sln
+
+      - name: Build
+        run: dotnet build OpenScrape.sln --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test OpenScrape.sln
+          --configuration Release
+          --no-build
+          --logger "trx;LogFileName=results.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+
+      - name: Formato (informativo)
+        if: always()
+        continue-on-error: true
+        run: dotnet format OpenScrape.sln --verify-no-changes --no-restore
+
+      - name: Publicar resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  secret-scan:
+    name: Escaneo de secretos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Se escanea el árbol del commit, no el historial: los secretos viejos ya
+      # fueron rotados y la reescritura de historia se descartó a propósito.
+      # Para el historial completo está el secret scanning nativo de GitHub.
+      - name: Gitleaks
+        run: >
+          docker run --rm
+          -v "${{ github.workspace }}:/repo"
+          ghcr.io/gitleaks/gitleaks:latest
+          detect --no-git --source /repo --redact --verbose --exit-code 1
