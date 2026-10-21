@@ -34,7 +34,11 @@ jobs:
         run: dotnet restore OpenScrape.sln
 
       - name: Build
-        run: dotnet build OpenScrape.sln --configuration Release --no-restore
+        run: >
+          dotnet build OpenScrape.sln
+          --configuration Release
+          --no-restore
+          -warnaserror:"NU1901;NU1902;NU1903;NU1904"
 
       - name: Test
         run: >
