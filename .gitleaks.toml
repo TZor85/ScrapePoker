@@ -1,0 +1,22 @@
+# Configuración de gitleaks.
+# Extiende las reglas por defecto y silencia falsos positivos ya verificados a mano.
+
+[extend]
+useDefault = true
+
+# Artefactos de build: no están versionados, pero si existen en local contienen
+# copias de appsettings.Development.json y hacen fallar el escaneo.
+[[allowlists]]
+description = "Artefactos de build y resultados de tests"
+paths = [
+  '''(^|/)bin/''',
+  '''(^|/)obj/''',
+  '''(^|/)TestResults/''',
+]
+
+# Falso positivo verificado: la frase "disclaimer/TOS" tiene entropía suficiente
+# para disparar la regla generic-api-key. No es una credencial.
+[[allowlists]]
+description = "Falso positivo en documentación de análisis"
+regexTarget = "match"
+regexes = ['''disclaimer/TOS''']

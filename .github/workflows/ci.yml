@@ -75,4 +75,5 @@ jobs:
           docker run --rm
           -v "${{ github.workspace }}:/repo"
           ghcr.io/gitleaks/gitleaks:latest
-          detect --no-git --source /repo --redact --verbose --exit-code 1
+          detect --no-git --source /repo --config /repo/.gitleaks.toml
+          --redact --verbose --exit-code 1

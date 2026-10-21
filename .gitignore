@@ -362,3 +362,6 @@ appsettings.Production.json
 
 # CodeGraph local index
 .codegraph/
+
+# Resultados de tests
+TestResults/
