@@ -74,9 +74,32 @@ Test-Checkpoint "Warnings" {
 }
 
 # Checkpoint 6: csproj changes
+# El baseline es el merge-base con develop, que es la rama destino del pre-merge.
+# Comparar contra main daba falsos positivos: main es una rama vieja que ni
+# siquiera contiene todos los proyectos. Se cuentan las rutas devueltas por
+# --name-only y no el texto del resumen: la salida de git esta localizada y un
+# patron en ingles ("files changed") no matchea en un sistema en espanol.
 Test-Checkpoint "No csproj Changes" {
-    $output = git diff main --stat -- "**/*.csproj" 2>&1 | Out-String
-    if ($output -match "\d+\s+files? changed") { throw "csproj files changed" }
+    $developRef = $null
+    git show-ref --verify --quiet refs/heads/develop
+    if ($LASTEXITCODE -eq 0) { $developRef = "develop" }
+    if (-not $developRef) {
+        git show-ref --verify --quiet refs/remotes/origin/develop
+        if ($LASTEXITCODE -eq 0) { $developRef = "origin/develop" }
+    }
+    if (-not $developRef) {
+        throw "No se encontro la rama develop para calcular el baseline"
+    }
+
+    $mergeBase = (git merge-base HEAD $developRef 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $mergeBase -notmatch '^[0-9a-f]{7,40}$') {
+        throw "No se pudo resolver el merge-base con $developRef"
+    }
+
+    $changed = @(git diff --name-only $mergeBase -- "*.csproj")
+    if ($changed.Count -gt 0) {
+        throw "csproj modificados respecto de $developRef ($($changed -join ', '))"
+    }
 }
 
 # Checkpoint 7: Smoke test (optional)
