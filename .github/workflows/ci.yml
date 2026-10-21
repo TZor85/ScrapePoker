@@ -33,12 +33,19 @@ jobs:
       - name: Restore
         run: dotnet restore OpenScrape.sln
 
+      # La solucion compila sin advertencias y este step mantiene ese invariante.
+      # Son dos mecanismos porque actuan sobre fuentes distintas:
+      #   -warnaserror:codigo  -> advertencias de MSBuild y de las tareas, incluidas
+      #                           las NU1901-NU1904 de la auditoria de paquetes
+      #                           vulnerables (se re-emiten en el build desde el restore)
+      #   TreatWarningsAsErrors -> advertencias del compilador (CSxxxx)
       - name: Build
         run: >
           dotnet build OpenScrape.sln
           --configuration Release
           --no-restore
           -warnaserror:"NU1901;NU1902;NU1903;NU1904"
+          -p:TreatWarningsAsErrors=true
 
       - name: Test
         run: >
