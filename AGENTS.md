@@ -328,13 +328,12 @@ Consultar `docs/pre-merge-checklist.md` para verificación paso a paso.
 1. **Build Debug**: `dotnet build OpenScrape.sln` → Exit code 0
 2. **Build Release**: `dotnet build OpenScrape.sln --configuration Release` → Exit code 0
 3. **Format**: `dotnet format --verify-no-changes` → Sin cambios
-4. **Tests**: `dotnet test` → ≥ 1173 tests pasando
-5. **Warnings**: ≤ 75 warnings
+4. **Tests**: `dotnet test OpenScrape.sln` → Exit code 0 (≥ 1300 tests pasando)
+5. **Warnings**: 0 advertencias → `dotnet build OpenScrape.sln --configuration Release --no-incremental -p:TreatWarningsAsErrors=true -warnaserror:"NU1901;NU1902;NU1903;NU1904"` → Exit code 0
 6. **csproj**: Sin cambios en archivos .csproj
 7. **Smoke Test**: Manual (8 pasos)
 
-This document should be updated as the codebase evolves. When adding new patterns or changing existing guidelines, update this file accordingly.</content>
-<parameter name="filePath">C:\Code\Poker\ScrapePoker\AGENTS.md
+This document should be updated as the codebase evolves. When adding new patterns or changing existing guidelines, update this file accordingly.
 
 ---
 

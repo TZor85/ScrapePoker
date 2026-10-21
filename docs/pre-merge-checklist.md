@@ -26,13 +26,20 @@ dotnet format --verify-no-changes OpenScrape.sln
 ```powershell
 dotnet test OpenScrape.sln
 ```
-**Esperado:** ≥ 1173 tests pasando
+**Esperado:** Exit code 0 (≥ 1300 tests pasando)
 
 ### 5. Warnings
 ```powershell
-dotnet build OpenScrape.sln 2>&1 | Select-String "warning" | Measure-Object
+dotnet build OpenScrape.sln --configuration Release --no-incremental `
+  -p:TreatWarningsAsErrors=true `
+  -warnaserror:"NU1901;NU1902;NU1903;NU1904"
 ```
-**Esperado:** ≤ 75 warnings
+**Esperado:** Exit code 0 (0 advertencias)
+
+No contar líneas de texto que digan "warning": la salida del CLI está localizada
+y el patrón no matchea en un sistema en español. Y `--no-incremental` es
+obligatorio, porque un build incremental no recompila y no re-emite las
+advertencias, con lo que el checkpoint pasaría sin verificar nada.
 
 ### 6. csproj Changes
 ```powershell
