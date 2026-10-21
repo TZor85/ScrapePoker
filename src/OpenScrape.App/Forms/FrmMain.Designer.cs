@@ -1830,8 +1830,6 @@
         }
 
         #endregion
-        private Label label6;
-        private Label label9;
         private TabControl tbControl;
         private TabPage tbConfig;
         private TabPage tbLogs;

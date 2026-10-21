@@ -6,9 +6,7 @@ namespace OpenScrape.App
 {
     public partial class FormImage : Form, IAddImage
     {
-        private FormListApps _formListApps;
-        private int _index = 0;
-        private List<string> _listaImagenes = new List<string>();
+        private int _index = 0;        private List<string> _listaImagenes = new List<string>();
 
         public FormImage()
         {

@@ -8,7 +8,6 @@ namespace OpenScrape.App.Services;
 public class OcrService : IOcrService, IDisposable
 {
     private readonly string _tessdataPath;
-    public event Action<string> OnDebugImageGenerated;
 
     private const int MaxBitmapCacheSize = 200;
     private const int MaxOcrCacheSize = 500;
@@ -406,8 +405,8 @@ public class OcrService : IOcrService, IDisposable
 
     private ulong ComputeDHash(SKBitmap bitmap)
     {
-        using var normalized = bitmap.Resize(new SKImageInfo(64, 64), SKFilterQuality.Medium);
-        using var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), SKFilterQuality.None);
+        using var normalized = bitmap.Resize(new SKImageInfo(64, 64), new SKSamplingOptions(SKCubicResampler.Mitchell));
+        using var hashBitmap = normalized.Resize(new SKImageInfo(9, 8), new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None));
 
         ulong hash = 0;
         int bitIndex = 0;

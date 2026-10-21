@@ -172,7 +172,7 @@ public class ImageCropperService : IImageCropperService
             if (original == null) return 0;
 
             // Redimensionar a 9x8 para generar 64 bits de hash (8 filas × 8 comparaciones)
-            using var resized = original.Resize(new SKImageInfo(9, 8), SKFilterQuality.Low);
+            using var resized = original.Resize(new SKImageInfo(9, 8), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None));
             if (resized == null) return 0;
 
             ulong hash = 0;

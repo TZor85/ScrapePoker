@@ -58,8 +58,6 @@ namespace OpenScrape.App
 
         #region [Forms]
         FormImage _formImage;
-        Graphics _papel;
-        FormAction _formAction;
         FrmOverlay _frmOverlay;
         #endregion
 
@@ -84,7 +82,6 @@ namespace OpenScrape.App
         private string _session = string.Empty;
         private IntPtr _handle;
         private User32.RECT _locWindowRect = new();
-        private volatile bool _executeCapture;
         // Street flags derivados del state machine
         private bool IsPreflop => _gameLoopStateMachine.IsPreflop;
         private bool IsFlop => _gameLoopStateMachine.IsFlop;
@@ -566,7 +563,6 @@ namespace OpenScrape.App
                 _frmOverlay.UpdateStreetPhase(string.Empty);
                 _frmOverlay.UpdateTableName(_tableName);
                 lbPositionAction.Text = string.Empty;
-                _executeCapture = true;
                 var potOddsResult = new PokerCalculationResult();
 
                 if (!cbTest.Checked)
