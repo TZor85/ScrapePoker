@@ -59,6 +59,8 @@
     </None>
     <None Update="appsettings.Development.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <!-- Secretos locales: nunca empaquetar en publish -->
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

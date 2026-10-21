@@ -392,7 +392,7 @@ Sin índices secundarios → consultas por campos no-`Id` hacen full scan sobre 
 Server=ep-solitary-grass-abau81p4-pooler.eu-west-2.aws.neon.tech;
 Database=neondb;
 Username=neondb_owner;
-Password=npg_O4jGNATq9wMu;
+Password=<REDACTED>;
 SSL Mode=VerifyFull;
 Channel Binding=Require;
 ```
@@ -410,7 +410,7 @@ CLAUDE.md declara explícitamente: *“appsettings.json — Contains strategy co
 
 🟡 **INFERIDO** — `appsettings.json` y `Development.json` definen también:
 ```
-"Encrypter": { "Key": "8UHjPgXZzXCGkhxV2QCnooyJexUzvJrO" }
+"Encrypter": { "Key": "<REDACTED>" }
 ```
 Ningún consumidor de esta clave aparece en el módulo Infrastructure ni en Domain. Habrá que validar en App qué servicio la utiliza (probable cifrado de campos sensibles o de licencia futura — ver openspec/login-sistema-licencias).
 
