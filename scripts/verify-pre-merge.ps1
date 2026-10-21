@@ -107,9 +107,9 @@ $results | ForEach-Object {
     Write-Host ("  [{0}] {1}" -f $_.Status, $_.Name) -ForegroundColor $color
 }
 Write-Host ""
-$failed = $results | Where-Object { $_.Status -eq "FAIL" }
-if ($failed) {
-    Write-Host "FAILED: $($failed.Count) checkpoints" -ForegroundColor Red
+$failed = @($results | Where-Object { $_.Status -eq "FAIL" })
+if ($failed.Count -gt 0) {
+    Write-Host "FAILED: $($failed.Count) checkpoint(s)" -ForegroundColor Red
     Write-Host "Elapsed: $($elapsed.TotalSeconds)s" -ForegroundColor Yellow
     exit 1
 } else {
