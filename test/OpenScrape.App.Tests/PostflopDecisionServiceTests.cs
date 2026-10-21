@@ -1938,7 +1938,9 @@ public class PostflopDecisionServiceTests
     {
         var profile = CreateDefaultProfile();
         profile.TurnBluffFrequency = 1.0;
-        var service = CreateService(profile);
+        // Random fijo debajo de la frecuencia escalada (~0.978): el test verifica
+        // la decision, no el sorteo. Sin esto falla ~2% de las corridas.
+        var service = CreateService(profile, new FixedRandomProvider(0.5));
 
         // BluffBetSize default en Turn_OpenRaise no está explícito → default "Bet 1/3"
         // betFraction 0.33, breakeven ~25%, foldEquity 40% >= 25% → bluff
