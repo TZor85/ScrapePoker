@@ -1,10 +1,10 @@
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
+using OpenScrape.App.Helpers;
 using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App.Services;
@@ -17,11 +17,11 @@ public class ScreenReaderService : IScreenReaderService
 {
     private static readonly Regex NumericPattern = new(@"^\d+[.,]?\d*$", RegexOptions.Compiled);
 
-    private readonly OcrService _ocrService;
+    private readonly IOcrService _ocrService;
     private readonly ILogger<ScreenReaderService> _logger;
     private readonly IMetricsCollector _metrics;
 
-    public ScreenReaderService(OcrService ocrService, ILogger<ScreenReaderService> logger, IMetricsCollector metrics)
+    public ScreenReaderService(IOcrService ocrService, ILogger<ScreenReaderService> logger, IMetricsCollector metrics)
     {
         _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -101,9 +101,9 @@ public class ScreenReaderService : IScreenReaderService
 
             _logger.LogDebug("[SetBetValue DEBUG] Region p{PlayerNum}bet - Raw: '{R1}' | '{R2}' | '{R3}' => Clean: '{C1}' | '{C2}' | '{C3}'", playerNum, firstOcr.Text, secondOcr.Text, thirdOcr.Text, clean1, clean2, clean3);
 
-            decimal.TryParse(clean1, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr1);
-            decimal.TryParse(clean2, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr2);
-            decimal.TryParse(clean3, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr3);
+            OcrNumber.TryParse(clean1, out var ocr1);
+            OcrNumber.TryParse(clean2, out var ocr2);
+            OcrNumber.TryParse(clean3, out var ocr3);
 
             decimal best = 0;
             _logger.LogDebug("[SetBetValue CONSENSUS] ocr1={Ocr1}, ocr2={Ocr2}, ocr3={Ocr3}", ocr1, ocr2, ocr3);
@@ -169,9 +169,9 @@ public class ScreenReaderService : IScreenReaderService
             var cleanSecond = CleanOcrNumericText(secondOcr.Text);
             var cleanThird = CleanOcrNumericText(thirdOcr.Text);
 
-            decimal.TryParse(cleanFirst, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr1);
-            decimal.TryParse(cleanSecond, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr2);
-            decimal.TryParse(cleanThird, NumberStyles.Any, CultureInfo.CurrentCulture, out var ocr3);
+            OcrNumber.TryParse(cleanFirst, out var ocr1);
+            OcrNumber.TryParse(cleanSecond, out var ocr2);
+            OcrNumber.TryParse(cleanThird, out var ocr3);
 
             decimal best;
             if (ocr1 == ocr2 && ocr1 == ocr3)
@@ -185,7 +185,7 @@ public class ScreenReaderService : IScreenReaderService
             else
                 best = ocr3; // Sin consenso → preferir lectura directa
 
-            result = best.ToString();
+            result = OcrNumber.Format(best);
 
             _logger.LogDebug("[STACK] OCR lecturas: '{R1}'→{Ocr1}, '{R2}'→{Ocr2}, '{R3}'→{Ocr3}, best={Best}", firstOcr.Text, ocr1, secondOcr.Text, ocr2, thirdOcr.Text, ocr3, best);
         }
@@ -193,7 +193,7 @@ public class ScreenReaderService : IScreenReaderService
         firstOcr?.Dispose();
         secondOcr?.Dispose();
 
-        if (decimal.TryParse(result, out var stack))
+        if (OcrNumber.TryParse(result, out var stack))
             return stack;
 
         return 0;
@@ -301,7 +301,7 @@ public class ScreenReaderService : IScreenReaderService
         if (rawValue <= 0)
             return 0;
 
-        var rawStr = rawValue.ToString();
+        var rawStr = OcrNumber.Format(rawValue);
 
         if (!IsValidNumericInput(rawStr))
         {
@@ -319,8 +319,7 @@ public class ScreenReaderService : IScreenReaderService
             if (parts[0].Length > 2 && parts[0][0] == '8')
             {
                 var corrected = parts[0][1..] + separator + parts[1];
-                if (decimal.TryParse(corrected, NumberStyles.Any,
-                    CultureInfo.CurrentCulture, out var correctedValue))
+                if (OcrNumber.TryParse(corrected, out var correctedValue))
                 {
                     _logger.LogDebug("[BET] OCR artefacto '8' corregido: {Raw} → {Corrected}", rawStr, corrected);
                     return correctedValue;
@@ -335,8 +334,7 @@ public class ScreenReaderService : IScreenReaderService
         if (suspiciouslyLarge)
         {
             var corrected = rawStr[..^2] + "," + rawStr[^2..];
-            if (decimal.TryParse(corrected, NumberStyles.Any,
-                CultureInfo.CurrentCulture, out var correctedValue))
+            if (OcrNumber.TryParse(corrected, out var correctedValue))
             {
                 _logger.LogDebug("[BET] OCR separador decimal perdido corregido: {Raw} → {Corrected} (pot={Pot})", rawStr, corrected, potSize);
                 return correctedValue;
@@ -351,7 +349,7 @@ public class ScreenReaderService : IScreenReaderService
         if (rawValue <= 0)
             return 0;
 
-        var rawStr = rawValue.ToString();
+        var rawStr = OcrNumber.Format(rawValue);
 
         if (!IsValidNumericInput(rawStr))
         {
@@ -371,8 +369,7 @@ public class ScreenReaderService : IScreenReaderService
             if (parts[0].Length > 2 && parts[0][0] == '8')
             {
                 var corrected = parts[0][1..] + separator + parts[1];
-                if (decimal.TryParse(corrected, NumberStyles.Any,
-                    CultureInfo.CurrentCulture, out var correctedValue))
+                if (OcrNumber.TryParse(corrected, out var correctedValue))
                 {
                     _logger.LogDebug("[STACK] OCR artefacto '8' corregido: {Raw} → {Corrected}", rawStr, corrected);
                     return correctedValue;
@@ -384,8 +381,7 @@ public class ScreenReaderService : IScreenReaderService
         if (!hasDecimalSeparator && rawValue >= 500 && rawStr.Length >= 4)
         {
             var corrected = rawStr[..^2] + "," + rawStr[^2..];
-            if (decimal.TryParse(corrected, NumberStyles.Any,
-                CultureInfo.CurrentCulture, out var correctedValue))
+            if (OcrNumber.TryParse(corrected, out var correctedValue))
             {
                 _logger.LogDebug("[STACK] OCR separador decimal perdido corregido: {Raw} → {Corrected}", rawStr, corrected);
                 return correctedValue;

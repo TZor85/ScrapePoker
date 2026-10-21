@@ -451,6 +451,9 @@ public class TableReaderServiceTests
     private sealed class FakeOcrService : IOcrService
     {
         public void ClearCache() { }
+
+        public OcrResult ExtractTextFromRegionAndDebug(Image sourceImage, int x, int y, int width, int height,
+            double umbral = 0, bool onlyNumber = false) => new();
     }
 
     private sealed class FakeScreenReaderService : IScreenReaderService

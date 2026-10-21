@@ -21,13 +21,6 @@ public sealed class TableReaderService : ITableReaderService
     private readonly IOcrService _ocrService;
     private readonly ILogger<TableReaderService> _logger;
 
-    /// <summary>
-    /// Cultura fija para parsear importes de la mesa. El cliente muestra coma decimal,
-    /// así que el parseo no puede depender de la configuración regional del sistema
-    /// (con en-US "15,25" se interpretaría como 1525).
-    /// </summary>
-    private static readonly CultureInfo MoneyCulture = CultureInfo.GetCultureInfo("es-ES");
-
     public TableReaderService(
         IRegionLookupCache regionLookupCache,
         IScreenReaderService screenReader,
@@ -132,9 +125,9 @@ public sealed class TableReaderService : ITableReaderService
             {
                 if (pot.Length == 4 && !pot.Contains(".") && !pot.Contains(","))
                     decimal.TryParse(pot.Substring(0, 2) + "," + pot.Substring(2),
-                        NumberStyles.Number, MoneyCulture, out potValue);
+                        NumberStyles.Number, OcrNumber.Culture, out potValue);
                 else
-                    decimal.TryParse(pot, NumberStyles.Number, MoneyCulture, out potValue);
+                    decimal.TryParse(pot, NumberStyles.Number, OcrNumber.Culture, out potValue);
             }
             catch (Exception)
             {
