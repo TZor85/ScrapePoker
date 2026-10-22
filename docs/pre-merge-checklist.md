@@ -41,11 +41,19 @@ y el patrón no matchea en un sistema en español. Y `--no-incremental` es
 obligatorio, porque un build incremental no recompila y no re-emite las
 advertencias, con lo que el checkpoint pasaría sin verificar nada.
 
-### 6. csproj Changes
+### 6. csproj Changes (Informativo)
+
 ```powershell
-git diff main --stat -- "**/*.csproj"
+git diff (git merge-base HEAD develop) --name-only -- "*.csproj"
 ```
-**Esperado:** 0 archivos modificados
+**Esperado:** el script reporta los csproj modificados pero **no falla**.
+
+Este checkpoint es informativo a propósito. El repo actualiza dependencias de
+forma normal (por ejemplo Marten 8.24 → 9.51 por CVE-2026-75513), así que un
+gate que falle ante cualquier cambio de csproj sería un falso positivo permanente
+y empujaría a esquivarlo. El control real de paquetes vive en el checkpoint 5
+(`NU190x` como error) y en el CI. El baseline es el merge-base con `develop`,
+no `main`: `main` es una rama vieja que ni siquiera contiene todos los proyectos.
 
 ### 7. Smoke Test (Manual)
 
@@ -75,5 +83,6 @@ git diff main --stat -- "**/*.csproj"
 ## Notas
 
 - Ejecutar antes de: merge a develop, PR, release build
-- Si csproj changed, revisar si las dependencias son necesarias
+- Si el checkpoint de csproj reporta cambios, revisarlos: es informativo, pero un
+  cambio inesperado (nueva dependencia, TFM distinto) merece una pregunta
 - Smoke test es manual por naturaleza visual/OCR
