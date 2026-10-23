@@ -365,3 +365,6 @@ appsettings.Production.json
 
 # Resultados de tests
 TestResults/
+
+# Scratch de ejecucion de planes (superpowers)
+.superpowers/
