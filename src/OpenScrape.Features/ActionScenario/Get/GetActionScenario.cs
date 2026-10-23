@@ -2,18 +2,17 @@
 using OpenScrape.Domain.Interfaces;
 using OpenScrape.Domain.Services;
 using OpenScrape.Domain.ValueObjects;
-using OpenScrape.Features.Table;
 
 namespace OpenScrape.Features.ActionScenario.Get;
 
 public class GetActionScenario
 {
-    private readonly TableUseCases tableUseCases;
+    private readonly IPreflopRangeStore _rangeStore;
     private readonly IRandomProvider _randomProvider;
 
-    public GetActionScenario(TableUseCases tableUseCases, IRandomProvider? randomProvider = null)
+    public GetActionScenario(IPreflopRangeStore rangeStore, IRandomProvider? randomProvider = null)
     {
-        this.tableUseCases = tableUseCases;
+        _rangeStore = rangeStore;
         _randomProvider = randomProvider ?? new SystemRandomProvider();
     }
 
@@ -21,11 +20,11 @@ public class GetActionScenario
     {
         try
         {
-            var table = await tableUseCases.GetTable.ExecuteAsync(situation.GetDescription());
-            if (table?.Value == null)
+            var table = await _rangeStore.GetAsync(situation.GetDescription());
+            if (table == null)
                 throw new Exception("Table not found");
 
-            var hands = SelectMatchingHands(table.Value.Positions, request);
+            var hands = SelectMatchingHands(table.Positions, request);
 
             if (hands == null)
                 return "Fold";

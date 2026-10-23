@@ -188,6 +188,7 @@ namespace OpenScrape.App
 
                     // Game logger y state machine
                     services.AddScoped<GameLoggerService>();
+                    services.AddScoped<IGameLoggerService>(sp => sp.GetRequiredService<GameLoggerService>());
                     services.AddSingleton<GameLoopStateMachine>();
                     services.AddSingleton<RegionLookupCache>();
                     services.AddSingleton<CardCacheService>();

@@ -23,7 +23,7 @@ public class GameCoordinator : IGameCoordinator
     private readonly IBetSizingService _betSizingService;
     private readonly IExploitabilityCalculator _exploitabilityCalculator;
     private readonly GameLoopStateMachine _gameLoopStateMachine;
-    private readonly GameLoggerService _gameLoggerService;
+    private readonly IGameLoggerService _gameLoggerService;
     private readonly StrategyProfileService _strategyProfileService;
     private readonly IPostflopContextHolder _contextHolder;
 
@@ -40,7 +40,7 @@ public class GameCoordinator : IGameCoordinator
         IBetSizingService betSizingService,
         IExploitabilityCalculator exploitabilityCalculator,
         GameLoopStateMachine gameLoopStateMachine,
-        GameLoggerService gameLoggerService,
+        IGameLoggerService gameLoggerService,
         StrategyProfileService strategyProfileService,
         IPostflopContextHolder contextHolder)
     {
