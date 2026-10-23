@@ -1,0 +1,99 @@
+{
+  "Id": "flop-set-in-position",
+  "Street": "Flop",
+  "State": {
+    "IsDealer": false,
+    "PotSize": 10,
+    "HoleCard1Face": "",
+    "HoleCard2Face": "",
+    "HoleCard1Rank": 13,
+    "HoleCard2Rank": 13,
+    "HoleCard1Suit": 4,
+    "HoleCard2Suit": 3,
+    "Kicker": 0,
+    "IsInPosition": true,
+    "Position": "None",
+    "CurrentBet": 0,
+    "HeroStack": 90,
+    "HandSituation": "OpenRaise",
+    "Players": [
+      {
+        "Name": "P0",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 90,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 0,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P1",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 1,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P2",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 2,
+        "WasPreflopAggressor": false
+      }
+    ],
+    "BoardCards": [
+      {
+        "Name": "King",
+        "Force": 13,
+        "Suit": 2,
+        "Position": "Flop",
+        "Location": 1
+      },
+      {
+        "Name": "Seven",
+        "Force": 7,
+        "Suit": 1,
+        "Position": "Flop",
+        "Location": 2
+      },
+      {
+        "Name": "Two",
+        "Force": 2,
+        "Suit": 3,
+        "Position": "Flop",
+        "Location": 3
+      }
+    ],
+    "HavePocketPair": true,
+    "IsSuited": false
+  },
+  "MaxBet": 0,
+  "ExpectedAction": "Bet Pot (Value)",
+  "ExpectedEquity": 97.354,
+  "MonteCarloSeed": 20261023
+}

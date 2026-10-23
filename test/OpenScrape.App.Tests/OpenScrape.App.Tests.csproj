@@ -26,4 +26,9 @@
     <ProjectReference Include="..\..\src\OpenScrape.Domain\OpenScrape.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\src\OpenScrape.App\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\test\fixtures\**\*.json" Link="fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
