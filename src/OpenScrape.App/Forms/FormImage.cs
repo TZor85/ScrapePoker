@@ -64,6 +64,10 @@ namespace OpenScrape.App
 
                     _listaImagenes = new List<string>(Directory.GetFiles(lbPath.Text.Split("game")[0], "*.png"));
 
+                    // El índice es estado del formulario: sin reubicarlo, se mostraba
+                    // la imagen que había quedado seleccionada en la carga anterior.
+                    _index = ImageListIndex.FindIndex(_listaImagenes, dlg.FileName);
+
                     this.Width = 461;
                     this.Height = 347;
 
