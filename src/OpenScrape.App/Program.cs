@@ -188,6 +188,7 @@ namespace OpenScrape.App
                     services.AddSingleton<CardCacheService>();
 
                     // Detection loop service (Fase 1: extraído de FrmMain.BackgroundWorker1_DoWork)
+                    services.AddSingleton<ITurnGate, TurnGate>();
                     services.AddSingleton<IDetectionLoopService, DetectionLoopService>();
 
                     // Capture service (Fase 2: extraído de FrmMain.GetImageWhilePlaying)

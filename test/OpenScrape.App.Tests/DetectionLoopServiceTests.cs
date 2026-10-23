@@ -336,6 +336,31 @@ public class DetectionLoopServiceTests
         cts.Dispose();
     }
 
+    [Test]
+    public void SetExecuteCaptureForTest_Delega_En_El_TurnGate()
+    {
+        var gate = new TurnGate();
+        var service = CreateService(turnGate: gate);
+
+        service.SetExecuteCaptureForTest(true);
+
+        Assert.That(gate.IsLatched, Is.True);
+    }
+
+    [Test]
+    public async Task StartAsync_Limpia_El_Latch_Del_TurnGate()
+    {
+        var gate = new TurnGate();
+        gate.ForceLatched(true);
+        var service = CreateService(turnGate: gate);
+        using var cts = new CancellationTokenSource();
+
+        await service.StartAsync(IntPtr.Zero, () => true, cts.Token);
+        await service.StopAsync();
+
+        Assert.That(gate.IsLatched, Is.False);
+    }
+
     #endregion
 
     #region DetectionResult Tests
@@ -413,7 +438,9 @@ public class DetectionLoopServiceTests
     /// Crea un DetectionLoopService con dependencias reales mínimas.
     /// El screen capture usa un fake que retorna null (para tests de lifecycle).
     /// </summary>
-    private static DetectionLoopService CreateService(RegionLookupCache? regionCache = null)
+    private static DetectionLoopService CreateService(
+        RegionLookupCache? regionCache = null,
+        ITurnGate? turnGate = null)
     {
         var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.None));
         var logger = loggerFactory.CreateLogger<DetectionLoopService>();
@@ -428,6 +455,7 @@ public class DetectionLoopServiceTests
             regionLookupCache,
             detectionLogger,
             coordinateScaler,
+            turnGate ?? new TurnGate(),
             logger);
     }
 

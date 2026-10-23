@@ -17,9 +17,9 @@ public class DetectionLoopService : IDetectionLoopService
     private readonly RegionLookupCache _regionLookupCache;
     private readonly DetectionLoggerService _detectionLoggerService;
     private readonly ICoordinateScaler _coordinateScaler;
+    private readonly ITurnGate _turnGate;
     private readonly ILogger<DetectionLoopService> _logger;
 
-    private volatile bool _executeCapture;
     private volatile bool _isRunning;
     private Task? _loopTask;
     private CancellationTokenSource? _internalCts;
@@ -46,12 +46,14 @@ public class DetectionLoopService : IDetectionLoopService
         RegionLookupCache regionLookupCache,
         DetectionLoggerService detectionLoggerService,
         ICoordinateScaler coordinateScaler,
+        ITurnGate turnGate,
         ILogger<DetectionLoopService> logger)
     {
         _useCase = useCase ?? throw new ArgumentNullException(nameof(useCase));
         _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
         _detectionLoggerService = detectionLoggerService ?? throw new ArgumentNullException(nameof(detectionLoggerService));
         _coordinateScaler = coordinateScaler ?? throw new ArgumentNullException(nameof(coordinateScaler));
+        _turnGate = turnGate ?? throw new ArgumentNullException(nameof(turnGate));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -66,7 +68,7 @@ public class DetectionLoopService : IDetectionLoopService
         _isRunning = true;
         _isOverlayVisible = isOverlayVisible ?? throw new ArgumentNullException(nameof(isOverlayVisible));
         _handle = windowHandle;
-        _executeCapture = false;
+        _turnGate.Reset();
         _totalChecks = 0;
         _detections = 0;
         _errors = 0;
@@ -241,14 +243,7 @@ public class DetectionLoopService : IDetectionLoopService
                             detectionResult.ActionColor,
                             GameState.WaitingForHand, // El estado real lo gestiona FrmMain
                             DateTimeOffset.Now));
-
-                        // Prevenir re-detección hasta que el color salga del rango
-                        _executeCapture = true;
                     }
-
-                    // Reset del flag de ejecución
-                    if (!detectionResult.IsActionColorInRange)
-                        _executeCapture = false;
 
                     // Log estadísticas periódicas
                     if (detectionStats.TotalChecks % 1000 == 0)
@@ -370,13 +365,16 @@ public class DetectionLoopService : IDetectionLoopService
                 const int TOLERANCE = 3; // Tolerancia de ±3 para el valor B
 
                 bool isActionColorInRange = Math.Abs(avgB - TARGET_B) <= TOLERANCE;
-                bool shouldCapture = isActionColorInRange && !_executeCapture;
 
                 // Detección de flop mejorada
                 const int FLOP_TARGET_B = 255;
                 const int FLOP_TOLERANCE = 10;
                 bool isFlopVisible = Math.Abs(flopB - FLOP_TARGET_B) <= FLOP_TOLERANCE;
-                bool shouldCaptureFlop = shouldCapture && isFlopVisible;
+
+                // El latch de turno vive en el gate: decide y actualiza su estado.
+                var gateDecision = _turnGate.Evaluate(isActionColorInRange, isFlopVisible);
+                bool shouldCapture = gateDecision.ShouldCaptureTurn;
+                bool shouldCaptureFlop = gateDecision.ShouldCaptureFlop;
 
                 return new DetectionResult
                 {
@@ -405,6 +403,10 @@ public class DetectionLoopService : IDetectionLoopService
             Color actionColor = bitmap.GetPixel(sx, sy);
             Color flopColor = bitmap.GetPixel(fx, fy);
 
+            var fallbackDecision = _turnGate.Evaluate(
+                isActionColorInRange: actionColor.B == 24,
+                isFlopVisible: flopColor.B == 255);
+
             return new DetectionResult
             {
                 ActionColor = actionColor,
@@ -412,8 +414,8 @@ public class DetectionLoopService : IDetectionLoopService
                 AverageActionB = actionColor.B,
                 SampleCount = 1,
                 IsActionColorInRange = actionColor.B == 24,
-                ShouldCapture = actionColor.B == 24 && !_executeCapture,
-                ShouldCaptureFlop = actionColor.B == 24 && !_executeCapture && flopColor.B == 255,
+                ShouldCapture = fallbackDecision.ShouldCaptureTurn,
+                ShouldCaptureFlop = fallbackDecision.ShouldCaptureFlop,
                 IsFlopVisible = flopColor.B == 255
             };
         }
@@ -447,11 +449,11 @@ public class DetectionLoopService : IDetectionLoopService
     }
 
     /// <summary>
-    /// Solo para tests: fuerza el estado interno de _executeCapture.
+    /// Solo para tests: fuerza el estado interno del latch de turno.
     /// </summary>
     public void SetExecuteCaptureForTest(bool value)
     {
-        _executeCapture = value;
+        _turnGate.ForceLatched(value);
     }
 }
 
