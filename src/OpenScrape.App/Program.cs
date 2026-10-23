@@ -42,7 +42,12 @@ namespace OpenScrape.App
 
             var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
 
+            // El ContentRoot por defecto es el working directory. Con `dotnet run --project`
+            // el CWD queda en la raíz del repo y no hay appsettings*.json ahí, así que la
+            // connection string no se resolvía. El directorio del ejecutable es donde el
+            // build deja los appsettings.
             var builder = Host.CreateDefaultBuilder()
+                .UseContentRoot(AppContext.BaseDirectory)
                 .UseEnvironment(environment)
                 .ConfigureLogging((context, lb) =>
                 {
