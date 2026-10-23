@@ -5,7 +5,7 @@
 Separar el motor de decisión de poker del cliente WinForms y exponerlo como un
 servicio HTTP. El objetivo del usuario es **proteger y licenciar el motor**: el
 binario que se distribuye al cliente no debe contener la lógica de equity, la
-matriz postflop ni el sizing.
+matriz postflop, el sizing ni la tabla de rangos preflop.
 
 Estado de partida: `develop = 9d40445`.
 
@@ -13,10 +13,13 @@ Estado de partida: `develop = 9d40445`.
 
 ### Dentro
 
-- Extraer el motor (`UnifiedPokerCalculator`, `PokerDecisionFacade` y los
-  servicios de `OpenScrape.DecisionMaker`) a proyectos sin dependencia de
-  Windows.
-- Contrato HTTP versionado para evaluar una decisión.
+- Extraer **las dos ramas de decisión** a proyectos sin dependencia de Windows:
+  - **Preflop**: `SetPreflopActionUseCase`, los diez use cases de acción,
+    `UserHandHelper` y `GetActionScenario` con su tabla de rangos.
+  - **Postflop**: la lógica de decisión de `GameCoordinator`, más
+    `UnifiedPokerCalculator`, `PostflopDecisionService` y el sizing.
+- Contrato HTTP versionado para evaluar una decisión, con una sola puerta de
+  entrada que cubre las cuatro calles.
 - Activación y validación de licencias por key, con cuota por plan.
 - Cliente HTTP en la aplicación, con pantalla de activación.
 - Pruebas de paridad entre el motor local actual y el servicio.
@@ -25,6 +28,9 @@ Estado de partida: `develop = 9d40445`.
 
 - OCR, captura de pantalla y overlay: dependen de la pantalla del usuario y de
   Tesseract/OpenCvSharp locales. No se mueven.
+- El estado cross-street, el tracking de villanos, el cálculo de exploitability
+  y el logging de decisiones: se quedan en el cliente. El servidor es stateless
+  y recibe todo lo que necesita en el request.
 - Persistencia de manos, historial de oponentes y estadísticas de villanos en
   el servidor.
 - Facturación, pasarela de pago y panel de administración.
@@ -35,27 +41,61 @@ Estado de partida: `develop = 9d40445`.
 
 | Decisión | Elegida | Alternativa descartada | Motivo |
 |---|---|---|---|
-| Alcance | Sólo el motor de decisión | Motor + persistencia / todo el backend | OCR y captura son locales; moverlos agrega latencia y expone la pantalla del usuario |
+| Alcance | Preflop y postflop desde el arranque | Sólo postflop, preflop en una fase posterior | La tabla de rangos y la inferencia de situación son el núcleo vendible; dejarlas en el cliente anula la protección |
 | Sin API disponible | El bot se detiene y avisa | Fallback degradado / motor local con licencia remota | Cualquier copia local del motor es extraíble y anula la protección |
 | Identidad | License key por instalación | Cuenta de usuario / binding a device | Es lo más simple que igual protege; sin registro ni recuperación de password |
 | Alojamiento | Contenedor agnóstico | Servicio managed / sólo local | Portable entre VPS, Azure y desarrollo; el proveedor se decide al desplegar |
 | Historial de villanos | El cliente manda `VillainProfile` | El servidor acumula stats por alias | Evita datos personales en la infraestructura y mantiene el servicio stateless |
 | UI de activación | `FormLicense` mínima | Sólo archivo de configuración | Sin pantalla, el usuario final no puede activar el producto |
+| Acceso a la tabla de rangos | `IPreflopRangeStore` en el motor | `DecisionMaker` referencia `Features` | El motor no puede arrastrar Marten; la implementación vive en la API |
+
+## Hallazgos que corrigen el diseño inicial
+
+El diseño anterior suponía que `FrmMain` consumía `IPokerDecisionFacade`. **No es
+así**, y la corrección cambia la fase 1:
+
+- `FrmMain` llama directo a `IPokerCalculator.Calculate` en cinco lugares y
+  decide con `GameCoordinator.DetermineFlopAction/Turn/River`.
+- `GameCoordinator` arma el `PostflopDecisionInput` con datos que la facade no
+  calcula: `EffectiveOuts`, `HeroKickerStrength`, `VillainFoldToBetPct`, la
+  equity ajustada por `PreflopAnalyzer.CalculateCbetAdjustment`, el donk bet y
+  el board change. La facade calcula equity y textura por su cuenta: **no es
+  equivalente**.
+- Nadie ejercita la facade en producción, así que la suite actual no detecta la
+  divergencia.
+- El preflop no pasa por `GameCoordinator` ni por la facade: va por
+  `SetPreflopActionUseCase` → use cases de acción → `GetActionScenario`
+  (`OpenScrape.Features`) → Marten.
+
+Conclusión: no se "conecta la facade". Se **extrae la lógica de decisión real**
+de `GameCoordinator` a un engine puro, se **mueve el motor preflop** al mismo
+engine, y la paridad se prueba con fixtures generados desde el código actual
+antes de tocarlo. La facade se elimina.
+
+### Las tres ramas de decisión hoy
+
+| Rama | Punto de entrada | Lógica | Datos |
+|---|---|---|---|
+| Preflop | `FrmMain.ProcessPreflopAsync` | `SetPreflopActionUseCase` + 10 use cases | `GetActionScenario` → Marten |
+| Postflop | `GameCoordinator.Determine*Action` | `PostflopDecisionService` + sizing | `IPokerCalculator` |
+| Muerta | — | `PokerDecisionFacade` | Nadie la usa |
 
 ## Arquitectura
 
 ```
-OpenScrape.Domain  (entidades, enums, value objects — sin lógica de motor)
+OpenScrape.Domain  (entidades, enums, value objects, PlayerGameState)
         ▲
-        ├── OpenScrape.Contracts      DTOs del protocolo
+        ├── OpenScrape.Contracts           DTOs del protocolo
         │         ▲
-        │         ├── OpenScrape.DecisionMaker   motor puro
+        │         ├── OpenScrape.DecisionMaker   motor puro (preflop + postflop)
         │         │         ▲
         │         │         └── OpenScrape.Api   HTTP + licencias (Marten)
         │         │
         │         └── OpenScrape.App             cliente delgado (WinForms)
         │
-        └── OpenScrape.Features / OpenScrape.Infrastructure  (sin cambios)
+        └── OpenScrape.Features / OpenScrape.Infrastructure
+                        ▲
+                        └── OpenScrape.Api implementa IPreflopRangeStore sobre GetTable
 ```
 
 ### `OpenScrape.Contracts` (nuevo)
@@ -65,9 +105,9 @@ paquetes de UI.
 
 Contiene:
 
-- `DecisionRequest` (movido desde `OpenScrape.DecisionMaker/DTOs`).
-- `DecisionResult` (movido; se elimina `CalculationDetail`).
-- `BetSizeCategory` (movido desde `OpenScrape.DecisionMaker/Services/PostflopDecisionService.cs`).
+- `DecisionRequest`, con `Street` y los bloques `Preflop`/`Postflop`.
+- `DecisionResult`.
+- `BetSizeCategory` (hoy atrapado en `PostflopDecisionService`).
 - `LicenseActivateRequest`, `LicenseActivateResponse`, `ApiError`.
 
 `DecisionResult.CalculationDetail` se elimina: es `object?` y en JSON se
@@ -76,15 +116,27 @@ explícitos, no un objeto opaco.
 
 ### `OpenScrape.DecisionMaker` (motor)
 
-Ya es `net10.0`. Pierde la referencia a Marten (deuda del Sprint 1) y pasa a
-referenciar `Contracts`.
+Ya es `net10.0`. Pierde la referencia a Marten y pasa a referenciar `Contracts`.
 
 Recibe desde `OpenScrape.App`:
 
-- `Aplication/UseCases/UnifiedPokerCalculator.cs`
-- `Services/PokerDecisionFacade.cs`
-- `Services/IPokerDecisionFacade.cs`
-- `Telemetry/IMetricsCollector.cs` y su implementación
+- `Aplication/UseCases/UnifiedPokerCalculator.cs`.
+- `Aplication/SetPreflopActionUseCase.cs` y los diez `UseCases/Actions/*`.
+- `Helpers/UserHandHelper.cs`.
+- `Features/ActionScenario` (`GetActionScenario`, `ActionScenarioRequest`).
+- La lógica de decisión de `Services/GameCoordinator.cs` extraída a
+  `PostflopDecisionEngine`.
+- `Telemetry/IMetricsCollector.cs` y su implementación.
+
+Define:
+
+- `IDecisionEngine` — única puerta: `Task<DecisionResult> DecideAsync(DecisionRequest, CancellationToken)`.
+- `IPreflopRangeStore` — `Task<TableDTO?> GetAsync(string situation)`. La
+  implementación con Marten vive en `OpenScrape.Api`.
+- `PostflopDecisionEngine` — construye el `PostflopDecisionInput` que hoy arma
+  `GameCoordinator`, sin efectos secundarios.
+- `IRandomProvider` se mantiene inyectable: la mezcla ponderada preflop es
+  estocástica y debe poder fijarse en los tests.
 
 `IDecisionTraceStore` queda como interfaz en el motor. La implementación con
 Marten vive en `OpenScrape.Api`.
@@ -93,21 +145,27 @@ El motor no conoce HTTP, ni licencias, ni el cliente.
 
 ### `OpenScrape.Api` (nuevo)
 
-`Microsoft.NET.Sdk.Web`, `net10.0`. Referencia `DecisionMaker`, `Contracts` y
-Marten. Es el único proyecto que conoce ASP.NET.
+`Microsoft.NET.Sdk.Web`, `net10.0`. Referencia `DecisionMaker`, `Contracts`,
+`Features` y Marten. Es el único proyecto que conoce ASP.NET.
 
 Contiene: endpoints, middleware de licencia, rate limiting, `ILicenseStore` con
-su implementación `MartenLicenseStore`, `IDecisionTraceStore` con
-`MartenDecisionTraceStore`, configuración y Dockerfile. Las interfaces permiten
-testear la API sin Postgres.
+`MartenLicenseStore`, `IPreflopRangeStore` con `MartenPrefllopRangeStore` (envuelve
+`GetTable`), `IDecisionTraceStore` con `MartenDecisionTraceStore`, configuración
+y Dockerfile. Las interfaces permiten testear la API sin Postgres.
 
 ### `OpenScrape.App` (cliente delgado)
 
 Deja de referenciar `OpenScrape.DecisionMaker`. Agrega:
 
-- `Services/Http/HttpDecisionClient.cs` — implementa `IPokerDecisionFacade`.
+- `Services/Http/HttpDecisionEngine.cs` — implementa `IDecisionEngine`.
 - `Forms/FormLicense.cs` — activación.
 - `Services/LicenseTokenStore.cs` — persiste key y token cifrados con `Encrypter`.
+- `Services/PlayerStateMapper.cs` — traduce `PlayerGameState` + contexto al
+  `DecisionRequest`.
+
+`GameCoordinator` se queda en `App` como adaptador: conserva el estado
+cross-street, el tracking de villanos, la exploitability y el logging, y delega
+la decisión en `IDecisionEngine`.
 
 Conserva OCR, captura, overlay, `Features`, `Infrastructure` y `Domain`.
 
@@ -115,15 +173,18 @@ Conserva OCR, captura, overlay, `Features`, `Infrastructure` y `Domain`.
 
 | Archivo | Origen | Destino |
 |---|---|---|
-| `UnifiedPokerCalculator.cs` | `App/Aplication/UseCases` | `DecisionMaker/Aplication` |
-| `PokerDecisionFacade.cs` | `App/Services` | `DecisionMaker/Services` |
-| `IPokerDecisionFacade.cs` | `App/Services` | `DecisionMaker/Services` |
-| `IMetricsCollector.cs` + impl | `App/Telemetry` | `DecisionMaker/Telemetry` |
+| `PlayerGameState.cs`, `Player.cs`, `BoardData`, `ResponseAction` | `App/Entities` | `Domain/Entities` |
+| `UnifiedPokerCalculator.cs` | `App/Aplication/UseCases` | `DecisionMaker` |
+| `SetPreflopActionUseCase.cs` + 10 use cases | `App/Aplication` | `DecisionMaker/Preflop` |
+| `UserHandHelper.cs` | `App/Helpers` | `DecisionMaker/Preflop` |
+| `GetActionScenario.cs`, `ActionScenarioRequest.cs` | `Features/ActionScenario` | `DecisionMaker/Preflop` |
+| Lógica de decisión de `GameCoordinator` | `App/Services` | `DecisionMaker/Postflop` |
+| `PokerDecisionFacade.cs` + `IPokerDecisionFacade.cs` | `App/Services` | **Se borran** |
 | `DecisionRequest.cs`, `DecisionResult.cs` | `DecisionMaker/DTOs` | `Contracts` |
 | `MartenDecisionTraceStore.cs` | `App/Services` | `Api/Stores` |
 
-Los namespaces se ajustan al proyecto destino. No se cambia la lógica del motor
-en esta migración.
+Los namespaces se ajustan al proyecto destino. **No se cambia la lógica del
+motor en esta migración**: sólo se mueve y se le inyectan sus dependencias.
 
 ## Contrato HTTP
 
@@ -150,6 +211,26 @@ Anónimo, con rate limit por IP.
 Requiere `Authorization: Bearer <jwt>`.
 
 Cuerpo: `DecisionRequest`. Respuesta `200`: `DecisionResult`.
+
+```json
+{
+  "street": "Preflop",
+  "hero": { "card1": { "rank": 12, "suit": 2 }, "card2": { "rank": 8, "suit": 2 } },
+  "position": "Button",
+  "potSize": 2.5,
+  "heroStack": 100,
+  "isSecondAction": false,
+  "seats": [
+    { "position": "UTG", "bet": 1, "active": true },
+    { "position": "Button", "bet": 0, "active": true }
+  ],
+  "villainProfile": { "handsPlayed": 40, "timesVoluntarilyPutMoneyIn": 12 }
+}
+```
+
+Para `Flop`/`Turn`/`River` el request agrega `board`, `potOdds`, `effectiveOuts`,
+`heroKickerStrength`, `villainFoldToBetPct`, `context` (donk bet, board change,
+`isAnyoneAllIn`). El servidor no infiere estado que el cliente ya posee.
 
 | Código | Situación |
 |---|---|
@@ -217,9 +298,9 @@ Se conecta a la misma base por `ConnectionStrings__Marten`. No hay panel web.
 
 ## Cliente
 
-### `HttpDecisionClient`
+### `HttpDecisionEngine`
 
-Implementa `IPokerDecisionFacade`. `HttpClient` tipado con
+Implementa `IDecisionEngine`. `HttpClient` tipado con
 `BaseAddress = Api:BaseUrl` y `Timeout = 1,5 s`. Sin reintentos: reintentar
 dentro del turno duplica la latencia.
 
@@ -260,31 +341,50 @@ La key nunca se escribe en logs.
 
 ## Migración por fases
 
-Tres fases, cada una mergeable y reversible. Flag `RemoteEngine:Enabled` en el
-cliente, apagado por defecto hasta la fase 3.
+Cuatro fases, cada una mergeable y reversible. Flag `RemoteEngine:Enabled` en el
+cliente, apagado por defecto hasta la fase 4.
 
-### Fase 1 — Punto de entrada único
+### Fase 1 — Caracterización
 
-`FrmMain` deja de llamar a `IPokerCalculator` y `IPostflopDecisionService` por
-separado y pasa a consumir `IPokerDecisionFacade` con la implementación local.
-La facade ya existe y ya absorbe esas dependencias; hoy sólo la usan los tests.
+Antes de mover una línea se congelan fixtures generados **desde el código
+actual**, no desde el diseño:
 
-Salida: paridad verificada con fixtures. Sin cambios de comportamiento
-observable.
+- Postflop: un test-generador recorre estados de mesa y guarda
+  `DecisionResult` en `test/fixtures/decisions/postflop/`.
+- Preflop: mismo mecanismo con `IRandomProvider` fijo, para que la mezcla
+  ponderada sea reproducible.
 
-### Fase 2 — Servicio y cliente HTTP
+Los fixtures se commitean y pasan a ser el contrato de paridad de todas las
+fases siguientes.
 
-Se crean `Contracts`, `OpenScrape.Api` y `HttpDecisionClient`. Con
+Salida: suite de caracterización verde contra el código de hoy.
+
+### Fase 2 — Motor local unificado
+
+- Extraer `PostflopDecisionEngine` de `GameCoordinator` y hacer que el
+  coordinator delegue conservando contexto, tracking, exploitability y logging.
+- Mover preflop (`SetPreflopActionUseCase`, use cases, `UserHandHelper`,
+  `GetActionScenario`) al motor, con `IPreflopRangeStore` inyectado.
+- Mover `PlayerGameState` y compañía a `Domain`.
+- `FrmMain` consume `IDecisionEngine` local como única puerta.
+- Borrar `PokerDecisionFacade`.
+
+Salida: paridad 100% sobre los fixtures de la fase 1, sin cambios observables.
+
+### Fase 3 — Servicio y cliente HTTP
+
+Se crean `Contracts`, `OpenScrape.Api` y `HttpDecisionEngine`. Con
 `RemoteEngine:Enabled = false` el cliente sigue usando el motor local; con el
-flag encendido usa la API. Ambos caminos conviven para comparar.
+flag encendido usa la API. Ambos caminos conviven para comparar decisiones en
+producción controlada.
 
 Salida: `/v1/decisions` responde con paridad y el cliente funciona en modo
-remoto.
+remoto para las cuatro calles.
 
-### Fase 3 — Retirar el motor del cliente
+### Fase 4 — Retirar el motor del cliente
 
-Se borran del cliente el motor y la facade local, se elimina el flag y queda
-sólo `HttpDecisionClient`. Se verifica el publish.
+Se borran del cliente el motor y el `IDecisionEngine` local, se elimina el flag
+y queda sólo `HttpDecisionEngine`. Se verifica el publish.
 
 Salida: el artefacto publicado no contiene `OpenScrape.DecisionMaker.dll`.
 
@@ -296,6 +396,13 @@ Las existentes se mantienen. `OpenScrape.App.Tests` ya referencia
 `OpenScrape.DecisionMaker` de forma directa, así que los tests del motor siguen
 compilando cuando `App` deje de referenciarlo. El test de arquitectura valida el
 csproj de `App` y el publish, no el proyecto de tests.
+
+### Caracterización y paridad
+
+- Fixtures postflop: acción exacta, equity ±0,1, sizing ±0,1, `Reason` no vacío.
+- Fixtures preflop: acción exacta con `IRandomProvider` fijo. Sin RNG fijo, la
+  mezcla ponderada hace el test flaky y la paridad no se puede afirmar.
+- Un fixture que no coincide bloquea el merge.
 
 ### Contrato
 
@@ -310,25 +417,11 @@ revocada, cuota excedida, request inválido, decisión imposible.
 
 Marten se usa sólo en producción; los tests no requieren Postgres.
 
-### Paridad (fixtures dorados)
-
-Para cada captura en `output/samples/grab` se genera un `DecisionRequest` y se
-guarda el `DecisionResult` del motor local en `test/fixtures/decisions/`.
-
-La suite replaya cada fixture contra la API y compara:
-
-- `RecommendedAction` exacta.
-- `EquityPercent` con tolerancia ±0,1.
-- `BetSize` con tolerancia ±0,1.
-- `Reason` no vacío.
-
-Un fixture que no coincide bloquea el merge.
-
 ### Arquitectura
 
 - `OpenScrape.App.csproj` no contiene `ProjectReference` a `DecisionMaker`.
 - El directorio de publish del cliente no contiene `OpenScrape.DecisionMaker.dll`
-  ni `OpenScrape.Contracts` con tipos del motor.
+  ni `OpenScrape.Features.dll`.
 - `OpenScrape.Contracts` no referencia Marten ni ASP.NET.
 
 ## Despliegue
@@ -350,17 +443,20 @@ Un fixture que no coincide bloquea el merge.
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
+| Mover preflop cambia decisiones | El usuario pierde confianza en el bot | Fixtures de caracterización generados antes del movimiento, con RNG fijo |
+| Movimiento de `PlayerGameState` a `Domain` | 147 call sites, errores de namespace | Cambio mecánico, verificado por el compilador; sin tocar lógica |
 | Latencia de red en el turno | El bot decide tarde | Timeout 1,5 s, servidor en la misma región que el usuario, medir p95 |
 | Caída del servicio | El bot se detiene | Monitoreo y reinicio automático; aceptado por diseño |
 | Key compartida entre instalaciones | Pérdida de ingresos | Cuota por token y rate limit; device binding queda como fase futura |
 | Deriva del contrato | Cliente y API incompatibles | `Contracts` compartido + tests de contrato + versión en la ruta |
-| Regresión al mover el motor | Decisiones distintas | Fixtures dorados y fase 1 sin cambio de comportamiento |
 | Secreto JWT filtrado | Tokens falsificables | Variable de entorno, rotación, gitleaks ya activo en CI |
 
 ## Criterios de aceptación
 
-1. `OpenScrape.Api` responde `/v1/decisions` con paridad 4/4 sobre los fixtures.
-2. El publish del cliente no incluye el motor.
-3. Suite completa en verde y 0 advertencias en Release.
-4. `dotnet format --verify-no-changes` sin cambios.
-5. `verify-pre-merge.ps1 -SkipSmoke` con todos los checkpoints en PASS.
+1. Los fixtures de caracterización pasan 100% al terminar la fase 2.
+2. `OpenScrape.Api` responde `/v1/decisions` con paridad sobre preflop y
+   postflop.
+3. El publish del cliente no incluye el motor ni `OpenScrape.Features.dll`.
+4. Suite completa en verde y 0 advertencias en Release.
+5. `dotnet format --verify-no-changes` sin cambios.
+6. `verify-pre-merge.ps1 -SkipSmoke` con todos los checkpoints en PASS.
