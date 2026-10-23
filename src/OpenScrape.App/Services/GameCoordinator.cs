@@ -330,6 +330,13 @@ public class GameCoordinator : IGameCoordinator
 
     #region Determine Actions
 
+    /// <summary>
+    /// Mantiene la equity efectiva dentro del rango que acepta el motor.
+    /// El ajuste de c-bet (flop) y la penalidad por peligro (turn y river)
+    /// pueden empujarla por encima de 100 o por debajo de 0.
+    /// </summary>
+    internal static double ClampEquity(double equity) => Math.Clamp(equity, 0d, 100d);
+
     public GameDecisionResult DetermineFlopAction(PlayerGameState state)
     {
         if (FlopResult == null) return new GameDecisionResult("Check", "Error: sin resultado de flop");
@@ -369,7 +376,7 @@ public class GameCoordinator : IGameCoordinator
         double cbetAdjustment = PreflopAnalyzer.CalculateCbetAdjustment(isPreflopAggressor, hasRangeAdvantage, boardTexture, inPosition, numOpponents, _strategyProfileService.Profile);
 
         double rawEquity = flopResult.EquityPercentage;
-        double effectiveEquity = rawEquity + cbetAdjustment;
+        double effectiveEquity = ClampEquity(rawEquity + cbetAdjustment);
 
         var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
         {
@@ -563,7 +570,7 @@ public class GameCoordinator : IGameCoordinator
         });
 
         // Exploitabilidad
-        double effectiveEquity = equity - dangerPenalty;
+        double effectiveEquity = ClampEquity(equity - dangerPenalty);
         var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), turnResult.FoldEquity);
         var turnAnalysis = _exploitabilityCalculator.AnalyzeDecision(
             decision.Action, effectiveEquity, turnResult.PotOddsPercentage, foldEquity,
@@ -722,7 +729,7 @@ public class GameCoordinator : IGameCoordinator
         _contextHolder.Update(c => c with { PreviousStreetWasBet = maxBet > 0 });
 
         // Exploitabilidad
-        double effectiveEquity = equity - dangerPenalty;
+        double effectiveEquity = ClampEquity(equity - dangerPenalty);
         var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), riverResult.FoldEquity);
         var riverAnalysis = _exploitabilityCalculator.AnalyzeDecision(
             decision.Action, effectiveEquity, riverResult.PotOddsPercentage, foldEquity,
