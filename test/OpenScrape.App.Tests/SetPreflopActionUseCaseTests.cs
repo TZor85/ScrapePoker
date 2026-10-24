@@ -1,20 +1,193 @@
 using OpenScrape.App.Aplication;
+using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
-using OpenScrape.App.Tests.Fixtures;
-using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Enums;
-using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.App.Tests;
 
 /// <summary>
-/// El caso de uso preflop no debe mutar el request que recibe: el llamador puede
-/// reutilizarlo y, sobre todo, un fixture guardado como "entrada" no puede salir
-/// con la respuesta ya horneada.
+/// Escenarios adversos del motor preflop: datos de OCR incompletos (una posición
+/// ausente, un asiento que no existe, un raiser que no coincide con la apuesta).
+/// El motor debe degradar a "sin acción" en vez de lanzar.
 /// </summary>
 [TestFixture]
 public class SetPreflopActionUseCaseTests
 {
+    /// <summary>
+    /// Todos los colaboradores comparten el mismo stub: ninguna rama de estos
+    /// escenarios depende de un escenario persistido concreto.
+    /// </summary>
+    private static SetPreflopActionUseCase CreateUseCase()
+    {
+        var stub = new PreflopUseCasesStub();
+        return new SetPreflopActionUseCase(stub, stub, stub, stub, stub, stub, stub, stub, stub, stub);
+    }
+
+    [Test]
+    public async Task Execute_SinSmallBlindEnElMapa_NoLanzaExcepcion()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.CutOff,
+            CurrentBet = 1m,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.CutOff, Bet = 1m, Active = true },
+                new Player { Name = "P1", Position = TablePosition.Button, Bet = 1m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction()
+        };
+        request.PreflopHeroPosition[TablePosition.CutOff] = new Dictionary<TablePosition, decimal>
+        {
+            [TablePosition.CutOff] = 1m,
+            [TablePosition.Button] = 1m
+        };
+
+        var useCase = CreateUseCase();
+
+        Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
+    }
+
+    [Test]
+    public async Task Execute_HeroEnBigBlindSinAsientoP5_NoLanzaExcepcion()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.BigBlind,
+            CurrentBet = 1m,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.BigBlind, Bet = 1m, Active = true },
+                new Player { Name = "P1", Position = TablePosition.Early, Bet = 0m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction()
+        };
+        request.PreflopHeroPosition[TablePosition.BigBlind] = new Dictionary<TablePosition, decimal>
+        {
+            [TablePosition.BigBlind] = 1m,
+            [TablePosition.Early] = 0m
+        };
+
+        var useCase = CreateUseCase();
+
+        Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
+    }
+
+    [Test]
+    public async Task Execute_SegundaAccionSinRaiserQueCoincida_NoLanzaExcepcion()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.Early,
+            CurrentBet = 3m,
+            HandSituation = HandSituation.Call,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.Early, Bet = 0m, Active = true },
+                new Player { Name = "P1", Position = TablePosition.Button, Bet = 3m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction
+            {
+                Action = "Call",
+                HandSituation = HandSituation.Call,
+                IsSecondAction = true
+            }
+        };
+        request.PreflopHeroPosition[TablePosition.Early] = new Dictionary<TablePosition, decimal>
+        {
+            [TablePosition.Early] = 0m,
+            [TablePosition.Button] = 3m
+        };
+
+        var useCase = CreateUseCase();
+
+        Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
+    }
+    /// <summary>
+    /// El mapa de apuestas se arma recorriendo los jugadores con posición asignada.
+    /// Si el héroe no quedó en ese recorrido, no hay entrada para su posición y el
+    /// motor debe concluir "sin acción" en vez de indexar el diccionario.
+    /// </summary>
+    [Test]
+    public async Task Execute_PosicionDelHeroeFueraDelMapa_DevuelveNone()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.CutOff,
+            CurrentBet = 1m,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.CutOff, Bet = 1m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction()
+        };
+
+        var useCase = CreateUseCase();
+
+        var response = await useCase.Execute(request);
+
+        Assert.That(response.ResponseAction.Action, Is.EqualTo("None"));
+    }
+
+    [Test]
+    public async Task Execute_RaiserSinPosicionEnElMapa_NoLanzaExcepcion()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.Early,
+            CurrentBet = 3m,
+            HandSituation = HandSituation.ThreeBet,
+            Players =
+            [
+                new Player { Name = "P0", Position = TablePosition.Early, Bet = 0m, Active = true },
+                new Player { Name = "P1", Position = TablePosition.Button, Bet = 5m, Active = true }
+            ]
+        };
+
+        var request = new SetPreflopActionUseCaseRequest
+        {
+            PlayerState = state,
+            ResponseAction = new ResponseAction
+            {
+                Action = "Call",
+                HandSituation = HandSituation.ThreeBet,
+                IsSecondAction = true
+            }
+        };
+        request.PreflopHeroPosition[TablePosition.Early] = new Dictionary<TablePosition, decimal>
+        {
+            [TablePosition.Early] = 0m
+        };
+
+        var useCase = CreateUseCase();
+
+        Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
+    }
+
+    /// <summary>
+    /// El caso de uso no debe escribir la respuesta sobre el request recibido:
+    /// un fixture guardado como entrada no puede salir con la decisión ya horneada.
+    /// </summary>
     [Test]
     public async Task Execute_NoMutaElRequest()
     {
@@ -32,12 +205,12 @@ public class SetPreflopActionUseCaseTests
         };
         var request = new SetPreflopActionUseCaseRequest { PlayerState = state };
 
-        var table = new TableDTO
+        var table = new OpenScrape.Domain.Dtos.TableDTO
         {
             Name = "fixture-no-mutacion",
             Positions =
             [
-                new PlayerActionSequence(
+                new OpenScrape.Domain.ValueObjects.PlayerActionSequence(
                     Name: "fixture-no-mutacion",
                     HeroPosition: "Button",
                     OpenRaiser: null,
@@ -48,11 +221,12 @@ public class SetPreflopActionUseCaseTests
                     BetSize: null,
                     IsGreater: null,
                     RaiserFolds: null,
-                    Hands: [new Hand("AK", true, "Raise", 100)])
+                    Hands: [new OpenScrape.Domain.ValueObjects.Hand("AK", true, "Raise", 100)])
             ]
         };
 
-        var sut = PreflopTestCaseBuilder.Create(new FixedRangeStore(table), new FixedRandomProvider(50));
+        var sut = Fixtures.PreflopTestCaseBuilder.Create(
+            new Fixtures.FixedRangeStore(table), new Fixtures.FixedRandomProvider(50));
 
         var response = await sut.Execute(request);
 
@@ -62,4 +236,50 @@ public class SetPreflopActionUseCaseTests
             Assert.That(request.ResponseAction.Action, Is.Null, "El request de entrada quedo mutado");
         });
     }
+}
+
+/// <summary>
+/// Colaborador que devuelve respuestas neutras: deja que el motor siga su curso
+/// sin depender de escenarios persistidos en la base.
+/// </summary>
+internal sealed class PreflopUseCasesStub : IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase,
+    IGetActionHero3BetAndOpenRaiser4BetUseCase,
+    IGetActionVs3BetUseCaseUseCase,
+    IGetActionVs3BetAndCallUseCase,
+    IGetActionSqueezeUseCase,
+    IGetActionOpenRaiseUseCase,
+    IGetActionRaiseOverLimperUseCase,
+    IGetAction3BetUseCase,
+    IGetActionRaiseVsSBLimpUseCase,
+    IGetActionCold4BetUseCase
+{
+    public Task<GetActionHeroCallOpenRaiseAndGetSqueezeResponse> Execute(GetActionHeroCallOpenRaiseAndGetSqueezeRequest request)
+        => Task.FromResult(new GetActionHeroCallOpenRaiseAndGetSqueezeResponse { Action = string.Empty });
+
+    public Task<GetActionHero3BetAndOpenRaiser4BetResponse> Execute(GetActionHero3BetAndOpenRaiser4BetRequest request)
+        => Task.FromResult(new GetActionHero3BetAndOpenRaiser4BetResponse { Action = string.Empty });
+
+    public Task<GetActionVs3BetUseCaseResponse> Execute(GetActionVs3BetUseCaseRequest request)
+        => Task.FromResult(new GetActionVs3BetUseCaseResponse { Action = string.Empty });
+
+    public Task<GetActionVs3BetAndCallUseCaseResponse> Execute(GetActionVs3BetAndCallUseCaseRequest request)
+        => Task.FromResult(new GetActionVs3BetAndCallUseCaseResponse { Action = string.Empty });
+
+    public Task<GetActionSqueezeResponse> Execute(GetActionSqueezeRequest request)
+        => Task.FromResult(new GetActionSqueezeResponse { Action = string.Empty });
+
+    public Task<GetActionOpenRaiseUseCaseResponse> Execute(GetActionOpenRaiseUseCaseRequest request)
+        => Task.FromResult(new GetActionOpenRaiseUseCaseResponse { Action = string.Empty });
+
+    public Task<GetActionRaiseOverLimperUseCaseResponse> Execute(GetActionRaiseOverLimperUseCaseRequest request)
+        => Task.FromResult(new GetActionRaiseOverLimperUseCaseResponse { Action = string.Empty });
+
+    public Task<GetAction3BetUseCaseResponse> Execute(GetAction3BetUseCaseRequest request)
+        => Task.FromResult(new GetAction3BetUseCaseResponse { Action = string.Empty });
+
+    public Task<GetActionRaiseVsSBLimpResponse> Execute(GetActionRaiseVsSBLimpRequest request)
+        => Task.FromResult(new GetActionRaiseVsSBLimpResponse { Action = string.Empty });
+
+    public Task<GetActionCold4BetUseCaseResponse> Execute(GetActionCold4BetUseCaseRequest request)
+        => Task.FromResult(new GetActionCold4BetUseCaseResponse { Action = string.Empty });
 }
