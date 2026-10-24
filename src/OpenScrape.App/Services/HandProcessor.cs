@@ -141,7 +141,13 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         // Ejecutar decision preflop por la puerta unica del motor
         var responseAction = new ResponseAction();
         var decision = await _decisionEngine.DecideAsync(
-            PlayerStateMapper.MapPreflop(state, responseAction.IsSecondAction, villain: null));
+            PlayerStateMapper.MapPreflop(
+                state,
+                responseAction.IsSecondAction,
+                villain: null,
+                preflopBets: preflopHeroPosition.TryGetValue(state.Position, out var heroBets)
+                    ? heroBets
+                    : null));
 
         responseAction.Action = decision.Action;
         if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))

@@ -1072,7 +1072,10 @@ namespace OpenScrape.App
                 PlayerStateMapper.MapPreflop(
                     _playerGameState,
                     _responseAction.IsSecondAction,
-                    villain: null));
+                    villain: null,
+                    preflopBets: _preflopHeroPosition.TryGetValue(_playerGameState.Position, out var heroBets)
+                        ? heroBets
+                        : null));
 
             _responseAction.Action = decision.Action;
             if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))

@@ -13,7 +13,8 @@ public static class PlayerStateMapper
     public static DecisionRequest MapPreflop(
         PlayerGameState state,
         bool isSecondAction,
-        VillainProfile? villain) =>
+        VillainProfile? villain,
+        IReadOnlyDictionary<TablePosition, decimal>? preflopBets = null) =>
         Build(
             state,
             DecisionStreet.Preflop,
@@ -21,7 +22,8 @@ public static class PlayerStateMapper
             isSecondAction,
             new DecisionContext(),
             villain,
-            heroIsAggressor: state.Players.Any(player => player.Name == HeroName && player.WasPreflopAggressor));
+            heroIsAggressor: state.Players.Any(player => player.Name == HeroName && player.WasPreflopAggressor),
+            preflopBets: preflopBets);
 
     public static DecisionRequest MapPostflop(
         PlayerGameState state,
@@ -43,7 +45,8 @@ public static class PlayerStateMapper
         DecisionContext context,
         VillainProfile? villain,
         bool heroIsAggressor,
-        HandSituation? effectiveSituation = null) => new()
+        HandSituation? effectiveSituation = null,
+        IReadOnlyDictionary<TablePosition, decimal>? preflopBets = null) => new()
         {
             Street = street,
             HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
@@ -67,7 +70,8 @@ public static class PlayerStateMapper
             HeroWasPreflopAggressor = heroIsAggressor,
             IsHeroAggressor = heroIsAggressor,
             VillainProfile = villain,
-            Context = context
+            Context = context,
+            PreflopBets = preflopBets ?? new Dictionary<TablePosition, decimal>()
         };
 
     private static int BoardCardsFor(DecisionStreet street) => street switch

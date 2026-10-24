@@ -31,5 +31,9 @@ public sealed record DecisionRequest
 
     public VillainProfile? VillainProfile { get; init; }
     public DecisionContext Context { get; init; } = new();
+
+    /// <summary>Apuestas preflop por posición: reconstruyen raiser, caller y squeezer.</summary>
+    public IReadOnlyDictionary<TablePosition, decimal> PreflopBets { get; init; }
+        = new Dictionary<TablePosition, decimal>();
     public int? MonteCarloIterations { get; init; }
 }
