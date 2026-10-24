@@ -9,6 +9,7 @@ using OpenScrape.App.Configuration;
 using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Http;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
@@ -16,9 +17,7 @@ using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
-using OpenScrape.Domain;
 using OpenScrape.Domain.Exceptions;
-using OpenScrape.Domain;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
@@ -171,7 +170,21 @@ namespace OpenScrape.App
                     services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
                     services.AddScoped<SetPreflopActionUseCase>(sp => (SetPreflopActionUseCase)sp.GetRequiredService<ISetPreflopActionUseCase>());
                     services.AddScoped<PostflopDecisionEngine>();
-                    services.AddScoped<IDecisionEngine, LocalDecisionEngine>();
+                    var remoteEngineEnabled = context.Configuration.GetValue<bool>("RemoteEngine:Enabled");
+                    if (remoteEngineEnabled)
+                    {
+                        var apiBaseUrl = context.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
+                        services.AddSingleton(new HttpClient
+                        {
+                            BaseAddress = new Uri(apiBaseUrl),
+                            Timeout = TimeSpan.FromSeconds(1.5)
+                        });
+                        services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
+                    }
+                    else
+                    {
+                        services.AddScoped<IDecisionEngine, LocalDecisionEngine>();
+                    }
                     services.AddScoped<IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase, GetActionHeroCallOpenRaiseAndGetSqueezeUseCase>();
                     services.AddScoped<IGetActionHero3BetAndOpenRaiser4BetUseCase, GetActionHero3BetAndOpenRaiser4BetUseCase>();
                     services.AddScoped<IGetActionVs3BetUseCaseUseCase, GetActionVs3BetUseCaseUseCase>();

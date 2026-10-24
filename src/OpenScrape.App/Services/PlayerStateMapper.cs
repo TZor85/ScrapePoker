@@ -1,0 +1,85 @@
+using OpenScrape.Contracts;
+using OpenScrape.Domain.Entities;
+using OpenScrape.Domain.Enums;
+
+namespace OpenScrape.App.Services;
+
+/// <summary>
+/// Traduce el estado de mesa al contrato crudo. Manda hechos (cartas, pozo,
+/// stacks, contexto); el servidor deriva equity, outs, textura y pot odds.
+/// </summary>
+public static class PlayerStateMapper
+{
+    public static DecisionRequest MapPreflop(
+        PlayerGameState state,
+        bool isSecondAction,
+        VillainProfile? villain) =>
+        Build(
+            state,
+            DecisionStreet.Preflop,
+            maxBet: state.CurrentBet,
+            isSecondAction,
+            new DecisionContext(),
+            villain,
+            heroIsAggressor: state.Players.Any(player => player.Name == HeroName && player.WasPreflopAggressor));
+
+    public static DecisionRequest MapPostflop(
+        PlayerGameState state,
+        DecisionStreet street,
+        decimal maxBet,
+        DecisionContext context,
+        VillainProfile? villain,
+        bool heroIsAggressor) =>
+        Build(state, street, maxBet, isSecondAction: false, context, villain, heroIsAggressor);
+
+    private const string HeroName = "P0";
+
+    private static DecisionRequest Build(
+        PlayerGameState state,
+        DecisionStreet street,
+        decimal maxBet,
+        bool isSecondAction,
+        DecisionContext context,
+        VillainProfile? villain,
+        bool heroIsAggressor) => new()
+    {
+        Street = street,
+        HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
+        HeroCard2 = new CardRef(state.HoleCard2Rank, state.HoleCard2Suit),
+        Board = state.BoardCards
+            .Select(card => new CardRef(card.Force, card.Suit))
+            .ToList(),
+        PotSize = state.PotSize,
+        BetToCall = maxBet,
+        HeroStack = state.HeroStack,
+        VillainStack = VillainStack(state),
+        IsInPosition = state.IsInPosition,
+        NumOpponents = Math.Max(0, state.Players.Count(player => player.Active) - 1),
+        HeroPosition = state.Position,
+        VillainPosition = Villain(state)?.Position ?? TablePosition.None,
+        HandSituation = state.HandSituation,
+        IsSecondAction = isSecondAction,
+        HeroWasPreflopAggressor = heroIsAggressor,
+        IsHeroAggressor = heroIsAggressor,
+        VillainProfile = villain,
+        Context = context
+    };
+
+    private static Player? Villain(PlayerGameState state) => state.Players
+        .Where(player => player.Active && !string.IsNullOrEmpty(player.Name) && player.Name != HeroName)
+        .OrderByDescending(player => player.Bet)
+        .FirstOrDefault();
+
+    private static decimal VillainStack(PlayerGameState state)
+    {
+        var candidates = state.Players
+            .Where(player => player.Active && player.Name != null && player.Name != HeroName)
+            .ToList();
+
+        if (candidates.Count == 0)
+            return state.HeroStack;
+
+        var stack = candidates.Max(player => player.Stack);
+        return stack <= 0 && state.HeroStack > 0 ? state.HeroStack : stack;
+    }
+}
