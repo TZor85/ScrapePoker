@@ -1,10 +1,12 @@
+using OpenScrape.Domain.Enums;
+
 namespace OpenScrape.App.Tests.Fixtures;
 
 [TestFixture]
 public class PostflopFixtureReplayTests
 {
     [Test]
-    public void Replay_CadaEscenarioFlop_CoincideConLaAccionEsperada()
+    public void Replay_CadaEscenario_CoincideConLaDecisionEsperada()
     {
         // Arrange
         var profile = StrategyProfileFixture.LoadOrCreate();
@@ -17,14 +19,21 @@ public class PostflopFixtureReplayTests
         {
             foreach (var fixture in fixtures)
             {
-                var (action, equity) = PostflopDecisionRunner.Run(
+                var street = Enum.Parse<BoardPosition>(fixture.Street, ignoreCase: true);
+                var snapshot = PostflopDecisionRunner.RunStreet(
                     profile,
                     fixture.State,
                     fixture.MaxBet,
-                    fixture.MonteCarloSeed);
+                    fixture.MonteCarloSeed,
+                    street);
 
-                Assert.That(action, Is.EqualTo(fixture.ExpectedAction), fixture.Id);
-                Assert.That(equity, Is.EqualTo(fixture.ExpectedEquity).Within(0.1), fixture.Id);
+                Assert.That(snapshot.Action, Is.EqualTo(fixture.ExpectedAction), fixture.Id);
+                Assert.That(snapshot.Equity, Is.EqualTo(fixture.ExpectedEquity).Within(0.1), fixture.Id);
+                Assert.That(snapshot.Reason, Is.EqualTo(fixture.ExpectedReason), fixture.Id);
+                Assert.That(snapshot.BoardTexture, Is.EqualTo(fixture.ExpectedBoardTexture), fixture.Id);
+                Assert.That(snapshot.IsBluff, Is.EqualTo(fixture.ExpectedIsBluff), fixture.Id);
+                Assert.That(snapshot.IsBarrel, Is.EqualTo(fixture.ExpectedIsBarrel), fixture.Id);
+                Assert.That(snapshot.IsCheckRaise, Is.EqualTo(fixture.ExpectedIsCheckRaise), fixture.Id);
             }
         });
     }

@@ -95,5 +95,10 @@
   "MaxBet": 0,
   "ExpectedAction": "Bet Pot (Value)",
   "ExpectedEquity": 97.354,
-  "MonteCarloSeed": 20261023
+  "MonteCarloSeed": 20261023,
+  "ExpectedReason": "Bet \u2014 strong value (ThreeOfAKind)",
+  "ExpectedBoardTexture": "Dry",
+  "ExpectedIsBluff": false,
+  "ExpectedIsBarrel": false,
+  "ExpectedIsCheckRaise": false
 }

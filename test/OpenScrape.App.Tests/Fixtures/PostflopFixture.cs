@@ -15,7 +15,12 @@ internal sealed record PostflopFixture(
     decimal MaxBet,
     string ExpectedAction,
     double ExpectedEquity,
-    int MonteCarloSeed);
+    int MonteCarloSeed,
+    string? ExpectedReason = null,
+    string? ExpectedBoardTexture = null,
+    bool ExpectedIsBluff = false,
+    bool ExpectedIsBarrel = false,
+    bool ExpectedIsCheckRaise = false);
 
 internal static class PostflopFixtureStore
 {
@@ -26,9 +31,9 @@ internal static class PostflopFixtureStore
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public static IReadOnlyList<PostflopFixture> LoadAll()
+    public static IReadOnlyList<PostflopFixture> LoadAll(string? directory = null)
     {
-        var directory = Directory.Exists(FixturePaths.Postflop) && Directory.GetFiles(FixturePaths.Postflop, "*.json").Length > 0
+        directory ??= Directory.Exists(FixturePaths.Postflop) && Directory.GetFiles(FixturePaths.Postflop, "*.json").Length > 0
             ? FixturePaths.Postflop
             : FixturePaths.SourcePostflop;
 

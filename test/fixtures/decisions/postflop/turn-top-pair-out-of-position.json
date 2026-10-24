@@ -1,0 +1,111 @@
+{
+  "Id": "turn-top-pair-out-of-position",
+  "Street": "Turn",
+  "State": {
+    "IsDealer": false,
+    "PotSize": 16,
+    "HoleCard1Face": "",
+    "HoleCard2Face": "",
+    "HoleCard1Rank": 12,
+    "HoleCard2Rank": 10,
+    "HoleCard1Suit": 1,
+    "HoleCard2Suit": 4,
+    "Kicker": 0,
+    "IsInPosition": false,
+    "Position": "None",
+    "CurrentBet": 0,
+    "HeroStack": 84,
+    "HandSituation": "Call",
+    "Players": [
+      {
+        "Name": "P0",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 84,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 0,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P1",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 1,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P2",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 2,
+        "WasPreflopAggressor": false
+      }
+    ],
+    "BoardCards": [
+      {
+        "Name": "King",
+        "Force": 13,
+        "Suit": 4,
+        "Position": "Flop",
+        "Location": 1
+      },
+      {
+        "Name": "Queen",
+        "Force": 12,
+        "Suit": 3,
+        "Position": "Flop",
+        "Location": 2
+      },
+      {
+        "Name": "Seven",
+        "Force": 7,
+        "Suit": 1,
+        "Position": "Flop",
+        "Location": 3
+      },
+      {
+        "Name": "Two",
+        "Force": 2,
+        "Suit": 2,
+        "Position": "Turn",
+        "Location": 4
+      }
+    ],
+    "HavePocketPair": false,
+    "IsSuited": false
+  },
+  "MaxBet": 8,
+  "ExpectedAction": "Check",
+  "ExpectedEquity": 56.16010854816905,
+  "MonteCarloSeed": 20261023,
+  "ExpectedReason": "Check \u2014 thin value OOP (showdown)",
+  "ExpectedBoardTexture": "Coordinated",
+  "ExpectedIsBluff": false,
+  "ExpectedIsBarrel": false,
+  "ExpectedIsCheckRaise": false
+}

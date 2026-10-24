@@ -1,12 +1,12 @@
 using OpenScrape.App.Entities;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Tests.Fixtures;
 
 /// <summary>
 /// Genera los fixtures postflop desde el comportamiento actual. No corre en CI:
-/// se ejecuta a mano con <c>-- NUnit.ExplicitMode=Include</c> cuando cambia el motor
-/// a propósito y hay que re-congelar el contrato.
+/// se ejecuta a mano cuando cambia el motor a propósito y hay que re-congelar el contrato.
 /// </summary>
 [TestFixture]
 [Explicit("Genera fixtures: ejecutar a mano cuando se acepte un cambio de comportamiento")]
@@ -15,7 +15,7 @@ public class PostflopFixtureGeneratorTests
     private const int Seed = 20261023;
 
     [Test]
-    public void Generate_EscenariosFlop_EscribeUnJsonPorEscenario()
+    public void Generate_Escenarios_EscribeUnJsonPorEscenario()
     {
         // Arrange
         var profile = StrategyProfileFixture.LoadOrCreate();
@@ -26,10 +26,10 @@ public class PostflopFixtureGeneratorTests
             PostflopFixtureStore.Save(fixture);
 
         // Assert
-        Assert.That(PostflopFixtureStore.LoadAll(), Has.Count.EqualTo(4));
+        Assert.That(PostflopFixtureStore.LoadAll(FixturePaths.SourcePostflop), Has.Count.EqualTo(7));
     }
 
-    private static IEnumerable<PostflopFixture> BuildFixtures(OpenScrape.Domain.Entities.StrategyProfile profile)
+    private static IEnumerable<PostflopFixture> BuildFixtures(StrategyProfile profile)
     {
         yield return CreateFixture(
             "flop-set-in-position",
@@ -41,6 +41,7 @@ public class PostflopFixtureGeneratorTests
                 pot: 10m,
                 heroStack: 90m),
             maxBet: 0m,
+            BoardPosition.Flop,
             profile);
 
         yield return CreateFixture(
@@ -53,6 +54,7 @@ public class PostflopFixtureGeneratorTests
                 pot: 12m,
                 heroStack: 88m),
             maxBet: 6m,
+            BoardPosition.Flop,
             profile);
 
         yield return CreateFixture(
@@ -65,6 +67,7 @@ public class PostflopFixtureGeneratorTests
                 pot: 15m,
                 heroStack: 85m),
             maxBet: 10m,
+            BoardPosition.Flop,
             profile);
 
         yield return CreateFixture(
@@ -77,6 +80,58 @@ public class PostflopFixtureGeneratorTests
                 pot: 8m,
                 heroStack: 92m),
             maxBet: 0m,
+            BoardPosition.Flop,
+            profile);
+
+        yield return CreateFixture(
+            "turn-top-pair-out-of-position",
+            State(
+                hole: [(Rank.Queen, Suit.Clubs), (Rank.Ten, Suit.Spades)],
+                board:
+                [
+                    (Rank.King, Suit.Spades), (Rank.Queen, Suit.Diamonds),
+                    (Rank.Seven, Suit.Clubs), (Rank.Two, Suit.Hearts)
+                ],
+                situation: HandSituation.Call,
+                inPosition: false,
+                pot: 16m,
+                heroStack: 84m),
+            maxBet: 8m,
+            BoardPosition.Turn,
+            profile);
+
+        yield return CreateFixture(
+            "river-bluff-catcher",
+            State(
+                hole: [(Rank.Ace, Suit.Hearts), (Rank.Five, Suit.Hearts)],
+                board:
+                [
+                    (Rank.King, Suit.Hearts), (Rank.Nine, Suit.Hearts),
+                    (Rank.Four, Suit.Hearts), (Rank.Two, Suit.Clubs), (Rank.Eight, Suit.Spades)
+                ],
+                situation: HandSituation.Call,
+                inPosition: false,
+                pot: 24m,
+                heroStack: 76m),
+            maxBet: 20m,
+            BoardPosition.River,
+            profile);
+
+        yield return CreateFixture(
+            "river-second-pair",
+            State(
+                hole: [(Rank.Queen, Suit.Clubs), (Rank.Jack, Suit.Diamonds)],
+                board:
+                [
+                    (Rank.Queen, Suit.Spades), (Rank.Eight, Suit.Hearts),
+                    (Rank.Three, Suit.Clubs), (Rank.Five, Suit.Diamonds), (Rank.King, Suit.Spades)
+                ],
+                situation: HandSituation.Call,
+                inPosition: true,
+                pot: 30m,
+                heroStack: 70m),
+            maxBet: 15m,
+            BoardPosition.River,
             profile);
     }
 
@@ -84,12 +139,26 @@ public class PostflopFixtureGeneratorTests
         string id,
         PlayerGameState state,
         decimal maxBet,
-        OpenScrape.Domain.Entities.StrategyProfile profile)
+        BoardPosition street,
+        StrategyProfile profile)
     {
-        var (action, equity) = PostflopDecisionRunner.Run(
-            profile, state, maxBet, Seed,
+        var snapshot = PostflopDecisionRunner.RunStreet(
+            profile, state, maxBet, Seed, street,
             calculationLogger: new TestLogger<OpenScrape.App.Aplication.UseCases.UnifiedPokerCalculator>());
-        return new PostflopFixture(id, "Flop", state, maxBet, action, equity, Seed);
+
+        return new PostflopFixture(
+            id,
+            street.ToString(),
+            state,
+            maxBet,
+            snapshot.Action,
+            snapshot.Equity,
+            Seed,
+            snapshot.Reason,
+            snapshot.BoardTexture,
+            snapshot.IsBluff,
+            snapshot.IsBarrel,
+            snapshot.IsCheckRaise);
     }
 
     private static PlayerGameState State(
@@ -122,10 +191,14 @@ public class PostflopFixtureGeneratorTests
                     Name = card.Rank.ToString(),
                     Force = (int)card.Rank,
                     Suit = (int)card.Suit,
-                    Position = BoardPosition.Flop,
+                    Position = index < 3
+                        ? BoardPosition.Flop
+                        : index == 3 ? BoardPosition.Turn : BoardPosition.River,
                     Location = index + 1
                 })
                 .ToList()
         };
     }
 }
+
+

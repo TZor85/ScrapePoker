@@ -1,0 +1,118 @@
+{
+  "Id": "river-second-pair",
+  "Street": "River",
+  "State": {
+    "IsDealer": false,
+    "PotSize": 30,
+    "HoleCard1Face": "",
+    "HoleCard2Face": "",
+    "HoleCard1Rank": 12,
+    "HoleCard2Rank": 11,
+    "HoleCard1Suit": 1,
+    "HoleCard2Suit": 3,
+    "Kicker": 0,
+    "IsInPosition": true,
+    "Position": "None",
+    "CurrentBet": 0,
+    "HeroStack": 70,
+    "HandSituation": "Call",
+    "Players": [
+      {
+        "Name": "P0",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 70,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 0,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P1",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 1,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P2",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 2,
+        "WasPreflopAggressor": false
+      }
+    ],
+    "BoardCards": [
+      {
+        "Name": "Queen",
+        "Force": 12,
+        "Suit": 4,
+        "Position": "Flop",
+        "Location": 1
+      },
+      {
+        "Name": "Eight",
+        "Force": 8,
+        "Suit": 2,
+        "Position": "Flop",
+        "Location": 2
+      },
+      {
+        "Name": "Three",
+        "Force": 3,
+        "Suit": 1,
+        "Position": "Flop",
+        "Location": 3
+      },
+      {
+        "Name": "Five",
+        "Force": 5,
+        "Suit": 3,
+        "Position": "Turn",
+        "Location": 4
+      },
+      {
+        "Name": "King",
+        "Force": 13,
+        "Suit": 4,
+        "Position": "River",
+        "Location": 5
+      }
+    ],
+    "HavePocketPair": false,
+    "IsSuited": false
+  },
+  "MaxBet": 15,
+  "ExpectedAction": "Bet 1/3 (Value)",
+  "ExpectedEquity": 59.321372854914166,
+  "MonteCarloSeed": 20261023,
+  "ExpectedReason": "Bet \u2014 value (merged sizing)",
+  "ExpectedBoardTexture": "Coordinated",
+  "ExpectedIsBluff": false,
+  "ExpectedIsBarrel": false,
+  "ExpectedIsCheckRaise": false
+}

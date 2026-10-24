@@ -95,5 +95,10 @@
   "MaxBet": 0,
   "ExpectedAction": "Bet 2/3 (Value)",
   "ExpectedEquity": 63.766999999999996,
-  "MonteCarloSeed": 20261023
+  "MonteCarloSeed": 20261023,
+  "ExpectedReason": "Bet \u2014 value (blocker, sizing mayor)",
+  "ExpectedBoardTexture": "Dry",
+  "ExpectedIsBluff": false,
+  "ExpectedIsBarrel": false,
+  "ExpectedIsCheckRaise": false
 }
