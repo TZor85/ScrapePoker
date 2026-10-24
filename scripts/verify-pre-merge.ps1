@@ -129,8 +129,8 @@ if ($preflopCount -eq 0 -or $postflopCount -eq 0) {
         Status = "FAIL"
         Error = "Faltan fixtures (preflop=$preflopCount, postflop=$postflopCount). Correr los generadores [Explicit]."
     }
-} elseif ($preflopCount -lt 7 -or $postflopCount -lt 4) {
-    Write-Host "  Aviso: se esperaban al menos 7 preflop y 4 postflop" -ForegroundColor Yellow
+} elseif ($preflopCount -lt 8 -or $postflopCount -lt 7) {
+    Write-Host "  Aviso: se esperaban al menos 8 preflop y 7 postflop" -ForegroundColor Yellow
     $script:results += @{ Name = "Fixtures de paridad"; Status = "INFO" }
 } else {
     $script:results += @{ Name = "Fixtures de paridad"; Status = "PASS" }
