@@ -18,6 +18,7 @@ namespace OpenScrape.App.Services;
 public class GameCoordinator : IGameCoordinator
 {
     private readonly IPostflopDecisionService _postflopDecisionService;
+    private readonly PostflopDecisionEngine _postflopEngine;
     private readonly IOpponentTracker _opponentTracker;
     private readonly IBoardTextureAnalyzer _boardTextureAnalyzer;
     private readonly IBetSizingService _betSizingService;
@@ -45,6 +46,7 @@ public class GameCoordinator : IGameCoordinator
         IPostflopContextHolder contextHolder)
     {
         _postflopDecisionService = postflopDecisionService;
+        _postflopEngine = new PostflopDecisionEngine(postflopDecisionService);
         _opponentTracker = opponentTracker;
         _boardTextureAnalyzer = boardTextureAnalyzer;
         _betSizingService = betSizingService;
@@ -378,34 +380,29 @@ public class GameCoordinator : IGameCoordinator
         double rawEquity = flopResult.EquityPercentage;
         double effectiveEquity = ClampEquity(rawEquity + cbetAdjustment);
 
-        var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+        var engineResult = _postflopEngine.Decide(new PostflopEngineRequest
         {
-            Equity = effectiveEquity,
+            State = state,
+            Result = flopResult,
             Street = BoardPosition.Flop,
             Situation = effectiveSituation,
             BoardTexture = texture,
-            IsInPosition = inPosition,
             VillainBetSize = betSize,
-            PotOdds = flopResult.PotOddsPercentage,
-            TotalOuts = flopResult.TotalOuts,
-            EffectiveOuts = flopResult.EffectiveOuts,  // S22.1
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
-            HeroStack = state.HeroStack,
-            PotSize = potSize,
-            HasFlushDraw = flopResult.DrawTypes.Contains("Flush Draw"),
-            NumOpponents = numOpponents,
-            HeroIsAggressor = isPreflopAggressor,
-            HeroHandRank = flopResult.HeroHandRank,
-            HasComboDraw = flopResult.HasComboDraw,
-            PairClassification = flopResult.PairType,
+            IsDonkBet = isDonkBet,
+            CbetAdjustment = cbetAdjustment,
             FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), flopResult.FoldEquity),
             VillainType = GetVillainType(state, inPosition),
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
-            HeroKickerStrength = flopResult.HeroKickerStrength,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
-            IsAnyoneAllIn = _contextHolder.Current.IsAnyoneAllIn
+            HeroIsAggressor = isPreflopAggressor,
+            IsAnyoneAllIn = _contextHolder.Current.IsAnyoneAllIn,
+            HasFlushDraw = flopResult.DrawTypes.Contains("Flush Draw"),
+            NumOpponents = numOpponents
         });
+        var decision = engineResult.Decision;
+        effectiveEquity = engineResult.EffectiveEquity;
 
         TrackVillainPostflopAction(state, maxBet, isPreflopAggressor, inPosition);
 
@@ -518,40 +515,33 @@ public class GameCoordinator : IGameCoordinator
         var turnCtx = _contextHolder.Current;
         bool turnIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || turnCtx.HeroBetFlop;
 
-        var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+        var decision = _postflopEngine.Decide(new PostflopEngineRequest
         {
-            Equity = equity,
+            State = state,
+            Result = turnResult,
             Street = BoardPosition.Turn,
             Situation = effectiveSituation,
             BoardTexture = texture,
-            IsInPosition = inPosition,
             VillainBetSize = betSize,
-            PotOdds = turnResult.PotOddsPercentage,
-            TotalOuts = turnResult.TotalOuts,
-            EffectiveOuts = turnResult.EffectiveOuts,  // S22.1
-            PreviousStreetBet = turnCtx.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
+            IsDonkBet = isDonkBet,
+            CbetAdjustment = 0,
+            PreviousStreetBet = turnCtx.PreviousStreetWasBet,
             HeroBlocksDangerSuit = heroBlocks,
-            HeroStack = state.HeroStack,
-            PotSize = potSize,
             HasFlushDraw = turnResult.DrawTypes.Contains("Flush Draw"),
             NumOpponents = numOpponents,
             HeroIsAggressor = turnIsAggressor,
-            HeroHandRank = turnResult.HeroHandRank,
-            HasComboDraw = turnResult.HasComboDraw,
             VillainAggressorCheckedPreviousStreet = turnCtx.VillainAggressorCheckedFlop,
             VillainBarreling = turnCtx.VillainBetFlop && maxBet > 0,
-            PairClassification = turnResult.PairType,
             FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), turnResult.FoldEquity),
             VillainBetSizeFlop = turnCtx.VillainBetSizeFlop,
             VillainType = GetVillainType(state, inPosition),
             HeroFloatedFlop = turnCtx.HeroFloatedFlop,
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
-            HeroKickerStrength = turnResult.HeroKickerStrength,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
             IsAnyoneAllIn = turnCtx.IsAnyoneAllIn
-        });
+        }).Decision;
 
         TrackVillainPostflopAction(state, maxBet, turnIsAggressor, inPosition);
 
@@ -683,43 +673,36 @@ public class GameCoordinator : IGameCoordinator
         bool riverIsAggressor = PreflopAnalyzer.IsPreflopAggressor(effectiveSituation) || riverCtx.HeroBetFlop || riverCtx.HeroBetTurn;
         var riverCardType = _boardTextureAnalyzer.ClassifyRiverCard(boardChange);  // S22.2
 
-        var decision = _postflopDecisionService.DetermineAction(new PostflopDecisionInput
+        var decision = _postflopEngine.Decide(new PostflopEngineRequest
         {
-            Equity = equity,
+            State = state,
+            Result = riverResult,
             Street = BoardPosition.River,
             Situation = effectiveSituation,
             BoardTexture = texture,
-            IsInPosition = inPosition,
             VillainBetSize = betSize,
-            PotOdds = riverResult.PotOddsPercentage,
-            TotalOuts = riverResult.TotalOuts,
-            EffectiveOuts = riverResult.EffectiveOuts,  // S22.1
-            RiverCardType = riverCardType,               // S22.2
+            RiverCardType = riverCardType,
             PreviousStreetBet = riverCtx.PreviousStreetWasBet,
             VillainShowedAggression = villainAggro,
             BoardChange = boardChange,
+            IsDonkBet = isDonkBet,
+            CbetAdjustment = 0,
             HeroBlocksDangerSuit = heroBlocks,
-            HeroStack = state.HeroStack,
-            PotSize = potSize,
             HasFlushDraw = riverResult.DrawTypes.Contains("Flush Draw"),
             NumOpponents = numOpponents,
             HeroIsAggressor = riverIsAggressor,
-            HeroHandRank = riverResult.HeroHandRank,
-            HasComboDraw = riverResult.HasComboDraw,
             VillainAggressorCheckedPreviousStreet = !riverCtx.VillainBetTurn && !riverIsAggressor,
             VillainBarreling = riverCtx.VillainBetTurn && maxBet > 0,
-            PairClassification = riverResult.PairType,
             FoldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), riverResult.FoldEquity),
             VillainBetSizeTurn = riverCtx.VillainBetSizeTurn,
             VillainCheckedMiddleStreet = riverCtx.VillainCheckedMiddleStreet,
             VillainType = GetVillainType(state, inPosition),
             VillainFoldToBetPct = _opponentTracker.GetFoldToBetPct(GetActiveVillainId(state)),
-            HeroKickerStrength = riverResult.HeroKickerStrength,
             TurnCalledWithFlushDanger = riverCtx.TurnCalledWithFlushDanger,
             HeroBlocksTopCard = HeroBlocksTopBoardCard(state),
             HeroCheckedAllStreets = riverCtx.HeroCheckedAllStreets,
             IsAnyoneAllIn = riverCtx.IsAnyoneAllIn
-        });
+        }).Decision;
 
         if (maxBet > 0)
             _opponentTracker.RecordPostflopAction(GetActiveVillainId(state), PostflopAction.Bet);
