@@ -51,7 +51,11 @@ Test-Checkpoint "Format" {
 # Se usa el exit code y no el texto: la salida del CLI esta localizada y un
 # patron en ingles ("Passed!") no matchea en un sistema en espanol.
 Test-Checkpoint "Tests" {
-    dotnet test OpenScrape.sln --no-build --verbosity quiet 2>&1 | Out-Null
+    # Sin --no-build a proposito: el checkpoint anterior compila Release con
+    # --no-incremental y reescribe archivos de obj/ que el test con --no-build
+    # lee a la vez, lo que produjo un fallo intermitente. Un build incremental
+    # aca cuesta segundos y garantiza que el binario probado sea el actual.
+    dotnet test OpenScrape.sln --verbosity quiet 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Tests failed (exit $LASTEXITCODE)" }
 }
 
@@ -110,6 +114,27 @@ if (-not $baselineRef) {
     $csprojChanged | ForEach-Object { Write-Host "    $_" }
 }
 $script:results += @{ Name = "csproj diff (informativo, no falla)"; Status = "INFO" }
+
+# Checkpoint de paridad: los fixtures congelan la decision del motor antes de
+# moverlo a la API. Si desaparecen, el replay de la suite no tiene contrato que
+# comparar y la paridad de las fases siguientes queda sin evidencia.
+Write-Host "=== Fixtures de paridad ===" -ForegroundColor Cyan
+$preflopCount = @(Get-ChildItem "test/fixtures/decisions/preflop" -Filter "*.json" -ErrorAction SilentlyContinue).Count
+$postflopCount = @(Get-ChildItem "test/fixtures/decisions/postflop" -Filter "*.json" -ErrorAction SilentlyContinue).Count
+Write-Host ("  preflop: {0}  |  postflop: {1}" -f $preflopCount, $postflopCount)
+
+if ($preflopCount -eq 0 -or $postflopCount -eq 0) {
+    $script:results += @{
+        Name = "Fixtures de paridad"
+        Status = "FAIL"
+        Error = "Faltan fixtures (preflop=$preflopCount, postflop=$postflopCount). Correr los generadores [Explicit]."
+    }
+} elseif ($preflopCount -lt 7 -or $postflopCount -lt 4) {
+    Write-Host "  Aviso: se esperaban al menos 7 preflop y 4 postflop" -ForegroundColor Yellow
+    $script:results += @{ Name = "Fixtures de paridad"; Status = "INFO" }
+} else {
+    $script:results += @{ Name = "Fixtures de paridad"; Status = "PASS" }
+}
 
 # Checkpoint 7: Smoke test (optional)
 if (-not $SkipSmoke) {
