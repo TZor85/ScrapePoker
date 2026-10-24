@@ -34,4 +34,8 @@
   <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.DecisionMaker.Postflop" /><Using Include="OpenScrape.DecisionMaker.Preflop" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OpenScrape.Contracts\OpenScrape.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
