@@ -2,9 +2,9 @@
   "Id": "raise-over-limper-aks",
   "Request": {
     "ResponseAction": {
-      "Action": "Raise",
-      "HandSituation": "RaiseOverLimper",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,

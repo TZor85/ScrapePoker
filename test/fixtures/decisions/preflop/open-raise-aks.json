@@ -2,9 +2,9 @@
   "Id": "open-raise-aks",
   "Request": {
     "ResponseAction": {
-      "Action": "Raise",
-      "HandSituation": "OpenRaise",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,
@@ -64,12 +64,18 @@
             "Suited": true,
             "Action": "Raise",
             "Name": "AK",
-            "Percentage": 100
+            "Percentage": 60
+          },
+          {
+            "Suited": true,
+            "Action": "Call",
+            "Name": "AK",
+            "Percentage": 40
           }
         ]
       }
     ]
   },
-  "RandomNumber": 50,
+  "RandomNumber": 30,
   "ExpectedAction": "Raise"
 }

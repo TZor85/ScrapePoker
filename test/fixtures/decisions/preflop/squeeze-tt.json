@@ -2,9 +2,9 @@
   "Id": "squeeze-tt",
   "Request": {
     "ResponseAction": {
-      "Action": "Raise",
-      "HandSituation": "Squeeze",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,

@@ -58,8 +58,13 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(request.PlayerState);
 
-        var playerState = request.PlayerState;
-        var responseAction = request.ResponseAction;
+        var playerState = request.PlayerState.Clone();
+        var responseAction = new ResponseAction
+        {
+            Action = request.ResponseAction.Action,
+            HandSituation = request.ResponseAction.HandSituation,
+            IsSecondAction = request.ResponseAction.IsSecondAction
+        };
 
         // El mapa se arma recorriendo los jugadores con posición asignada: si el héroe
         // no quedó en ese recorrido, su posición no existe como clave.

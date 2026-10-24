@@ -48,7 +48,7 @@ public class PreflopFixtureGeneratorTests
         }
 
         TestContext.Progress.WriteLine(string.Join(Environment.NewLine, generated));
-        Assert.That(generated, Has.Count.EqualTo(7));
+        Assert.That(generated, Has.Count.EqualTo(8));
     }
 
     private static IReadOnlyList<PreflopFixture> BuildScenarios()
@@ -58,8 +58,17 @@ public class PreflopFixtureGeneratorTests
             new PreflopFixture(
                 "open-raise-aks",
                 CreateRequest(TablePosition.Button, "AKs", new Dictionary<TablePosition, decimal>()),
-                CreateTable("fx-open-raise-aks", "Button", hands: [new Hand("AK", true, "Raise", 100)]),
-                RandomNumber,
+                CreateTable("fx-open-raise-aks", "Button",
+                    hands: [new Hand("AK", true, "Raise", 60), new Hand("AK", true, "Call", 40)]),
+                30,
+                string.Empty),
+
+            new PreflopFixture(
+                "open-raise-aks-call",
+                CreateRequest(TablePosition.Button, "AKs", new Dictionary<TablePosition, decimal>()),
+                CreateTable("fx-open-raise-aks", "Button",
+                    hands: [new Hand("AK", true, "Raise", 60), new Hand("AK", true, "Call", 40)]),
+                70,
                 string.Empty),
 
             new PreflopFixture(

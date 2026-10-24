@@ -2,9 +2,9 @@
   "Id": "three-bet-qq",
   "Request": {
     "ResponseAction": {
-      "Action": "Raise",
-      "HandSituation": "ThreeBet",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,

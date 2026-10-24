@@ -2,9 +2,9 @@
   "Id": "open-raise-72o",
   "Request": {
     "ResponseAction": {
-      "Action": "Fold",
-      "HandSituation": "OpenRaise",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,

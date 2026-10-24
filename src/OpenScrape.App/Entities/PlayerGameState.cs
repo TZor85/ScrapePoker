@@ -40,6 +40,30 @@ namespace OpenScrape.App.Entities
         // Computed properties
         public bool HavePocketPair => HoleCard1Rank == HoleCard2Rank;
         public bool IsSuited => HoleCard1Suit == HoleCard2Suit;
+
+        /// <summary>
+        /// Copia del estado para no mutar el objeto del llamador.
+        /// Las listas se copian; sus elementos se comparten (no se mutan en el flujo preflop).
+        /// </summary>
+        public PlayerGameState Clone() => new()
+        {
+            IsDealer = IsDealer,
+            PotSize = PotSize,
+            HoleCard1Face = HoleCard1Face,
+            HoleCard2Face = HoleCard2Face,
+            HoleCard1Rank = HoleCard1Rank,
+            HoleCard2Rank = HoleCard2Rank,
+            HoleCard1Suit = HoleCard1Suit,
+            HoleCard2Suit = HoleCard2Suit,
+            Kicker = Kicker,
+            IsInPosition = IsInPosition,
+            Position = Position,
+            CurrentBet = CurrentBet,
+            HeroStack = HeroStack,
+            HandSituation = HandSituation,
+            Players = [.. Players],
+            BoardCards = [.. BoardCards]
+        };
     }
 
 

@@ -28,9 +28,9 @@ internal static class PreflopFixtureStore
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public static IReadOnlyList<PreflopFixture> LoadAll()
+    public static IReadOnlyList<PreflopFixture> LoadAll(string? directory = null)
     {
-        var directory = FixturePaths.Preflop;
+        directory ??= FixturePaths.Preflop;
         if (!Directory.Exists(directory))
             return [];
 

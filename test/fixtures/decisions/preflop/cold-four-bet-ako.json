@@ -2,9 +2,9 @@
   "Id": "cold-four-bet-ako",
   "Request": {
     "ResponseAction": {
-      "Action": "Raise",
-      "HandSituation": "Cold4Bet",
-      "IsSecondAction": true
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
     },
     "PlayerState": {
       "IsDealer": false,

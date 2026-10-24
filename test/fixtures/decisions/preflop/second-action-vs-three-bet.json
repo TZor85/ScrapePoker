@@ -3,8 +3,8 @@
   "Request": {
     "ResponseAction": {
       "Action": "Raise",
-      "HandSituation": "OpenRaiseVs3Bet",
-      "IsSecondAction": false
+      "HandSituation": "None",
+      "IsSecondAction": true
     },
     "PlayerState": {
       "IsDealer": false,
