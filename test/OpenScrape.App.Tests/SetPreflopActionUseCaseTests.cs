@@ -1,5 +1,4 @@
 using OpenScrape.App.Aplication;
-using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
 using OpenScrape.Domain.Enums;
 

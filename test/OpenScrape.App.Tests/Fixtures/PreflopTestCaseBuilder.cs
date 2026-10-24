@@ -1,8 +1,6 @@
 using OpenScrape.App.Aplication;
-using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.Domain.Interfaces;
 using OpenScrape.Features.ActionScenario;
-using OpenScrape.Features.ActionScenario.Get;
 
 namespace OpenScrape.App.Tests.Fixtures;
 

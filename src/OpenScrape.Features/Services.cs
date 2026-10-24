@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using OpenScrape.Domain.Interfaces;
 using OpenScrape.Features.ActionScenario;
-using OpenScrape.Features.ActionScenario.Get;
 using OpenScrape.Features.Card;
 using OpenScrape.Features.Card.GetAll;
 using OpenScrape.Features.GameRound;
@@ -19,8 +18,6 @@ public static class Services
     public static IServiceCollection AddUseCases(this IServiceCollection services) =>
     services
         .AddScoped<IPreflopRangeStore, MartenPreflopRangeStore>()
-        .AddScoped<GetActionScenario>()
-        .AddScoped<ActionScenarioUseCases>()
 
         .AddScoped<GetTable>()
         .AddScoped<TableUseCases>()

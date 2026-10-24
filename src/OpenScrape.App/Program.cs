@@ -20,7 +20,7 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
-using OpenScrape.App.Aplication.UseCases.Actions;
+using OpenScrape.DecisionMaker.Preflop;
 using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App
@@ -166,6 +166,8 @@ namespace OpenScrape.App
                     services.AddSingleton<ImageCropperService>();
                     services.AddSingleton<DetectionLoggerService>();
                     services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
+                    services.AddScoped<GetActionScenario>();
+                    services.AddScoped<ActionScenarioUseCases>();
                     services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
                     services.AddScoped<IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase, GetActionHeroCallOpenRaiseAndGetSqueezeUseCase>();
                     services.AddScoped<IGetActionHero3BetAndOpenRaiser4BetUseCase, GetActionHero3BetAndOpenRaiser4BetUseCase>();

@@ -1,4 +1,4 @@
-﻿namespace OpenScrape.App.Aplication.UseCases.Actions
+namespace OpenScrape.DecisionMaker.Preflop
 {
     public class GetActionOpenRaiseUseCaseRequest : BaseRequest
     {

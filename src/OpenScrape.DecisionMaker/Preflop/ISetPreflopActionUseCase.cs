@@ -1,7 +1,7 @@
-﻿using OpenScrape.App.Entities;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Aplication;
+namespace OpenScrape.DecisionMaker.Preflop;
 
 
 public class SetPreflopActionUseCaseRequest

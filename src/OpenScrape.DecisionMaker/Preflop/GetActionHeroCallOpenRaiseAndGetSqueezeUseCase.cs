@@ -1,7 +1,6 @@
-﻿using OpenScrape.Domain.Enums;
-using OpenScrape.Features.ActionScenario;
+using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Aplication.UseCases.Actions
+namespace OpenScrape.DecisionMaker.Preflop
 {
     public class GetActionHeroCallOpenRaiseAndGetSqueezeUseCase : IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase
     {

@@ -1,9 +1,9 @@
-﻿using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Interfaces;
 using OpenScrape.Domain.Services;
 using OpenScrape.Domain.ValueObjects;
 
-namespace OpenScrape.Features.ActionScenario.Get;
+namespace OpenScrape.DecisionMaker.Preflop;
 
 public class GetActionScenario
 {

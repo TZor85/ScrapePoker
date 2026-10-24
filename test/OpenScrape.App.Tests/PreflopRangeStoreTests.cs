@@ -3,7 +3,6 @@ using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Interfaces;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features.ActionScenario;
-using OpenScrape.Features.ActionScenario.Get;
 
 namespace OpenScrape.App.Tests;
 

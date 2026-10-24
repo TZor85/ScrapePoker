@@ -1,6 +1,6 @@
-﻿using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Aplication.UseCases
+namespace OpenScrape.DecisionMaker.Preflop
 {
     public class BaseRequest
     {

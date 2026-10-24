@@ -1,6 +1,6 @@
-﻿using OpenScrape.App.Entities;
+using OpenScrape.Domain.Entities;
 
-namespace OpenScrape.App.Helpers
+namespace OpenScrape.DecisionMaker.Preflop
 {
     public static class UserHandHelper
     {

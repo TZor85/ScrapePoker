@@ -31,7 +31,7 @@
     <None Include="..\..\test\fixtures\**\*.json" Link="fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="Always" />
   </ItemGroup>
 
-  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.DecisionMaker.Postflop" />
+  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.DecisionMaker.Postflop" /><Using Include="OpenScrape.DecisionMaker.Preflop" />
   </ItemGroup>
 
 </Project>

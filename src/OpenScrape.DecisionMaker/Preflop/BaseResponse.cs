@@ -1,4 +1,4 @@
-﻿namespace OpenScrape.App.Aplication.UseCases
+namespace OpenScrape.DecisionMaker.Preflop
 {
     public class BaseResponse
     {
