@@ -3115,9 +3115,9 @@ namespace OpenScrape.App
         //   _historialLoaded        (bool)
         //   _bankrollLoaded         (bool)
         //
-        // Inyección DI → se mantienen hasta Fase 7.5 (consolidación en facade):
+        // Inyección DI → se mantienen hasta Fase 7.5:
         //   _pokerCalculator, _betSizingService, _postflopDecisionService,
-        //   _boardTextureAnalyzer, _opponentTracker → absorbidos por IPokerDecisionFacade
+        //   _boardTextureAnalyzer, _opponentTracker → absorbidos por GameCoordinator
         //   _coordinator, _screenReader, _tableLayout → consumidos por
         //     GameLoopCoordinator y eliminados de FrmMain tras cutover
         //   Resto (*UseCase, *Service de infraestructura) → permanecen o se reasignan

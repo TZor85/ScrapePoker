@@ -128,9 +128,6 @@ namespace OpenScrape.App
                     // Register unified calculator
                     services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
 
-                    // Facade de decisión postflop (refactor-frmmain-coordinators Fase 2)
-                    services.AddScoped<IPokerDecisionFacade, PokerDecisionFacade>();
-
                     // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
                     // Fase 4: factory condicional — HandProcessor si flag=true, EmptyGameLoopTickProcessor si flag=false
                     services.AddScoped<HandProcessor>();
