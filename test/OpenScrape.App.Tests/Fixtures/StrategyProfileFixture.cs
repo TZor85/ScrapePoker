@@ -37,6 +37,22 @@ internal static class StrategyProfileFixture
         File.WriteAllText(FixturePaths.SourceStrategyProfile, JsonSerializer.Serialize(profile, JsonOptions));
     }
 
+    /// <summary>Perfil configurado en producción (sección StrategyProfile de appsettings.json).</summary>
+    public static StrategyProfile LoadFromProduction() => LoadFromAppSettings();
+
+    /// <summary>Perfil congelado que usan los fixtures.</summary>
+    public static StrategyProfile LoadSnapshot()
+    {
+        if (!File.Exists(FixturePaths.SourceStrategyProfile))
+            throw new FileNotFoundException(
+                "No existe el snapshot de estrategia versionado.", FixturePaths.SourceStrategyProfile);
+
+        return JsonSerializer.Deserialize<StrategyProfile>(
+            File.ReadAllText(FixturePaths.SourceStrategyProfile), JsonOptions)!;
+    }
+
+    public static string Serialize(StrategyProfile profile) => JsonSerializer.Serialize(profile, JsonOptions);
+
     private static StrategyProfile LoadFromAppSettings()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
