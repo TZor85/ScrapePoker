@@ -1,0 +1,95 @@
+{
+  "Id": "second-action-vs-three-bet",
+  "Request": {
+    "ResponseAction": {
+      "Action": "Raise",
+      "HandSituation": "OpenRaiseVs3Bet",
+      "IsSecondAction": false
+    },
+    "PlayerState": {
+      "IsDealer": false,
+      "PotSize": 3,
+      "HoleCard1Face": "A",
+      "HoleCard2Face": "K",
+      "HoleCard1Rank": 14,
+      "HoleCard2Rank": 13,
+      "HoleCard1Suit": 4,
+      "HoleCard2Suit": 2,
+      "Kicker": 0,
+      "IsInPosition": true,
+      "Position": "Button",
+      "CurrentBet": 0,
+      "HeroStack": 100,
+      "HandSituation": "OpenRaise",
+      "Players": [
+        {
+          "Name": "P0",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 0,
+          "Stack": 0,
+          "Active": false,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "None",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        },
+        {
+          "Name": "Middle",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 3,
+          "Stack": 100,
+          "Active": true,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "Middle",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        }
+      ],
+      "BoardCards": [],
+      "HavePocketPair": false,
+      "IsSuited": false
+    },
+    "PreflopHeroPosition": {
+      "Button": {
+        "Middle": 3
+      }
+    }
+  },
+  "Table": {
+    "Name": "fx-second-action",
+    "Positions": [
+      {
+        "Name": "fx-second-action",
+        "HeroPosition": "Button",
+        "OpenRaiser": "Button",
+        "ThreeBetPosition": "Middle",
+        "Limper": null,
+        "Caller": null,
+        "Squeezer": null,
+        "BetSize": null,
+        "IsGreater": null,
+        "RaiserFolds": null,
+        "Hands": [
+          {
+            "Suited": false,
+            "Action": "Raise",
+            "Name": "AK",
+            "Percentage": 100
+          }
+        ]
+      }
+    ]
+  },
+  "RandomNumber": 50,
+  "ExpectedAction": "Raise"
+}

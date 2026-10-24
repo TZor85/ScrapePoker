@@ -1,0 +1,112 @@
+{
+  "Id": "squeeze-tt",
+  "Request": {
+    "ResponseAction": {
+      "Action": "Raise",
+      "HandSituation": "Squeeze",
+      "IsSecondAction": true
+    },
+    "PlayerState": {
+      "IsDealer": false,
+      "PotSize": 3,
+      "HoleCard1Face": "T",
+      "HoleCard2Face": "T",
+      "HoleCard1Rank": 10,
+      "HoleCard2Rank": 10,
+      "HoleCard1Suit": 4,
+      "HoleCard2Suit": 2,
+      "Kicker": 0,
+      "IsInPosition": true,
+      "Position": "Button",
+      "CurrentBet": 0,
+      "HeroStack": 100,
+      "HandSituation": "None",
+      "Players": [
+        {
+          "Name": "P0",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 0,
+          "Stack": 0,
+          "Active": false,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "None",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        },
+        {
+          "Name": "Middle",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 3,
+          "Stack": 100,
+          "Active": true,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "Middle",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        },
+        {
+          "Name": "CutOff",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 3,
+          "Stack": 100,
+          "Active": true,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "CutOff",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        }
+      ],
+      "BoardCards": [],
+      "HavePocketPair": true,
+      "IsSuited": false
+    },
+    "PreflopHeroPosition": {
+      "Button": {
+        "Middle": 3,
+        "CutOff": 3
+      }
+    }
+  },
+  "Table": {
+    "Name": "fx-squeeze",
+    "Positions": [
+      {
+        "Name": "fx-squeeze",
+        "HeroPosition": "Button",
+        "OpenRaiser": "Middle",
+        "ThreeBetPosition": null,
+        "Limper": null,
+        "Caller": "CutOff",
+        "Squeezer": null,
+        "BetSize": null,
+        "IsGreater": null,
+        "RaiserFolds": null,
+        "Hands": [
+          {
+            "Suited": null,
+            "Action": "Raise",
+            "Name": "TT",
+            "Percentage": 100
+          }
+        ]
+      }
+    ]
+  },
+  "RandomNumber": 50,
+  "ExpectedAction": "Raise"
+}
