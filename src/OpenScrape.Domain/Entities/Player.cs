@@ -1,6 +1,6 @@
 ﻿using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.App.Entities
+namespace OpenScrape.Domain.Entities
 {
     public class Player
     {

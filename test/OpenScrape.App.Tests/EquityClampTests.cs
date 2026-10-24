@@ -57,7 +57,7 @@ public class EquityClampTests
         // Con KK en K72 la equity cruda ronda 97.4 y el ajuste de c-bet la lleva a 100.004.
         // Sin el clamp, PostflopDecisionService.ValidateInput rechaza el input y la decisión muere.
         var profile = Fixtures.StrategyProfileFixture.LoadOrCreate();
-        var state = new Entities.PlayerGameState
+        var state = new PlayerGameState
         {
             PotSize = 10m,
             HeroStack = 90m,
@@ -69,15 +69,15 @@ public class EquityClampTests
             HoleCard2Suit = (int)OpenScrape.Domain.Enums.Suit.Diamonds,
             Players =
             [
-                new Entities.Player { Name = "P0", Active = true, Stack = 90m, Bet = 0m, ValuePosition = 0 },
-                new Entities.Player { Name = "P1", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 1 },
-                new Entities.Player { Name = "P2", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 2 }
+                new Player { Name = "P0", Active = true, Stack = 90m, Bet = 0m, ValuePosition = 0 },
+                new Player { Name = "P1", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 1 },
+                new Player { Name = "P2", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 2 }
             ],
             BoardCards =
             [
-                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.King, Suit = (int)OpenScrape.Domain.Enums.Suit.Hearts, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 1 },
-                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Seven, Suit = (int)OpenScrape.Domain.Enums.Suit.Clubs, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 2 },
-                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Two, Suit = (int)OpenScrape.Domain.Enums.Suit.Diamonds, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 3 }
+                new BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.King, Suit = (int)OpenScrape.Domain.Enums.Suit.Hearts, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 1 },
+                new BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Seven, Suit = (int)OpenScrape.Domain.Enums.Suit.Clubs, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 2 },
+                new BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Two, Suit = (int)OpenScrape.Domain.Enums.Suit.Diamonds, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 3 }
             ]
         };
 
