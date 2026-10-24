@@ -11,7 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace OpenScrape.App.Aplication.UseCases
+namespace OpenScrape.DecisionMaker.Postflop
 {
     public interface IPokerCalculator
     {

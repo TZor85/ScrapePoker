@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
@@ -49,8 +49,7 @@
     <InternalsVisibleTo Include="OpenScrape.App.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Using Include="OpenScrape.Domain.Entities" />
+  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.DecisionMaker.Postflop" />
   </ItemGroup>
 
   <ItemGroup>

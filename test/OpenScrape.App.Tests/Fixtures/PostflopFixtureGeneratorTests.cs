@@ -144,7 +144,7 @@ public class PostflopFixtureGeneratorTests
     {
         var snapshot = PostflopDecisionRunner.RunStreet(
             profile, state, maxBet, Seed, street,
-            calculationLogger: new TestLogger<OpenScrape.App.Aplication.UseCases.UnifiedPokerCalculator>());
+            calculationLogger: new TestLogger<OpenScrape.DecisionMaker.Postflop.UnifiedPokerCalculator>());
 
         return new PostflopFixture(
             id,
