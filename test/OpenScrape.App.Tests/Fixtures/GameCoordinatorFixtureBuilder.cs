@@ -38,6 +38,19 @@ internal static class GameCoordinatorFixtureBuilder
             new PostflopContextHolder());
     }
 
+    public static PostflopDecisionEngine CreateEngine(StrategyProfile profile)
+    {
+        var options = Options.Create(profile);
+
+        return new PostflopDecisionEngine(
+            new PostflopDecisionService(
+                options,
+                new BetSizingService(options),
+                new RangePolarizer(),
+                new ThresholdsRegistry(options),
+                new DeterministicRandomProvider()));
+    }
+
     public static UnifiedPokerCalculator CreateCalculator(StrategyProfile profile, int monteCarloSeed, ILogger<UnifiedPokerCalculator>? logger = null)
     {
         var options = Options.Create(profile);

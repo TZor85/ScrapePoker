@@ -169,6 +169,9 @@ namespace OpenScrape.App
                     services.AddScoped<GetActionScenario>();
                     services.AddScoped<ActionScenarioUseCases>();
                     services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
+                    services.AddScoped<SetPreflopActionUseCase>(sp => (SetPreflopActionUseCase)sp.GetRequiredService<ISetPreflopActionUseCase>());
+                    services.AddScoped<PostflopDecisionEngine>();
+                    services.AddScoped<IDecisionEngine, LocalDecisionEngine>();
                     services.AddScoped<IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase, GetActionHeroCallOpenRaiseAndGetSqueezeUseCase>();
                     services.AddScoped<IGetActionHero3BetAndOpenRaiser4BetUseCase, GetActionHero3BetAndOpenRaiser4BetUseCase>();
                     services.AddScoped<IGetActionVs3BetUseCaseUseCase, GetActionVs3BetUseCaseUseCase>();
