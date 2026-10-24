@@ -55,6 +55,43 @@ public class PlayerStateMapperTests
         Assert.That(json, Does.Not.Contain("potOdds"));
     }
 
+    [Test]
+    public void MapPostflop_BoardConCartasDeManoAlFinal_DescartaLasManosYOrdena()
+    {
+        var state = State();
+        state.BoardCards.Add(new BoardData
+        {
+            Force = (int)Rank.Ace, Suit = (int)Suit.Spades, Position = BoardPosition.Hand, Location = 6
+        });
+        state.BoardCards.Add(new BoardData
+        {
+            Force = (int)Rank.King, Suit = (int)Suit.Spades, Position = BoardPosition.Hand, Location = 7
+        });
+
+        var request = PlayerStateMapper.MapPostflop(
+            state, DecisionStreet.Flop, maxBet: 5m, new DecisionContext(), villain: null, heroIsAggressor: true);
+
+        Assert.That(request.Board, Has.Count.EqualTo(3));
+        Assert.That(
+            request.Board.Select(card => card.Rank),
+            Is.EqualTo(new[] { (int)Rank.King, (int)Rank.Seven, (int)Rank.Two }));
+    }
+
+    [Test]
+    public void MapPostflop_SituacionEfectivaReemplazaLaDelEstado()
+    {
+        var request = PlayerStateMapper.MapPostflop(
+            State(),
+            DecisionStreet.Flop,
+            maxBet: 5m,
+            new DecisionContext { IsDonkBet = true },
+            villain: null,
+            heroIsAggressor: true,
+            effectiveSituation: HandSituation.DonkBet);
+
+        Assert.That(request.HandSituation, Is.EqualTo(HandSituation.DonkBet));
+    }
+
     private static PlayerGameState State() => new()
     {
         HoleCard1Rank = (int)Rank.Ace,

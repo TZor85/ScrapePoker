@@ -98,7 +98,9 @@ public sealed class PostflopRequestFactory
             BoardChange = boardChange,
             IsDonkBet = request.Context.IsDonkBet,
             CbetAdjustment = cbetAdjustment,
-            FoldEquity = request.VillainProfile?.AdjustedFoldEquity ?? result.FoldEquity,
+            FoldEquity = request.VillainProfile is { AdjustedFoldEquity: >= 0 } profile
+                ? profile.AdjustedFoldEquity
+                : result.FoldEquity,
             VillainType = request.VillainProfile?.Type ?? OpponentType.Unknown,
             VillainFoldToBetPct = request.VillainProfile?.FoldToBetPct ?? -1,
             HeroIsAggressor = request.IsHeroAggressor,

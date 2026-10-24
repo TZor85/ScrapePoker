@@ -29,8 +29,9 @@ public static class PlayerStateMapper
         decimal maxBet,
         DecisionContext context,
         VillainProfile? villain,
-        bool heroIsAggressor) =>
-        Build(state, street, maxBet, isSecondAction: false, context, villain, heroIsAggressor);
+        bool heroIsAggressor,
+        HandSituation? effectiveSituation = null) =>
+        Build(state, street, maxBet, isSecondAction: false, context, villain, heroIsAggressor, effectiveSituation);
 
     private const string HeroName = "P0";
 
@@ -41,12 +42,15 @@ public static class PlayerStateMapper
         bool isSecondAction,
         DecisionContext context,
         VillainProfile? villain,
-        bool heroIsAggressor) => new()
+        bool heroIsAggressor,
+        HandSituation? effectiveSituation = null) => new()
         {
             Street = street,
             HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
             HeroCard2 = new CardRef(state.HoleCard2Rank, state.HoleCard2Suit),
             Board = state.BoardCards
+            .Where(card => card.Position != BoardPosition.Hand)
+            .OrderBy(card => card.Location)
             .Take(BoardCardsFor(street))
             .Select(card => new CardRef(card.Force, card.Suit))
             .ToList(),
@@ -58,7 +62,7 @@ public static class PlayerStateMapper
             NumOpponents = Math.Max(0, state.Players.Count(player => player.Active) - 1),
             HeroPosition = state.Position,
             VillainPosition = Villain(state)?.Position ?? TablePosition.None,
-            HandSituation = state.HandSituation,
+            HandSituation = effectiveSituation ?? state.HandSituation,
             IsSecondAction = isSecondAction,
             HeroWasPreflopAggressor = heroIsAggressor,
             IsHeroAggressor = heroIsAggressor,

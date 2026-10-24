@@ -387,7 +387,8 @@ public class GameCoordinator : IGameCoordinator
                 maxBet,
                 new DecisionContext { IsDonkBet = isDonkBet },
                 BuildVillainProfile(state, inPosition, flopResult.FoldEquity),
-                isPreflopAggressor),
+                isPreflopAggressor,
+                effectiveSituation),
             cancellationToken);
         var decision = ToDecision(doorResult);
         effectiveEquity = doorResult.Equity;
@@ -519,7 +520,8 @@ public class GameCoordinator : IGameCoordinator
                     IsAnyoneAllIn = turnCtx.IsAnyoneAllIn
                 },
                 BuildVillainProfile(state, inPosition, turnResult.FoldEquity),
-                turnIsAggressor),
+                turnIsAggressor,
+                effectiveSituation),
             cancellationToken);
         var decision = ToDecision(doorResult);
 
@@ -671,7 +673,8 @@ public class GameCoordinator : IGameCoordinator
                     IsAnyoneAllIn = riverCtx.IsAnyoneAllIn
                 },
                 BuildVillainProfile(state, inPosition, riverResult.FoldEquity),
-                riverIsAggressor),
+                riverIsAggressor,
+                effectiveSituation),
             cancellationToken);
         var decision = ToDecision(doorResult);
 
