@@ -199,14 +199,14 @@ internal sealed class FakeGameCoordinator : IGameCoordinator
         ref string previousDealer, ref string previousSB, ref string previousBB)
         => false;
 
-    public GameDecisionResult DetermineFlopAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty));
 
-    public GameDecisionResult DetermineTurnAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineTurnAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty));
 
-    public GameDecisionResult DetermineRiverAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineRiverAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty));
 
     public string FormatCardsForLog(PlayerGameState state, BoardPosition position)
         => string.Empty;

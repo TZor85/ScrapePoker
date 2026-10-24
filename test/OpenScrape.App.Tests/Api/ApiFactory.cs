@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using OpenScrape.App.Tests.Fixtures;
+using OpenScrape.DecisionMaker;
+using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Interfaces;
@@ -15,6 +17,17 @@ namespace OpenScrape.App.Tests.Api;
 /// </summary>
 internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
 {
+    private readonly TableDTO _table;
+    private readonly int _randomNumber;
+    private readonly int _monteCarloSeed;
+
+    public ApiFactory(TableDTO? table = null, int randomNumber = 30, int monteCarloSeed = 1)
+    {
+        _table = table ?? FixtureTables.OpenRaiseAks();
+        _randomNumber = randomNumber;
+        _monteCarloSeed = monteCarloSeed;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Host=localhost;Database=test");
@@ -22,21 +35,20 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IPreflopRangeStore>();
-            services.AddSingleton<IPreflopRangeStore>(new FixedRangeStore(FixtureTables.OpenRaiseAks()));
+            services.AddSingleton<IPreflopRangeStore>(new FixedRangeStore(_table));
 
-            services.RemoveAll<IRandomProvider>();
-            services.AddSingleton<IRandomProvider>(new FixedRandomProvider(30));
+            services.RemoveAll<OpenScrape.Domain.Interfaces.IRandomProvider>();
+            services.AddSingleton<OpenScrape.Domain.Interfaces.IRandomProvider>(new FixedRandomProvider(_randomNumber));
 
             services.RemoveAll<OpenScrape.DecisionMaker.Interfaces.IRandomProvider>();
             services.AddSingleton<OpenScrape.DecisionMaker.Interfaces.IRandomProvider>(
-                new FixedEngineRandomProvider(30));
+                new FixedEngineRandomProvider(_randomNumber));
 
             services.RemoveAll<MonteCarloSimulator>();
-            services.AddSingleton(new MonteCarloSimulator(1));
+            services.AddSingleton(new MonteCarloSimulator(_monteCarloSeed));
         });
     }
 
-    /// <summary>El motor declara su propio contrato de azar; se fija igual que el del dominio.</summary>
     private sealed class FixedEngineRandomProvider(int value)
         : OpenScrape.DecisionMaker.Interfaces.IRandomProvider
     {

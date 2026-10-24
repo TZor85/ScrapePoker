@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Services;
+using OpenScrape.DecisionMaker;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
@@ -28,16 +29,17 @@ internal sealed record PostflopDecisionSnapshot(
 /// </summary>
 internal static class PostflopDecisionRunner
 {
-    public static (string Action, double Equity) Run(
+    public static async Task<(string Action, double Equity)> Run(
         StrategyProfile profile,
         PlayerGameState state,
         decimal maxBet,
         int monteCarloSeed,
         IGameLoggerService? logger = null,
-        ILogger<UnifiedPokerCalculator>? calculationLogger = null)
+        ILogger<UnifiedPokerCalculator>? calculationLogger = null,
+        IDecisionEngine? engine = null)
     {
-        var snapshot = RunStreet(
-            profile, state, maxBet, monteCarloSeed, BoardPosition.Flop, logger, calculationLogger);
+        var snapshot = await RunStreet(
+            profile, state, maxBet, monteCarloSeed, BoardPosition.Flop, logger, calculationLogger, engine);
 
         return (snapshot.Action, snapshot.Equity);
     }
@@ -46,16 +48,17 @@ internal static class PostflopDecisionRunner
     /// Corre la secuencia completa hasta la calle pedida. Las calles previas se ejecutan
     /// igual que en producción porque el coordinador arrastra contexto entre ellas.
     /// </summary>
-    public static PostflopDecisionSnapshot RunStreet(
+    public static async Task<PostflopDecisionSnapshot> RunStreet(
         StrategyProfile profile,
         PlayerGameState state,
         decimal maxBet,
         int monteCarloSeed,
         BoardPosition street,
         IGameLoggerService? logger = null,
-        ILogger<UnifiedPokerCalculator>? calculationLogger = null)
+        ILogger<UnifiedPokerCalculator>? calculationLogger = null,
+        IDecisionEngine? engine = null)
     {
-        var coordinator = GameCoordinatorFixtureBuilder.Create(profile, logger ?? new NoOpGameLogger());
+        var coordinator = GameCoordinatorFixtureBuilder.Create(profile, logger ?? new NoOpGameLogger(), engine, monteCarloSeed);
         var calculator = GameCoordinatorFixtureBuilder.CreateCalculator(profile, monteCarloSeed, calculationLogger);
         var community = ToCommunityCards(state);
 
@@ -72,21 +75,21 @@ internal static class PostflopDecisionRunner
 
         var flopResult = Calculate(3);
         coordinator.SetFlopResult(flopResult);
-        var flopDecision = coordinator.DetermineFlopAction(state);
+        var flopDecision = await coordinator.DetermineFlopAction(state);
         if (street == BoardPosition.Flop)
             return ToSnapshot(flopDecision, flopResult);
 
         var turnResult = Calculate(4);
         coordinator.SetTurnResult(turnResult);
         coordinator.TurnBoardTexture = coordinator.AnalyzeTurnBoardTexture(state.BoardCards);
-        var turnDecision = coordinator.DetermineTurnAction(state);
+        var turnDecision = await coordinator.DetermineTurnAction(state);
         if (street == BoardPosition.Turn)
             return ToSnapshot(turnDecision, turnResult);
 
         var riverResult = Calculate(5);
         coordinator.SetRiverResult(riverResult);
         coordinator.RiverBoardTexture = coordinator.AnalyzeRiverBoardTexture(state.BoardCards);
-        var riverDecision = coordinator.DetermineRiverAction(state);
+        var riverDecision = await coordinator.DetermineRiverAction(state);
 
         return ToSnapshot(riverDecision, riverResult);
     }

@@ -33,9 +33,9 @@ public interface IGameCoordinator
     void ResetContext();
 
     // Decisiones por calle
-    GameDecisionResult DetermineFlopAction(PlayerGameState state);
-    GameDecisionResult DetermineTurnAction(PlayerGameState state);
-    GameDecisionResult DetermineRiverAction(PlayerGameState state);
+    Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default);
+    Task<GameDecisionResult> DetermineTurnAction(PlayerGameState state, CancellationToken cancellationToken = default);
+    Task<GameDecisionResult> DetermineRiverAction(PlayerGameState state, CancellationToken cancellationToken = default);
 
     // Almacenar resultados de cálculo (llenados por FrmMain tras OCR)
     void SetFlopResult(PokerCalculationResult result);

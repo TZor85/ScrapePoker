@@ -169,6 +169,8 @@ namespace OpenScrape.App
                     services.AddScoped<ActionScenarioUseCases>();
                     services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
                     services.AddScoped<SetPreflopActionUseCase>(sp => (SetPreflopActionUseCase)sp.GetRequiredService<ISetPreflopActionUseCase>());
+                    services.AddScoped<PreflopRequestFactory>();
+                    services.AddScoped<PostflopRequestFactory>();
                     services.AddScoped<PostflopDecisionEngine>();
                     var remoteEngineEnabled = context.Configuration.GetValue<bool>("RemoteEngine:Enabled");
                     if (remoteEngineEnabled)

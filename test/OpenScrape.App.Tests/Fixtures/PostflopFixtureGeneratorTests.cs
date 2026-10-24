@@ -15,7 +15,7 @@ public class PostflopFixtureGeneratorTests
     private const int Seed = 20261023;
 
     [Test]
-    public void Generate_Escenarios_EscribeUnJsonPorEscenario()
+    public async Task Generate_Escenarios_EscribeUnJsonPorEscenario()
     {
         // Arrange
         var profile = StrategyProfileFixture.LoadOrCreate();
@@ -144,7 +144,7 @@ public class PostflopFixtureGeneratorTests
     {
         var snapshot = PostflopDecisionRunner.RunStreet(
             profile, state, maxBet, Seed, street,
-            calculationLogger: new TestLogger<OpenScrape.DecisionMaker.Postflop.UnifiedPokerCalculator>());
+            calculationLogger: new TestLogger<OpenScrape.DecisionMaker.Postflop.UnifiedPokerCalculator>()).GetAwaiter().GetResult();
 
         return new PostflopFixture(
             id,

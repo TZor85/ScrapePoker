@@ -1230,10 +1230,10 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina la acción del river delegando a GameCoordinator.
         /// </summary>
-        private void DetermineRiverAction()
+        private async Task DetermineRiverAction()
         {
             _coordinator.SetRiverResult(_riverResult);
-            var result = _coordinator.DetermineRiverAction(_playerGameState);
+            var result = await _coordinator.DetermineRiverAction(_playerGameState);
             _responseAction.Action = result.Action;
             _logger.LogError("{LogText}", result.LogText);
         }
@@ -1405,7 +1405,7 @@ namespace OpenScrape.App
             _tableLayout.SetIsInPosition(_playerGameState);
 
             // Analizar el flop y determinar acción usando PostflopDecisionService (unificado con turn/river)
-            DetermineFlopActionUnified();
+            await DetermineFlopActionUnified();
 
             // Persistir flop board y decisión
             var flopCardNames = _playerGameState.BoardCards
@@ -1428,10 +1428,10 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina la acción del flop delegando a GameCoordinator.
         /// </summary>
-        private void DetermineFlopActionUnified()
+        private async Task DetermineFlopActionUnified()
         {
             _coordinator.SetFlopResult(_flopResult);
-            var result = _coordinator.DetermineFlopAction(_playerGameState);
+            var result = await _coordinator.DetermineFlopAction(_playerGameState);
             _responseAction.Action = result.Action;
             _logger.LogError("{LogText}", result.LogText);
         }
@@ -1445,11 +1445,11 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina la acción del turn delegando a GameCoordinator.
         /// </summary>
-        private void DetermineTurnAction()
+        private async Task DetermineTurnAction()
         {
             _coordinator.SetTurnResult(_turnResult);
             _coordinator.TurnBoardTexture = _turnBoardTexture;
-            var result = _coordinator.DetermineTurnAction(_playerGameState);
+            var result = await _coordinator.DetermineTurnAction(_playerGameState);
             _responseAction.Action = result.Action;
             _logger.LogError("{LogText}", result.LogText);
         }
@@ -1541,7 +1541,7 @@ namespace OpenScrape.App
             _tableLayout.SetIsInPosition(_playerGameState);
 
             // Determinar acción en el turn
-            DetermineTurnAction();
+            await DetermineTurnAction();
         }
 
         /// <summary>
@@ -1633,7 +1633,7 @@ namespace OpenScrape.App
             _tableLayout.SetIsInPosition(_playerGameState);
 
             // Determinar acción en el river
-            DetermineRiverAction();
+            await DetermineRiverAction();
         }
 
         /// <summary>

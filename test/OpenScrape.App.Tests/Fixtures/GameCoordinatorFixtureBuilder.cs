@@ -7,6 +7,7 @@ using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App.Tests.Fixtures;
@@ -17,7 +18,7 @@ namespace OpenScrape.App.Tests.Fixtures;
 /// </summary>
 internal static class GameCoordinatorFixtureBuilder
 {
-    public static GameCoordinator Create(StrategyProfile profile, IGameLoggerService logger)
+    public static GameCoordinator Create(StrategyProfile profile, IGameLoggerService logger, IDecisionEngine? engine = null, int monteCarloSeed = 1)
     {
         var options = Options.Create(profile);
 
@@ -35,7 +36,8 @@ internal static class GameCoordinatorFixtureBuilder
             new GameLoopStateMachine(NullLogger<GameLoopStateMachine>.Instance),
             logger,
             new StrategyProfileService(options),
-            new PostflopContextHolder());
+            new PostflopContextHolder(),
+            engine ?? CreateLocalEngine(profile, monteCarloSeed));
     }
 
     public static PostflopDecisionEngine CreateEngine(StrategyProfile profile)
@@ -63,6 +65,23 @@ internal static class GameCoordinatorFixtureBuilder
             new BoardTextureAnalyzer(),
             options,
             logger ?? NullLogger<UnifiedPokerCalculator>.Instance);
+    }
+    private static LocalDecisionEngine CreateLocalEngine(StrategyProfile profile, int monteCarloSeed)
+    {
+        var options = Options.Create(profile);
+        var preflop = PreflopTestCaseBuilder.Create(
+            new FixedRangeStore(new TableDTO { Name = "sin-tabla", Positions = [] }),
+            new FixedRandomProvider(0));
+
+        return new LocalDecisionEngine(
+            new PreflopRequestFactory(),
+            new PostflopRequestFactory(
+                CreateCalculator(profile, monteCarloSeed),
+                new BoardTextureAnalyzer(),
+                new PreflopAnalyzer(),
+                options),
+            preflop,
+            CreateEngine(profile));
     }
 }
 

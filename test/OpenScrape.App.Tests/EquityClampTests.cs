@@ -51,7 +51,7 @@ public class EquityClampTests
     }
 
     [Test]
-    public void DetermineFlopAction_SetSobreBoard_NoLanzaConEquityEfectivaFueraDeRango()
+    public async Task DetermineFlopAction_SetSobreBoard_NoLanzaConEquityEfectivaFueraDeRango()
     {
         // Arrange
         // Con KK en K72 la equity cruda ronda 97.4 y el ajuste de c-bet la lleva a 100.004.
@@ -82,7 +82,7 @@ public class EquityClampTests
         };
 
         // Act
-        var snapshot = Fixtures.PostflopDecisionRunner.RunStreet(
+        var snapshot = await Fixtures.PostflopDecisionRunner.RunStreet(
             profile, state, maxBet: 0m, monteCarloSeed: 20261023, street: OpenScrape.Domain.Enums.BoardPosition.Flop);
 
         // Assert

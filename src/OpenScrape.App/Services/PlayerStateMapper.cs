@@ -47,6 +47,7 @@ public static class PlayerStateMapper
         HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
         HeroCard2 = new CardRef(state.HoleCard2Rank, state.HoleCard2Suit),
         Board = state.BoardCards
+            .Take(BoardCardsFor(street))
             .Select(card => new CardRef(card.Force, card.Suit))
             .ToList(),
         PotSize = state.PotSize,
@@ -63,6 +64,14 @@ public static class PlayerStateMapper
         IsHeroAggressor = heroIsAggressor,
         VillainProfile = villain,
         Context = context
+    };
+
+    private static int BoardCardsFor(DecisionStreet street) => street switch
+    {
+        DecisionStreet.Flop => 3,
+        DecisionStreet.Turn => 4,
+        DecisionStreet.River => 5,
+        _ => 0
     };
 
     private static Player? Villain(PlayerGameState state) => state.Players
