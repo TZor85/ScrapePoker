@@ -1,4 +1,5 @@
 using OpenScrape.App.Services;
+using OpenScrape.App.Tests.Fixtures;
 
 namespace OpenScrape.App.Tests;
 
@@ -47,5 +48,44 @@ public class EquityClampTests
 
         // Assert
         Assert.That(resultado, Is.EqualTo(52.3));
+    }
+
+    [Test]
+    public void DetermineFlopAction_SetSobreBoard_NoLanzaConEquityEfectivaFueraDeRango()
+    {
+        // Arrange
+        // Con KK en K72 la equity cruda ronda 97.4 y el ajuste de c-bet la lleva a 100.004.
+        // Sin el clamp, PostflopDecisionService.ValidateInput rechaza el input y la decisión muere.
+        var profile = Fixtures.StrategyProfileFixture.LoadOrCreate();
+        var state = new Entities.PlayerGameState
+        {
+            PotSize = 10m,
+            HeroStack = 90m,
+            IsInPosition = true,
+            HandSituation = OpenScrape.Domain.Enums.HandSituation.OpenRaise,
+            HoleCard1Rank = (int)OpenScrape.Domain.Enums.Rank.King,
+            HoleCard1Suit = (int)OpenScrape.Domain.Enums.Suit.Spades,
+            HoleCard2Rank = (int)OpenScrape.Domain.Enums.Rank.King,
+            HoleCard2Suit = (int)OpenScrape.Domain.Enums.Suit.Diamonds,
+            Players =
+            [
+                new Entities.Player { Name = "P0", Active = true, Stack = 90m, Bet = 0m, ValuePosition = 0 },
+                new Entities.Player { Name = "P1", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 1 },
+                new Entities.Player { Name = "P2", Active = true, Stack = 100m, Bet = 0m, ValuePosition = 2 }
+            ],
+            BoardCards =
+            [
+                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.King, Suit = (int)OpenScrape.Domain.Enums.Suit.Hearts, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 1 },
+                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Seven, Suit = (int)OpenScrape.Domain.Enums.Suit.Clubs, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 2 },
+                new Entities.BoardData { Force = (int)OpenScrape.Domain.Enums.Rank.Two, Suit = (int)OpenScrape.Domain.Enums.Suit.Diamonds, Position = OpenScrape.Domain.Enums.BoardPosition.Flop, Location = 3 }
+            ]
+        };
+
+        // Act
+        var snapshot = Fixtures.PostflopDecisionRunner.RunStreet(
+            profile, state, maxBet: 0m, monteCarloSeed: 20261023, street: OpenScrape.Domain.Enums.BoardPosition.Flop);
+
+        // Assert
+        Assert.That(snapshot.Action, Is.Not.Null.And.Not.Empty);
     }
 }
