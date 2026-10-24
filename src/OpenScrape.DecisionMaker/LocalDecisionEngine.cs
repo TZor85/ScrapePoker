@@ -1,17 +1,25 @@
+using OpenScrape.Contracts;
 using OpenScrape.DecisionMaker.Postflop;
 using OpenScrape.DecisionMaker.Preflop;
-using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.DecisionMaker;
 
 /// <summary>
-/// Motor local: despacha la calle al camino preflop o al motor postflop.
-/// No agrega lógica propia, sólo normaliza la entrada y la salida.
+/// Motor local: traduce el contrato crudo al pedido interno de cada calle y
+/// despacha. No agrega lógica propia, sólo normaliza la entrada y la salida.
 /// </summary>
 public sealed class LocalDecisionEngine(
+    PreflopRequestFactory preflopFactory,
+    PostflopRequestFactory postflopFactory,
     SetPreflopActionUseCase preflop,
     PostflopDecisionEngine postflop) : IDecisionEngine
 {
+    private readonly PreflopRequestFactory _preflopFactory =
+        preflopFactory ?? throw new ArgumentNullException(nameof(preflopFactory));
+
+    private readonly PostflopRequestFactory _postflopFactory =
+        postflopFactory ?? throw new ArgumentNullException(nameof(postflopFactory));
+
     private readonly SetPreflopActionUseCase _preflop =
         preflop ?? throw new ArgumentNullException(nameof(preflop));
 
@@ -26,37 +34,39 @@ public sealed class LocalDecisionEngine(
 
         if (request.Street == DecisionStreet.Preflop)
         {
-            if (request.Preflop is null)
-                throw new ArgumentException("El pedido preflop no trae su bloque de entrada.", nameof(request));
+            var internalRequest = _preflopFactory.Create(request, request.PotSize);
+            var response = await _preflop.Execute(internalRequest).ConfigureAwait(false);
 
-            var response = await _preflop.Execute(request.Preflop).ConfigureAwait(false);
-
-            return new DecisionResult(
-                Action: response.ResponseAction.Action ?? string.Empty,
-                Equity: 0d);
+            return new DecisionResult
+            {
+                Action = response.ResponseAction.Action ?? string.Empty
+            };
         }
 
-        if (request.Postflop is null)
-            throw new ArgumentException("El pedido postflop no trae su bloque de entrada.", nameof(request));
-
-        var postflopRequest = request.Postflop with { Street = ToBoardPosition(request.Street) };
+        var postflopRequest = _postflopFactory.Create(request);
         var result = _postflop.Decide(postflopRequest);
+        var calculation = result.Result;
 
-        return new DecisionResult(
-            Action: result.Action,
-            Equity: result.EffectiveEquity,
-            Reason: result.Decision.Reason,
-            BoardTexture: result.BoardTexture,
-            IsBluff: result.Decision.IsBluff,
-            IsBarrel: result.Decision.IsBarrel,
-            IsCheckRaise: result.Decision.IsCheckRaise);
+        return new DecisionResult
+        {
+            Action = result.Action,
+            Equity = result.EffectiveEquity,
+            PotOdds = calculation.PotOddsPercentage,
+            BetSize = calculation.SuggestedBetSize,
+            Reason = result.Decision.Reason,
+            BoardTexture = result.BoardTexture,
+            IsBluff = result.Decision.IsBluff,
+            IsBarrel = result.Decision.IsBarrel,
+            IsCheckRaise = result.Decision.IsCheckRaise,
+            IsFloating = result.Decision.IsFloating,
+            FoldEquity = calculation.FoldEquity,
+            TotalOuts = calculation.TotalOuts,
+            EffectiveOuts = calculation.EffectiveOuts,
+            DrawTypes = calculation.DrawTypes,
+            HasComboDraw = calculation.HasComboDraw,
+            HeroHandRank = calculation.HeroHandRank.ToString(),
+            PairClassification = calculation.PairType.ToString(),
+            KickerStrength = calculation.HeroKickerStrength.ToString()
+        };
     }
-
-    private static BoardPosition ToBoardPosition(DecisionStreet street) => street switch
-    {
-        DecisionStreet.Flop => BoardPosition.Flop,
-        DecisionStreet.Turn => BoardPosition.Turn,
-        DecisionStreet.River => BoardPosition.River,
-        _ => throw new ArgumentOutOfRangeException(nameof(street), street, "La calle no es postflop")
-    };
 }

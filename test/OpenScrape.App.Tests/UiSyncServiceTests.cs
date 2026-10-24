@@ -8,7 +8,6 @@ using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Services;
 using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Tests;
@@ -77,7 +76,7 @@ public class UiSyncServiceTests
     }
 
     [Test]
-    public async Task Attach_ConResultadoDecision_ActualizaOverlay()
+    public async Task Attach_ConResultadoDecision_ActualizaAccionYCalle()
     {
         using var ui = new UiSyncService(NullLogger<UiSyncService>.Instance);
         await using var coord = CreateCoord();
@@ -88,20 +87,11 @@ public class UiSyncServiceTests
         {
             Street = BoardPosition.Flop,
             RecommendedAction = "Bet 1/2",
-            DecisionResult = new DecisionResult
-            {
-                RecommendedAction = "Bet 1/2",
-                EquityPercent = 65.3,
-                Reason = "flop value",
-                BoardTexture = "Dry",
-                PotOddsPercent = 20.0,
-            },
         };
 
         RaiseResultReady(coord, result);
 
         Assert.That(overlay.Actions, Has.Exactly(1).EqualTo("Bet 1/2"));
-        Assert.That(overlay.Equities, Has.Exactly(1).EqualTo("65,3%").Or.Exactly(1).EqualTo("65.3%"));
         Assert.That(overlay.Streets, Has.Exactly(1).EqualTo("Flop"));
     }
 
@@ -144,12 +134,6 @@ public class UiSyncServiceTests
         RaiseResultReady(coord, new GameLoopResult
         {
             RecommendedAction = "Bet 1/2",
-            DecisionResult = new DecisionResult
-            {
-                RecommendedAction = "Bet 1/2",
-                EquityPercent = 50,
-                Reason = "x"
-            },
         });
         Assert.That(overlay.Actions, Is.Empty, "Tras Detach, el overlay no debe recibir actualizaciones");
 
@@ -158,12 +142,6 @@ public class UiSyncServiceTests
         RaiseResultReady(coord, new GameLoopResult
         {
             RecommendedAction = "Call",
-            DecisionResult = new DecisionResult
-            {
-                RecommendedAction = "Call",
-                EquityPercent = 50,
-                Reason = "x"
-            },
         });
         Assert.That(overlay.Actions, Has.Exactly(1).EqualTo("Call"));
     }

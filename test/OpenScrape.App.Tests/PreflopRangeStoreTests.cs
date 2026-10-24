@@ -73,11 +73,11 @@ public class PreflopRangeStoreTests
         var sut = new GetActionScenario(new FakeRangeStore(null));
 
         // Act
-        var ex = Assert.ThrowsAsync<Exception>(async () => await sut.ExecuteAsync(
+        var ex = Assert.ThrowsAsync<PreflopSituationNotFoundException>(async () => await sut.ExecuteAsync(
             GameSituation.OpenRaise,
             new ActionScenarioRequest()));
 
         // Assert
-        Assert.That(ex!.Message, Does.Contain("Table not found"));
+        Assert.That(ex!.Situation, Is.EqualTo(GameSituation.OpenRaise.GetDescription()));
     }
 }

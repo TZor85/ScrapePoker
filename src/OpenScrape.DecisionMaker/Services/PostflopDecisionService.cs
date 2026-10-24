@@ -9,7 +9,7 @@ using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker.Services;
 
-public enum BetSizeCategory { NoBet, Underbet, Small, Medium, Large }
+
 
 public record PostflopDecisionResult(
     string Action,

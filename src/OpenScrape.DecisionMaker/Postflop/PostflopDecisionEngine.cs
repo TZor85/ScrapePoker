@@ -55,7 +55,8 @@ public sealed record PostflopDecisionEngineResult(
     PostflopDecisionResult Decision,
     string BoardTexture,
     BoardChangeResult? BoardChange,
-    double EffectiveEquity)
+    double EffectiveEquity,
+    PokerCalculationResult Result)
 {
     public string Action => Decision.Action;
 }
@@ -129,7 +130,8 @@ public sealed class PostflopDecisionEngine
             decision,
             request.BoardTexture,
             request.BoardChange,
-            equity);
+            equity,
+            result);
     }
 
     private static double ClampEquity(double equity) => Math.Clamp(equity, 0d, 100d);

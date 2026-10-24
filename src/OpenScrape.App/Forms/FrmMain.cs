@@ -1,4 +1,4 @@
-﻿using JasperFx.Core;
+using JasperFx.Core;
 using Marten;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +17,6 @@ using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;

@@ -22,7 +22,7 @@ public class GetActionScenario
         {
             var table = await _rangeStore.GetAsync(situation.GetDescription());
             if (table == null)
-                throw new Exception("Table not found");
+                throw new PreflopSituationNotFoundException(situation.GetDescription());
 
             var hands = SelectMatchingHands(table.Positions, request);
 
@@ -33,6 +33,10 @@ public class GetActionScenario
                 var action = GetRandomAction(hands?.ToList() ?? new List<Hand>());
                 return string.IsNullOrEmpty(action) ? "Fold" : action;
             }
+        }
+        catch (PreflopSituationNotFoundException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

@@ -1,6 +1,11 @@
+using Microsoft.Extensions.Options;
 using OpenScrape.App.Tests.Fixtures;
+using OpenScrape.Contracts;
 using OpenScrape.DecisionMaker;
+using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.DecisionMaker.Postflop;
 using OpenScrape.DecisionMaker.Preflop;
+using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -42,18 +47,35 @@ public class LocalDecisionEngineTests
             ]
         };
 
+        var profile = StrategyProfileFixture.LoadOrCreate();
+        var options = Options.Create(profile);
+
         var preflop = PreflopTestCaseBuilder.Create(
             new FixedRangeStore(table),
             new FixedRandomProvider(30));
 
         var engine = new LocalDecisionEngine(
+            new PreflopRequestFactory(),
+            new PostflopRequestFactory(
+                GameCoordinatorFixtureBuilder.CreateCalculator(profile, monteCarloSeed: 1),
+                new BoardTextureAnalyzer(),
+                new PreflopAnalyzer(),
+                options),
             preflop,
-            GameCoordinatorFixtureBuilder.CreateEngine(StrategyProfileFixture.LoadOrCreate()));
+            GameCoordinatorFixtureBuilder.CreateEngine(profile));
 
         var request = new DecisionRequest
         {
             Street = DecisionStreet.Preflop,
-            Preflop = CreateOpenRaiseRequest()
+            HeroCard1 = new CardRef((int)Rank.Ace, (int)Suit.Spades),
+            HeroCard2 = new CardRef((int)Rank.King, (int)Suit.Spades),
+            HeroPosition = TablePosition.Button,
+            PotSize = 3m,
+            BetToCall = 3m,
+            HeroStack = 100m,
+            VillainStack = 100m,
+            IsInPosition = true,
+            HandSituation = HandSituation.None
         };
 
         // Act
@@ -61,30 +83,5 @@ public class LocalDecisionEngineTests
 
         // Assert
         Assert.That(result.Action, Is.EqualTo("Raise"));
-    }
-
-    private static SetPreflopActionUseCaseRequest CreateOpenRaiseRequest()
-    {
-        var state = new PlayerGameState
-        {
-            Position = TablePosition.Button,
-            PotSize = 3m,
-            HeroStack = 100m,
-            IsInPosition = true,
-            HandSituation = HandSituation.None,
-            HoleCard1Face = "A",
-            HoleCard2Face = "K",
-            HoleCard1Rank = (int)Rank.Ace,
-            HoleCard2Rank = (int)Rank.King,
-            HoleCard1Suit = (int)Suit.Spades,
-            HoleCard2Suit = (int)Suit.Spades
-        };
-
-        return new SetPreflopActionUseCaseRequest
-        {
-            ResponseAction = new ResponseAction(),
-            PlayerState = state,
-            PreflopHeroPosition = new Dictionary<TablePosition, Dictionary<TablePosition, decimal>>()
-        };
     }
 }

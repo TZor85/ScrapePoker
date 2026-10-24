@@ -49,7 +49,7 @@
     <InternalsVisibleTo Include="OpenScrape.App.Tests" />
   </ItemGroup>
 
-  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.DecisionMaker.Postflop" /><Using Include="OpenScrape.DecisionMaker.Preflop" />
+  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.Contracts" /><Using Include="OpenScrape.DecisionMaker.Postflop" /><Using Include="OpenScrape.DecisionMaker.Preflop" />
   </ItemGroup>
 
   <ItemGroup>

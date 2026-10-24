@@ -99,13 +99,6 @@ public sealed class UiSyncService : IUiSyncService
             {
                 if (!string.IsNullOrEmpty(result.RecommendedAction))
                     overlay.UpdateAction(result.RecommendedAction);
-                if (result.DecisionResult is { } decision)
-                {
-                    overlay.UpdateEquityPercentage($"{decision.EquityPercent:F1}%");
-                    overlay.UpdatePotOddsPercentage($"{decision.PotOddsPercent:F1}%");
-                    if (!string.IsNullOrEmpty(decision.BoardTexture))
-                        overlay.UpdateStreetPhase(decision.BoardTexture);
-                }
                 if (result.Street is { } street)
                     overlay.UpdateStreetIndicator(street.ToString());
             }

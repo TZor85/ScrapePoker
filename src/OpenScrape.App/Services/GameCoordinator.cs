@@ -2,7 +2,6 @@ using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
