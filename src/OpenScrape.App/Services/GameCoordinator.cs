@@ -758,13 +758,18 @@ public class GameCoordinator : IGameCoordinator
     private VillainProfile BuildVillainProfile(PlayerGameState state, bool? inPosition, double baseFoldEquity)
     {
         var villainId = GetActiveVillainId(state);
+        var villainStats = GetActiveVillainProfile(state);
 
         return new VillainProfile
         {
             VillainId = villainId,
             Type = GetVillainType(state, inPosition),
             FoldToBetPct = _opponentTracker.GetFoldToBetPct(villainId),
-            AdjustedFoldEquity = _opponentTracker.GetAdjustedFoldEquity(villainId, baseFoldEquity)
+            AdjustedFoldEquity = _opponentTracker.GetAdjustedFoldEquity(villainId, baseFoldEquity),
+            HandsPlayed = villainStats?.HandsPlayed ?? 0,
+            TimesVoluntarilyPutMoneyIn = villainStats?.TimesVoluntarilyPutMoneyIn ?? 0,
+            TimesPreflopRaised = villainStats?.TimesPreflopRaised ?? 0,
+            TimesThreeBet = villainStats?.TimesThreeBet ?? 0
         };
     }
 

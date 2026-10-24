@@ -133,7 +133,7 @@ namespace OpenScrape.App
         private readonly GetWindowsScreenUseCase _useCase;
         private readonly ActionScenarioUseCases _actionScenarioUseCases;
         private readonly RegionTableMapUseCases _regionTableMapUseCases;
-        private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
+        private readonly IDecisionEngine _decisionEngine;
         private readonly ImageCropperService _imageCropperService;
         private readonly IDocumentStore _dataBase;
         // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
@@ -227,7 +227,7 @@ namespace OpenScrape.App
                         IGetCardsFlopUseCase getCardsFlopUseCase,
                         IGetCardsTurnUseCase getCardsTurnUseCase,
                         IGetCardsRiverUseCase getCardsRiverUseCase,
-                        ISetPreflopActionUseCase setPreflopActionUseCase,
+                        IDecisionEngine decisionEngine,
                         IGameCoordinator coordinator,
                         IScreenReaderService screenReader,
                         ITableLayoutService tableLayout,
@@ -294,7 +294,7 @@ namespace OpenScrape.App
             _getCardsFlopUseCase = getCardsFlopUseCase ?? throw new ArgumentNullException(nameof(getCardsFlopUseCase));
             _getCardsTurnUseCase = getCardsTurnUseCase ?? throw new ArgumentNullException(nameof(getCardsTurnUseCase));
             _getCardsRiverUseCase = getCardsRiverUseCase ?? throw new ArgumentNullException(nameof(getCardsRiverUseCase));
-            _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
+            _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
             _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
@@ -1068,15 +1068,18 @@ namespace OpenScrape.App
                 }
             }
 
-            var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
-            {
-                ResponseAction = _responseAction,
-                PlayerState = _playerGameState,
-                PreflopHeroPosition = _preflopHeroPosition
-            });
+            var decision = await _decisionEngine.DecideAsync(
+                PlayerStateMapper.MapPreflop(
+                    _playerGameState,
+                    _responseAction.IsSecondAction,
+                    villain: null));
 
-            _responseAction = responseFlop.ResponseAction;
-            _playerGameState = responseFlop.PlayerState;
+            _responseAction.Action = decision.Action;
+            if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))
+                _responseAction.HandSituation = nextSituation;
+
+            if (decision.Action.Contains("Call"))
+                _playerGameState.HandSituation = HandSituation.Call;
 
             _frmOverlay.UpdateStreetPhase("Pre-Flop");
             SetPreflopAggressors();

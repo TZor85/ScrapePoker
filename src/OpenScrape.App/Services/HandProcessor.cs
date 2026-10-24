@@ -6,6 +6,7 @@ using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;
+using OpenScrape.DecisionMaker;
 
 namespace OpenScrape.App.Services;
 
@@ -24,7 +25,7 @@ public sealed class HandProcessor : IGameLoopTickProcessor
     private readonly ICaptureService _captureService;
     private readonly ITableReaderService _tableReaderService;
     private readonly GameLoopStateMachine _stateMachine;
-    private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
+    private readonly IDecisionEngine _decisionEngine;
     private readonly IGameCoordinator _gameCoordinator;
     private readonly IPostflopContextHolder _contextHolder;
     private readonly ITableLayoutService _tableLayout;
@@ -44,7 +45,7 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         ICaptureService captureService,
         ITableReaderService tableReaderService,
         GameLoopStateMachine stateMachine,
-        ISetPreflopActionUseCase setPreflopActionUseCase,
+        IDecisionEngine decisionEngine,
         IGameCoordinator? gameCoordinator = null,
         IPostflopContextHolder? contextHolder = null,
         ITableLayoutService? tableLayout = null,
@@ -58,7 +59,7 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
         _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
         _stateMachine = stateMachine ?? throw new ArgumentNullException(nameof(stateMachine));
-        _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
+        _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
         _gameCoordinator = gameCoordinator!;
         _contextHolder = contextHolder!;
         _tableLayout = tableLayout!;
@@ -137,20 +138,24 @@ public sealed class HandProcessor : IGameLoopTickProcessor
             return new GameLoopResult { Empty = true };
         }
 
-        // Ejecutar decisión preflop
+        // Ejecutar decision preflop por la puerta unica del motor
         var responseAction = new ResponseAction();
-        var response = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
-        {
-            ResponseAction = responseAction,
-            PlayerState = state,
-            PreflopHeroPosition = preflopHeroPosition
-        });
+        var decision = await _decisionEngine.DecideAsync(
+            PlayerStateMapper.MapPreflop(state, responseAction.IsSecondAction, villain: null));
+
+        responseAction.Action = decision.Action;
+        if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))
+            responseAction.HandSituation = nextSituation;
+
+        var playerState = state.Clone();
+        if (decision.Action.Contains("Call"))
+            playerState.HandSituation = HandSituation.Call;
 
         // Marcar aggressors preflop
-        SetPreflopAggressors(response.PlayerState);
+        SetPreflopAggressors(playerState);
 
         // Construir GameLoopResult
-        return BuildGameLoopResult(response.PlayerState, response.ResponseAction);
+        return BuildGameLoopResult(playerState, responseAction);
     }
 
     /// <summary>

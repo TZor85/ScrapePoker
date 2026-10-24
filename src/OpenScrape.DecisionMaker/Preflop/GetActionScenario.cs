@@ -24,15 +24,13 @@ public class GetActionScenario
             if (table == null)
                 throw new PreflopSituationNotFoundException(situation.GetDescription());
 
-            var hands = SelectMatchingHands(table.Positions, request);
+            var matches = SelectMatchingHands(table.Positions, request).ToList();
 
-            if (hands == null)
+            if (matches.Count == 0)
                 return "Fold";
-            else
-            {
-                var action = GetRandomAction(hands?.ToList() ?? new List<Hand>());
-                return string.IsNullOrEmpty(action) ? "Fold" : action;
-            }
+
+            var action = GetRandomAction(matches);
+            return string.IsNullOrEmpty(action) ? "Fold" : action;
         }
         catch (PreflopSituationNotFoundException)
         {

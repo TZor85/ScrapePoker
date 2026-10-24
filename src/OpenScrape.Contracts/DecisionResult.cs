@@ -14,6 +14,9 @@ public sealed record DecisionResult
     public string? Reason { get; init; }
     public string? BoardTexture { get; init; }
 
+    /// <summary>Situación preflop resultante (Call, ThreeBet, ...), para la calle siguiente.</summary>
+    public string? Situation { get; init; }
+
     public bool IsBluff { get; init; }
     public bool IsBarrel { get; init; }
     public bool IsCheckRaise { get; init; }

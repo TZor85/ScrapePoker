@@ -6,6 +6,7 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Enums;
 using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
+using OpenScrape.DecisionMaker;
 
 namespace OpenScrape.App.Tests;
 
@@ -276,13 +277,13 @@ public class HandProcessorTests
         ICaptureService? captureService = null,
         ITableReaderService? tableReader = null,
         GameLoopStateMachine? stateMachine = null,
-        ISetPreflopActionUseCase? preflopUseCase = null)
+        FakeSetPreflopActionUseCase? preflopUseCase = null)
     {
         return new HandProcessor(
             captureService: captureService ?? new FakeCaptureService(),
             tableReaderService: tableReader ?? new FakeTableReaderService(),
             stateMachine: stateMachine ?? new GameLoopStateMachine(new FakeLogger<GameLoopStateMachine>()),
-            setPreflopActionUseCase: preflopUseCase ?? new FakeSetPreflopActionUseCase(),
+            decisionEngine: new FakePreflopDecisionEngine(preflopUseCase ?? new FakeSetPreflopActionUseCase()),
             logger: new FakeLogger<HandProcessor>());
     }
 
@@ -366,6 +367,17 @@ internal sealed class FakeTableReaderService : ITableReaderService
     bool ITableReaderService.IsBoardCardVisible(Bitmap screenshot, string cardRegionName) => true;
 
     int ITableReaderService.CountVisibleBoardCards(Bitmap screenshot) => BoardCardCount;
+}
+
+internal sealed class FakePreflopDecisionEngine(FakeSetPreflopActionUseCase preflop) : IDecisionEngine
+{
+    public Task<OpenScrape.Contracts.DecisionResult> DecideAsync(
+        OpenScrape.Contracts.DecisionRequest request, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new OpenScrape.Contracts.DecisionResult
+        {
+            Action = preflop.ResponseActionText,
+            Situation = preflop.HandSituation.ToString()
+        });
 }
 
 internal sealed class FakeSetPreflopActionUseCase : ISetPreflopActionUseCase

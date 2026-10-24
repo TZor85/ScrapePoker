@@ -13,4 +13,8 @@ public sealed record VillainProfile
     public double AdjustedFoldEquity { get; init; } = -1;
     public int HandsPlayed { get; init; }
     public int TimesVoluntarilyPutMoneyIn { get; init; }
+
+    public int TimesPreflopRaised { get; init; }
+
+    public int TimesThreeBet { get; init; }
 }

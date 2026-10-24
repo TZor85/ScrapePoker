@@ -54,7 +54,11 @@ public sealed class PostflopRequestFactory
             request.HeroStack,
             request.VillainStack,
             request.HandSituation.ToString(),
-            request.VillainPosition);
+            request.VillainPosition,
+            ToOpponentProfile(request.VillainProfile));
+
+        if (result.Failed)
+            throw new CalculationFailedException(result.FailureReason ?? "error desconocido");
 
         var texture = _boardTextureAnalyzer.Analyze(communityCards);
         var boardChange = street switch
@@ -180,4 +184,15 @@ public sealed class PostflopRequestFactory
         DecisionStreet.River => BoardPosition.River,
         _ => throw new ArgumentException("La fábrica postflop no acepta pedidos de preflop.", nameof(street))
     };
+
+    private static OpponentProfile? ToOpponentProfile(VillainProfile? villain) => villain is null
+        ? null
+        : new OpponentProfile
+        {
+            PlayerId = villain.VillainId,
+            HandsPlayed = villain.HandsPlayed,
+            TimesVoluntarilyPutMoneyIn = villain.TimesVoluntarilyPutMoneyIn,
+            TimesPreflopRaised = villain.TimesPreflopRaised,
+            TimesThreeBet = villain.TimesThreeBet
+        };
 }

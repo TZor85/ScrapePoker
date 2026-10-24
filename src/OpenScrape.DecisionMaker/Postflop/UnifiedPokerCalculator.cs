@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using OpenScrape.DecisionMaker;
@@ -40,7 +40,12 @@ namespace OpenScrape.DecisionMaker.Postflop
         public KickerStrength HeroKickerStrength { get; set; } // Fuerza del kicker con top pair
         public BoardTextureCategory? BoardTexture { get; set; } // Textura del board (Dry/SemiDry/SemiWet/Wet/Paired)
         public double BoardWetnessScore { get; set; }           // Puntuación de humedad del board (0-100)
-        public PairClassification PairType { get; set; }        // Sub-tipo de par (solo relevante cuando HeroHandRank == OnePair)
+        public PairClassification PairType { get; set; }
+
+        /// <summary>Indica que el calculo fallo y el resultado no debe usarse.</summary>
+        public bool Failed { get; set; }
+
+        public string? FailureReason { get; set; }
     }
 
     public class UnifiedPokerCalculator : IPokerCalculator
@@ -126,7 +131,6 @@ namespace OpenScrape.DecisionMaker.Postflop
                                 : KickerStrength.Weak;
                         }
 
-                        // Clasificar sub-tipo de par para decisiones turn/river diferenciadas
                         result.PairType = ClassifyPair(handEval, playerHand, communityCards);
                     }
                 }
@@ -178,7 +182,9 @@ namespace OpenScrape.DecisionMaker.Postflop
                     TotalOuts = 0,
                     Street = "Unknown",
                     RecommendedAction = "Fold",
-                    SuggestedBetSize = null
+                    SuggestedBetSize = null,
+                    Failed = true,
+                    FailureReason = ex.Message
                 };
             }
         }
@@ -419,7 +425,6 @@ namespace OpenScrape.DecisionMaker.Postflop
         }
 
         /// <summary>
-        /// Clasifica el sub-tipo de par cuando hero tiene OnePair.
         /// Distingue Overpair, TopPair, MiddlePair, BottomPair, PocketPairUnder y BoardPaired.
         /// </summary>
         public static PairClassification ClassifyPair(
