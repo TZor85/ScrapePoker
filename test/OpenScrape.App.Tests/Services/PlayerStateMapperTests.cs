@@ -61,11 +61,17 @@ public class PlayerStateMapperTests
         var state = State();
         state.BoardCards.Add(new BoardData
         {
-            Force = (int)Rank.Ace, Suit = (int)Suit.Spades, Position = BoardPosition.Hand, Location = 6
+            Force = (int)Rank.Ace,
+            Suit = (int)Suit.Spades,
+            Position = BoardPosition.Hand,
+            Location = 6
         });
         state.BoardCards.Add(new BoardData
         {
-            Force = (int)Rank.King, Suit = (int)Suit.Spades, Position = BoardPosition.Hand, Location = 7
+            Force = (int)Rank.King,
+            Suit = (int)Suit.Spades,
+            Position = BoardPosition.Hand,
+            Location = 7
         });
 
         var request = PlayerStateMapper.MapPostflop(
