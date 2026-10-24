@@ -766,4 +766,5 @@ public class GameCoordinator : IGameCoordinator
     }
 
     private static PostflopDecisionResult ToDecision(Contracts.DecisionResult result) =>
-        new(result.Action, result.Reason, result.IsBluff, result.IsBarrel, result.IsCheckRaise, result.IsFloating);}
+        new(result.Action, result.Reason, result.IsBluff, result.IsBarrel, result.IsCheckRaise, result.IsFloating);
+}

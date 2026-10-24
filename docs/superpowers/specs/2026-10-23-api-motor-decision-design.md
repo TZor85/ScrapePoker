@@ -417,6 +417,11 @@ Se parte en dos entregas mergeables.
 `HttpDecisionEngine` detrás del flag `RemoteEngine:Enabled`, apagado por
 defecto. Los 15 fixtures se replayed contra el host en proceso con RNG fijo.
 
+Estado: completada (commit `c11d305`, 1330 tests verdes, paridad 15/15 por
+HTTP). El preflop del cliente sigue llamando a `ISetPreflopActionUseCase`
+porque el contrato no devuelve el estado mutado que usa la calle siguiente;
+el camino preflop por HTTP queda cubierto por `ParidadHttpTests`.
+
 Salida: el mismo `DecisionRequest` produce la misma decisión por el camino local
 y por HTTP, en las cuatro calles.
 

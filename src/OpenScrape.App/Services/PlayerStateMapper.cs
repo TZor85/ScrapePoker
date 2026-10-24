@@ -42,29 +42,29 @@ public static class PlayerStateMapper
         DecisionContext context,
         VillainProfile? villain,
         bool heroIsAggressor) => new()
-    {
-        Street = street,
-        HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
-        HeroCard2 = new CardRef(state.HoleCard2Rank, state.HoleCard2Suit),
-        Board = state.BoardCards
+        {
+            Street = street,
+            HeroCard1 = new CardRef(state.HoleCard1Rank, state.HoleCard1Suit),
+            HeroCard2 = new CardRef(state.HoleCard2Rank, state.HoleCard2Suit),
+            Board = state.BoardCards
             .Take(BoardCardsFor(street))
             .Select(card => new CardRef(card.Force, card.Suit))
             .ToList(),
-        PotSize = state.PotSize,
-        BetToCall = maxBet,
-        HeroStack = state.HeroStack,
-        VillainStack = VillainStack(state),
-        IsInPosition = state.IsInPosition,
-        NumOpponents = Math.Max(0, state.Players.Count(player => player.Active) - 1),
-        HeroPosition = state.Position,
-        VillainPosition = Villain(state)?.Position ?? TablePosition.None,
-        HandSituation = state.HandSituation,
-        IsSecondAction = isSecondAction,
-        HeroWasPreflopAggressor = heroIsAggressor,
-        IsHeroAggressor = heroIsAggressor,
-        VillainProfile = villain,
-        Context = context
-    };
+            PotSize = state.PotSize,
+            BetToCall = maxBet,
+            HeroStack = state.HeroStack,
+            VillainStack = VillainStack(state),
+            IsInPosition = state.IsInPosition,
+            NumOpponents = Math.Max(0, state.Players.Count(player => player.Active) - 1),
+            HeroPosition = state.Position,
+            VillainPosition = Villain(state)?.Position ?? TablePosition.None,
+            HandSituation = state.HandSituation,
+            IsSecondAction = isSecondAction,
+            HeroWasPreflopAggressor = heroIsAggressor,
+            IsHeroAggressor = heroIsAggressor,
+            VillainProfile = villain,
+            Context = context
+        };
 
     private static int BoardCardsFor(DecisionStreet street) => street switch
     {

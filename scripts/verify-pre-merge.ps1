@@ -136,6 +136,13 @@ if ($preflopCount -eq 0 -or $postflopCount -eq 0) {
     $script:results += @{ Name = "Fixtures de paridad"; Status = "PASS" }
 }
 
+# Checkpoint de arquitectura: el contrato compartido con la API no puede
+# arrastrar Marten ni ASP.NET, o deja de poder publicarse como ensamblado aparte.
+Test-Checkpoint "Arquitectura de Contracts" {
+    dotnet test "test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj" --no-build --filter "FullyQualifiedName~Architecture" --nologo 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "El contrato compartido dejo de estar aislado (ver ContractsIsolationTests)." }
+}
+
 # Checkpoint 7: Smoke test (optional)
 if (-not $SkipSmoke) {
     Test-Checkpoint "Smoke Test" {
