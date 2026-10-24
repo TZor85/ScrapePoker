@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 
 using OpenScrape.App.Services;
+using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App.Tests;

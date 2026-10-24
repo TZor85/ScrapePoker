@@ -19,6 +19,7 @@ public static class DecisionMakerServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddSingleton<IRandomProvider, SystemRandomProvider>();
+        services.AddSingleton<OpenScrape.Domain.Interfaces.IRandomProvider, OpenScrape.Domain.Services.SystemRandomProvider>();
         services.AddSingleton<MonteCarloSimulator>();
         services.AddSingleton<IMonteCarloSimulator>(sp => sp.GetRequiredService<MonteCarloSimulator>());
         services.AddSingleton<OutsCalculator>();

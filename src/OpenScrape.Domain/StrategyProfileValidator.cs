@@ -3,7 +3,7 @@ using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Exceptions;
 using OpenScrape.Domain.ValueObjects;
 
-namespace OpenScrape.App.Services;
+namespace OpenScrape.Domain;
 
 /// <summary>
 /// Valida el <see cref="StrategyProfile"/> cargado al arrancar. Si detecta errores,
