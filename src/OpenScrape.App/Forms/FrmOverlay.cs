@@ -422,6 +422,12 @@ namespace OpenScrape.App.Forms
                 lbEVWithFoldEquity.ForeColor = Color.FromArgb(255, 255, 160);
         }
 
+        /// <summary>
+        /// Texto del monto sugerido. La fracción es del pote (1 = bote completo).
+        /// </summary>
+        internal static string FormatSuggestedBetSize(double fraction) =>
+            FormattableString.Invariant($"Bet: {fraction:0.##}x pot");
+
         public void UpdateSuggestedBetSize(double? betSize)
         {
             if (!betSize.HasValue)
@@ -430,7 +436,7 @@ namespace OpenScrape.App.Forms
                 return;
             }
 
-            lbSuggestedBetSize.Text = $"Bet: {Math.Round(betSize.Value, 2)}";
+            lbSuggestedBetSize.Text = FormatSuggestedBetSize(betSize.Value);
             SetConditionalVisibility(lbSuggestedBetSize, true);
         }
 
