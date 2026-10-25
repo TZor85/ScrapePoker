@@ -442,6 +442,14 @@ y queda sólo `HttpDecisionEngine`. Se verifica el publish.
 
 Salida: el artefacto publicado no contiene `OpenScrape.DecisionMaker.dll`.
 
+Estado: **fase 4a completada** (rama local `feature/api-engine-fase-4a`,
+commits `06e6eb6`→`2106490`). `OpenScrape.App` ya no referencia
+`OpenScrape.DecisionMaker`, no instancia el motor local y decide siempre por
+HTTP; el overlay, el resume y los logs se alimentan de `Contracts.DecisionResult`.
+El gate `verify-pre-merge.ps1` publica el cliente y falla si aparece
+`DecisionMaker.dll`. La fase 4b (sacar `OpenScrape.Features` del cliente) queda
+pendiente, así que el publish todavía incluye `OpenScrape.Features.dll`.
+
 ## Pruebas
 
 ### Unitarias del motor
@@ -478,12 +486,12 @@ Marten se usa sólo en producción; los tests no requieren Postgres.
 
 - `OpenScrape.Contracts` no referencia Marten ni ASP.NET. Se valida desde la
   fase 3a.
-- Al terminar la fase 4, `OpenScrape.App.csproj` no contiene `ProjectReference`
+- Al terminar la fase 4a, `OpenScrape.App.csproj` no contiene `ProjectReference`
   a `DecisionMaker`. Durante 3a el camino local sigue vivo y la referencia es
   legítima.
-- Al terminar la fase 4, el directorio de publish del cliente no contiene
-  `OpenScrape.DecisionMaker.dll` ni `OpenScrape.Features.dll`. En 3a se valida
-  la paridad, no la ausencia del motor.
+- Al terminar la fase 4a, el directorio de publish del cliente no contiene
+  `OpenScrape.DecisionMaker.dll`. La ausencia de `OpenScrape.Features.dll` es la
+  salida de la fase 4b, todavía pendiente.
 
 ## Despliegue
 

@@ -143,6 +143,23 @@ Test-Checkpoint "Arquitectura de Contracts" {
     if ($LASTEXITCODE -ne 0) { throw "El contrato compartido dejo de estar aislado (ver ContractsIsolationTests)." }
 }
 
+# Checkpoint de publish: el cliente no puede llevar el motor en el binario.
+# Publica en un directorio temporal y falla si aparece DecisionMaker.dll.
+Test-Checkpoint "Publish sin motor" {
+    $publishDir = Join-Path ([System.IO.Path]::GetTempPath()) ("openscrape-publish-check-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        dotnet publish "src/OpenScrape.App/OpenScrape.App.csproj" -c Release -r win-x64 --self-contained false -o $publishDir --nologo 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "El publish del cliente fallo." }
+
+        if (Test-Path (Join-Path $publishDir "OpenScrape.DecisionMaker.dll")) {
+            throw "El publish todavia incluye OpenScrape.DecisionMaker.dll."
+        }
+    }
+    finally {
+        if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
+    }
+}
+
 # Checkpoint 7: Smoke test (optional)
 if (-not $SkipSmoke) {
     Test-Checkpoint "Smoke Test" {
