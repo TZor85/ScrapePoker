@@ -16,6 +16,14 @@ public class AppEngineIsolationTests
     }
 
     [Test]
+    public void App_NoReferenciaFeatures()
+    {
+        var csproj = File.ReadAllText(FindProject());
+
+        Assert.That(csproj, Does.Not.Contain("OpenScrape.Features"));
+    }
+
+    [Test]
     public void App_NoUsaLocalDecisionEngine()
     {
         var files = Directory.GetFiles(FindDir(), "*.cs", SearchOption.AllDirectories);

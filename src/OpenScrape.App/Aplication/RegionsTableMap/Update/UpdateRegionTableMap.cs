@@ -1,7 +1,7 @@
-﻿using Ardalis.Result;
+using Ardalis.Result;
 using Marten;
 
-namespace OpenScrape.Features.RegionsTableMap.Update;
+namespace OpenScrape.App.Aplication.RegionsTableMap.Update;
 
 public class UpdateRegionTableMap
 {

@@ -68,7 +68,7 @@ así**, y la corrección cambia la fase 1:
   divergencia.
 - El preflop no pasa por `GameCoordinator` ni por la facade: va por
   `SetPreflopActionUseCase` → use cases de acción → `GetActionScenario`
-  (`OpenScrape.Features`) → Marten.
+  (`IPreflopRangeStore`, hoy implementado en `OpenScrape.Api.Persistence`) → Marten.
 
 Conclusión: no se "conecta la facade". Se **extrae la lógica de decisión real**
 de `GameCoordinator` a un engine puro, se **mueve el motor preflop** al mismo
@@ -96,7 +96,7 @@ OpenScrape.Domain  (entidades, enums, value objects, PlayerGameState)
         │         │
         │         └── OpenScrape.App             cliente delgado (WinForms)
         │
-        └── OpenScrape.Features / OpenScrape.Infrastructure
+        └── OpenScrape.Infrastructure
                         ▲
                         └── OpenScrape.Api implementa IPreflopRangeStore sobre GetTable
 ```
@@ -149,7 +149,9 @@ El motor no conoce HTTP, ni licencias, ni el cliente.
 ### `OpenScrape.Api` (nuevo)
 
 `Microsoft.NET.Sdk.Web`, `net10.0`. Referencia `DecisionMaker`, `Contracts`,
-`Features` y Marten. Es el único proyecto que conoce ASP.NET.
+`Infrastructure` y Marten. Es el único proyecto que conoce ASP.NET. La
+implementación de `IPreflopRangeStore` vive en `OpenScrape.Api.Persistence`
+(antes en `OpenScrape.Features`, proyecto eliminado en la fase 4b).
 
 Contiene: endpoints, middleware de licencia, rate limiting, `ILicenseStore` con
 `MartenLicenseStore`, `IPreflopRangeStore` con `MartenPreflopRangeStore` (envuelve
@@ -177,9 +179,10 @@ Ese recableado es parte de la fase 3a y no es cosmético: hoy el coordinador
 llama directo a `PostflopDecisionEngine` y a los use cases preflop. Pasa a armar
 un `DecisionRequest`, pedir la decisión a `IDecisionEngine` y recién después
 hacer sus efectos (tracking, contexto, logging, exploitability) con el
-resultado. Sin ese cambio, el flag `RemoteEngine:Enabled` no tendría efecto.
+resultado. Sin ese cambio, el cliente no tendría de dónde sacar la decisión.
 
-Conserva OCR, captura, overlay, `Features`, `Infrastructure` y `Domain`.
+Conserva OCR, captura, overlay, `Infrastructure` y `Domain`. Los use cases del
+editor de regiones viven en `App.Aplication.RegionsTableMap` desde la fase 4b.
 
 ### Qué se mueve y qué se borra del cliente
 
@@ -442,13 +445,17 @@ y queda sólo `HttpDecisionEngine`. Se verifica el publish.
 
 Salida: el artefacto publicado no contiene `OpenScrape.DecisionMaker.dll`.
 
-Estado: **fase 4a completada** (rama local `feature/api-engine-fase-4a`,
-commits `06e6eb6`→`3005c9d`). `OpenScrape.App` ya no referencia
-`OpenScrape.DecisionMaker`, no instancia el motor local y decide siempre por
-HTTP; el overlay, el resume y los logs se alimentan de `Contracts.DecisionResult`.
-El gate `verify-pre-merge.ps1` publica el cliente y falla si aparece
-`DecisionMaker.dll`. La fase 4b (sacar `OpenScrape.Features` del cliente) queda
-pendiente, así que el publish todavía incluye `OpenScrape.Features.dll`.
+Estado: **fases 4a y 4b completadas** (rama local `feature/api-engine-fase-4a`).
+`OpenScrape.App` ya no referencia `OpenScrape.DecisionMaker` ni
+`OpenScrape.Features`, no instancia el motor local y decide siempre por HTTP; el
+overlay, el resume y los logs se alimentan de `Contracts.DecisionResult`. El
+gate `verify-pre-merge.ps1` publica el cliente y falla si aparece
+`DecisionMaker.dll` o `Features.dll`.
+
+En 4b los use cases del editor de regiones se mudaron a
+`App.Aplication.RegionsTableMap`; `MartenPreflopRangeStore` y `GetTable` pasaron
+a `OpenScrape.Api.Persistence`; y el proyecto `OpenScrape.Features` se eliminó
+junto con los use cases que nadie consumía (Cards, tablas y game rounds).
 
 ## Pruebas
 
@@ -486,12 +493,10 @@ Marten se usa sólo en producción; los tests no requieren Postgres.
 
 - `OpenScrape.Contracts` no referencia Marten ni ASP.NET. Se valida desde la
   fase 3a.
-- Al terminar la fase 4a, `OpenScrape.App.csproj` no contiene `ProjectReference`
-  a `DecisionMaker`. Durante 3a el camino local sigue vivo y la referencia es
-  legítima.
-- Al terminar la fase 4a, el directorio de publish del cliente no contiene
-  `OpenScrape.DecisionMaker.dll`. La ausencia de `OpenScrape.Features.dll` es la
-  salida de la fase 4b, todavía pendiente.
+- Al terminar la fase 4b, `OpenScrape.App.csproj` no contiene `ProjectReference`
+  a `Features` ni el proyecto existe en la solución.
+- Al terminar la fase 4b, el directorio de publish del cliente no contiene
+  `OpenScrape.DecisionMaker.dll` ni `OpenScrape.Features.dll`.
 
 ## Despliegue
 

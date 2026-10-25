@@ -41,7 +41,7 @@
   <ItemGroup>
     <ProjectReference Include="..\OpenScrape.Contracts\OpenScrape.Contracts.csproj" />
     <ProjectReference Include="..\OpenScrape.Domain\OpenScrape.Domain.csproj" />
-    <ProjectReference Include="..\OpenScrape.Features\OpenScrape.Features.csproj" />
+
     <ProjectReference Include="..\OpenScrape.Infrastructure\OpenScrape.Infrastructure.csproj" />
   </ItemGroup>
 

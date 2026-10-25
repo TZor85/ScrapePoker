@@ -21,7 +21,9 @@ using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Exceptions;
 using OpenScrape.Domain.ValueObjects;
-using OpenScrape.Features;
+using OpenScrape.App.Aplication.RegionsTableMap;
+using OpenScrape.App.Aplication.RegionsTableMap.GetAll;
+using OpenScrape.App.Aplication.RegionsTableMap.Update;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Telemetry;
@@ -60,7 +62,11 @@ namespace OpenScrape.App
                 {
                     // Agregar configuración de base de datos
                     services.AddDataBase(context.Configuration, context.HostingEnvironment.IsDevelopment());
-                    services.AddUseCases();
+
+                    // Use cases del editor de regiones (viven en el cliente, no en la API).
+                    services.AddScoped<GetAllRegionTableMap>();
+                    services.AddScoped<UpdateRegionTableMap>();
+                    services.AddScoped<RegionTableMapUseCases>();
                     //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
 
                     //services.AddScoped<OcrService>();

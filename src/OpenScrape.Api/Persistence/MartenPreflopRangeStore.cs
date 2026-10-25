@@ -1,8 +1,8 @@
-namespace OpenScrape.Features.ActionScenario;
+namespace OpenScrape.Api.Persistence;
 
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Interfaces;
-using OpenScrape.Features.Table.Get;
+
 
 /// <summary>
 /// Implementación de <see cref="IPreflopRangeStore"/> sobre Marten.

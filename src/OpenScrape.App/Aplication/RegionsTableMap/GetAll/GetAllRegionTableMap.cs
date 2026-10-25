@@ -1,6 +1,6 @@
-﻿using Marten;
+using Marten;
 
-namespace OpenScrape.Features.RegionsTableMap.GetAll;
+namespace OpenScrape.App.Aplication.RegionsTableMap.GetAll;
 
 public class GetAllRegionTableMap
 {

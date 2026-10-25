@@ -10,10 +10,11 @@ using Microsoft.IdentityModel.Tokens;
 using OpenScrape.Contracts;
 using OpenScrape.Api.Endpoints;
 using OpenScrape.Api.Licensing;
+using OpenScrape.Api.Persistence;
 using OpenScrape.DecisionMaker;
 using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
-using OpenScrape.Features;
+using OpenScrape.Domain.Interfaces;
 using OpenScrape.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +23,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<StrategyProfile>(builder.Configuration.GetSection("StrategyProfile"));
 
 builder.Services.AddDecisionMaker();
-builder.Services.AddUseCases();
+builder.Services.AddScoped<GetTable>();
+builder.Services.AddScoped<IPreflopRangeStore, MartenPreflopRangeStore>();
 builder.Services.AddDataBase(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.ConfigureMarten(options =>
     options.Schema.For<License>().DatabaseSchemaName("license"));

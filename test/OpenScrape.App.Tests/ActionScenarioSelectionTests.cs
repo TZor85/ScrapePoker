@@ -5,7 +5,7 @@ using OpenScrape.Domain.Interfaces;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
-using OpenScrape.Features.ActionScenario;
+using OpenScrape.Api.Persistence;
 
 namespace OpenScrape.App.Tests;
 

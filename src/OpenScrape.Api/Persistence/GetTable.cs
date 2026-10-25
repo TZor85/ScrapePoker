@@ -1,9 +1,9 @@
-﻿using Ardalis.Result;
+using Ardalis.Result;
 using Marten;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Mappers;
 
-namespace OpenScrape.Features.Table.Get;
+namespace OpenScrape.Api.Persistence;
 
 public class GetTable
 {

@@ -25,9 +25,6 @@ using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Mappers;
 using OpenScrape.Domain.ValueObjects;
-using OpenScrape.Features.ActionScenario;
-using OpenScrape.Features.Card;
-using OpenScrape.Features.RegionsTableMap;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics;
@@ -126,7 +123,6 @@ namespace OpenScrape.App
 
         #region [Services and UseCases]
         private readonly GetWindowsScreenUseCase _useCase;
-        private readonly RegionTableMapUseCases _regionTableMapUseCases;
         private readonly IDecisionEngine _decisionEngine;
         private readonly ImageCropperService _imageCropperService;
         private readonly IDocumentStore _dataBase;
@@ -140,7 +136,6 @@ namespace OpenScrape.App
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase;
         private readonly ColorDetectionService _colorDetectionService;
         private readonly OcrService _ocrService;
-        private readonly CardUseCases _cardUseCases;
         private readonly GameLoggerService _gameLoggerService;
         private readonly DetectionLoggerService _detectionLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
@@ -188,8 +183,6 @@ namespace OpenScrape.App
         /// Constructor del formulario principal
         /// </summary>
         public FrmMain(IDocumentStore dataBase,
-                        CardUseCases cardUseCases,
-                        RegionTableMapUseCases regionTableMapUseCases,
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
@@ -250,8 +243,6 @@ namespace OpenScrape.App
             //InitializeVisualStyles();
 
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
-            _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
-            _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
             _detectionLoggerService = detectionLoggerService ?? throw new ArgumentNullException(nameof(detectionLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));

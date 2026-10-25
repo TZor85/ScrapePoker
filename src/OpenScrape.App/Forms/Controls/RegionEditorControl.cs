@@ -2,8 +2,8 @@ using Microsoft.Extensions.Logging;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Entities;
-using OpenScrape.Features.RegionsTableMap;
-using OpenScrape.Features.RegionsTableMap.Update;
+using OpenScrape.App.Aplication.RegionsTableMap;
+using OpenScrape.App.Aplication.RegionsTableMap.Update;
 using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
 
 namespace OpenScrape.App.Forms.Controls;

@@ -1,6 +1,6 @@
 using OpenScrape.App.Aplication;
 using OpenScrape.Domain.Interfaces;
-using OpenScrape.Features.ActionScenario;
+using OpenScrape.Api.Persistence;
 
 namespace OpenScrape.App.Tests.Fixtures;
 
