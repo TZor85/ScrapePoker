@@ -425,10 +425,15 @@ el camino preflop por HTTP queda cubierto por `ParidadHttpTests`.
 Salida: el mismo `DecisionRequest` produce la misma decisión por el camino local
 y por HTTP, en las cuatro calles.
 
-**3b — Licencias.** Marten, JWT, cuotas, `LicenseCli` y `FormLicense`, según
+**3b - Licencias.** Marten, JWT, cuotas, `LicenseCli` y `FormLicense`, según
 `## Licencias y seguridad`. El endpoint pasa a exigir Bearer.
 
 Salida: `/v1/decisions` rechaza sin licencia válida y respeta la cuota del plan.
+
+Estado: completada (commit `a9d3448` de la rama `feature/api-engine-fase-3b`,
+1379 tests verdes). La compuerta de licencia está en el arranque del cliente;
+un token que vence a mitad de sesión obliga a reiniciar, no a reactivar en
+caliente.
 
 ### Fase 4 — Retirar el motor del cliente
 

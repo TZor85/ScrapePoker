@@ -33,6 +33,7 @@ builder.Services.AddSingleton<ILicenseKeyHasher, LicenseKeyHasher>();
 builder.Services.AddSingleton<ILicenseTokenService, JwtLicenseTokenService>();
 builder.Services.AddScoped<ILicenseStore, MartenLicenseStore>();
 builder.Services.AddPlanRateLimiting(builder.Configuration);
+builder.Services.AddHostedService<LicenseStartupValidation>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
     .Configure<IOptions<JwtOptions>>((options, jwt) =>
@@ -56,6 +57,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 
 // Fallar rápido si el perfil quedó incompleto: sin él ninguna decisión es confiable.
 StrategyProfileValidator.Validate(app.Services.GetRequiredService<IOptions<StrategyProfile>>().Value);
