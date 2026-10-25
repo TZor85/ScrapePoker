@@ -25,19 +25,12 @@ internal static class GameCoordinatorFixtureBuilder
         var options = Options.Create(profile);
 
         return new GameCoordinator(
-            new PostflopDecisionService(
-                options,
-                new BetSizingService(options),
-                new RangePolarizer(),
-                new ThresholdsRegistry(options),
-                new DeterministicRandomProvider()),
             new OpponentTracker(),
             new BoardTextureAnalyzer(),
             new BetSizingService(options),
             new ExploitabilityCalculator(),
             new GameLoopStateMachine(NullLogger<GameLoopStateMachine>.Instance),
             logger,
-            new StrategyProfileService(options),
             new PostflopContextHolder(),
             engine ?? CreateLocalEngine(profile, monteCarloSeed));
     }

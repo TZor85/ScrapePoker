@@ -1,6 +1,4 @@
-using OpenScrape.DecisionMaker.Algorithms;
-
-namespace OpenScrape.DecisionMaker.Services;
+namespace OpenScrape.App.Services.State;
 
 /// <summary>
 /// Contexto de estado cross-street para decisiones postflop. Record inmutable:
@@ -61,18 +59,6 @@ public sealed record PostflopGameContext
     /// Indica que hero debe ir all-in ahora (o check para control) en vez de tamaño intermedio.
     /// </summary>
     public bool TurnBetCommitsToRiver { get; init; }
-
-    /// <summary>
-    /// Estado base de peligro del flop (flush draw presence, paired, connected).
-    /// Se combina con boardChange del turn via CombineBoardChanges().
-    /// </summary>
-    public BoardChangeResult InitialBoardDanger { get; init; } = BoardChangeResult.Safe;
-
-    /// <summary>
-    /// Resultado del análisis de cambio de board (peligro de turn/river card).
-    /// Se propaga entre streets para acumular peligro.
-    /// </summary>
-    public BoardChangeResult LastBoardChange { get; init; } = BoardChangeResult.Safe;
 
     /// <summary>
     /// Detecta si el villano está barreling (apostó en 2+ calles consecutivas).
@@ -144,28 +130,5 @@ public sealed record PostflopGameContext
 
         // Actualización normal (descenso o incremento pequeño).
         return (this with { HeroStackPreRebuy = currentStack }, currentStack);
-    }
-
-    /// <summary>
-    /// Combina el peligro del turn con el nuevo peligro del river.
-    /// </summary>
-    public static BoardChangeResult CombineBoardChanges(
-        BoardChangeResult previous, BoardChangeResult current)
-    {
-        if (previous.DangerLevel == 0)
-            return current;
-        if (current.DangerLevel == 0)
-            return previous;
-
-        return new BoardChangeResult(
-            FlushCompleted: previous.FlushCompleted || current.FlushCompleted,
-            FlushDrawAppeared: previous.FlushDrawAppeared || current.FlushDrawAppeared,
-            StraightCompleted: previous.StraightCompleted || current.StraightCompleted,
-            BoardPaired: previous.BoardPaired || current.BoardPaired,
-            OvercardAppeared: previous.OvercardAppeared || current.OvercardAppeared,
-            CompletedFlushSuit: current.CompletedFlushSuit >= 0
-                ? current.CompletedFlushSuit
-                : previous.CompletedFlushSuit,
-            DangerLevel: Math.Min(10, previous.DangerLevel + current.DangerLevel));
     }
 }

@@ -1,5 +1,4 @@
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.Services;
+using OpenScrape.App.Services.State;
 
 namespace OpenScrape.App.Tests;
 
@@ -21,8 +20,6 @@ public class PostflopGameContextImmutableTests
         Assert.That(ctx.HeroFloatedFlop, Is.False);
         Assert.That(ctx.VillainBetSizeFlop, Is.EqualTo(BetSizeCategory.NoBet));
         Assert.That(ctx.VillainBetSizeTurn, Is.EqualTo(BetSizeCategory.NoBet));
-        Assert.That(ctx.InitialBoardDanger.DangerLevel, Is.EqualTo(0));
-        Assert.That(ctx.LastBoardChange.DangerLevel, Is.EqualTo(0));
         Assert.That(ctx.HeroStackPreRebuy, Is.EqualTo(0m));
     }
 

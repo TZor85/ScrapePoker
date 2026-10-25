@@ -123,8 +123,6 @@ namespace OpenScrape.App
                     services.AddSingleton<IPreflopAnalyzer>(sp => sp.GetRequiredService<PreflopAnalyzer>());
                     services.AddSingleton<EquityCalculatorService>();
                     services.AddSingleton<IEquityCalculatorService>(sp => sp.GetRequiredService<EquityCalculatorService>());
-                    services.AddSingleton<StrategyBacktester>();
-                    services.AddSingleton<IStrategyBacktester>(sp => sp.GetRequiredService<StrategyBacktester>());
                     services.AddSingleton(sp =>
                     {
                         var store = sp.GetRequiredService<IDocumentStore>();

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 
 using OpenScrape.App.Services;
-using OpenScrape.DecisionMaker.Services;
+using OpenScrape.App.Services.State;
 
 namespace OpenScrape.App.Tests;
 

@@ -1,8 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -10,13 +8,13 @@ using OpenScrape.Domain.Enums;
 namespace OpenScrape.App.Forms.Controls;
 
 /// <summary>
-/// UserControl que encapsula la pestaña Historial: sesiones recientes, manos, backtest.
+/// UserControl que encapsula la pestaña Historial: sesiones recientes y manos.
+/// El backtest A/B quedó fuera de servicio al retirar el motor local del cliente.
 /// </summary>
 public sealed class HistorialTabControl : UserControl
 {
     private readonly GameLoggerService _gameLogger;
     private readonly ILogger<HistorialTabControl> _logger;
-    private readonly IPostflopDecisionService _postflopDecision;
 
     // Controls recibidos via Initialize
     private DataGridView? _dgvSessions;
@@ -31,12 +29,10 @@ public sealed class HistorialTabControl : UserControl
 
     public HistorialTabControl(
         GameLoggerService gameLogger,
-        ILogger<HistorialTabControl> logger,
-        IPostflopDecisionService postflopDecision)
+        ILogger<HistorialTabControl> logger)
     {
         _gameLogger = gameLogger ?? throw new ArgumentNullException(nameof(gameLogger));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _postflopDecision = postflopDecision ?? throw new ArgumentNullException(nameof(postflopDecision));
     }
 
     public void Initialize(
@@ -90,7 +86,10 @@ public sealed class HistorialTabControl : UserControl
         _dgvSessionHands!.CellDoubleClick += DgvSessionHands_CellDoubleClick;
         _dgvSessions.CellFormatting += DgvSessions_CellFormatting;
         _dgvSessionHands.CellFormatting += DgvSessionHands_CellFormatting;
-        _btnBacktest!.Click += BtnBacktest_Click;
+
+        // El backtest A/B replayaba manos contra el motor local, ya retirado del cliente.
+        _btnBacktest!.Enabled = false;
+        _btnBacktest.Text = "Backtest A/B (no disponible)";
     }
 
     /// <summary>
@@ -243,50 +242,6 @@ public sealed class HistorialTabControl : UserControl
                 e.CellStyle.ForeColor = AppThemeHelper.Success;
             else if (val.StartsWith('-'))
                 e.CellStyle.ForeColor = AppThemeHelper.Danger;
-        }
-    }
-
-    /// <summary>
-    /// Ejecuta backtest A/B comparando decisiones históricas con el motor actual.
-    /// </summary>
-    private async void BtnBacktest_Click(object? sender, EventArgs e)
-    {
-        _btnBacktest!.Enabled = false;
-        _btnBacktest.Text = "Analizando...";
-
-        try
-        {
-            // Cargar todas las manos disponibles
-            var hands = await _gameLogger.GetRecentHandsAsync(500);
-
-            if (hands == null || hands.Count == 0)
-            {
-                MessageBox.Show("No hay manos en el historial para analizar.",
-                    "Backtest", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            // Determinar BigBlind de la sesión
-            decimal bigBlind = _loadedSessions?.FirstOrDefault()?.BigBlind ?? 0.50m;
-
-            // Ejecutar backtest
-            var backtester = new StrategyBacktester(_postflopDecision);
-            var result = backtester.RunBacktest(hands, bigBlind);
-
-            // Mostrar resultado en popup
-            var msg = result.ToString();
-            MessageBox.Show(msg, $"Backtest A/B — {hands.Count} manos",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error en backtest: {ex.Message}",
-                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-        }
-        finally
-        {
-            _btnBacktest.Enabled = true;
-            _btnBacktest.Text = "Backtest A/B";
         }
     }
 }
