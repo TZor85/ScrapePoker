@@ -1,4 +1,3 @@
-using IDecisionEngine = OpenScrape.App.Services.IDecisionEngine;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -29,17 +28,7 @@ internal static class GameCoordinatorFixtureBuilder
             new GameLoopStateMachine(NullLogger<GameLoopStateMachine>.Instance),
             logger,
             new PostflopContextHolder(),
-            engine ?? new LocalEngineAdapter(CreateLocalEngine(profile, monteCarloSeed)));
-    }
-
-    /// <summary>
-    /// Los tests de paridad corren el motor local dentro del coordinador, que sólo
-    /// conoce la interfaz del cliente. El adaptador traduce una en la otra.
-    /// </summary>
-    private sealed class LocalEngineAdapter(LocalDecisionEngine inner) : IDecisionEngine
-    {
-        public Task<DecisionResult> DecideAsync(DecisionRequest request, CancellationToken cancellationToken = default)
-            => inner.DecideAsync(request, cancellationToken);
+            engine ?? CreateLocalEngine(profile, monteCarloSeed));
     }
 
     public static PostflopDecisionEngine CreateEngine(StrategyProfile profile)

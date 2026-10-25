@@ -3,6 +3,7 @@ using OpenScrape.App.Entities;
 using OpenScrape.App.Services.Analysis;
 using OpenScrape.App.Services.Exploitability;
 using OpenScrape.App.Services.Tracking;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -242,13 +243,6 @@ public class GameCoordinator : IGameCoordinator
 
     #region Determine Actions
 
-    /// <summary>
-    /// Mantiene la equity efectiva dentro del rango que acepta el motor.
-    /// El ajuste de c-bet (flop) y la penalidad por peligro (turn y river)
-    /// pueden empujarla por encima de 100 o por debajo de 0.
-    /// </summary>
-    internal static double ClampEquity(double equity) => Math.Clamp(equity, 0d, 100d);
-
     public async Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default)
     {
         decimal maxBet = state.Players.Where(p => p.Active && p.Name != "P0").Select(p => p.Bet).DefaultIfEmpty(0).Max();
@@ -341,7 +335,7 @@ public class GameCoordinator : IGameCoordinator
             Street: BoardPosition.Flop,
             EquityPercent: effectiveEquity,
             PotOddsPercent: doorResult.PotOdds,
-            ExpectedValue: 0,
+            ExpectedValue: doorResult.EVWithFoldEquity ?? 0,
             RecommendedAction: action,
             ActionTaken: action,
             PotSizeAtDecision: potSize,
@@ -459,7 +453,7 @@ public class GameCoordinator : IGameCoordinator
             Street: BoardPosition.Turn,
             EquityPercent: effectiveEquity,
             PotOddsPercent: doorResult.PotOdds,
-            ExpectedValue: 0,
+            ExpectedValue: doorResult.EVWithFoldEquity ?? 0,
             RecommendedAction: action,
             ActionTaken: action,
             PotSizeAtDecision: potSize,
@@ -578,7 +572,7 @@ public class GameCoordinator : IGameCoordinator
             Street: BoardPosition.River,
             EquityPercent: effectiveEquity,
             PotOddsPercent: doorResult.PotOdds,
-            ExpectedValue: 0,
+            ExpectedValue: doorResult.EVWithFoldEquity ?? 0,
             RecommendedAction: action,
             ActionTaken: action,
             PotSizeAtDecision: potSize,

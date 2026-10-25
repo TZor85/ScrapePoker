@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using OpenScrape.Contracts;
-using OpenScrape.App.Services;
 using OpenScrape.App.Services.License;
 
 namespace OpenScrape.App.Services.Http;

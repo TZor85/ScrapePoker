@@ -41,10 +41,13 @@ public class DecisionContractSerializationTests
         {
             Action = "Bet 33%",
             Equity = 54.2,
+            RawEquity = 61.0,
             PotOdds = 25.0,
             BetSize = 12.5,
             Reason = "top pair",
             BoardTexture = "Dry",
+            BoardWetnessScore = 0.42,
+            EVWithFoldEquity = 3.75,
             IsBluff = false,
             IsBarrel = true,
             DrawTypes = ["Flush Draw"],
@@ -59,7 +62,10 @@ public class DecisionContractSerializationTests
 
         Assert.That(restored!.Action, Is.EqualTo(original.Action));
         Assert.That(restored.Equity, Is.EqualTo(original.Equity));
+        Assert.That(restored.RawEquity, Is.EqualTo(original.RawEquity));
         Assert.That(restored.BetSize, Is.EqualTo(original.BetSize));
+        Assert.That(restored.BoardWetnessScore, Is.EqualTo(original.BoardWetnessScore));
+        Assert.That(restored.EVWithFoldEquity, Is.EqualTo(original.EVWithFoldEquity));
         Assert.That(restored.DrawTypes, Is.EquivalentTo(original.DrawTypes));
         Assert.That(restored.HeroHandRank, Is.EqualTo(original.HeroHandRank));
     }

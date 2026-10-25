@@ -124,7 +124,6 @@ namespace OpenScrape.App
         #region [Services and UseCases]
         private readonly GetWindowsScreenUseCase _useCase;
         private readonly IDecisionEngine _decisionEngine;
-        private readonly ImageCropperService _imageCropperService;
         private readonly IDocumentStore _dataBase;
         // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
         private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase;
@@ -195,7 +194,6 @@ namespace OpenScrape.App
                         CardCacheService cardCacheService,
                         OcrService ocrService,
                         ColorDetectionService colorDetectionService,
-                        ImageCropperService imageCropperService,
                         DetectionLoggerService detectionLoggerService,
                         ISetFlopForceBoardUseCase setFlopForceBoardUseCase,
                         IGetHashImageUseCase getHashImageUseCase,
@@ -256,7 +254,6 @@ namespace OpenScrape.App
             _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
             _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
             _colorDetectionService = colorDetectionService ?? throw new ArgumentNullException(nameof(colorDetectionService));
-            _imageCropperService = imageCropperService ?? throw new ArgumentNullException(nameof(imageCropperService));
             _setFlopForceBoardUseCase = setFlopForceBoardUseCase ?? throw new ArgumentNullException(nameof(setFlopForceBoardUseCase));
             _getHashImageUseCase = getHashImageUseCase ?? throw new ArgumentNullException(nameof(getHashImageUseCase));
             _getCropImageUseCase = getCropImageUseCase ?? throw new ArgumentNullException(nameof(getCropImageUseCase));
@@ -1606,99 +1603,6 @@ namespace OpenScrape.App
                 : "PRE-FLOP";
 
             _frmOverlay.UpdateWithDecision(decision, street);
-        }
-
-        /// <summary>
-        /// Actualiza el texto de resumen para la fase de flop
-        /// </summary>
-        private void UpdateResumeTextForFlop()
-        {
-            tbResume.Text += "*** FLOP *** [";
-            var countFlop = 0;
-            foreach (var carta in _playerGameState.BoardCards.Where(w => w.Position == BoardPosition.Flop))
-            {
-                countFlop++;
-                if (countFlop == 3)
-                    tbResume.Text += $"{carta.Name}]";
-                else
-                    tbResume.Text += $"{carta.Name} ";
-            }
-        }
-
-        /// <summary>
-        /// Actualiza los indicadores visuales de los jugadores
-        /// </summary>
-        private void UpdatePlayerIndicators()
-        {
-            // Resetear colores de botones
-            pbbuttonPlayerOne.BackColor = Color.Transparent;
-            pbButtonPlayerTwo.BackColor = Color.Transparent;
-            pbButtonPlayerThree.BackColor = Color.Transparent;
-            pbButtonPlayerFour.BackColor = Color.Transparent;
-            pbButtonPlayerFive.BackColor = Color.Transparent;
-            pbButtonHero.BackColor = Color.Transparent;
-
-            // Actualizar nombres y apuestas
-            lbNamePlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Alias;
-            lbNamePlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
-            lbNamePlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
-            lbNamePlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
-            lbNamePlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
-
-            lbBetPlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
-            lbBetPlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
-            lbBetPlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
-            lbBetPlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
-            lbBetPlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
-
-            lbBetHero.Text = _playerGameState.CurrentBet.ToString();
-            lbPot.Text = _playerGameState.PotSize.ToString();
-
-            // Marcar el dealer
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
-                pbbuttonPlayerOne.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
-                pbButtonPlayerTwo.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
-                pbButtonPlayerThree.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
-                pbButtonPlayerFour.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
-                pbButtonPlayerFive.BackColor = Color.Red;
-            if (_playerGameState.IsDealer == true)
-                pbButtonHero.BackColor = Color.Red;
-
-            lbTableHand.Text = _tableHand;
-            lbTableName.Text = _tableName;
-        }
-
-        /// <summary>
-        /// Actualiza las imágenes de las cartas
-        /// </summary>
-        private void UpdateCardImages()
-        {
-            // Cartas del héroe
-            pbHeroCard0.Image = GetCardImage(_playerGameState.HoleCard1Face);
-            pbHeroCard1.Image = GetCardImage(_playerGameState.HoleCard2Face);
-
-            // Cartas del tablero
-            pbBoard1.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 1)?.Name);
-            pbBoard2.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 2)?.Name);
-            pbBoard3.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 3)?.Name);
-            pbBoard4.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 4)?.Name);
-            pbBoard5.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 5)?.Name);
-        }
-
-        /// <summary>
-        /// Obtiene la imagen de una carta a partir de su nombre
-        /// </summary>
-        private Image? GetCardImage(string? cardName)
-        {
-            if (string.IsNullOrEmpty(cardName))
-                return null;
-
-            var card = _cards.FirstOrDefault(x => x.Id.Contains(cardName));
-            return card != null ? _imageCropperService.Base64ToImage(card.ImageBase64) : null;
         }
 
         /// <summary>

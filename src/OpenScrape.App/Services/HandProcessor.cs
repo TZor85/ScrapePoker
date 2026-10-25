@@ -5,6 +5,7 @@ using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Services.Tracking;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Services;

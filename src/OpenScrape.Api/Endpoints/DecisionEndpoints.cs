@@ -13,7 +13,7 @@ public static class DecisionEndpoints
 
         group.MapPost("/decisions", async (
             DecisionRequest request,
-            OpenScrape.DecisionMaker.IDecisionEngine engine,
+            OpenScrape.Contracts.IDecisionEngine engine,
             CancellationToken cancellationToken) =>
         {
             var validationError = RequestValidator.Validate(request);
