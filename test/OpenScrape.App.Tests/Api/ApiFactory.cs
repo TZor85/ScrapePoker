@@ -26,7 +26,10 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
         _table = table ?? FixtureTables.OpenRaiseAks();
         _randomNumber = randomNumber;
         _monteCarloSeed = monteCarloSeed;
+        LicenseStore = LicenseTestData.CreateStore();
     }
+
+    public InMemoryLicenseStore LicenseStore { get; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -43,6 +46,19 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
             services.RemoveAll<OpenScrape.DecisionMaker.Interfaces.IRandomProvider>();
             services.AddSingleton<OpenScrape.DecisionMaker.Interfaces.IRandomProvider>(
                 new FixedEngineRandomProvider(_randomNumber));
+
+            services.RemoveAll<OpenScrape.Api.Licensing.ILicenseStore>();
+            services.AddSingleton<OpenScrape.Api.Licensing.ILicenseStore>(LicenseStore);
+
+            services.Configure<OpenScrape.Api.Licensing.JwtOptions>(options =>
+            {
+                options.SigningKey = LicenseTestData.SigningKey;
+                options.LifetimeHours = 24;
+            });
+            services.Configure<OpenScrape.Api.Licensing.LicenseOptions>(options =>
+            {
+                options.Pepper = LicenseTestData.Pepper;
+            });
 
             services.RemoveAll<MonteCarloSimulator>();
             services.AddSingleton(new MonteCarloSimulator(_monteCarloSeed));

@@ -3,7 +3,9 @@ using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Options;
 
+using Marten;
 using OpenScrape.Api.Endpoints;
+using OpenScrape.Api.Licensing;
 using OpenScrape.DecisionMaker;
 using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
@@ -18,6 +20,15 @@ builder.Services.Configure<StrategyProfile>(builder.Configuration.GetSection("St
 builder.Services.AddDecisionMaker();
 builder.Services.AddUseCases();
 builder.Services.AddDataBase(builder.Configuration, builder.Environment.IsDevelopment());
+builder.Services.ConfigureMarten(options =>
+    options.Schema.For<License>().DatabaseSchemaName("license"));
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection("License"));
+builder.Services.AddSingleton<ILicenseKeyHasher, LicenseKeyHasher>();
+builder.Services.AddSingleton<ILicenseTokenService, JwtLicenseTokenService>();
+builder.Services.AddScoped<ILicenseStore, MartenLicenseStore>();
+builder.Services.AddPlanRateLimiting(builder.Configuration);
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -30,7 +41,10 @@ var app = builder.Build();
 // Fallar rápido si el perfil quedó incompleto: sin él ninguna decisión es confiable.
 StrategyProfileValidator.Validate(app.Services.GetRequiredService<IOptions<StrategyProfile>>().Value);
 
+app.UseRateLimiter();
+
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+app.MapLicenseEndpoints();
 app.MapDecisionEndpoints();
 
 app.Run();
