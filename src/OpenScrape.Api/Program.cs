@@ -26,8 +26,7 @@ builder.Services.AddDecisionMaker();
 builder.Services.AddScoped<GetTable>();
 builder.Services.AddScoped<IPreflopRangeStore, MartenPreflopRangeStore>();
 builder.Services.AddDataBase(builder.Configuration, builder.Environment.IsDevelopment());
-builder.Services.ConfigureMarten(options =>
-    options.Schema.For<License>().DatabaseSchemaName("license"));
+builder.Services.AddLicenseStore();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection("License"));

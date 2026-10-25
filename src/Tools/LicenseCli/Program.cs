@@ -17,6 +17,7 @@ if (args.Length == 0 || args[0] is "-h" or "--help")
 // License__Pepper).
 var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 builder.Services.AddDataBase(builder.Configuration, builder.Environment.IsDevelopment());
+builder.Services.AddLicenseStore();
 builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection("License"));
 builder.Services.AddSingleton<ILicenseKeyHasher, LicenseKeyHasher>();
 builder.Services.AddScoped<ILicenseStore, MartenLicenseStore>();
