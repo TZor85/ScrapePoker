@@ -35,6 +35,49 @@ public class HttpDecisionEngineTests
             async () => await engine.DecideAsync(PreflopRequest()));
     }
 
+    [Test]
+    public async Task DecideAsync_MotorLento_CortaPorTimeoutYNoDevuelveDecision()
+    {
+        using var client = new HttpClient(new SlowHandler(TimeSpan.FromSeconds(30)))
+        {
+            BaseAddress = new Uri("http://127.0.0.1:5099")
+        };
+        var engine = new HttpDecisionEngine(client, NullLogger<HttpDecisionEngine>.Instance);
+
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        Assert.ThrowsAsync<EngineUnavailableException>(
+            async () => await engine.DecideAsync(PreflopRequest()));
+        elapsed.Stop();
+
+        Assert.That(elapsed.Elapsed, Is.LessThan(TimeSpan.FromSeconds(5)));
+    }
+
+    private sealed class SlowHandler(TimeSpan delay) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(delay, cancellationToken);
+            return new HttpResponseMessage();
+        }
+    }
+
+    [Test]
+    public void DecideAsync_CancelacionDelLlamador_SePropagaComoCancelacion()
+    {
+        using var client = new HttpClient(new SlowHandler(TimeSpan.FromSeconds(30)))
+        {
+            BaseAddress = new Uri("http://127.0.0.1:5099")
+        };
+        var engine = new HttpDecisionEngine(client, NullLogger<HttpDecisionEngine>.Instance);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+
+        Assert.That(
+            async () => await engine.DecideAsync(PreflopRequest(), cancellation.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
     private static DecisionRequest PreflopRequest() => new()
     {
         Street = DecisionStreet.Preflop,

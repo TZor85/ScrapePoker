@@ -176,11 +176,8 @@ namespace OpenScrape.App
                     if (remoteEngineEnabled)
                     {
                         var apiBaseUrl = context.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
-                        services.AddSingleton(new HttpClient
-                        {
-                            BaseAddress = new Uri(apiBaseUrl),
-                            Timeout = TimeSpan.FromSeconds(1.5)
-                        });
+                        // El timeout por decisión lo impone HttpDecisionEngine.DecisionTimeout.
+                        services.AddSingleton(new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
                         services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
                     }
                     else
