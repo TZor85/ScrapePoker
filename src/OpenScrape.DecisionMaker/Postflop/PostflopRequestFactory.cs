@@ -102,9 +102,7 @@ public sealed class PostflopRequestFactory
             BoardChange = boardChange,
             IsDonkBet = request.Context.IsDonkBet,
             CbetAdjustment = cbetAdjustment,
-            FoldEquity = request.VillainProfile is { AdjustedFoldEquity: >= 0 } profile
-                ? profile.AdjustedFoldEquity
-                : result.FoldEquity,
+            FoldEquity = ResolveFoldEquity(request, result.FoldEquity),
             VillainType = request.VillainProfile?.Type ?? OpponentType.Unknown,
             VillainFoldToBetPct = request.VillainProfile?.FoldToBetPct ?? -1,
             HeroIsAggressor = request.IsHeroAggressor,
@@ -184,6 +182,31 @@ public sealed class PostflopRequestFactory
         DecisionStreet.River => BoardPosition.River,
         _ => throw new ArgumentException("La fábrica postflop no acepta pedidos de preflop.", nameof(street))
     };
+
+    /// <summary>
+    /// El cliente ya no calcula la fold equity base, así que manda el ajuste en -1
+    /// y el tipo de rival. Acá se replica el multiplicador que aplicaba su tracker.
+    /// </summary>
+    private static double ResolveFoldEquity(DecisionRequest request, double baseFoldEquity)
+    {
+        if (request.VillainProfile is not { } profile)
+            return baseFoldEquity;
+
+        if (profile.AdjustedFoldEquity >= 0)
+            return profile.AdjustedFoldEquity;
+
+        if (!profile.HasReliableAggressionData)
+            return baseFoldEquity;
+
+        return profile.Type switch
+        {
+            OpponentType.LP => baseFoldEquity * 1.25,
+            OpponentType.TP => baseFoldEquity * 1.10,
+            OpponentType.TAG => baseFoldEquity * 0.85,
+            OpponentType.LAG => baseFoldEquity * 0.70,
+            _ => baseFoldEquity
+        };
+    }
 
     private static OpponentProfile? ToOpponentProfile(VillainProfile? villain) => villain is null
         ? null

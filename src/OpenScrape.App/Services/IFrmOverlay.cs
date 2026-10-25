@@ -1,5 +1,5 @@
 using OpenScrape.App.Aplication.UseCases;
-using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Services;
@@ -17,12 +17,12 @@ public interface IFrmOverlay
     void UpdateStreetPhase(string phase);
     void UpdateSituacion(string situacion);
     void UpdateHandStrength(HandRank handRank, KickerStrength kicker, bool hasComboDraw);
-    void UpdateBoardTexture(BoardTextureCategory? category, double wetnessScore);
+    void UpdateBoardTexture(string? texture, double wetnessScore);
     void UpdateStreetIndicator(string street);
     void UpdateFoldEquity(double foldEquity);
     void UpdateEVWithFoldEquity(double ev);
     void UpdateSuggestedBetSize(double? betSize);
     void UpdateTableName(string tableName);
-    void UpdateWithCalculationResult(PokerCalculationResult result);
+    void UpdateWithDecision(DecisionResult decision, string street);
     void ClearAll();
 }

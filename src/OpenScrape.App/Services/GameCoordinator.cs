@@ -21,23 +21,13 @@ public class GameCoordinator : IGameCoordinator
 {
     private readonly IDecisionEngine _decisionEngine;
     private readonly IOpponentTracker _opponentTracker;
-    private readonly IBoardTextureAnalyzer _boardTextureAnalyzer;
-    private readonly IBetSizingService _betSizingService;
     private readonly IExploitabilityCalculator _exploitabilityCalculator;
     private readonly GameLoopStateMachine _gameLoopStateMachine;
     private readonly IGameLoggerService _gameLoggerService;
     private readonly IPostflopContextHolder _contextHolder;
 
-    public PokerCalculationResult? FlopResult { get; private set; }
-    public PokerCalculationResult? TurnResult { get; private set; }
-    public PokerCalculationResult? RiverResult { get; private set; }
-    public TurnBoardTexture TurnBoardTexture { get; set; }
-    public RiverBoardTexture RiverBoardTexture { get; set; }
-
     public GameCoordinator(
         IOpponentTracker opponentTracker,
-        IBoardTextureAnalyzer boardTextureAnalyzer,
-        IBetSizingService betSizingService,
         IExploitabilityCalculator exploitabilityCalculator,
         GameLoopStateMachine gameLoopStateMachine,
         IGameLoggerService gameLoggerService,
@@ -46,8 +36,6 @@ public class GameCoordinator : IGameCoordinator
     {
         _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
         _opponentTracker = opponentTracker;
-        _boardTextureAnalyzer = boardTextureAnalyzer;
-        _betSizingService = betSizingService;
         _exploitabilityCalculator = exploitabilityCalculator;
         _gameLoopStateMachine = gameLoopStateMachine;
         _gameLoggerService = gameLoggerService;
@@ -57,14 +45,7 @@ public class GameCoordinator : IGameCoordinator
     public void ResetContext()
     {
         _contextHolder.StartNewHand();
-        FlopResult = null;
-        TurnResult = null;
-        RiverResult = null;
     }
-
-    public void SetFlopResult(PokerCalculationResult result) => FlopResult = result;
-    public void SetTurnResult(PokerCalculationResult result) => TurnResult = result;
-    public void SetRiverResult(PokerCalculationResult result) => RiverResult = result;
 
     #region Helpers
 
@@ -204,89 +185,21 @@ public class GameCoordinator : IGameCoordinator
         return PreflopSituation.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
     }
 
-    public string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
-    {
-        if (!action.StartsWith("Bet "))
-            return action;
-
-        var parts = action.Split(' ');
-        double baseSize;
-
-        if (parts[1] == "Pot")
-            baseSize = 1.0;
-        else if (parts[1].Contains('/'))
-        {
-            var frac = parts[1].Split('/');
-            if (frac.Length >= 2 &&
-                double.TryParse(frac[0], out var num) &&
-                double.TryParse(frac[1], out var den) && den > 0)
-                baseSize = num / den;
-            else
-                baseSize = 0.50;
-        }
-        else
-            return action;
-
-        var adjustedBet = _betSizingService.CalculateDynamicBetSize(baseSize, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
-        var reason = action.Contains('(') ? action[action.IndexOf('(')..] : "";
-        return adjustedBet + reason;
-    }
-
     #endregion
 
     #region Board Analysis
 
-    public BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount)
+    /// <summary>
+    /// True si la última carta del board completa un flush draw (tres del mismo palo).
+    /// Es sólo contexto de log: la decisión llega del servidor.
+    /// </summary>
+    private static bool FlushDrawAppeared(List<BoardData> boardCards)
     {
-        var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-        if (communityCards.Count <= previousCardCount)
-            return BoardChangeResult.Safe;
+        var suits = boardCards
+            .Where(b => b.Position != BoardPosition.Hand)
+            .Select(b => b.Suit);
 
-        var previousRanks = communityCards.Take(previousCardCount).Select(c => c.Force).ToList();
-        var previousSuits = communityCards.Take(previousCardCount).Select(c => c.Suit).ToList();
-        var newCard = communityCards[previousCardCount];
-
-        return _boardTextureAnalyzer.AnalyzeBoardChange(previousRanks, previousSuits, newCard.Force, newCard.Suit);
-    }
-
-    public TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
-    {
-        var turnCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-        if (turnCards.Count < 4) return TurnBoardTexture.Dry;
-
-        var suits = turnCards.Select(b => b.Suit).ToList();
-        var ranks = turnCards.Select(b => b.Force).OrderBy(r => r).ToList();
-
-        if (ranks.GroupBy(r => r).Any(g => g.Count() >= 2))
-            return TurnBoardTexture.Paired;
-
-        bool hasFlushDraw = suits.GroupBy(s => s).Any(g => g.Count() >= 3);
-        bool hasStraightDraw = ranks.Count >= 3 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
-
-        if (hasFlushDraw || hasStraightDraw)
-            return TurnBoardTexture.Coordinated;
-
-        return TurnBoardTexture.Dry;
-    }
-
-    public RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> boardCards)
-    {
-        var communityCards = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
-        if (communityCards.Count < 5) return RiverBoardTexture.Dry;
-
-        var suits = communityCards.Select(b => b.Suit).ToList();
-        var ranks = communityCards.Select(b => b.Force).OrderBy(r => r).ToList();
-
-        if (ranks.GroupBy(r => r).Any(g => g.Count() >= 3) || ranks.GroupBy(r => r).Count(g => g.Count() >= 2) >= 2)
-            return RiverBoardTexture.Paired;
-
-        bool hasFlush = suits.GroupBy(s => s).Any(g => g.Count() >= 5);
-        bool hasStraight = ranks.Count >= 5 && ranks.Zip(ranks.Skip(1), (a, b) => b - a).Any(diff => diff <= 4);
-
-        if (hasFlush || hasStraight)
-            return RiverBoardTexture.Coordinated;
-
-        return RiverBoardTexture.Dry;
+        return suits.GroupBy(suit => suit).Any(group => group.Count() >= 3);
     }
 
     #endregion
@@ -338,26 +251,13 @@ public class GameCoordinator : IGameCoordinator
 
     public async Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default)
     {
-        if (FlopResult == null) return new GameDecisionResult("Check", "Error: sin resultado de flop");
-
-        var flopResult = FlopResult;
-        var boardCards = state.BoardCards.Where(b => b.Position == BoardPosition.Flop).ToList();
-        var flopRanks = boardCards.Select(b => b.Force).ToList();
-        var flopSuits = boardCards.Select(b => b.Suit).ToList();
-
         decimal maxBet = state.Players.Where(p => p.Active && p.Name != "P0").Select(p => p.Bet).DefaultIfEmpty(0).Max();
         decimal potSize = state.PotSize;
         bool inPosition = state.IsInPosition;
         int numOpponents = state.Players.Count(p => p.Active && p.Name != "P0" && !string.IsNullOrEmpty(p.Name));
         if (numOpponents < 1) numOpponents = 1;
-        decimal villainStack = GetVillainStack(state);
 
         var betSize = GetOpponentBetSize(maxBet, potSize);
-        bool villainAggro = maxBet > 0;
-
-        var boardTexture = _boardTextureAnalyzer.Analyze(flopRanks, flopSuits);
-        string texture = boardTexture.Category.ToString();
-        var boardChange = AnalyzeBoardChange(state.BoardCards, 0);
 
         var effectiveSituation = state.HandSituation;
         bool isDonkBet = false;
@@ -376,17 +276,18 @@ public class GameCoordinator : IGameCoordinator
                 DecisionStreet.Flop,
                 maxBet,
                 new DecisionContext { IsDonkBet = isDonkBet },
-                BuildVillainProfile(state, inPosition, flopResult.FoldEquity),
+                BuildVillainProfile(state, inPosition),
                 isPreflopAggressor,
                 effectiveSituation),
             cancellationToken);
-        var decision = ToDecision(doorResult);
+
         double effectiveEquity = doorResult.Equity;
+        string texture = doorResult.BoardTexture ?? "Unknown";
 
         TrackVillainPostflopAction(state, maxBet, isPreflopAggressor, inPosition);
 
         // Actualizar contexto cross-street
-        string action = decision.Action;
+        string action = doorResult.Action;
         bool heroBet = action.StartsWith("Bet") || action.StartsWith("Raise");
         bool villainBet = maxBet > 0;
         _contextHolder.Update(c => c with
@@ -400,15 +301,15 @@ public class GameCoordinator : IGameCoordinator
         });
 
         // Exploitabilidad
-        var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), flopResult.FoldEquity);
+        var foldEquity = doorResult.FoldEquity;
         var flopAnalysis = _exploitabilityCalculator.AnalyzeDecision(
-            decision.Action, effectiveEquity, flopResult.PotOddsPercentage, foldEquity,
+            action, effectiveEquity, doorResult.PotOdds, foldEquity,
             BoardPosition.Flop, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action,
+            OurDecision = action,
             Equity = effectiveEquity,
-            PotOdds = flopResult.PotOddsPercentage,
+            PotOdds = doorResult.PotOdds,
             FoldEquity = foldEquity,
             Street = BoardPosition.Flop,
             Situation = effectiveSituation,
@@ -423,23 +324,23 @@ public class GameCoordinator : IGameCoordinator
 
         // Log
         double spr = potSize > 0 ? (double)(state.HeroStack / potSize) : 0;
-        var draws = flopResult.DrawTypes.Count > 0 ? string.Join(", ", flopResult.DrawTypes) : "Ninguno";
+        var draws = doorResult.DrawTypes.Count > 0 ? string.Join(", ", doorResult.DrawTypes) : "Ninguno";
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"═══ [FLOP] ═══════════════════════════════════════");
         sb.AppendLine($"  {FormatCardsForLog(state, BoardPosition.Flop)}");
         sb.AppendLine($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {state.HeroStack:F0}  |  SPR: {spr:F1}");
         sb.AppendLine($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {numOpponents}");
-        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {flopResult.PotOddsPercentage:F1}%");
-        sb.AppendLine($"  Mano: {flopResult.HeroHandRank} ({flopResult.PairType}, Kicker: {flopResult.HeroKickerStrength})  |  Draws: {draws}  |  Textura: {texture}");
-        sb.AppendLine($"  ► Decisión: {action}{(decision.IsBluff ? " [BLUFF]" : "")}{(decision.IsBarrel ? " [BARREL]" : "")}{(decision.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
-        if (!string.IsNullOrEmpty(decision.Reason))
-            sb.AppendLine($"    Razón: {decision.Reason}");
+        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {doorResult.PotOdds:F1}%");
+        sb.AppendLine($"  Mano: {doorResult.HeroHandRank ?? "Desconocida"} ({doorResult.PairClassification ?? "Sin par"}, Kicker: {doorResult.KickerStrength ?? "Desconocido"})  |  Draws: {draws}  |  Textura: {texture}");
+        sb.AppendLine($"  ► Decisión: {action}{(doorResult.IsBluff ? " [BLUFF]" : "")}{(doorResult.IsBarrel ? " [BARREL]" : "")}{(doorResult.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
+        if (!string.IsNullOrEmpty(doorResult.Reason))
+            sb.AppendLine($"    Razón: {doorResult.Reason}");
 
         // Log decisión en game logger
         _gameLoggerService.LogStreetDecision(new StreetDecision(
             Street: BoardPosition.Flop,
             EquityPercent: effectiveEquity,
-            PotOddsPercent: flopResult.PotOddsPercentage,
+            PotOddsPercent: doorResult.PotOdds,
             ExpectedValue: 0,
             RecommendedAction: action,
             ActionTaken: action,
@@ -447,29 +348,24 @@ public class GameCoordinator : IGameCoordinator
             BetSize: maxBet,
             Situation: effectiveSituation,
             IsInPosition: inPosition,
-            Reason: decision.Reason,
+            Reason: doorResult.Reason,
             BoardTexture: texture,
-            TotalOuts: flopResult.TotalOuts,
+            TotalOuts: doorResult.TotalOuts,
             SPR: spr
         ));
         _gameLoggerService.UpdateSituation(effectiveSituation);
 
-        return new GameDecisionResult(action, sb.ToString(), decision, boardChange, texture);
+        return new GameDecisionResult(action, sb.ToString(), doorResult, texture);
     }
 
     public async Task<GameDecisionResult> DetermineTurnAction(PlayerGameState state, CancellationToken cancellationToken = default)
     {
-        if (TurnResult == null) return new GameDecisionResult("Check", "Error: sin resultado de turn");
-
-        var turnResult = TurnResult;
         decimal maxBet = state.Players.Where(p => p.Active && p.Name != "P0").Select(p => p.Bet).DefaultIfEmpty(0).Max();
         decimal potSize = state.PotSize;
         bool inPosition = state.IsInPosition;
         int numOpponents = Math.Max(1, state.Players.Count(p => p.Active && p.Name != "P0" && !string.IsNullOrEmpty(p.Name)));
-        decimal villainStack = GetVillainStack(state);
 
         var betSize = GetOpponentBetSize(maxBet, potSize);
-        bool villainAggro = maxBet > 0;
 
         var effectiveSituation = state.HandSituation;
         bool isDonkBet = false;
@@ -479,9 +375,6 @@ public class GameCoordinator : IGameCoordinator
             isDonkBet = true;
             effectiveSituation = donkResult.DonkBetSituation;
         }
-
-        var boardChange = AnalyzeBoardChange(state.BoardCards, 3);
-        var texture = TurnBoardTexture.ToString();
 
         var turnCtx = _contextHolder.Current;
         bool turnIsAggressor = PreflopSituation.IsAggressor(effectiveSituation) || turnCtx.HeroBetFlop;
@@ -501,19 +394,20 @@ public class GameCoordinator : IGameCoordinator
                     HeroFloatedFlop = turnCtx.HeroFloatedFlop,
                     IsAnyoneAllIn = turnCtx.IsAnyoneAllIn
                 },
-                BuildVillainProfile(state, inPosition, turnResult.FoldEquity),
+                BuildVillainProfile(state, inPosition),
                 turnIsAggressor,
                 effectiveSituation),
             cancellationToken);
-        var decision = ToDecision(doorResult);
+
+        string texture = doorResult.BoardTexture ?? "Unknown";
 
         TrackVillainPostflopAction(state, maxBet, turnIsAggressor, inPosition);
 
         // Actualizar contexto cross-street
-        string action = decision.Action;
+        string action = doorResult.Action;
         bool heroBetTurn = action.StartsWith("Bet") || action.StartsWith("Raise");
         bool villainBetTurn = maxBet > 0;
-        bool newFlushDanger = maxBet > 0 && action.StartsWith("Call") && boardChange.FlushDrawAppeared;
+        bool newFlushDanger = maxBet > 0 && action.StartsWith("Call") && FlushDrawAppeared(state.BoardCards);
         _contextHolder.Update(c => c with
         {
             PreviousStreetWasBet = villainBetTurn,
@@ -525,15 +419,15 @@ public class GameCoordinator : IGameCoordinator
 
         // Exploitabilidad
         double effectiveEquity = doorResult.Equity;
-        var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), turnResult.FoldEquity);
+        var foldEquity = doorResult.FoldEquity;
         var turnAnalysis = _exploitabilityCalculator.AnalyzeDecision(
-            decision.Action, effectiveEquity, turnResult.PotOddsPercentage, foldEquity,
+            action, effectiveEquity, doorResult.PotOdds, foldEquity,
             BoardPosition.Turn, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action,
+            OurDecision = action,
             Equity = effectiveEquity,
-            PotOdds = turnResult.PotOddsPercentage,
+            PotOdds = doorResult.PotOdds,
             FoldEquity = foldEquity,
             Street = BoardPosition.Turn,
             Situation = effectiveSituation,
@@ -548,23 +442,23 @@ public class GameCoordinator : IGameCoordinator
 
         // Log
         double spr = potSize > 0 ? (double)(state.HeroStack / potSize) : 0;
-        var draws = turnResult.DrawTypes.Count > 0 ? string.Join(", ", turnResult.DrawTypes) : "Ninguno";
+        var draws = doorResult.DrawTypes.Count > 0 ? string.Join(", ", doorResult.DrawTypes) : "Ninguno";
 
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"═══ [TURN] ═══════════════════════════════════════");
         sb.AppendLine($"  {FormatCardsForLog(state, BoardPosition.Turn)}");
         sb.AppendLine($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {state.HeroStack:F0}  |  SPR: {spr:F1}");
         sb.AppendLine($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {numOpponents}");
-        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {turnResult.PotOddsPercentage:F1}%");
-        sb.AppendLine($"  Mano: {turnResult.HeroHandRank} ({turnResult.PairType}, Kicker: {turnResult.HeroKickerStrength})  |  Draws: {draws}  |  Textura: {texture}");
-        sb.AppendLine($"  ► Decisión: {action}{(decision.IsBluff ? " [BLUFF]" : "")}{(decision.IsBarrel ? " [BARREL]" : "")}{(decision.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
-        if (!string.IsNullOrEmpty(decision.Reason))
-            sb.AppendLine($"    Razón: {decision.Reason}");
+        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {doorResult.PotOdds:F1}%");
+        sb.AppendLine($"  Mano: {doorResult.HeroHandRank ?? "Desconocida"} ({doorResult.PairClassification ?? "Sin par"}, Kicker: {doorResult.KickerStrength ?? "Desconocido"})  |  Draws: {draws}  |  Textura: {texture}");
+        sb.AppendLine($"  ► Decisión: {action}{(doorResult.IsBluff ? " [BLUFF]" : "")}{(doorResult.IsBarrel ? " [BARREL]" : "")}{(doorResult.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
+        if (!string.IsNullOrEmpty(doorResult.Reason))
+            sb.AppendLine($"    Razón: {doorResult.Reason}");
 
         _gameLoggerService.LogStreetDecision(new StreetDecision(
             Street: BoardPosition.Turn,
             EquityPercent: effectiveEquity,
-            PotOddsPercent: turnResult.PotOddsPercentage,
+            PotOddsPercent: doorResult.PotOdds,
             ExpectedValue: 0,
             RecommendedAction: action,
             ActionTaken: action,
@@ -572,9 +466,9 @@ public class GameCoordinator : IGameCoordinator
             BetSize: maxBet,
             Situation: effectiveSituation,
             IsInPosition: inPosition,
-            Reason: decision.Reason,
+            Reason: doorResult.Reason,
             BoardTexture: texture,
-            TotalOuts: turnResult.TotalOuts,
+            TotalOuts: doorResult.TotalOuts,
             SPR: spr
         ));
         var turnCardNames = state.BoardCards
@@ -583,14 +477,11 @@ public class GameCoordinator : IGameCoordinator
         _gameLoggerService.UpdateBoard(turnCardNames);
         _gameLoggerService.UpdateSituation(effectiveSituation);
 
-        return new GameDecisionResult(action, sb.ToString(), decision, boardChange, texture);
+        return new GameDecisionResult(action, sb.ToString(), doorResult, texture);
     }
 
     public async Task<GameDecisionResult> DetermineRiverAction(PlayerGameState state, CancellationToken cancellationToken = default)
     {
-        if (RiverResult == null) return new GameDecisionResult("Check", "Error: sin resultado de river");
-
-        var riverResult = RiverResult;
         decimal maxBet = state.Players.Where(p => p.Active && p.Name != "P0").Select(p => p.Bet).DefaultIfEmpty(0).Max();
         decimal potSize = state.PotSize;
         bool inPosition = state.IsInPosition;
@@ -602,8 +493,6 @@ public class GameCoordinator : IGameCoordinator
             _contextHolder.Update(c => c with { IsAnyoneAllIn = true });
 
         var betSize = GetOpponentBetSize(maxBet, potSize);
-        bool villainAggro = maxBet > 0;
-        string texture = RiverBoardTexture.ToString();
 
         var effectiveSituation = state.HandSituation;
         bool isDonkBet = false;
@@ -613,8 +502,6 @@ public class GameCoordinator : IGameCoordinator
             isDonkBet = true;
             effectiveSituation = donkResult.DonkBetSituation;
         }
-
-        var boardChange = AnalyzeBoardChange(state.BoardCards, 4);
 
         var riverCtx = _contextHolder.Current;
         bool riverIsAggressor = PreflopSituation.IsAggressor(effectiveSituation) || riverCtx.HeroBetFlop || riverCtx.HeroBetTurn;
@@ -636,30 +523,31 @@ public class GameCoordinator : IGameCoordinator
                     HeroCheckedAllStreets = riverCtx.HeroCheckedAllStreets,
                     IsAnyoneAllIn = riverCtx.IsAnyoneAllIn
                 },
-                BuildVillainProfile(state, inPosition, riverResult.FoldEquity),
+                BuildVillainProfile(state, inPosition),
                 riverIsAggressor,
                 effectiveSituation),
             cancellationToken);
-        var decision = ToDecision(doorResult);
+
+        string texture = doorResult.BoardTexture ?? "Unknown";
 
         if (maxBet > 0)
             _opponentTracker.RecordPostflopAction(GetActiveVillainId(state), PostflopAction.Bet);
 
         // Actualizar contexto
-        string action = decision.Action;
+        string action = doorResult.Action;
         _contextHolder.Update(c => c with { PreviousStreetWasBet = maxBet > 0 });
 
         // Exploitabilidad
         double effectiveEquity = doorResult.Equity;
-        var foldEquity = _opponentTracker.GetAdjustedFoldEquity(GetActiveVillainId(state), riverResult.FoldEquity);
+        var foldEquity = doorResult.FoldEquity;
         var riverAnalysis = _exploitabilityCalculator.AnalyzeDecision(
-            decision.Action, effectiveEquity, riverResult.PotOddsPercentage, foldEquity,
+            action, effectiveEquity, doorResult.PotOdds, foldEquity,
             BoardPosition.River, effectiveSituation, inPosition, texture, potSize, betSize);
         _exploitabilityCalculator.RecordDecision(new DecisionRecord
         {
-            OurDecision = decision.Action,
+            OurDecision = action,
             Equity = effectiveEquity,
-            PotOdds = riverResult.PotOddsPercentage,
+            PotOdds = doorResult.PotOdds,
             FoldEquity = foldEquity,
             Street = BoardPosition.River,
             Situation = effectiveSituation,
@@ -680,16 +568,16 @@ public class GameCoordinator : IGameCoordinator
         sb.AppendLine($"  {FormatCardsForLog(state, BoardPosition.River)}");
         sb.AppendLine($"  Pot: {potSize:F0}  |  Bet villano: {maxBet:F0} ({betSize})  |  Stack hero: {state.HeroStack:F0}  |  SPR: {spr:F1}");
         sb.AppendLine($"  Situación: {effectiveSituation}{(isDonkBet ? " (DONK BET)" : "")}  |  Posición: {(inPosition ? "IP" : "OOP")}  |  Oponentes: {numOpponents}");
-        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {riverResult.PotOddsPercentage:F1}%");
-        sb.AppendLine($"  Mano: {riverResult.HeroHandRank} ({riverResult.PairType}, Kicker: {riverResult.HeroKickerStrength})");
-        sb.AppendLine($"  ► Decisión: {action}{(decision.IsBluff ? " [BLUFF]" : "")}{(decision.IsBarrel ? " [BARREL]" : "")}{(decision.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
-        if (!string.IsNullOrEmpty(decision.Reason))
-            sb.AppendLine($"    Razón: {decision.Reason}");
+        sb.AppendLine($"  Equity: {effectiveEquity:F1}%  |  Pot odds: {doorResult.PotOdds:F1}%");
+        sb.AppendLine($"  Mano: {doorResult.HeroHandRank ?? "Desconocida"} ({doorResult.PairClassification ?? "Sin par"}, Kicker: {doorResult.KickerStrength ?? "Desconocido"})");
+        sb.AppendLine($"  ► Decisión: {action}{(doorResult.IsBluff ? " [BLUFF]" : "")}{(doorResult.IsBarrel ? " [BARREL]" : "")}{(doorResult.IsCheckRaise ? " [CHECK-RAISE]" : "")}");
+        if (!string.IsNullOrEmpty(doorResult.Reason))
+            sb.AppendLine($"    Razón: {doorResult.Reason}");
 
         _gameLoggerService.LogStreetDecision(new StreetDecision(
             Street: BoardPosition.River,
             EquityPercent: effectiveEquity,
-            PotOddsPercent: riverResult.PotOddsPercentage,
+            PotOddsPercent: doorResult.PotOdds,
             ExpectedValue: 0,
             RecommendedAction: action,
             ActionTaken: action,
@@ -697,9 +585,9 @@ public class GameCoordinator : IGameCoordinator
             BetSize: maxBet,
             Situation: effectiveSituation,
             IsInPosition: inPosition,
-            Reason: decision.Reason,
+            Reason: doorResult.Reason,
             BoardTexture: texture,
-            TotalOuts: riverResult.TotalOuts,
+            TotalOuts: doorResult.TotalOuts,
             SPR: spr
         ));
         var riverCardNames = state.BoardCards
@@ -707,29 +595,29 @@ public class GameCoordinator : IGameCoordinator
             .Select(b => b.Name ?? "").ToList();
         _gameLoggerService.UpdateBoard(riverCardNames);
 
-        return new GameDecisionResult(action, sb.ToString(), decision, boardChange, texture);
+        return new GameDecisionResult(action, sb.ToString(), doorResult, texture);
     }
 
     #endregion
 
-    private VillainProfile BuildVillainProfile(PlayerGameState state, bool? inPosition, double baseFoldEquity)
+    private VillainProfile BuildVillainProfile(PlayerGameState state, bool? inPosition)
     {
         var villainId = GetActiveVillainId(state);
         var villainStats = GetActiveVillainProfile(state);
 
+        // El cliente ya no calcula fold equity: manda -1 y el servidor aplica el
+        // multiplicador por tipo sobre su propio cálculo.
         return new VillainProfile
         {
             VillainId = villainId,
             Type = GetVillainType(state, inPosition),
             FoldToBetPct = _opponentTracker.GetFoldToBetPct(villainId),
-            AdjustedFoldEquity = _opponentTracker.GetAdjustedFoldEquity(villainId, baseFoldEquity),
+            AdjustedFoldEquity = -1,
+            HasReliableAggressionData = villainStats?.HasReliableAFData ?? false,
             HandsPlayed = villainStats?.HandsPlayed ?? 0,
             TimesVoluntarilyPutMoneyIn = villainStats?.TimesVoluntarilyPutMoneyIn ?? 0,
             TimesPreflopRaised = villainStats?.TimesPreflopRaised ?? 0,
             TimesThreeBet = villainStats?.TimesThreeBet ?? 0
         };
     }
-
-    private static PostflopDecisionResult ToDecision(Contracts.DecisionResult result) =>
-        new(result.Action, result.Reason, result.IsBluff, result.IsBarrel, result.IsCheckRaise, result.IsFloating);
 }

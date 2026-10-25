@@ -14,6 +14,18 @@ public sealed record DecisionResult
     public string? Reason { get; init; }
     public string? BoardTexture { get; init; }
 
+    /// <summary>Puntuación de humedad del board (0-100), para el overlay.</summary>
+    public double? BoardWetnessScore { get; init; }
+
+    /// <summary>
+    /// Equity calculada antes de los ajustes del motor (c-bet en flop). El overlay
+    /// la muestra tal como la mostraba el cliente; si no viaja, cae en <see cref="Equity"/>.
+    /// </summary>
+    public double? RawEquity { get; init; }
+
+    /// <summary>EV considerando fold equity, para el overlay.</summary>
+    public double? EVWithFoldEquity { get; init; }
+
     /// <summary>Situación preflop resultante (Call, ThreeBet, ...), para la calle siguiente.</summary>
     public string? Situation { get; init; }
 

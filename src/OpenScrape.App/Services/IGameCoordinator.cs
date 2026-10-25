@@ -1,10 +1,7 @@
-using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.Services;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
-using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.App.Services;
 
@@ -14,8 +11,7 @@ namespace OpenScrape.App.Services;
 public record GameDecisionResult(
     string Action,
     string LogText,
-    PostflopDecisionResult? Decision = null,
-    BoardChangeResult? BoardChange = null,
+    DecisionResult Decision,
     string? BoardTexture = null);
 
 /// <summary>
@@ -24,23 +20,12 @@ public record GameDecisionResult(
 /// </summary>
 public interface IGameCoordinator
 {
-    PokerCalculationResult? FlopResult { get; }
-    PokerCalculationResult? TurnResult { get; }
-    PokerCalculationResult? RiverResult { get; }
-    TurnBoardTexture TurnBoardTexture { get; set; }
-    RiverBoardTexture RiverBoardTexture { get; set; }
-
     void ResetContext();
 
     // Decisiones por calle
     Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default);
     Task<GameDecisionResult> DetermineTurnAction(PlayerGameState state, CancellationToken cancellationToken = default);
     Task<GameDecisionResult> DetermineRiverAction(PlayerGameState state, CancellationToken cancellationToken = default);
-
-    // Almacenar resultados de cálculo (llenados por FrmMain tras OCR)
-    void SetFlopResult(PokerCalculationResult result);
-    void SetTurnResult(PokerCalculationResult result);
-    void SetRiverResult(PokerCalculationResult result);
 
     // Helpers
     BetSizeCategory GetOpponentBetSize(decimal maxBet, decimal potSize);
@@ -50,14 +35,8 @@ public interface IGameCoordinator
     decimal GetVillainStack(PlayerGameState state);
     string GetActiveVillainId(PlayerGameState state);
     bool HeroBlocksTopBoardCard(PlayerGameState state);
-    string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition);
     string FormatCardsForLog(PlayerGameState state, BoardPosition street);
     (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(PlayerGameState state, decimal maxBet, bool isHeroInPosition, HandSituation currentSituation);
-
-    // Board analysis
-    BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount);
-    TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards);
-    RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> boardCards);
 
     // Detection
     bool DetectNewHand(PlayerGameState state, bool handNumberChanged, string currentHand, ref string previousDealer, ref string previousSB, ref string previousBB);

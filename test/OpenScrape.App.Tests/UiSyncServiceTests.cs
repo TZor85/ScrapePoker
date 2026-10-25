@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Services;
-using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Tests;
@@ -58,13 +58,13 @@ public class UiSyncServiceTests
         public void UpdateStreetPhase(string phase) { }
         public void UpdateSituacion(string situacion) { }
         public void UpdateHandStrength(HandRank handRank, KickerStrength kicker, bool hasComboDraw) { }
-        public void UpdateBoardTexture(BoardTextureCategory? category, double wetnessScore) { }
+        public void UpdateBoardTexture(string? category, double wetnessScore) { }
         public void UpdateStreetIndicator(string street) => Streets.Add(street);
         public void UpdateFoldEquity(double foldEquity) { }
         public void UpdateEVWithFoldEquity(double ev) { }
         public void UpdateSuggestedBetSize(double? betSize) { }
         public void UpdateTableName(string tableName) { }
-        public void UpdateWithCalculationResult(PokerCalculationResult result) { }
+        public void UpdateWithDecision(DecisionResult result, string street) { }
         public void ClearAll() => ClearCount++;
     }
 

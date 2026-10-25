@@ -104,7 +104,7 @@
   "ExpectedEquity": 56.16010854816905,
   "MonteCarloSeed": 20261023,
   "ExpectedReason": "Check \u2014 thin value OOP (showdown)",
-  "ExpectedBoardTexture": "Coordinated",
+  "ExpectedBoardTexture": "Dry",
   "ExpectedIsBluff": false,
   "ExpectedIsBarrel": false,
   "ExpectedIsCheckRaise": false

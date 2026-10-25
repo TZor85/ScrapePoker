@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Services;
-using OpenScrape.DecisionMaker.Algorithms;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using System.Drawing.Drawing2D;
@@ -352,23 +352,23 @@ namespace OpenScrape.App.Forms
             SetConditionalVisibility(lbHandStrength, true);
         }
 
-        public void UpdateBoardTexture(BoardTextureCategory? category, double wetnessScore)
+        public void UpdateBoardTexture(string? texture, double wetnessScore)
         {
-            if (!category.HasValue)
+            if (string.IsNullOrEmpty(texture))
             {
                 SetConditionalVisibility(lbBoardTexture, false);
                 return;
             }
 
-            lbBoardTexture.Text = $"Board: {FormatBoardTexture(category.Value)} ({wetnessScore:F0})";
+            lbBoardTexture.Text = $"Board: {texture} ({wetnessScore:F0})";
 
-            lbBoardTexture.ForeColor = category.Value switch
+            lbBoardTexture.ForeColor = texture switch
             {
-                BoardTextureCategory.Dry => Color.FromArgb(160, 210, 255),
-                BoardTextureCategory.SemiDry => Color.FromArgb(200, 220, 240),
-                BoardTextureCategory.SemiWet => Color.FromArgb(255, 230, 160),
-                BoardTextureCategory.Wet => Color.FromArgb(255, 170, 120),
-                BoardTextureCategory.Paired => Color.FromArgb(220, 200, 255),
+                "Dry" => Color.FromArgb(160, 210, 255),
+                "Coordinated" => Color.FromArgb(255, 230, 160),
+                "Wet" => Color.FromArgb(255, 170, 120),
+                "Paired" => Color.FromArgb(220, 200, 255),
+                "Monotone" => Color.FromArgb(255, 140, 140),
                 _ => Color.FromArgb(200, 220, 240)
             };
 
@@ -439,34 +439,40 @@ namespace OpenScrape.App.Forms
             lbTableName.Text = tableName ?? string.Empty;
         }
 
-        public void UpdateWithCalculationResult(PokerCalculationResult result)
+        public void UpdateWithDecision(DecisionResult decision, string street)
         {
-            UpdatePotOddsPercentage(result.PotOddsPercentage.ToString("F1"));
-            UpdateEquityPercentage(result.EquityPercentage.ToString("F1"));
-            UpdateStreetPhase(result.Street);
-            UpdateAction(result.RecommendedAction);
+            UpdatePotOddsPercentage(decision.PotOdds.ToString("F1"));
+            UpdateEquityPercentage((decision.RawEquity ?? decision.Equity).ToString("F1"));
+            UpdateStreetPhase(street);
+            UpdateAction(decision.Action);
 
             // Indicador de street (borde)
-            UpdateStreetIndicator(result.Street);
+            UpdateStreetIndicator(street);
 
             // Situación con draws
-            string situacionText = result.Street;
-            if (result.TotalOuts > 0)
-                situacionText += $" | Outs: {result.TotalOuts}";
-            if (result.DrawTypes.Any())
-                situacionText += $" | {string.Join(", ", result.DrawTypes)}";
+            string situacionText = street;
+            if (decision.TotalOuts > 0)
+                situacionText += $" | Outs: {decision.TotalOuts}";
+            if (decision.DrawTypes.Count > 0)
+                situacionText += $" | {string.Join(", ", decision.DrawTypes)}";
             UpdateSituacion(situacionText);
 
-            // Fuerza de mano
-            UpdateHandStrength(result.HeroHandRank, result.HeroKickerStrength, result.HasComboDraw);
+            // Fuerza de mano: el contrato trae los enums como texto
+            var handRank = Enum.TryParse<HandRank>(decision.HeroHandRank, out var parsedRank)
+                ? parsedRank
+                : HandRank.HighCard;
+            var kicker = Enum.TryParse<KickerStrength>(decision.KickerStrength, out var parsedKicker)
+                ? parsedKicker
+                : KickerStrength.None;
+            UpdateHandStrength(handRank, kicker, decision.HasComboDraw);
 
             // Board texture
-            UpdateBoardTexture(result.BoardTexture, result.BoardWetnessScore);
+            UpdateBoardTexture(decision.BoardTexture, decision.BoardWetnessScore ?? 0d);
 
             // Métricas avanzadas
-            UpdateFoldEquity(result.FoldEquity);
-            UpdateEVWithFoldEquity(result.EVWithFoldEquity);
-            UpdateSuggestedBetSize(result.SuggestedBetSize);
+            UpdateFoldEquity(decision.FoldEquity);
+            UpdateEVWithFoldEquity(decision.EVWithFoldEquity ?? 0d);
+            UpdateSuggestedBetSize(decision.BetSize);
 
             // Animación fade-in para métricas avanzadas
             currentOpacity = 0.0f;
@@ -515,16 +521,6 @@ namespace OpenScrape.App.Forms
             HandRank.StraightFlush => "Straight Flush",
             HandRank.RoyalFlush => "Royal Flush",
             _ => rank.ToString()
-        };
-
-        private static string FormatBoardTexture(BoardTextureCategory category) => category switch
-        {
-            BoardTextureCategory.Dry => "Dry",
-            BoardTextureCategory.SemiDry => "Semi-Dry",
-            BoardTextureCategory.SemiWet => "Semi-Wet",
-            BoardTextureCategory.Wet => "Wet",
-            BoardTextureCategory.Paired => "Paired",
-            _ => category.ToString()
         };
 
         private void AnimationTimer_Tick(object? sender, EventArgs e)

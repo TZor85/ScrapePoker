@@ -59,62 +59,26 @@ internal static class PostflopDecisionRunner
         IDecisionEngine? engine = null)
     {
         var coordinator = GameCoordinatorFixtureBuilder.Create(profile, logger ?? new NoOpGameLogger(), engine, monteCarloSeed);
-        var calculator = GameCoordinatorFixtureBuilder.CreateCalculator(profile, monteCarloSeed, calculationLogger);
-        var community = ToCommunityCards(state);
 
-        PokerCalculationResult Calculate(int take) => calculator.Calculate(
-            ToCards(state.HoleCard1Suit, state.HoleCard1Rank, state.HoleCard2Suit, state.HoleCard2Rank),
-            community.Take(take).ToList(),
-            state.PotSize,
-            maxBet,
-            isInPosition: state.IsInPosition,
-            heroStack: state.HeroStack,
-            villainStack: coordinator.GetVillainStack(state),
-            handSituation: state.HandSituation.ToString(),
-            opponentProfile: null);
-
-        var flopResult = Calculate(3);
-        coordinator.SetFlopResult(flopResult);
         var flopDecision = await coordinator.DetermineFlopAction(state);
         if (street == BoardPosition.Flop)
-            return ToSnapshot(flopDecision, flopResult);
+            return ToSnapshot(flopDecision);
 
-        var turnResult = Calculate(4);
-        coordinator.SetTurnResult(turnResult);
-        coordinator.TurnBoardTexture = coordinator.AnalyzeTurnBoardTexture(state.BoardCards);
         var turnDecision = await coordinator.DetermineTurnAction(state);
         if (street == BoardPosition.Turn)
-            return ToSnapshot(turnDecision, turnResult);
+            return ToSnapshot(turnDecision);
 
-        var riverResult = Calculate(5);
-        coordinator.SetRiverResult(riverResult);
-        coordinator.RiverBoardTexture = coordinator.AnalyzeRiverBoardTexture(state.BoardCards);
         var riverDecision = await coordinator.DetermineRiverAction(state);
 
-        return ToSnapshot(riverDecision, riverResult);
+        return ToSnapshot(riverDecision);
     }
 
-    private static PostflopDecisionSnapshot ToSnapshot(
-        GameDecisionResult decision,
-        PokerCalculationResult result) => new(
-            decision.Action,
-            result.EquityPercentage,
-            decision.Decision?.Reason,
-            decision.BoardTexture,
-            decision.Decision?.IsBluff ?? false,
-            decision.Decision?.IsBarrel ?? false,
-            decision.Decision?.IsCheckRaise ?? false);
-
-    private static List<CardDataOuts> ToCards(int suit1, int rank1, int suit2, int rank2) =>
-    [
-        new((Suit)suit1, (Rank)rank1),
-        new((Suit)suit2, (Rank)rank2)
-    ];
-
-    private static List<CardDataOuts> ToCommunityCards(PlayerGameState state) =>
-        state.BoardCards
-            .Where(b => b.Position != BoardPosition.Hand)
-            .OrderBy(b => b.Location)
-            .Select(b => new CardDataOuts((Suit)b.Suit, (Rank)b.Force))
-            .ToList();
+    private static PostflopDecisionSnapshot ToSnapshot(GameDecisionResult decision) => new(
+        decision.Action,
+        decision.Decision.RawEquity ?? decision.Decision.Equity,
+        decision.Decision.Reason,
+        decision.BoardTexture,
+        decision.Decision.IsBluff,
+        decision.Decision.IsBarrel,
+        decision.Decision.IsCheckRaise);
 }

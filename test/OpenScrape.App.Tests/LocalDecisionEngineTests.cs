@@ -23,6 +23,46 @@ public class LocalDecisionEngineTests
     public async Task DecideAsync_PreflopDosTramos_RespetaElNumeroAleatorio()
     {
         // Arrange
+        var engine = CreateEngine();
+
+        var request = CreatePreflopRequest();
+
+        // Act
+        var result = await engine.DecideAsync(request);
+
+        // Assert
+        Assert.That(result.Action, Is.EqualTo("Raise"));
+    }
+
+    [Test]
+    public async Task DecideAsync_Preflop_DevuelveLaEquityParaElResumen()
+    {
+        // Arrange
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.DecideAsync(CreatePreflopRequest());
+
+        // Assert
+        Assert.That(result.Equity, Is.InRange(50d, 85d));
+    }
+
+    private static DecisionRequest CreatePreflopRequest() => new()
+    {
+        Street = DecisionStreet.Preflop,
+        HeroCard1 = new CardRef((int)Rank.Ace, (int)Suit.Spades),
+        HeroCard2 = new CardRef((int)Rank.King, (int)Suit.Spades),
+        HeroPosition = TablePosition.Button,
+        PotSize = 3m,
+        BetToCall = 3m,
+        HeroStack = 100m,
+        VillainStack = 100m,
+        IsInPosition = true,
+        HandSituation = HandSituation.None
+    };
+
+    private static LocalDecisionEngine CreateEngine()
+    {
         var table = new TableDTO
         {
             Name = "fx-local-engine",
@@ -54,7 +94,7 @@ public class LocalDecisionEngineTests
             new FixedRangeStore(table),
             new FixedRandomProvider(30));
 
-        var engine = new LocalDecisionEngine(
+        return new LocalDecisionEngine(
             new PreflopRequestFactory(),
             new PostflopRequestFactory(
                 GameCoordinatorFixtureBuilder.CreateCalculator(profile, monteCarloSeed: 1),
@@ -62,26 +102,7 @@ public class LocalDecisionEngineTests
                 new PreflopAnalyzer(),
                 options),
             preflop,
-            GameCoordinatorFixtureBuilder.CreateEngine(profile));
-
-        var request = new DecisionRequest
-        {
-            Street = DecisionStreet.Preflop,
-            HeroCard1 = new CardRef((int)Rank.Ace, (int)Suit.Spades),
-            HeroCard2 = new CardRef((int)Rank.King, (int)Suit.Spades),
-            HeroPosition = TablePosition.Button,
-            PotSize = 3m,
-            BetToCall = 3m,
-            HeroStack = 100m,
-            VillainStack = 100m,
-            IsInPosition = true,
-            HandSituation = HandSituation.None
-        };
-
-        // Act
-        var result = await engine.DecideAsync(request);
-
-        // Assert
-        Assert.That(result.Action, Is.EqualTo("Raise"));
+            GameCoordinatorFixtureBuilder.CreateEngine(profile),
+            new PreflopEquityCalculator());
     }
 }

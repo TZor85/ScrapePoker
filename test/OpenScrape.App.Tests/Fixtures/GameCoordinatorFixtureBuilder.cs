@@ -22,12 +22,8 @@ internal static class GameCoordinatorFixtureBuilder
 {
     public static GameCoordinator Create(StrategyProfile profile, IGameLoggerService logger, IDecisionEngine? engine = null, int monteCarloSeed = 1)
     {
-        var options = Options.Create(profile);
-
         return new GameCoordinator(
             new OpponentTracker(),
-            new BoardTextureAnalyzer(),
-            new BetSizingService(options),
             new ExploitabilityCalculator(),
             new GameLoopStateMachine(NullLogger<GameLoopStateMachine>.Instance),
             logger,
@@ -76,7 +72,8 @@ internal static class GameCoordinatorFixtureBuilder
                 new PreflopAnalyzer(),
                 options),
             preflop,
-            CreateEngine(profile));
+            CreateEngine(profile),
+            new PreflopEquityCalculator());
     }
 }
 

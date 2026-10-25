@@ -1,6 +1,9 @@
 using OpenScrape.Contracts;
+using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Postflop;
 using OpenScrape.DecisionMaker.Preflop;
+using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.DecisionMaker;
 
@@ -12,7 +15,8 @@ public sealed class LocalDecisionEngine(
     PreflopRequestFactory preflopFactory,
     PostflopRequestFactory postflopFactory,
     SetPreflopActionUseCase preflop,
-    PostflopDecisionEngine postflop) : IDecisionEngine
+    PostflopDecisionEngine postflop,
+    PreflopEquityCalculator preflopEquity) : IDecisionEngine
 {
     private readonly PreflopRequestFactory _preflopFactory =
         preflopFactory ?? throw new ArgumentNullException(nameof(preflopFactory));
@@ -25,6 +29,9 @@ public sealed class LocalDecisionEngine(
 
     private readonly PostflopDecisionEngine _postflop =
         postflop ?? throw new ArgumentNullException(nameof(postflop));
+
+    private readonly PreflopEquityCalculator _preflopEquity =
+        preflopEquity ?? throw new ArgumentNullException(nameof(preflopEquity));
 
     public async Task<DecisionResult> DecideAsync(
         DecisionRequest request,
@@ -39,7 +46,10 @@ public sealed class LocalDecisionEngine(
 
             return new DecisionResult
             {
-                Action = response.ResponseAction.Action ?? string.Empty
+                Action = response.ResponseAction.Action ?? string.Empty,
+                // La equity preflop viaja para el resumen de la mesa: el cliente ya
+                // no calcula nada por su cuenta.
+                Equity = CalculatePreflopEquity(request)
             };
         }
 
@@ -51,10 +61,13 @@ public sealed class LocalDecisionEngine(
         {
             Action = result.Action,
             Equity = result.EffectiveEquity,
+            RawEquity = calculation.EquityPercentage,
             PotOdds = calculation.PotOddsPercentage,
             BetSize = calculation.SuggestedBetSize,
             Reason = result.Decision.Reason,
             BoardTexture = result.BoardTexture,
+            BoardWetnessScore = calculation.BoardWetnessScore,
+            EVWithFoldEquity = calculation.EVWithFoldEquity,
             IsBluff = result.Decision.IsBluff,
             IsBarrel = result.Decision.IsBarrel,
             IsCheckRaise = result.Decision.IsCheckRaise,
@@ -68,5 +81,17 @@ public sealed class LocalDecisionEngine(
             PairClassification = calculation.PairType.ToString(),
             KickerStrength = calculation.HeroKickerStrength.ToString()
         };
+    }
+
+    private double CalculatePreflopEquity(DecisionRequest request)
+    {
+        List<CardDataOuts> holeCards =
+        [
+            new CardDataOuts((Suit)request.HeroCard1.Suit, (Rank)request.HeroCard1.Rank),
+            new CardDataOuts((Suit)request.HeroCard2.Suit, (Rank)request.HeroCard2.Rank)
+        ];
+
+        // El motor ajusta por número de rivales; el 0 del cliente significa "sin dato".
+        return _preflopEquity.GetEquity(holeCards, Math.Max(0, request.NumOpponents)) * 100d;
     }
 }
