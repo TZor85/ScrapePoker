@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
+using OpenScrape.DecisionMaker.Postflop;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
@@ -1875,14 +1876,7 @@ public class PostflopDecisionService : IPostflopDecisionService
     /// </summary>
     private static double BetStringToFraction(string bet)
     {
-        if (bet.Contains("Pot")) return 1.0;
-        if (bet.Contains("3/4")) return 0.75;
-        if (bet.Contains("2/3")) return 0.67;
-        if (bet.Contains("1/2")) return 0.50;
-        if (bet.Contains("1/3")) return 0.33;
-        if (bet.Contains("1/4")) return 0.25;
-        if (bet.Contains("1.25x")) return 1.25;
-        return 0.50;
+        return BetSizeParser.FromSizeText(bet) ?? 0.50;
     }
 
     /// <summary>

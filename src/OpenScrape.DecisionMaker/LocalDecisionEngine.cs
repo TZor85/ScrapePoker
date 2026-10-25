@@ -63,7 +63,10 @@ public sealed class LocalDecisionEngine(
             Equity = result.EffectiveEquity,
             RawEquity = calculation.EquityPercentage,
             PotOdds = calculation.PotOddsPercentage,
-            BetSize = calculation.SuggestedBetSize,
+            // El calculador legacy sólo sugiere tamaño cuando su rama apuesta;
+            // la acción real la decide el motor postflop y lleva el tamaño en el
+            // texto ("Bet Pot"). Sin el fallback, el overlay no muestra el monto.
+            BetSize = calculation.SuggestedBetSize ?? BetSizeParser.FromAction(result.Action),
             Reason = result.Decision.Reason,
             BoardTexture = result.BoardTexture,
             BoardWetnessScore = calculation.BoardWetnessScore,
