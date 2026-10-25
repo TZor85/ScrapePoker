@@ -244,6 +244,61 @@ git commit -m "chore(app): cerrar la fase 4a con el publish sin motor"
 
 ## Inventario de cálculos locales (Task 1)
 
+### Tabla 1 — Sitios de cálculo local
+
+El plan estimaba cinco sitios; el código tiene **seis** (el sexto, vivo, está en
+`UiUpdateService`). Se listan todos, incluidos los muertos, porque un método
+muerto que calcula equity sigue arrastrando el motor al binario.
+
 | Sitio | Calle | Campos usados | Alimenta | Reemplazo en `DecisionResult` |
 |---|---|---|---|---|
-| _(completar en la Task 1)_ | | | | |
+| `FrmMain.cs:1396` | Flop | `EquityPercentage`, `PotOddsPercentage`, `ExpectedValue`, `RecommendedAction`, `TotalOuts`, `FoldEquity` | `_flopResult` → overlay (`UpdateWithPotOdds`) y log `LogStreetDecision`; `FoldEquity` viaja como `AdjustedFoldEquity` del request | `Equity`, `PotOdds`, `BetSize`, `Action`, `TotalOuts`, `FoldEquity`, `Reason` |
+| `FrmMain.cs:1531` | Turn | ídem flop | `_turnResult` → overlay y log dentro del coordinador | ídem |
+| `FrmMain.cs:1620` | River | ídem flop | `_riverResult` → overlay y log dentro del coordinador | ídem |
+| `FrmMain.cs:1794` | Preflop | `EquityPercentage` | `UpdateResumeTextForPreflop(PokerCalculationResult)` — **muerto**: su único caller (`UpdateUIWithResults`, L1735) no tiene callers | `Equity` (se agrega al mapeo preflop del servidor) |
+| `FrmMain.cs:1969` | — | `GetPotOddsCalculator()` | **muerto**, sin callers | borrar |
+| `UiUpdateService.cs:103` | Preflop | `EquityPercentage` (+ ajuste por posición ±3 en el cliente) | **vivo**: texto de resume (`Equity: X%`), llamado desde `FrmMain:718` | `Equity` (servidor) + ajuste por posición, que es presentación y se queda en App |
+
+Notas del inventario:
+
+- El flujo vivo de preflop (`FrmMain:567`) crea `new PokerCalculationResult()`
+  vacío y lo pasa a `UiUpdateService`; por eso el resume muestra hoy
+  `PotOdds: 0%` y `Should Call: False`. Se mantiene igual.
+- `HandProcessor` guarda `IPokerCalculator`, `IBetSizingService` y
+  `IOpponentTracker` y **no los usa** (sólo asignación en el ctor): se borran.
+- `GameCoordinator` ya decide por `IDecisionEngine`; los valores locales de
+  equity, c-bet, danger penalty, textura y board change alimentan sólo
+  telemetría, explotabilidad, logs y el `AdjustedFoldEquity` del request.
+
+### Tabla 2 — Veredicto por tipo del motor usado en App
+
+| Tipo(s) | Archivos | Uso en App | Veredicto |
+|---|---|---|---|
+| `IOpponentTracker`, `OpponentTracker`, `IOpponentProfileStore`, `MartenOpponentProfileStore` | `DecisionMaker/Services`, `Interfaces` | FrmMain, GameCoordinator, HandProcessor, TableLayoutService | **Mover a App** (`Services/Tracking`) — Task 2 |
+| `IExploitabilityCalculator`, `ExploitabilityCalculator`, `DecisionRecord` | `DecisionMaker/Services` | FrmMain (panel), GameCoordinator | **Mover a App** (`Services/Exploitability`) — Task 2 |
+| `IBankrollTrackerService`, `BankrollTrackerService` | `DecisionMaker/Interfaces`, `Services` | FrmMain, BankrollTabControl | **Mover a App** (`Services/Bankroll`) — Task 2 |
+| `IAutoCalibrationService`, `AutoCalibrationService`, `CalibrationResult`, `ParameterAdjustment`, `CalibrationPreview` | `DecisionMaker/Interfaces`, `Services` | FrmMain (botón de calibración) | **Mover a App** (`Services/Calibration`) — Task 2 |
+| `PostflopGameContext` | `DecisionMaker/Services` | `IPostflopContextHolder`, `PostflopContextHolder`, GameCoordinator | **Mover a App** (`Services/State`), sin `InitialBoardDanger`, `LastBoardChange` ni `CombineBoardChanges` — Task 2/3 |
+| `IBoardTextureAnalyzer`, `BoardTextureAnalyzer`, `BoardTextureResult`, `BoardTextureCategory`, `BoardChangeResult`, `TurnBoardTexture`, `RiverBoardTexture`, `RiverCardType` | `DecisionMaker/Algorithms` | FrmMain, GameCoordinator, FrmOverlay, IFrmOverlay | **Consumir del contrato**: `BoardTexture` (string), `BoardWetnessScore` (nuevo); se borra el análisis local. `TurnBoardTexture`/`RiverBoardTexture`/`BoardChangeResult` desaparecen con la telemetría que los usaba |
+| `IBetSizingService`, `BetSizingService` | `DecisionMaker/Interfaces`, `Services` | GameCoordinator (`AdjustBetSize`, **muerto**), HandProcessor (sin uso) | **Consumir del contrato**: `BetSize`; se borra el uso local y el método muerto |
+| `IPostflopDecisionService`, `DangerPenaltyCalculator` | `DecisionMaker/Interfaces`, `Services` | GameCoordinator (danger penalty: sólo log/telemetría), FrmMain (campo sin uso), HistorialTabControl | **Borrar el uso en App**; el motor sigue usándolos del lado servidor |
+| `IPreflopAnalyzer`, `PreflopAnalyzer` | `DecisionMaker/Services` | GameCoordinator: `IsPreflopAggressor`, `DetectDonkBet`, `HasRangeAdvantageOnBoard`, `CalculateCbetAdjustment` | **Reemplazar por lógica local de situación** (`PreflopSituation.IsAggressor`, `DetectDonkBet`) — Task 3. Range advantage y c-bet no se reemplazan: su resultado ya se descartaba (`doorResult.Equity` lo pisa) |
+| `IPokerCalculator`, `UnifiedPokerCalculator`, `PokerCalculationResult`, `CalculationFailedException` | `DecisionMaker/Postflop` | FrmMain, GameCoordinator, FrmOverlay, IFrmOverlay, IGameCoordinator, IUiUpdateService, UiUpdateService | **Borrar**: se reemplaza por `Contracts.DecisionResult` — Task 4 |
+| `IStrategyBacktester`, `StrategyBacktester`, `BacktestResult`, `DecisionDivergence` | `DecisionMaker/Interfaces`, `Services` | HistorialTabControl (`Backtest A/B`) | **Borrar**: replayed manos contra `IPostflopDecisionService` local; sin motor no puede correr. El botón queda deshabilitado con aviso — Task 3 |
+| `ActionScenarioUseCases`, `GetActionScenario`, `ActionScenarioRequest`, `ISetPreflopActionUseCase`, `SetPreflopActionUseCase`, 10 use cases de acción, `UserHandHelper` | `DecisionMaker/Preflop` | `ActionScenarioUseCases`: campo y parámetro de FrmMain **sin uso**; `GetActionScenario` y `SetPreflopActionUseCase`: sólo registro en `Program.cs` | **Borrar del cliente**: preflop ya decide por `IDecisionEngine` (`FrmMain:1071`) |
+| `IDecisionEngine`, `LocalDecisionEngine` | `DecisionMaker` | FrmMain, GameCoordinator, HandProcessor, HttpDecisionEngine | **Consumir del contrato** vía `HttpDecisionEngine`; `LocalDecisionEngine` no viaja al cliente |
+
+### Huecos del contrato y resolución
+
+`DecisionResult` no tiene `Street`, `BoardWetnessScore`, `EVWithFoldEquity`,
+`ExpectedValue` ni `ShouldCall`.
+
+| Hueco | Resolución |
+|---|---|
+| `Street` | No viaja: el cliente conoce la calle y la pasa al overlay. Sin cambio de contrato |
+| `BoardWetnessScore` | **Agregar** `double? BoardWetnessScore` al contrato y propagarlo desde `BoardTextureResult.WetnessScore` (el servidor ya lo calcula en `PostflopRequestFactory`). El overlay lo muestra y colorea por categoría |
+| `EVWithFoldEquity` | **Agregar** `double? EVWithFoldEquity` al contrato; el servidor ya lo tiene en `PokerCalculationResult` |
+| `ExpectedValue` | No se agrega: el log usa `EVWithFoldEquity` |
+| `ShouldCall` | Se deriva en el cliente con la misma fórmula del motor (`equity >= potOdds`) para conservar el texto del resume; hoy siempre da `False` porque llega un resultado vacío |
+| Equity preflop | El servidor hoy devuelve sólo `Action`. **Agregar** `Equity` al mapeo preflop de `LocalDecisionEngine` con `PreflopEquityCalculator.GetEquity(...) * 100`, el mismo cálculo que usa `UnifiedPokerCalculator` (L233). Sin esto el resume pierde el número y el overlay queda sin equity si alguna calle llegara sin ella |
+| `AdjustedFoldEquity` del villano | Sin equity local no hay base que ajustar por tipo. **Ruling**: el cliente manda `AdjustedFoldEquity = -1` y el `PostflopRequestFactory` aplica el multiplicador por `VillainProfile.Type` sobre su propio `FoldEquity` (LP 1.25, TP 1.10, TAG 0.85, LAG 0.70), replicando `OpponentTracker.GetAdjustedFoldEquity`. Preserva las decisiones de los fixtures |
