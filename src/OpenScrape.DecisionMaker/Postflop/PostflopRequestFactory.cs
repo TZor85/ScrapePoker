@@ -96,7 +96,7 @@ public sealed class PostflopRequestFactory
             Result = result,
             Street = street,
             Situation = request.HandSituation,
-            BoardTexture = texture.ToString(),
+            BoardTexture = texture.SimplifiedTexture,
             VillainBetSize = _preflopAnalyzer.CategorizeOpponentBet(request.BetToCall, request.PotSize),
             VillainShowedAggression = request.BetToCall > 0,
             BoardChange = boardChange,
