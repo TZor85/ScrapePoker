@@ -4,7 +4,8 @@ using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
-using OpenScrape.DecisionMaker.Interfaces;
+using OpenScrape.App.Services.Tracking;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Services;
@@ -24,14 +25,12 @@ public sealed class HandProcessor : IGameLoopTickProcessor
     private readonly ICaptureService _captureService;
     private readonly ITableReaderService _tableReaderService;
     private readonly GameLoopStateMachine _stateMachine;
-    private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
+    private readonly IDecisionEngine _decisionEngine;
     private readonly IGameCoordinator _gameCoordinator;
     private readonly IPostflopContextHolder _contextHolder;
     private readonly ITableLayoutService _tableLayout;
     private readonly GameLoggerService _gameLogger;
     private readonly IOpponentTracker _opponentTracker;
-    private readonly IPokerCalculator _pokerCalculator;
-    private readonly IBetSizingService _betSizingService;
     private readonly IOptions<GameLoopOptions> _options;
     private readonly ILogger<HandProcessor> _logger;
 
@@ -44,28 +43,24 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         ICaptureService captureService,
         ITableReaderService tableReaderService,
         GameLoopStateMachine stateMachine,
-        ISetPreflopActionUseCase setPreflopActionUseCase,
+        IDecisionEngine decisionEngine,
         IGameCoordinator? gameCoordinator = null,
         IPostflopContextHolder? contextHolder = null,
         ITableLayoutService? tableLayout = null,
         GameLoggerService? gameLogger = null,
         IOpponentTracker? opponentTracker = null,
-        IPokerCalculator? pokerCalculator = null,
-        IBetSizingService? betSizingService = null,
         IOptions<GameLoopOptions>? options = null,
         ILogger<HandProcessor>? logger = null)
     {
         _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
         _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
         _stateMachine = stateMachine ?? throw new ArgumentNullException(nameof(stateMachine));
-        _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
+        _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
         _gameCoordinator = gameCoordinator!;
         _contextHolder = contextHolder!;
         _tableLayout = tableLayout!;
         _gameLogger = gameLogger!;
         _opponentTracker = opponentTracker!;
-        _pokerCalculator = pokerCalculator!;
-        _betSizingService = betSizingService!;
         _options = options!;
         _logger = logger!;
     }
@@ -137,20 +132,30 @@ public sealed class HandProcessor : IGameLoopTickProcessor
             return new GameLoopResult { Empty = true };
         }
 
-        // Ejecutar decisión preflop
+        // Ejecutar decision preflop por la puerta unica del motor
         var responseAction = new ResponseAction();
-        var response = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
-        {
-            ResponseAction = responseAction,
-            PlayerState = state,
-            PreflopHeroPosition = preflopHeroPosition
-        });
+        var decision = await _decisionEngine.DecideAsync(
+            PlayerStateMapper.MapPreflop(
+                state,
+                responseAction.IsSecondAction,
+                villain: null,
+                preflopBets: preflopHeroPosition.TryGetValue(state.Position, out var heroBets)
+                    ? heroBets
+                    : null));
+
+        responseAction.Action = decision.Action;
+        if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))
+            responseAction.HandSituation = nextSituation;
+
+        var playerState = state.Clone();
+        if (decision.Action.Contains("Call"))
+            playerState.HandSituation = HandSituation.Call;
 
         // Marcar aggressors preflop
-        SetPreflopAggressors(response.PlayerState);
+        SetPreflopAggressors(playerState);
 
         // Construir GameLoopResult
-        return BuildGameLoopResult(response.PlayerState, response.ResponseAction);
+        return BuildGameLoopResult(playerState, responseAction);
     }
 
     /// <summary>
@@ -243,8 +248,8 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         return new GameLoopResult
         {
             Empty = false,
-            PotOdds = null,  // Postflop: proviene de PokerCalculationResult (futura fase)
-            Equity = null,   // Postflop: proviene de PokerCalculationResult (futura fase)
+            PotOdds = null,  // Postflop: lo resuelve el motor remoto (Contracts.DecisionResult)
+            Equity = null,   // Postflop: lo resuelve el motor remoto (Contracts.DecisionResult)
             HoleCards = !string.IsNullOrEmpty(state.HoleCard1Face) &&
                         !string.IsNullOrEmpty(state.HoleCard2Face)
                 ? (state.HoleCard1Face, state.HoleCard2Face)

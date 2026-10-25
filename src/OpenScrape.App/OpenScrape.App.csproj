@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
@@ -39,10 +39,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\OpenScrape.DecisionMaker\OpenScrape.DecisionMaker.csproj" />
+    <ProjectReference Include="..\OpenScrape.Contracts\OpenScrape.Contracts.csproj" />
     <ProjectReference Include="..\OpenScrape.Domain\OpenScrape.Domain.csproj" />
-    <ProjectReference Include="..\OpenScrape.Features\OpenScrape.Features.csproj" />
+
     <ProjectReference Include="..\OpenScrape.Infrastructure\OpenScrape.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="OpenScrape.App.Tests" />
+  </ItemGroup>
+
+  <ItemGroup><Using Include="OpenScrape.Domain.Entities" /><Using Include="OpenScrape.Contracts" /><Using Include="OpenScrape.Domain.Dtos" />
   </ItemGroup>
 
   <ItemGroup>

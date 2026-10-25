@@ -4,9 +4,8 @@ using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.Domain.Entities;
-using OpenScrape.Features.RegionsTableMap;
-using OpenScrape.Features.RegionsTableMap.GetAll;
-using OpenScrape.Features.RegionsTableMap.Update;
+using OpenScrape.App.Aplication.RegionsTableMap;
+using OpenScrape.App.Aplication.RegionsTableMap.Update;
 using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
 using System.Drawing;
 using System.Windows.Forms;
@@ -281,7 +280,7 @@ internal sealed record FakeRegionTableMapUseCases : RegionTableMapUseCases
         = DocumentStore.For("host=localhost;database=fake;password=fake;username=fake");
 
     public FakeRegionTableMapUseCases()
-        : base(new GetAllRegionTableMap(_fakeStore), new UpdateRegionTableMap(_fakeStore))
+        : base(new UpdateRegionTableMap(_fakeStore))
     {
     }
 }

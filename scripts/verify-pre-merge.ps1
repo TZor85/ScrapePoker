@@ -51,7 +51,11 @@ Test-Checkpoint "Format" {
 # Se usa el exit code y no el texto: la salida del CLI esta localizada y un
 # patron en ingles ("Passed!") no matchea en un sistema en espanol.
 Test-Checkpoint "Tests" {
-    dotnet test OpenScrape.sln --no-build --verbosity quiet 2>&1 | Out-Null
+    # Sin --no-build a proposito: el checkpoint anterior compila Release con
+    # --no-incremental y reescribe archivos de obj/ que el test con --no-build
+    # lee a la vez, lo que produjo un fallo intermitente. Un build incremental
+    # aca cuesta segundos y garantiza que el binario probado sea el actual.
+    dotnet test OpenScrape.sln --verbosity quiet 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Tests failed (exit $LASTEXITCODE)" }
 }
 
@@ -110,6 +114,56 @@ if (-not $baselineRef) {
     $csprojChanged | ForEach-Object { Write-Host "    $_" }
 }
 $script:results += @{ Name = "csproj diff (informativo, no falla)"; Status = "INFO" }
+
+# Checkpoint de paridad: los fixtures congelan la decision del motor antes de
+# moverlo a la API. Si desaparecen, el replay de la suite no tiene contrato que
+# comparar y la paridad de las fases siguientes queda sin evidencia.
+Write-Host "=== Fixtures de paridad ===" -ForegroundColor Cyan
+$preflopCount = @(Get-ChildItem "test/fixtures/decisions/preflop" -Filter "*.json" -ErrorAction SilentlyContinue).Count
+$postflopCount = @(Get-ChildItem "test/fixtures/decisions/postflop" -Filter "*.json" -ErrorAction SilentlyContinue).Count
+Write-Host ("  preflop: {0}  |  postflop: {1}" -f $preflopCount, $postflopCount)
+
+if ($preflopCount -eq 0 -or $postflopCount -eq 0) {
+    $script:results += @{
+        Name = "Fixtures de paridad"
+        Status = "FAIL"
+        Error = "Faltan fixtures (preflop=$preflopCount, postflop=$postflopCount). Correr los generadores [Explicit]."
+    }
+} elseif ($preflopCount -lt 8 -or $postflopCount -lt 7) {
+    Write-Host "  Aviso: se esperaban al menos 8 preflop y 7 postflop" -ForegroundColor Yellow
+    $script:results += @{ Name = "Fixtures de paridad"; Status = "INFO" }
+} else {
+    $script:results += @{ Name = "Fixtures de paridad"; Status = "PASS" }
+}
+
+# Checkpoint de arquitectura: el contrato compartido con la API no puede
+# arrastrar Marten ni ASP.NET, o deja de poder publicarse como ensamblado aparte.
+Test-Checkpoint "Arquitectura de Contracts" {
+    dotnet test "test/OpenScrape.App.Tests/OpenScrape.App.Tests.csproj" --no-build --filter "FullyQualifiedName~Architecture" --nologo 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "El contrato compartido dejo de estar aislado (ver ContractsIsolationTests)." }
+}
+
+# Checkpoint de publish: el cliente no puede llevar el motor ni los use cases
+# de Marten en el binario. Publica en un directorio temporal y falla si aparece
+# cualquiera de los dos ensamblados.
+Test-Checkpoint "Publish sin motor" {
+    $publishDir = Join-Path ([System.IO.Path]::GetTempPath()) ("openscrape-publish-check-" + [Guid]::NewGuid().ToString("N"))
+    try {
+        dotnet publish "src/OpenScrape.App/OpenScrape.App.csproj" -c Release -r win-x64 --self-contained false -o $publishDir --nologo 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "El publish del cliente fallo." }
+
+        if (Test-Path (Join-Path $publishDir "OpenScrape.DecisionMaker.dll")) {
+            throw "El publish todavia incluye OpenScrape.DecisionMaker.dll."
+        }
+
+        if (Test-Path (Join-Path $publishDir "OpenScrape.Features.dll")) {
+            throw "El publish todavia incluye OpenScrape.Features.dll."
+        }
+    }
+    finally {
+        if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
+    }
+}
 
 # Checkpoint 7: Smoke test (optional)
 if (-not $SkipSmoke) {

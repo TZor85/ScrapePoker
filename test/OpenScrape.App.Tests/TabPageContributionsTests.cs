@@ -2,11 +2,8 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Bankroll;
 using OpenScrape.App.Telemetry;
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.DTOs;
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -146,8 +143,7 @@ public class TabPageContributionsTests
     {
         return new HistorialTabControl(
             new FakeGameLoggerService(),
-            new TabPageTestLogger<HistorialTabControl>(),
-            new FakePostflopDecisionService());
+            new TabPageTestLogger<HistorialTabControl>());
     }
 
     private static BankrollTabControl CreateBankrollTabControl()
@@ -254,31 +250,6 @@ internal sealed class TabPageTestLogger<T> : ILogger<T>
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
     public bool IsEnabled(LogLevel logLevel) => true;
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
-}
-
-internal sealed class FakePostflopDecisionService : IPostflopDecisionService
-{
-    public double CalculateDangerPenalty(
-        double rawEquity, BoardChangeResult boardChange,
-        bool heroBlocksDangerSuit, bool isFacingBet,
-        BoardPosition street = BoardPosition.Turn,
-        bool heroHasNutBlocker = false,
-        HandRank heroHandRank = HandRank.HighCard,
-        bool heroCompletedFlush = false,
-        bool heroCompletedStraight = false) => 0.0;
-
-    public double CalculateImpliedOddsFactor(
-        BoardPosition street, bool isInPosition, bool hasFlushDraw,
-        decimal heroStack = 0, decimal potSize = 0, int numOpponents = 1) => 1.0;
-
-    public double CalculateReverseImpliedOdds(
-        BoardChangeResult? boardChange, HandRank heroHandRank,
-        bool hasFlushDraw, BoardPosition street, bool isFacingBet,
-        PairClassification pairClassification = PairClassification.None,
-        bool heroBlocksDangerSuit = false) => 0.0;
-
-    public PostflopDecisionResult DetermineAction(PostflopDecisionInput input)
-        => new PostflopDecisionResult(Action: "Check");
 }
 
 #endregion

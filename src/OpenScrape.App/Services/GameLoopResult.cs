@@ -1,4 +1,3 @@
-using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Services;
@@ -22,11 +21,8 @@ public sealed record GameLoopResult
     /// <summary>Calle detectada por el state machine en esta iteración.</summary>
     public BoardPosition? Street { get; init; }
 
-    /// <summary>Acción recomendada en texto legible (espejo de <see cref="DecisionResult.RecommendedAction"/>).</summary>
+    /// <summary>Acción recomendada en texto legible.</summary>
     public string? RecommendedAction { get; init; }
-
-    /// <summary>Resultado completo del facade cuando hubo decisión postflop.</summary>
-    public DecisionResult? DecisionResult { get; init; }
 
     /// <summary>Texto de log asociado (bloque estructurado por street).</summary>
     public string? LogText { get; init; }

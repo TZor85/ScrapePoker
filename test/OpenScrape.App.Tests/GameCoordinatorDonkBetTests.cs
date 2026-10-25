@@ -1,5 +1,5 @@
 using OpenScrape.App.Entities;
-using OpenScrape.DecisionMaker.Services;
+using OpenScrape.App.Services.Analysis;
 using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.App.Tests;
@@ -34,7 +34,7 @@ public class GameCoordinatorDonkBetTests
             return (false, currentSituation);
 
         bool effectiveVillainAggressor = villainWasPreflopAggressor && !heroWasPreviousStreetAggressor;
-        return PreflopAnalyzer.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
+        return PreflopSituation.DetectDonkBet(maxBet, effectiveVillainAggressor, currentSituation);
     }
 
     private static List<Player> CreatePlayers(bool heroAggressor, bool villainAggressor)

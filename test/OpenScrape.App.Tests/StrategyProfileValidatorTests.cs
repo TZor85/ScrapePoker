@@ -1,5 +1,7 @@
 using OpenScrape.App.Services;
+using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
+
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Exceptions;
 using OpenScrape.Domain.ValueObjects;

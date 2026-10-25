@@ -1,4 +1,4 @@
-﻿using JasperFx.Core;
+using JasperFx.Core;
 using Marten;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,21 +13,18 @@ using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Bankroll;
+using OpenScrape.App.Services.Calibration;
+using OpenScrape.App.Services.Exploitability;
+using OpenScrape.App.Services.License;
 using OpenScrape.App.Services.Logging;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.App.Telemetry;
-using OpenScrape.DecisionMaker;
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.DTOs;
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.Mappers;
 using OpenScrape.Domain.ValueObjects;
-using OpenScrape.Features.ActionScenario;
-using OpenScrape.Features.Card;
-using OpenScrape.Features.RegionsTableMap;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics;
@@ -122,20 +119,11 @@ namespace OpenScrape.App
         private volatile bool _backgroundExecute;
         private IReadOnlyList<Table>? _tables;
         private List<Table>? _dataTables;
-        // Resultados por calle: nulos hasta que se procesa esa calle.
-        private PokerCalculationResult _flopResult = null!;
-        private PokerCalculationResult _turnResult = null!;
-        private TurnBoardTexture _turnBoardTexture;
-        private PokerCalculationResult _riverResult = null!;
-        private RiverBoardTexture _riverBoardTexture;
         #endregion
 
         #region [Services and UseCases]
         private readonly GetWindowsScreenUseCase _useCase;
-        private readonly ActionScenarioUseCases _actionScenarioUseCases;
-        private readonly RegionTableMapUseCases _regionTableMapUseCases;
-        private readonly ISetPreflopActionUseCase _setPreflopActionUseCase;
-        private readonly ImageCropperService _imageCropperService;
+        private readonly IDecisionEngine _decisionEngine;
         private readonly IDocumentStore _dataBase;
         // _sessionDB eliminado: se usan sesiones locales con using para evitar connection leak
         private readonly ISetFlopForceBoardUseCase _setFlopForceBoardUseCase;
@@ -145,20 +133,15 @@ namespace OpenScrape.App
         private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase;
-        private readonly IPokerCalculator _pokerCalculator;
-        private readonly IBetSizingService _betSizingService;
         private readonly ColorDetectionService _colorDetectionService;
         private readonly OcrService _ocrService;
-        private readonly CardUseCases _cardUseCases;
         private readonly GameLoggerService _gameLoggerService;
         private readonly DetectionLoggerService _detectionLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
-        private readonly IPostflopDecisionService _postflopDecisionService;
         private readonly IExploitabilityCalculator _exploitabilityCalculator;
         private readonly IAutoCalibrationService _autoCalibrationService;
         private readonly IBankrollTrackerService _bankrollTrackerService;
-        private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly IOpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
         private readonly IGameCoordinator _coordinator;
@@ -199,26 +182,18 @@ namespace OpenScrape.App
         /// Constructor del formulario principal
         /// </summary>
         public FrmMain(IDocumentStore dataBase,
-                        ActionScenarioUseCases actionScenarioUseCases,
-                        CardUseCases cardUseCases,
-                        RegionTableMapUseCases regionTableMapUseCases,
-                        IPokerCalculator pokerCalculator,
-                        IBetSizingService betSizingService,
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
-                        IPostflopDecisionService postflopDecisionService,
                         IExploitabilityCalculator exploitabilityCalculator,
                         IAutoCalibrationService autoCalibrationService,
                         IBankrollTrackerService bankrollTrackerService,
-                        BoardTextureAnalyzer boardTextureAnalyzer,
                         IOpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
                         CardCacheService cardCacheService,
                         OcrService ocrService,
                         ColorDetectionService colorDetectionService,
-                        ImageCropperService imageCropperService,
                         DetectionLoggerService detectionLoggerService,
                         ISetFlopForceBoardUseCase setFlopForceBoardUseCase,
                         IGetHashImageUseCase getHashImageUseCase,
@@ -228,7 +203,7 @@ namespace OpenScrape.App
                         IGetCardsFlopUseCase getCardsFlopUseCase,
                         IGetCardsTurnUseCase getCardsTurnUseCase,
                         IGetCardsRiverUseCase getCardsRiverUseCase,
-                        ISetPreflopActionUseCase setPreflopActionUseCase,
+                        IDecisionEngine decisionEngine,
                         IGameCoordinator coordinator,
                         IScreenReaderService screenReader,
                         ITableLayoutService tableLayout,
@@ -266,27 +241,19 @@ namespace OpenScrape.App
             //InitializeVisualStyles();
 
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
-            _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
-            _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
-            _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
-            _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
-            _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
             _detectionLoggerService = detectionLoggerService ?? throw new ArgumentNullException(nameof(detectionLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
-            _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
             _exploitabilityCalculator = exploitabilityCalculator ?? throw new ArgumentNullException(nameof(exploitabilityCalculator));
             _autoCalibrationService = autoCalibrationService ?? throw new ArgumentNullException(nameof(autoCalibrationService));
             _bankrollTrackerService = bankrollTrackerService ?? throw new ArgumentNullException(nameof(bankrollTrackerService));
-            _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
             _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
             _cardCacheService = cardCacheService ?? throw new ArgumentNullException(nameof(cardCacheService));
             _ocrService = ocrService ?? throw new ArgumentNullException(nameof(ocrService));
             _colorDetectionService = colorDetectionService ?? throw new ArgumentNullException(nameof(colorDetectionService));
-            _imageCropperService = imageCropperService ?? throw new ArgumentNullException(nameof(imageCropperService));
             _setFlopForceBoardUseCase = setFlopForceBoardUseCase ?? throw new ArgumentNullException(nameof(setFlopForceBoardUseCase));
             _getHashImageUseCase = getHashImageUseCase ?? throw new ArgumentNullException(nameof(getHashImageUseCase));
             _getCropImageUseCase = getCropImageUseCase ?? throw new ArgumentNullException(nameof(getCropImageUseCase));
@@ -295,7 +262,7 @@ namespace OpenScrape.App
             _getCardsFlopUseCase = getCardsFlopUseCase ?? throw new ArgumentNullException(nameof(getCardsFlopUseCase));
             _getCardsTurnUseCase = getCardsTurnUseCase ?? throw new ArgumentNullException(nameof(getCardsTurnUseCase));
             _getCardsRiverUseCase = getCardsRiverUseCase ?? throw new ArgumentNullException(nameof(getCardsRiverUseCase));
-            _setPreflopActionUseCase = setPreflopActionUseCase ?? throw new ArgumentNullException(nameof(setPreflopActionUseCase));
+            _decisionEngine = decisionEngine ?? throw new ArgumentNullException(nameof(decisionEngine));
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             _screenReader = screenReader ?? throw new ArgumentNullException(nameof(screenReader));
             _tableLayout = tableLayout ?? throw new ArgumentNullException(nameof(tableLayout));
@@ -565,7 +532,7 @@ namespace OpenScrape.App
                 _frmOverlay.UpdateStreetPhase(string.Empty);
                 _frmOverlay.UpdateTableName(_tableName);
                 lbPositionAction.Text = string.Empty;
-                var potOddsResult = new PokerCalculationResult();
+                Contracts.DecisionResult? preflopDecision = null;
 
                 if (!cbTest.Checked)
                 {
@@ -713,10 +680,10 @@ namespace OpenScrape.App
                 _tableLayout.ValidatePlayerStates(_playerGameState);
 
                 // Procesar la información de la mesa
-                await ProcessTableInfoAsync(potOddsResult);
+                preflopDecision = await ProcessTableInfoAsync();
 
                 // Actualizar la interfaz con los resultados
-                _uiUpdateService.UpdateResults(_playerGameState, potOddsResult, _responseAction, _tableHand, _tableName);
+                _uiUpdateService.UpdateResults(_playerGameState, preflopDecision, _responseAction, _tableHand, _tableName);
 
                 // Telemetry: medir render del overlay
                 using var _overlayTimer = _metrics?.Measure(TelemetryCategories.OverlayRender);
@@ -726,6 +693,15 @@ namespace OpenScrape.App
                 {
                     _gameLoggerService.SetTelemetry(telemetry);
                 }
+            }
+            catch (LicenseRequiredException ex)
+            {
+                _logger.LogError(ex, "El motor rechazó la licencia");
+                MessageBox.Show(
+                    ex.Message,
+                    "OpenScrape",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
@@ -977,7 +953,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa la información de la mesa
         /// </summary>
-        private async Task ProcessTableInfoAsync(PokerCalculationResult potOddsResult)
+        private async Task<Contracts.DecisionResult?> ProcessTableInfoAsync()
         {
             SetPotValue();
             _gameLoggerService.UpdatePotSize(_playerGameState.PotSize);
@@ -1009,12 +985,12 @@ namespace OpenScrape.App
                     if (!hasHoleCards)
                     {
                         _logger.LogError("HoleCards no detectadas después de reintentos, saltando procesamiento preflop");
-                        return;
+                        return null;
                     }
                 }
 
                 _gameLoopStateMachine.TryTransition(GameState.PreflopAction);
-                await ProcessPreflopAsync();
+                return await ProcessPreflopAsync();
             }
             else
             {
@@ -1038,23 +1014,24 @@ namespace OpenScrape.App
                     if (!hasHoleCards)
                     {
                         _logger.LogError("HoleCards no detectadas para postflop, saltando procesamiento");
-                        return;
+                        return null;
                     }
                 }
 
-                await ProcessPostFlopAsync(potOddsResult);
+                await ProcessPostFlopAsync();
+                return null;
             }
         }
 
         /// <summary>
         /// Procesa la fase de preflop
         /// </summary>
-        private async Task ProcessPreflopAsync()
+        private async Task<Contracts.DecisionResult> ProcessPreflopAsync()
         {
             if (_playerGameState.Position == TablePosition.None)
             {
                 _logger.LogError("Posición del jugador no detectada, saltando procesamiento preflop");
-                return;
+                return new Contracts.DecisionResult { Action = string.Empty };
             }
 
             if (_preflopHeroPosition == null || !_preflopHeroPosition.ContainsKey(_playerGameState.Position))
@@ -1065,22 +1042,29 @@ namespace OpenScrape.App
                 if (!_preflopHeroPosition.ContainsKey(_playerGameState.Position))
                 {
                     _logger.LogError("Sigue sin tener datos para posición {Position}, saltando preflop", _playerGameState.Position);
-                    return;
+                    return new Contracts.DecisionResult { Action = string.Empty };
                 }
             }
 
-            var responseFlop = await _setPreflopActionUseCase.Execute(new SetPreflopActionUseCaseRequest
-            {
-                ResponseAction = _responseAction,
-                PlayerState = _playerGameState,
-                PreflopHeroPosition = _preflopHeroPosition
-            });
+            var decision = await _decisionEngine.DecideAsync(
+                PlayerStateMapper.MapPreflop(
+                    _playerGameState,
+                    _responseAction.IsSecondAction,
+                    villain: null,
+                    preflopBets: _preflopHeroPosition.TryGetValue(_playerGameState.Position, out var heroBets)
+                        ? heroBets
+                        : null));
 
-            _responseAction = responseFlop.ResponseAction;
-            _playerGameState = responseFlop.PlayerState;
+            _responseAction.Action = decision.Action;
+            if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))
+                _responseAction.HandSituation = nextSituation;
+
+            if (decision.Action.Contains("Call"))
+                _playerGameState.HandSituation = HandSituation.Call;
 
             _frmOverlay.UpdateStreetPhase("Pre-Flop");
             SetPreflopAggressors();
+            return decision;
         }
 
         private void SetPreflopAggressors()
@@ -1108,7 +1092,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa las fases posteriores al flop (flop, turn, river)
         /// </summary>
-        private async Task ProcessPostFlopAsync(PokerCalculationResult potOddsResult)
+        private async Task ProcessPostFlopAsync()
         {
             _logger.LogInformation("ProcessPostFlopAsync: Estado actual = {State}", _gameLoopStateMachine.CurrentState);
 
@@ -1141,7 +1125,7 @@ namespace OpenScrape.App
                         VillainBetSizeFlop = reprocessFlopBetSize,
                         VillainBetFlop = reprocessMaxBet > 0
                     });
-                    await ProcessFlopAsync(potOddsResult);
+                    await ProcessFlopAsync();
                 }
             }
 
@@ -1176,7 +1160,7 @@ namespace OpenScrape.App
             if (_gameLoopStateMachine.CurrentState == GameState.FlopDetected)
             {
                 _gameLoopStateMachine.TryTransition(GameState.FlopAction);
-                await ProcessFlopAsync(potOddsResult);
+                await ProcessFlopAsync();
             }
 
             if (_gameLoopStateMachine.CurrentState == GameState.TurnDetected)
@@ -1231,31 +1215,13 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina la acción del river delegando a GameCoordinator.
         /// </summary>
-        private void DetermineRiverAction()
+        private async Task DetermineRiverAction()
         {
-            _coordinator.SetRiverResult(_riverResult);
-            var result = _coordinator.DetermineRiverAction(_playerGameState);
+            var result = await _coordinator.DetermineRiverAction(_playerGameState);
             _responseAction.Action = result.Action;
+            UpdateOverlayWithDecision(result.Decision);
             _logger.LogError("{LogText}", result.LogText);
         }
-
-        /// <summary>
-        /// Analiza la textura del board del turn
-        /// </summary>
-        /// <summary>
-        /// Analiza el cambio de board al caer una nueva carta.
-        /// previousCardCount indica cuántas cartas había antes (3 para turn, 4 para river).
-        /// </summary>
-        // CombineBoardChanges extraído a PostflopGameContext
-
-        private BoardChangeResult AnalyzeBoardChange(List<BoardData> boardCards, int previousCardCount)
-            => _coordinator.AnalyzeBoardChange(boardCards, previousCardCount);
-
-        private TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> boardCards)
-            => _coordinator.AnalyzeTurnBoardTexture(boardCards);
-
-        private RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> boardCards)
-            => _coordinator.AnalyzeRiverBoardTexture(boardCards);
 
         /// <summary>
         /// Detecta si se ha iniciado una nueva mano usando múltiples indicadores
@@ -1313,7 +1279,7 @@ namespace OpenScrape.App
         /// <summary>
         /// Procesa la fase de flop
         /// </summary>
-        private async Task ProcessFlopAsync(PokerCalculationResult potOddsResult)
+        private async Task ProcessFlopAsync()
         {
             _logger.LogInformation("ProcessFlopAsync: Iniciando procesamiento de flop - Estado actual: {State}", _gameLoopStateMachine.CurrentState);
 
@@ -1366,47 +1332,20 @@ namespace OpenScrape.App
             _playerGameState = setFlopForceBoardResponse.PlayerState;
             _scrapeFlopResult = setFlopForceBoardResponse.TableScrapeFlopResult;
 
-            var myCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
-                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
-            };
-
             // Verificar que hay suficientes cartas del flop tras reintentos
             if (dataBoard.Count(d => d.Position == BoardPosition.Flop) < 3)
             {
                 _logger.LogError("No se detectaron suficientes cartas del flop tras reintentos.");
                 _responseAction.Action = "Error: No se pudieron detectar cartas del flop";
-                UpdateOverlayWithPotOdds(new PokerCalculationResult());
+                _frmOverlay.ClearAll();
                 return;
             }
-
-            var communityCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 1).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 1).Force),
-                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 2).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 2).Force),
-                new CardDataOuts((Suit)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 3).Suit, (Rank)dataBoard.First(d => d.Position == BoardPosition.Flop && d.Location == 3).Force)
-            };
-
-            var result = _pokerCalculator.Calculate(
-                myCards,
-                communityCards,
-                _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet),
-                isInPosition: _playerGameState.IsInPosition,
-                heroStack: _playerGameState.HeroStack,
-                villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString(),
-                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
-
-            _flopResult = result;
-            UpdateOverlayWithPotOdds(result);
 
             // Determinar si estamos en posición
             _tableLayout.SetIsInPosition(_playerGameState);
 
-            // Analizar el flop y determinar acción usando PostflopDecisionService (unificado con turn/river)
-            DetermineFlopActionUnified();
+            // La decisión viene del motor; el cliente ya no calcula equity localmente.
+            var flopDecision = await DetermineFlopActionUnified();
 
             // Persistir flop board y decisión
             var flopCardNames = _playerGameState.BoardCards
@@ -1418,40 +1357,41 @@ namespace OpenScrape.App
             decimal flopMaxBet = _playerGameState.Players.Max(m => m.Bet);
             double flopSpr = _playerGameState.PotSize > 0
                 ? (double)(_playerGameState.HeroStack / _playerGameState.PotSize) : 0;
+            var flop = flopDecision.Decision;
             _gameLoggerService.LogStreetDecision(new StreetDecision(
-                BoardPosition.Flop, result.EquityPercentage, result.PotOddsPercentage, result.ExpectedValue,
-                result.RecommendedAction, _responseAction.Action ?? "Unknown", _playerGameState.PotSize,
+                BoardPosition.Flop, flop.RawEquity ?? flop.Equity, flop.PotOdds, flop.EVWithFoldEquity ?? 0,
+                flop.Action, _responseAction.Action ?? "Unknown", _playerGameState.PotSize,
                 flopMaxBet, _playerGameState.HandSituation, _playerGameState.IsInPosition,
-                Reason: result.RecommendedAction, TotalOuts: result.TotalOuts, SPR: flopSpr));
+                Reason: flop.Reason, TotalOuts: flop.TotalOuts, SPR: flopSpr));
             _gameLoggerService.UpdateSituation(_playerGameState.HandSituation);
         }
 
         /// <summary>
         /// Determina la acción del flop delegando a GameCoordinator.
         /// </summary>
-        private void DetermineFlopActionUnified()
+        private async Task<GameDecisionResult> DetermineFlopActionUnified()
         {
-            _coordinator.SetFlopResult(_flopResult);
-            var result = _coordinator.DetermineFlopAction(_playerGameState);
+            var result = await _coordinator.DetermineFlopAction(_playerGameState);
             _responseAction.Action = result.Action;
+            UpdateOverlayWithDecision(result.Decision);
             _logger.LogError("{LogText}", result.LogText);
+            return result;
         }
 
         /// <summary>
         /// Determina si hero fue el agresor preflop basado en la HandSituation.
         /// </summary>
-        // IsPreflopAggressor, HasRangeAdvantageOnBoard, CalculateCbetAdjustment
-        // extraídos a PreflopAnalyzer en DecisionMaker
+        // La situación preflop se resuelve en App (PreflopSituation); range
+        // advantage y ajuste de c-bet viven sólo del lado del servidor.
 
         /// <summary>
         /// Determina la acción del turn delegando a GameCoordinator.
         /// </summary>
-        private void DetermineTurnAction()
+        private async Task DetermineTurnAction()
         {
-            _coordinator.SetTurnResult(_turnResult);
-            _coordinator.TurnBoardTexture = _turnBoardTexture;
-            var result = _coordinator.DetermineTurnAction(_playerGameState);
+            var result = await _coordinator.DetermineTurnAction(_playerGameState);
             _responseAction.Action = result.Action;
+            UpdateOverlayWithDecision(result.Decision);
             _logger.LogError("{LogText}", result.LogText);
         }
 
@@ -1506,43 +1446,11 @@ namespace OpenScrape.App
 
             _playerGameState.BoardCards = dataBoard;
 
-            // Analizar textura del board del turn
-            _turnBoardTexture = AnalyzeTurnBoardTexture(dataBoard);
-
-            var myCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
-                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
-            };
-
-            // Filtrar solo cartas comunitarias (excluir hole cards que se añaden en el flop)
-            var boardOnly = dataBoard
-                .Where(d => d.Position != BoardPosition.Hand)
-                .OrderBy(d => d.Location)
-                .ToList();
-            var communityCards = boardOnly.Select(d =>
-                new CardDataOuts((Suit)d.Suit, (Rank)d.Force)).ToList();
-
-            var result = _pokerCalculator.Calculate(
-                myCards,
-                communityCards,
-                _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet),
-                isInPosition: _playerGameState.IsInPosition,
-                heroStack: _playerGameState.HeroStack,
-                villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString(),
-                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
-
-            _turnResult = result;
-
-            UpdateOverlayWithPotOdds(result);
-
             // Determinar si estamos en posición
             _tableLayout.SetIsInPosition(_playerGameState);
 
-            // Determinar acción en el turn
-            DetermineTurnAction();
+            // Determinar acción en el turn (la equity y la textura vienen del motor)
+            await DetermineTurnAction();
         }
 
         /// <summary>
@@ -1598,43 +1506,11 @@ namespace OpenScrape.App
 
             _playerGameState.BoardCards = dataBoard;
 
-            var myCards = new List<CardDataOuts>
-            {
-                new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
-                new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
-            };
-
-            // Filtrar solo cartas comunitarias (excluir hole cards que se añaden en el flop)
-            var boardOnly = dataBoard
-                .Where(d => d.Position != BoardPosition.Hand)
-                .OrderBy(d => d.Location)
-                .ToList();
-            var communityCards = boardOnly.Select(d =>
-                new CardDataOuts((Suit)d.Suit, (Rank)d.Force)).ToList();
-
-            var result = _pokerCalculator.Calculate(
-                myCards,
-                communityCards,
-                _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet),
-                isInPosition: _playerGameState.IsInPosition,
-                heroStack: _playerGameState.HeroStack,
-                villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString(),
-                opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
-
-            _riverResult = result;
-
-            UpdateOverlayWithPotOdds(result);
-
-            // Analizar textura del board del river
-            _riverBoardTexture = AnalyzeRiverBoardTexture(dataBoard);
-
             // Determinar si estamos en posición
             _tableLayout.SetIsInPosition(_playerGameState);
 
-            // Determinar acción en el river
-            DetermineRiverAction();
+            // Determinar acción en el river (la equity y la textura vienen del motor)
+            await DetermineRiverAction();
         }
 
         /// <summary>
@@ -1717,272 +1593,16 @@ namespace OpenScrape.App
         }
 
         /// <summary>
-        /// Actualiza el overlay con la información de pot odds
+        /// Actualiza el overlay con la decisión que devolvió el motor.
         /// </summary>
-        private void UpdateOverlayWithPotOdds(PokerCalculationResult potOddsResult)
+        private void UpdateOverlayWithDecision(Contracts.DecisionResult decision)
         {
-            _frmOverlay.UpdateWithCalculationResult(potOddsResult);
-        }
+            var street = _gameLoopStateMachine.IsFlop ? "FLOP"
+                : _gameLoopStateMachine.IsTurn ? "TURN"
+                : _gameLoopStateMachine.IsRiver ? "RIVER"
+                : "PRE-FLOP";
 
-        /// <summary>
-        /// Actualiza la interfaz con los resultados del análisis
-        /// </summary>
-        private void UpdateUIWithResults(PokerCalculationResult potOddsResult)
-        {
-            _playerGameState.HandSituation = _responseAction.HandSituation;
-
-            if (_playerGameState != null)
-            {
-                if (IsPreflop)
-                {
-                    UpdateResumeTextForPreflop(potOddsResult);
-                    // Transición a PreflopAction ya se hizo en ProcessTableInfoAsync
-                }
-
-                if (_gameLoopStateMachine.IsFlop)
-                {
-                    UpdateResumeTextForFlop();
-                }
-
-                UpdatePlayerIndicators();
-                UpdateCardImages();
-            }
-
-            lbAction.Text = _responseAction?.Action ?? string.Empty;
-            lbPositionAction.Text = _playerGameState?.HandSituation.ToString() ?? string.Empty;
-
-            _frmOverlay.UpdateSituacion(lbPositionAction.Text);
-
-            if (_frmOverlay != null)
-            {
-                var actionText = _responseAction?.Action ?? string.Empty;
-                var villains = _playerGameState?.Players.Where(p => p.Name != "P0").ToList() ?? new List<Player>();
-                _frmOverlay.UpdateAction(_actionFormatter.EnrichActionWithBBAmount(actionText, villains, _gameLoggerService.CurrentBigBlind));
-            }
-
-        }
-
-        /// <summary>
-        /// Actualiza el texto de resumen para la fase de preflop
-        /// </summary>
-        private void UpdateResumeTextForPreflop(PokerCalculationResult potOddsResult)
-        {
-            var enMesa = _playerGameState.Players.Count(e => !e.Empty) + 1;
-            var sitout = _playerGameState.Players.Count(s => s.SitOut);
-            var playing = _playerGameState.Players.Count(p => p.Active) + 1;
-
-            // Calcular equity preflop si hay hole cards
-            double preflopEquity = 0;
-            if (_playerGameState.HoleCard1Rank > 0 && _playerGameState.HoleCard2Rank > 0)
-            {
-                try
-                {
-                    var heroCards = new List<CardDataOuts>
-                    {
-                        new((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
-                        new((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
-                    };
-                    // En preflop, numOpp = jugadores con bet voluntaria (> big blind),
-                    // excluyendo blinds obligatorias que no representan manos en la mano.
-                    int voluntaryBettors = _playerGameState.Players.Count(p => p.Active && p.Bet > 1m);
-                    var numOpp = Math.Max(1, voluntaryBettors);
-                    var preflopResult = _pokerCalculator.Calculate(
-                        heroCards, new List<CardDataOuts>(),
-                        _playerGameState.PotSize,
-                        _playerGameState.Players.Max(m => m.Bet),
-                        numOpponents: numOpp,
-                        heroStack: _playerGameState.HeroStack,
-                        villainStack: GetVillainStack(),
-                        handSituation: _playerGameState.HandSituation.ToString(),
-                        opponentProfile: _coordinator.GetActiveVillainProfile(_playerGameState));
-                    preflopEquity = preflopResult.EquityPercentage;
-
-                    // Ajuste posicional: posiciones tardías tienen ventaja de información
-                    double positionAdjust = _playerGameState.Position switch
-                    {
-                        TablePosition.Button => 3.0,
-                        TablePosition.CutOff => 1.0,
-                        TablePosition.Middle => 0.0,
-                        TablePosition.Early => -2.0,
-                        TablePosition.SmallBlind => -3.0,
-                        TablePosition.BigBlind => -1.0,
-                        _ => 0.0
-                    };
-                    preflopEquity = Math.Max(0, Math.Min(100, preflopEquity + positionAdjust));
-                }
-                catch { /* OCR puede dar valores inválidos */ }
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Hand #{_tableHand}: Hold'em No Limit");
-            sb.AppendLine($"#{_playerGameState.Players.FirstOrDefault(d => d.Dealer)?.Name ?? "Hero"} is the Dealer");
-            sb.AppendLine($"{_playerGameState.Players.FirstOrDefault(f => f.Position == TablePosition.SmallBlind)?.Name ?? "Hero"}: posts small blind");
-            sb.AppendLine($"{_playerGameState.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
-            sb.AppendLine($"Pot: {_playerGameState.PotSize}");
-            sb.AppendLine($"*** STATISTICS ***");
-            sb.AppendLine($"PotOdds: {(decimal)potOddsResult.PotOddsPercentage}%");
-            sb.AppendLine($"Equity: {preflopEquity:F1}%");
-            sb.AppendLine($"Should Call: {potOddsResult.ShouldCall}");
-            sb.AppendLine("*** HOLE CARDS ***");
-            sb.AppendLine($"Dealt to Hero [{_playerGameState.HoleCard1Face} {_playerGameState.HoleCard2Face}]");
-
-            foreach (TablePosition position in Enum.GetValues(typeof(TablePosition)))
-            {
-                if (position != TablePosition.None && position <= _playerGameState.Position)
-                {
-                    var player = _playerGameState.Players.FirstOrDefault(f => f.Position == position);
-                    string name = player?.Name ?? "Hero";
-                    string action = string.Empty;
-
-                    if (name != "Hero")
-                        action = player?.Bet == null ? "folds" : $"bets/calls {player.Bet}";
-                    else
-                    {
-                        if (position == _playerGameState.Position)
-                        {
-                            sb.AppendLine($"Hand Situation: {_playerGameState.HandSituation}");
-                            action = _responseAction?.Action ?? string.Empty;
-                        }
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(action))
-                        sb.AppendLine($"{name}: {action}");
-                }
-            }
-
-            // Siempre mostrar la acción recomendada de Hero al final
-            var heroAction = _responseAction?.Action ?? "No action";
-            var heroSituation = _playerGameState.HandSituation;
-            sb.AppendLine($"*** HERO ACTION ***");
-            sb.AppendLine($"Position: {_playerGameState.Position}  |  Situation: {heroSituation}");
-            sb.AppendLine($"Equity preflop: {preflopEquity:F1}%");
-
-            // Enriquecer acción con BB amount si tiene multiplicador (ej: "3Bet x6" → "3Bet x6 (15BB)")
-            var villainsSnapshot = _playerGameState.Players.Where(p => p.Name != "P0").ToList();
-            var displayAction = _actionFormatter.EnrichActionWithBBAmount(heroAction, villainsSnapshot, _gameLoggerService.CurrentBigBlind);
-            sb.AppendLine($"▶ DECISIÓN: {displayAction}");
-
-            tbResume.AppendText(sb.ToString() + Environment.NewLine);
-        }
-
-        /// <summary>
-        /// Actualiza el texto de resumen para la fase de flop
-        /// </summary>
-        private void UpdateResumeTextForFlop()
-        {
-            tbResume.Text += "*** FLOP *** [";
-            var countFlop = 0;
-            foreach (var carta in _playerGameState.BoardCards.Where(w => w.Position == BoardPosition.Flop))
-            {
-                countFlop++;
-                if (countFlop == 3)
-                    tbResume.Text += $"{carta.Name}]";
-                else
-                    tbResume.Text += $"{carta.Name} ";
-            }
-        }
-
-        /// <summary>
-        /// Actualiza los indicadores visuales de los jugadores
-        /// </summary>
-        private void UpdatePlayerIndicators()
-        {
-            // Resetear colores de botones
-            pbbuttonPlayerOne.BackColor = Color.Transparent;
-            pbButtonPlayerTwo.BackColor = Color.Transparent;
-            pbButtonPlayerThree.BackColor = Color.Transparent;
-            pbButtonPlayerFour.BackColor = Color.Transparent;
-            pbButtonPlayerFive.BackColor = Color.Transparent;
-            pbButtonHero.BackColor = Color.Transparent;
-
-            // Actualizar nombres y apuestas
-            lbNamePlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Alias;
-            lbNamePlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Alias;
-            lbNamePlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Alias;
-            lbNamePlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Alias;
-            lbNamePlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Alias;
-
-            lbBetPlayerOne.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Bet.ToString();
-            lbBetPlayerTwo.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Bet.ToString();
-            lbBetPlayerThree.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Bet.ToString();
-            lbBetPlayerFour.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Bet.ToString();
-            lbBetPlayerFive.Text = _playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Bet.ToString();
-
-            lbBetHero.Text = _playerGameState.CurrentBet.ToString();
-            lbPot.Text = _playerGameState.PotSize.ToString();
-
-            // Marcar el dealer
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P1")?.Dealer == true)
-                pbbuttonPlayerOne.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P2")?.Dealer == true)
-                pbButtonPlayerTwo.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P3")?.Dealer == true)
-                pbButtonPlayerThree.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P4")?.Dealer == true)
-                pbButtonPlayerFour.BackColor = Color.Red;
-            if (_playerGameState.Players.FirstOrDefault(f => f.Name == "P5")?.Dealer == true)
-                pbButtonPlayerFive.BackColor = Color.Red;
-            if (_playerGameState.IsDealer == true)
-                pbButtonHero.BackColor = Color.Red;
-
-            lbTableHand.Text = _tableHand;
-            lbTableName.Text = _tableName;
-        }
-
-        /// <summary>
-        /// Actualiza las imágenes de las cartas
-        /// </summary>
-        private void UpdateCardImages()
-        {
-            // Cartas del héroe
-            pbHeroCard0.Image = GetCardImage(_playerGameState.HoleCard1Face);
-            pbHeroCard1.Image = GetCardImage(_playerGameState.HoleCard2Face);
-
-            // Cartas del tablero
-            pbBoard1.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 1)?.Name);
-            pbBoard2.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 2)?.Name);
-            pbBoard3.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 3)?.Name);
-            pbBoard4.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 4)?.Name);
-            pbBoard5.Image = GetCardImage(_playerGameState.BoardCards.FirstOrDefault(f => f.Location == 5)?.Name);
-        }
-
-        /// <summary>
-        /// Obtiene la imagen de una carta a partir de su nombre
-        /// </summary>
-        private Image? GetCardImage(string? cardName)
-        {
-            if (string.IsNullOrEmpty(cardName))
-                return null;
-
-            var card = _cards.FirstOrDefault(x => x.Id.Contains(cardName));
-            return card != null ? _imageCropperService.Base64ToImage(card.ImageBase64) : null;
-        }
-
-        /// <summary>
-        /// Calcula las pot odds y la equidad
-        /// </summary>
-        private PokerCalculationResult GetPotOddsCalculator()
-        {
-            var result = _pokerCalculator.Calculate(
-                new List<CardDataOuts>
-                {
-                    new CardDataOuts((Suit)_playerGameState.HoleCard1Suit, (Rank)_playerGameState.HoleCard1Rank),
-                    new CardDataOuts((Suit)_playerGameState.HoleCard2Suit, (Rank)_playerGameState.HoleCard2Rank)
-                },
-                new List<CardDataOuts>
-                {
-                    new CardDataOuts((Suit)_playerGameState.BoardCards[0].Suit, (Rank)_playerGameState.BoardCards[0].Force),
-                    new CardDataOuts((Suit)_playerGameState.BoardCards[1].Suit, (Rank)_playerGameState.BoardCards[1].Force),
-                    new CardDataOuts((Suit)_playerGameState.BoardCards[2].Suit, (Rank)_playerGameState.BoardCards[2].Force)
-                },
-                _playerGameState.PotSize,
-                _playerGameState.Players.Max(m => m.Bet),
-                isInPosition: _playerGameState.IsInPosition,
-                heroStack: _playerGameState.HeroStack,
-                villainStack: GetVillainStack(),
-                handSituation: _playerGameState.HandSituation.ToString());
-
-            return result;
+            _frmOverlay.UpdateWithDecision(decision, street);
         }
 
         /// <summary>
@@ -3062,12 +2682,6 @@ namespace OpenScrape.App
 
         }
 
-        /// <summary>
-        /// Ajusta el tamaño de apuesta basado en stack dinámico
-        /// </summary>
-        private string AdjustBetSize(string action, decimal heroStack, decimal potSize, int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
-            => _coordinator.AdjustBetSize(action, heroStack, potSize, numOpponents, isPaired, isCoordinated, isDry, isInPosition);
-
         // Pestañas Bankroll/Métricas delegadas a UserControls (Fase 7)
 
         // ============================================================================
@@ -3115,9 +2729,9 @@ namespace OpenScrape.App
         //   _historialLoaded        (bool)
         //   _bankrollLoaded         (bool)
         //
-        // Inyección DI → se mantienen hasta Fase 7.5 (consolidación en facade):
+        // Inyección DI → se mantienen hasta Fase 7.5:
         //   _pokerCalculator, _betSizingService, _postflopDecisionService,
-        //   _boardTextureAnalyzer, _opponentTracker → absorbidos por IPokerDecisionFacade
+        //   _boardTextureAnalyzer, _opponentTracker → absorbidos por GameCoordinator
         //   _coordinator, _screenReader, _tableLayout → consumidos por
         //     GameLoopCoordinator y eliminados de FrmMain tras cutover
         //   Resto (*UseCase, *Service de infraestructura) → permanecen o se reasignan

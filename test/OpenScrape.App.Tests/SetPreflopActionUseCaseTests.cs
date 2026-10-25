@@ -1,5 +1,4 @@
 using OpenScrape.App.Aplication;
-using OpenScrape.App.Aplication.UseCases.Actions;
 using OpenScrape.App.Entities;
 using OpenScrape.Domain.Enums;
 
@@ -182,6 +181,59 @@ public class SetPreflopActionUseCaseTests
         var useCase = CreateUseCase();
 
         Assert.DoesNotThrowAsync(async () => await useCase.Execute(request));
+    }
+
+    /// <summary>
+    /// El caso de uso no debe escribir la respuesta sobre el request recibido:
+    /// un fixture guardado como entrada no puede salir con la decisión ya horneada.
+    /// </summary>
+    [Test]
+    public async Task Execute_NoMutaElRequest()
+    {
+        var state = new PlayerGameState
+        {
+            Position = TablePosition.Button,
+            HoleCard1Face = "A",
+            HoleCard1Rank = (int)Rank.Ace,
+            HoleCard1Suit = (int)Suit.Spades,
+            HoleCard2Face = "K",
+            HoleCard2Rank = (int)Rank.King,
+            HoleCard2Suit = (int)Suit.Spades,
+            PotSize = 3m,
+            HeroStack = 100m
+        };
+        var request = new SetPreflopActionUseCaseRequest { PlayerState = state };
+
+        var table = new OpenScrape.Domain.Dtos.TableDTO
+        {
+            Name = "fixture-no-mutacion",
+            Positions =
+            [
+                new OpenScrape.Domain.ValueObjects.PlayerActionSequence(
+                    Name: "fixture-no-mutacion",
+                    HeroPosition: "Button",
+                    OpenRaiser: null,
+                    ThreeBetPosition: null,
+                    Limper: null,
+                    Caller: null,
+                    Squeezer: null,
+                    BetSize: null,
+                    IsGreater: null,
+                    RaiserFolds: null,
+                    Hands: [new OpenScrape.Domain.ValueObjects.Hand("AK", true, "Raise", 100)])
+            ]
+        };
+
+        var sut = Fixtures.PreflopTestCaseBuilder.Create(
+            new Fixtures.FixedRangeStore(table), new Fixtures.FixedRandomProvider(50));
+
+        var response = await sut.Execute(request);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(response.ResponseAction.Action, Is.EqualTo("Raise"));
+            Assert.That(request.ResponseAction.Action, Is.Null, "El request de entrada quedo mutado");
+        });
     }
 }
 

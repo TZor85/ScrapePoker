@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;

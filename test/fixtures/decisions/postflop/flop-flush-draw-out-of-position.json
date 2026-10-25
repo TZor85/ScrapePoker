@@ -1,0 +1,104 @@
+{
+  "Id": "flop-flush-draw-out-of-position",
+  "Street": "Flop",
+  "State": {
+    "IsDealer": false,
+    "PotSize": 12,
+    "HoleCard1Face": "",
+    "HoleCard2Face": "",
+    "HoleCard1Rank": 12,
+    "HoleCard2Rank": 11,
+    "HoleCard1Suit": 2,
+    "HoleCard2Suit": 2,
+    "Kicker": 0,
+    "IsInPosition": false,
+    "Position": "None",
+    "CurrentBet": 0,
+    "HeroStack": 88,
+    "HandSituation": "Call",
+    "Players": [
+      {
+        "Name": "P0",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 88,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 0,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P1",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 1,
+        "WasPreflopAggressor": false
+      },
+      {
+        "Name": "P2",
+        "Alias": null,
+        "Dealer": false,
+        "Bet": 0,
+        "Stack": 100,
+        "Active": true,
+        "SitOut": false,
+        "Empty": false,
+        "HasFolded": false,
+        "BigBlind": false,
+        "SmallBlind": false,
+        "Position": "None",
+        "ValuePosition": 2,
+        "WasPreflopAggressor": false
+      }
+    ],
+    "BoardCards": [
+      {
+        "Name": "Ace",
+        "Force": 14,
+        "Suit": 2,
+        "Position": "Flop",
+        "Location": 1
+      },
+      {
+        "Name": "Nine",
+        "Force": 9,
+        "Suit": 2,
+        "Position": "Flop",
+        "Location": 2
+      },
+      {
+        "Name": "Four",
+        "Force": 4,
+        "Suit": 1,
+        "Position": "Flop",
+        "Location": 3
+      }
+    ],
+    "HavePocketPair": false,
+    "IsSuited": true
+  },
+  "MaxBet": 6,
+  "ExpectedAction": "Check",
+  "ExpectedEquity": 47.400999999999996,
+  "MonteCarloSeed": 20261023,
+  "ExpectedReason": "Check \u2014 thin value OOP (showdown)",
+  "ExpectedBoardTexture": "Dry",
+  "ExpectedIsBluff": false,
+  "ExpectedIsBarrel": false,
+  "ExpectedIsCheckRaise": false
+}

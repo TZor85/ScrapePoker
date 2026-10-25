@@ -1,0 +1,107 @@
+using OpenScrape.Domain.Enums;
+using OpenScrape.Domain.Interfaces;
+using OpenScrape.Domain.Services;
+using OpenScrape.Domain.ValueObjects;
+
+namespace OpenScrape.DecisionMaker.Preflop;
+
+public class GetActionScenario
+{
+    private readonly IPreflopRangeStore _rangeStore;
+    private readonly IRandomProvider _randomProvider;
+
+    public GetActionScenario(IPreflopRangeStore rangeStore, IRandomProvider? randomProvider = null)
+    {
+        _rangeStore = rangeStore;
+        _randomProvider = randomProvider ?? new SystemRandomProvider();
+    }
+
+    public async Task<string> ExecuteAsync(GameSituation situation, ActionScenarioRequest request)
+    {
+        try
+        {
+            var table = await _rangeStore.GetAsync(situation.GetDescription());
+            if (table == null)
+                throw new PreflopSituationNotFoundException(situation.GetDescription());
+
+            // Una fila ausente es un error de configuración del rango, no un fold:
+            // si ambas cosas terminan en "Fold", el motor no puede distinguirlas.
+            if (!SelectMatchingScenarios(table.Positions, request).Any())
+                throw new PreflopSituationNotFoundException(
+                    $"{situation.GetDescription()} / {request.HeroPosition?.GetDescription() ?? "sin posición"}");
+
+            var matches = SelectMatchingHands(table.Positions, request).ToList();
+
+            if (matches.Count == 0)
+                return "Fold";
+
+            var action = GetRandomAction(matches);
+            return string.IsNullOrEmpty(action) ? "Fold" : action;
+        }
+        catch (PreflopSituationNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error executing {situation.GetDescription()} scenario: {ex.Message}");
+        }
+    }
+
+    public static IEnumerable<PlayerActionSequence> SelectMatchingScenarios(
+        IEnumerable<PlayerActionSequence>? positions,
+        ActionScenarioRequest request) =>
+        positions?
+            .Where(w => w.HeroPosition == request.HeroPosition?.GetDescription()
+                    && (request.OpenRaiser == null || w.OpenRaiser == request.OpenRaiser.GetDescription())
+                    && (request.ThreeBetPosition == null || w.ThreeBetPosition == request.ThreeBetPosition.GetDescription())
+                    && (request.Limper == null || w.Limper == request.Limper.GetDescription())
+                    && (request.Caller == null || w.Caller == request.Caller.GetDescription())
+                    && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
+                    && (request.BetSize == null || w.BetSize == request.BetSize)
+                    && (request.IsGreater == null || w.IsGreater == request.IsGreater)
+                    && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
+        ?? Enumerable.Empty<PlayerActionSequence>();
+
+    public static IEnumerable<Hand> SelectMatchingHands(
+        IEnumerable<PlayerActionSequence>? positions,
+        ActionScenarioRequest request) =>
+        SelectMatchingScenarios(positions, request)
+            .FirstOrDefault()?.Hands
+            .Where(f => f.Name == request.HandName && f.Suited == request.Suited)
+        ?? Enumerable.Empty<Hand>();
+
+    private string GetRandomAction(List<Hand> actions)
+    {
+        if (actions.Count != 0)
+        {
+            // Verificamos que la lista no esté vacía
+            if (!actions.Any())
+                throw new ArgumentException("La lista de acciones está vacía");
+
+            // Verificamos que los porcentajes sumen 100
+            if (actions.Sum(a => a.Percentage) != 100)
+                throw new ArgumentException("Los porcentajes deben sumar 100");
+
+            // Generamos un número aleatorio entre 1 y 100
+            int randomNumber = _randomProvider.Next(1, 101);
+
+            // Acumulamos los porcentajes para crear rangos
+            int accumulatedPercentage = 0;
+
+            foreach (var action in actions)
+            {
+                accumulatedPercentage += action.Percentage;
+                if (randomNumber <= accumulatedPercentage)
+                {
+                    return action.Action;
+                }
+            }
+
+            // En caso de algún error de redondeo, devolvemos la última acción
+            return actions.Last()?.Action ?? string.Empty;
+        }
+
+        return string.Empty;
+    }
+}

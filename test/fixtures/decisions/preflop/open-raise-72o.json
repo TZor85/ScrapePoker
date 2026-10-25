@@ -1,0 +1,75 @@
+{
+  "Id": "open-raise-72o",
+  "Request": {
+    "ResponseAction": {
+      "Action": null,
+      "HandSituation": "None",
+      "IsSecondAction": false
+    },
+    "PlayerState": {
+      "IsDealer": false,
+      "PotSize": 3,
+      "HoleCard1Face": "7",
+      "HoleCard2Face": "2",
+      "HoleCard1Rank": 7,
+      "HoleCard2Rank": 2,
+      "HoleCard1Suit": 4,
+      "HoleCard2Suit": 2,
+      "Kicker": 0,
+      "IsInPosition": true,
+      "Position": "Button",
+      "CurrentBet": 0,
+      "HeroStack": 100,
+      "HandSituation": "None",
+      "Players": [
+        {
+          "Name": "P0",
+          "Alias": null,
+          "Dealer": false,
+          "Bet": 0,
+          "Stack": 0,
+          "Active": false,
+          "SitOut": false,
+          "Empty": false,
+          "HasFolded": false,
+          "BigBlind": false,
+          "SmallBlind": false,
+          "Position": "None",
+          "ValuePosition": 0,
+          "WasPreflopAggressor": false
+        }
+      ],
+      "BoardCards": [],
+      "HavePocketPair": false,
+      "IsSuited": false
+    },
+    "PreflopHeroPosition": {}
+  },
+  "Table": {
+    "Name": "fx-open-raise-72o",
+    "Positions": [
+      {
+        "Name": "fx-open-raise-72o",
+        "HeroPosition": "Button",
+        "OpenRaiser": null,
+        "ThreeBetPosition": null,
+        "Limper": null,
+        "Caller": null,
+        "Squeezer": null,
+        "BetSize": null,
+        "IsGreater": null,
+        "RaiserFolds": null,
+        "Hands": [
+          {
+            "Suited": false,
+            "Action": "Fold",
+            "Name": "72",
+            "Percentage": 100
+          }
+        ]
+      }
+    ]
+  },
+  "RandomNumber": 50,
+  "ExpectedAction": "Fold"
+}

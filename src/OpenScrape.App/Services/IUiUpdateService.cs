@@ -1,5 +1,6 @@
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Entities;
 
 namespace OpenScrape.App.Services;
@@ -43,6 +44,6 @@ public interface IUiUpdateService
     void Detach();
     void SetCardList(List<Card> cards);
     void SetOverlay(IFrmOverlay overlay);
-    void UpdateResults(PlayerGameState state, PokerCalculationResult result,
+    void UpdateResults(PlayerGameState state, DecisionResult? decision,
         ResponseAction responseAction, string tableHand, string tableName);
 }

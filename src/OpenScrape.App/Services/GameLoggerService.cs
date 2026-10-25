@@ -8,7 +8,7 @@ using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.App.Services;
 
-public class GameLoggerService
+public class GameLoggerService : IGameLoggerService
 {
     // Máximo de manos que se mantienen en la lista en memoria por sesión.
     // Las manos anteriores ya están persistidas como documentos HandRecord individuales.

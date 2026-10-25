@@ -1,16 +1,15 @@
 using System.Text;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
+using OpenScrape.Contracts;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
-using OpenScrape.Domain.ValueObjects;
 
 namespace OpenScrape.App.Services;
 
 public sealed class UiUpdateService : IUiUpdateService
 {
     private readonly IActionFormatter _actionFormatter;
-    private readonly IPokerCalculator _pokerCalculator;
     private readonly Func<decimal> _bigBlindProvider;
     private readonly GameLoopStateMachine _gameLoopStateMachine;
     private readonly ImageCropperService _imageCropper;
@@ -21,12 +20,11 @@ public sealed class UiUpdateService : IUiUpdateService
 
     public UiUpdateService(
         IActionFormatter actionFormatter,
-        IPokerCalculator pokerCalculator,
         GameLoggerService gameLogger,
         GameLoopStateMachine gameLoopStateMachine,
         ImageCropperService imageCropper,
         IGameCoordinator coordinator)
-        : this(actionFormatter, pokerCalculator,
+        : this(actionFormatter,
               gameLogger is not null ? () => gameLogger.CurrentBigBlind : () => 0.50m,
               gameLoopStateMachine, imageCropper, coordinator)
     {
@@ -34,14 +32,12 @@ public sealed class UiUpdateService : IUiUpdateService
 
     public UiUpdateService(
         IActionFormatter actionFormatter,
-        IPokerCalculator pokerCalculator,
         Func<decimal> bigBlindProvider,
         GameLoopStateMachine gameLoopStateMachine,
         ImageCropperService imageCropper,
         IGameCoordinator coordinator)
     {
         _actionFormatter = actionFormatter ?? throw new ArgumentNullException(nameof(actionFormatter));
-        _pokerCalculator = pokerCalculator ?? throw new ArgumentNullException(nameof(pokerCalculator));
         _bigBlindProvider = bigBlindProvider ?? (() => 0.50m);
         _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
         _imageCropper = imageCropper ?? throw new ArgumentNullException(nameof(imageCropper));
@@ -53,7 +49,7 @@ public sealed class UiUpdateService : IUiUpdateService
     public void SetCardList(List<Card> cards) => _cards = cards ?? new List<Card>();
     public void SetOverlay(IFrmOverlay overlay) => _overlay = overlay;
 
-    public void UpdateResults(PlayerGameState state, PokerCalculationResult result,
+    public void UpdateResults(PlayerGameState state, DecisionResult? decision,
         ResponseAction responseAction, string tableHand, string tableName)
     {
         var controls = _controls;
@@ -63,7 +59,7 @@ public sealed class UiUpdateService : IUiUpdateService
         state.HandSituation = responseAction.HandSituation;
 
         if (_gameLoopStateMachine.IsPreflop)
-            UpdateResumeTextForPreflop(controls, state, result, responseAction, tableHand);
+            UpdateResumeTextForPreflop(controls, state, decision, responseAction, tableHand);
 
         if (_gameLoopStateMachine.IsFlop)
             UpdateResumeTextForFlop(controls, state);
@@ -86,45 +82,29 @@ public sealed class UiUpdateService : IUiUpdateService
     }
 
     private void UpdateResumeTextForPreflop(UiUpdateControls controls, PlayerGameState state,
-        PokerCalculationResult result, ResponseAction responseAction, string tableHand)
+        DecisionResult? decision, ResponseAction responseAction, string tableHand)
     {
-        double preflopEquity = 0;
+        // La equity viene del motor; el cliente sólo aplica el ajuste posicional
+        // que ya mostraba en el resumen.
+        double preflopEquity = decision?.Equity ?? 0d;
         if (state.HoleCard1Rank > 0 && state.HoleCard2Rank > 0)
         {
-            try
+            double positionAdjust = state.Position switch
             {
-                var heroCards = new List<CardDataOuts>
-                {
-                    new((Suit)state.HoleCard1Suit, (Rank)state.HoleCard1Rank),
-                    new((Suit)state.HoleCard2Suit, (Rank)state.HoleCard2Rank)
-                };
-                int voluntaryBettors = state.Players.Count(p => p.Active && p.Bet > 1m);
-                var numOpp = Math.Max(1, voluntaryBettors);
-                var preflopResult = _pokerCalculator.Calculate(
-                    heroCards, new List<CardDataOuts>(),
-                    state.PotSize,
-                    state.Players.Max(m => m.Bet),
-                    numOpponents: numOpp,
-                    heroStack: state.HeroStack,
-                    villainStack: GetVillainStack(state),
-                    handSituation: state.HandSituation.ToString(),
-                    opponentProfile: _coordinator.GetActiveVillainProfile(state));
-                preflopEquity = preflopResult.EquityPercentage;
-
-                double positionAdjust = state.Position switch
-                {
-                    TablePosition.Button => 3.0,
-                    TablePosition.CutOff => 1.0,
-                    TablePosition.Middle => 0.0,
-                    TablePosition.Early => -2.0,
-                    TablePosition.SmallBlind => -3.0,
-                    TablePosition.BigBlind => -1.0,
-                    _ => 0.0
-                };
-                preflopEquity = Math.Max(0, Math.Min(100, preflopEquity + positionAdjust));
-            }
-            catch { }
+                TablePosition.Button => 3.0,
+                TablePosition.CutOff => 1.0,
+                TablePosition.Middle => 0.0,
+                TablePosition.Early => -2.0,
+                TablePosition.SmallBlind => -3.0,
+                TablePosition.BigBlind => -1.0,
+                _ => 0.0
+            };
+            preflopEquity = Math.Max(0, Math.Min(100, preflopEquity + positionAdjust));
         }
+
+        decimal maxBet = state.Players.Select(p => p.Bet).DefaultIfEmpty(0).Max();
+        decimal potOdds = CalculatePotOddsPercentage(state.PotSize, maxBet);
+        bool shouldCall = preflopEquity >= (double)potOdds;
 
         var sb = new StringBuilder();
         sb.AppendLine($"Hand #{tableHand}: Hold'em No Limit");
@@ -133,9 +113,9 @@ public sealed class UiUpdateService : IUiUpdateService
         sb.AppendLine($"{state.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
         sb.AppendLine($"Pot: {state.PotSize}");
         sb.AppendLine($"*** STATISTICS ***");
-        sb.AppendLine($"PotOdds: {(decimal)result.PotOddsPercentage}%");
+        sb.AppendLine($"PotOdds: {potOdds}%");
         sb.AppendLine($"Equity: {preflopEquity:F1}%");
-        sb.AppendLine($"Should Call: {result.ShouldCall}");
+        sb.AppendLine($"Should Call: {shouldCall}");
         sb.AppendLine("*** HOLE CARDS ***");
         sb.AppendLine($"Dealt to Hero [{state.HoleCard1Face} {state.HoleCard2Face}]");
 
@@ -253,15 +233,15 @@ public sealed class UiUpdateService : IUiUpdateService
         return card != null ? _imageCropper.Base64ToImage(card.ImageBase64) : null;
     }
 
-    private static decimal GetVillainStack(PlayerGameState state)
+    /// <summary>
+    /// Misma fórmula que usa el motor: la apuesta a pagar sobre el pozo final.
+    /// </summary>
+    private static decimal CalculatePotOddsPercentage(decimal potSize, decimal betToCall)
     {
-        var activeVillains = state.Players
-            .Where(p => p.Active && !string.IsNullOrEmpty(p.Name) && p.Name != "P0");
-        var villainStack = activeVillains.Any() ? activeVillains.Max(p => p.Stack) : 0;
+        if (betToCall <= 0)
+            return 0m;
 
-        if (villainStack <= 0 && state.HeroStack > 0)
-            return state.HeroStack;
-
-        return villainStack;
+        var total = potSize + betToCall;
+        return total <= 0 ? 0m : betToCall / total * 100m;
     }
 }

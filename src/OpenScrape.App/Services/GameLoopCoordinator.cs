@@ -245,6 +245,11 @@ public sealed class GameLoopCoordinator : IGameLoopCoordinator
         {
             throw;
         }
+        catch (Services.Http.EngineUnavailableException)
+        {
+            // Sin motor no hay decision: se propaga para que el loop se detenga.
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error en iteración del loop");

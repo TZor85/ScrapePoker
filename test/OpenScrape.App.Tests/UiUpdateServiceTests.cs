@@ -5,6 +5,7 @@ using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Services;
+using OpenScrape.Contracts;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
@@ -20,7 +21,6 @@ public class UiUpdateServiceTests
     {
         return new UiUpdateService(
             new FakeActionFormatter(),
-            new FakePokerCalculator(),
             bigBlindProvider ?? (() => 0.50m),
             new GameLoopStateMachine(new UiTestLogger<GameLoopStateMachine>()),
             new ImageCropperService(),
@@ -68,13 +68,20 @@ public class UiUpdateServiceTests
         return new ResponseAction { Action = "Call", HandSituation = HandSituation.OpenRaise };
     }
 
+    private static DecisionResult CreateDecision() => new()
+    {
+        Action = "Call",
+        Equity = 55.0,
+        PotOdds = 25.0
+    };
+
     [Test]
     public void Attach_WithControls_UpdateResultsDoesNotThrow()
     {
         var svc = CreateService();
         svc.Attach(CreateControls());
         Assert.DoesNotThrow(() =>
-            svc.UpdateResults(CreateState(), new PokerCalculationResult(),
+            svc.UpdateResults(CreateState(), CreateDecision(),
                 CreateResponseAction(), "1", "T"));
     }
 
@@ -85,7 +92,7 @@ public class UiUpdateServiceTests
         svc.Attach(CreateControls());
         svc.Detach();
         Assert.DoesNotThrow(() =>
-            svc.UpdateResults(CreateState(), new PokerCalculationResult(),
+            svc.UpdateResults(CreateState(), CreateDecision(),
                 CreateResponseAction(), "1", "T"));
     }
 
@@ -94,7 +101,7 @@ public class UiUpdateServiceTests
     {
         var svc = CreateService();
         Assert.DoesNotThrow(() =>
-            svc.UpdateResults(CreateState(), new PokerCalculationResult(),
+            svc.UpdateResults(CreateState(), CreateDecision(),
                 CreateResponseAction(), "1", "T"));
     }
 
@@ -106,7 +113,7 @@ public class UiUpdateServiceTests
         svc.Attach(ctrl);
         var resp = CreateResponseAction();
         resp.Action = "Raise 3bb";
-        svc.UpdateResults(CreateState(), new PokerCalculationResult(), resp, "1", "T");
+        svc.UpdateResults(CreateState(), CreateDecision(), resp, "1", "T");
         Assert.That(ctrl.LbAction.Text, Is.EqualTo("Raise 3bb"));
     }
 
@@ -118,7 +125,7 @@ public class UiUpdateServiceTests
         svc.Attach(ctrl);
         var st = CreateState();
         st.PotSize = 250m;
-        svc.UpdateResults(st, new PokerCalculationResult(), CreateResponseAction(), "1", "T");
+        svc.UpdateResults(st, CreateDecision(), CreateResponseAction(), "1", "T");
         Assert.That(ctrl.LbPot.Text, Is.EqualTo("250"));
     }
 
@@ -128,7 +135,7 @@ public class UiUpdateServiceTests
         var svc = CreateService();
         var ctrl = CreateControls();
         svc.Attach(ctrl);
-        svc.UpdateResults(CreateState(), new PokerCalculationResult(),
+        svc.UpdateResults(CreateState(), CreateDecision(),
             CreateResponseAction(), "H001", "Mesa");
         Assert.Multiple(() =>
         {
@@ -160,37 +167,8 @@ internal sealed class FakeActionFormatter : IActionFormatter
         => action;
 }
 
-internal sealed class FakePokerCalculator : IPokerCalculator
-{
-    public PokerCalculationResult Calculate(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
-        decimal currentPotSize, decimal betToCall, int numOpponents = 1, int? monteCarloIterations = null,
-        bool isInPosition = false, decimal heroStack = 0, decimal villainStack = 0,
-        string? handSituation = null, TablePosition villainPosition = TablePosition.None,
-        OpponentProfile? opponentProfile = null)
-        => new() { EquityPercentage = 50.0, PotOddsPercentage = 25.0, ShouldCall = true };
-}
-
 internal sealed class FakeGameCoordinator : IGameCoordinator
 {
-    public PokerCalculationResult? FlopResult { get; set; }
-    public PokerCalculationResult? TurnResult { get; set; }
-    public PokerCalculationResult? RiverResult { get; set; }
-    public TurnBoardTexture TurnBoardTexture { get; set; }
-    public RiverBoardTexture RiverBoardTexture { get; set; }
-
-    public string AdjustBetSize(string action, decimal heroStack, decimal potSize,
-        int numOpponents, bool isPaired, bool isCoordinated, bool isDry, bool isInPosition)
-        => action;
-
-    public BoardChangeResult AnalyzeBoardChange(List<BoardData> board, int currentStreet)
-        => BoardChangeResult.Safe;
-
-    public TurnBoardTexture AnalyzeTurnBoardTexture(List<BoardData> board)
-        => TurnBoardTexture.Dry;
-
-    public RiverBoardTexture AnalyzeRiverBoardTexture(List<BoardData> board)
-        => RiverBoardTexture.Dry;
-
     public (bool IsDonkBet, HandSituation DonkBetSituation) DetectDonkBet(
         PlayerGameState state, decimal villainBet, bool isHeadsUp, HandSituation situation)
         => (false, HandSituation.None);
@@ -199,14 +177,14 @@ internal sealed class FakeGameCoordinator : IGameCoordinator
         ref string previousDealer, ref string previousSB, ref string previousBB)
         => false;
 
-    public GameDecisionResult DetermineFlopAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineFlopAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty, new DecisionResult { Action = string.Empty }));
 
-    public GameDecisionResult DetermineTurnAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineTurnAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty, new DecisionResult { Action = string.Empty }));
 
-    public GameDecisionResult DetermineRiverAction(PlayerGameState state)
-        => new(string.Empty, string.Empty);
+    public Task<GameDecisionResult> DetermineRiverAction(PlayerGameState state, CancellationToken cancellationToken = default)
+        => Task.FromResult(new GameDecisionResult(string.Empty, string.Empty, new DecisionResult { Action = string.Empty }));
 
     public string FormatCardsForLog(PlayerGameState state, BoardPosition position)
         => string.Empty;
@@ -226,9 +204,6 @@ internal sealed class FakeGameCoordinator : IGameCoordinator
     public bool HeroBlocksTopBoardCard(PlayerGameState state) => false;
 
     public void ResetContext() { }
-    public void SetFlopResult(PokerCalculationResult result) { }
-    public void SetTurnResult(PokerCalculationResult result) { }
-    public void SetRiverResult(PokerCalculationResult result) { }
 
     public void TrackVillainPostflopAction(PlayerGameState state, decimal villainBet,
         bool isPreflopAggressor, bool? heroIsInPosition = null)
@@ -244,13 +219,13 @@ internal sealed class FakeOverlay : IFrmOverlay
     public void UpdateStreetPhase(string p) { }
     public void UpdateSituacion(string s) { }
     public void UpdateHandStrength(HandRank r, KickerStrength k, bool c) { }
-    public void UpdateBoardTexture(BoardTextureCategory? c, double w) { }
+    public void UpdateBoardTexture(string? c, double w) { }
     public void UpdateStreetIndicator(string s) { }
     public void UpdateFoldEquity(double f) { }
     public void UpdateEVWithFoldEquity(double e) { }
     public void UpdateSuggestedBetSize(double? b) { }
     public void UpdateTableName(string n) { }
-    public void UpdateWithCalculationResult(PokerCalculationResult r) { }
+    public void UpdateWithDecision(DecisionResult d, string s) { }
 }
 
 internal sealed class UiTestLogger<T> : ILogger<T>

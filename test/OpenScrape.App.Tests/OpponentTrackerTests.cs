@@ -1,3 +1,4 @@
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
