@@ -17,10 +17,6 @@ using OpenScrape.App.Services.Http;
 using OpenScrape.App.Services.License;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Services.Tracking;
-using OpenScrape.DecisionMaker;
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Exceptions;
@@ -28,7 +24,6 @@ using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features;
 using OpenScrape.Infrastructure;
 using OpenScrape.App.Aplication.UseCases;
-using OpenScrape.DecisionMaker.Preflop;
 using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App
@@ -76,9 +71,6 @@ namespace OpenScrape.App
                     // Strategy profile (antes de servicios que lo usan)
                     services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
                     services.AddSingleton<StrategyProfileService>();
-                    services.AddSingleton<ThresholdsRegistry>();
-                    services.AddSingleton<IThresholdsRegistry>(sp => sp.GetRequiredService<ThresholdsRegistry>());
-                    services.AddSingleton<IRandomProvider, SystemRandomProvider>();
                     services.AddSingleton<
                         OpenScrape.Domain.Interfaces.IRandomProvider,
                         OpenScrape.Domain.Services.SystemRandomProvider>();
@@ -87,42 +79,15 @@ namespace OpenScrape.App
                     services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
                     services.Configure<FeatureFlags>(context.Configuration.GetSection(FeatureFlags.SectionName));
 
-                    // Algoritmos: registro por clase concreta + forwarding por interfaz (misma instancia)
-                    services.AddSingleton<MonteCarloSimulator>();
-                    services.AddSingleton<IMonteCarloSimulator>(sp => sp.GetRequiredService<MonteCarloSimulator>());
-                    services.AddSingleton<BitHandEvaluator>();
-                    services.AddSingleton<IHandEvaluator>(sp => sp.GetRequiredService<BitHandEvaluator>());
-                    services.AddSingleton<OutsCalculator>();
-                    services.AddSingleton<IOutsCalculator>(sp => sp.GetRequiredService<OutsCalculator>());
-                    services.AddSingleton<BoardTextureAnalyzer>();
-                    services.AddSingleton<IBoardTextureAnalyzer>(sp => sp.GetRequiredService<BoardTextureAnalyzer>());
-                    services.AddSingleton<PreflopEquityCalculator>();
-
-                    // Servicios DecisionMaker: clase concreta + forwarding por interfaz
-                    services.AddSingleton<BetSizingService>();
-                    services.AddSingleton<IBetSizingService>(sp => sp.GetRequiredService<BetSizingService>());
-                    services.AddSingleton<RangePolarizer>();
-                    services.AddSingleton<IRangePolarizer>(sp => sp.GetRequiredService<RangePolarizer>());
-                    services.AddSingleton<PostflopDecisionService>();
-                    services.AddSingleton<IPostflopDecisionService>(sp => sp.GetRequiredService<PostflopDecisionService>());
+                    // Estado del cliente: tracking, exploitability, calibración y bankroll
                     services.AddSingleton<IOpponentProfileStore, MartenOpponentProfileStore>();
                     services.AddSingleton<IDecisionTraceStore, MartenDecisionTraceStore>();
                     services.AddSingleton<OpponentTracker>();
                     services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
-                    services.AddSingleton<StrategyAnalyzerService>();
-                    services.AddSingleton<IStrategyAnalyzerService>(sp => sp.GetRequiredService<StrategyAnalyzerService>());
                     services.AddSingleton<ExploitabilityCalculator>();
                     services.AddSingleton<IExploitabilityCalculator>(sp => sp.GetRequiredService<ExploitabilityCalculator>());
                     services.AddSingleton<AutoCalibrationService>();
                     services.AddSingleton<IAutoCalibrationService>(sp => sp.GetRequiredService<AutoCalibrationService>());
-                    services.AddSingleton<DangerPenaltyCalculator>();
-                    services.AddSingleton<IDangerPenaltyCalculator>(sp => sp.GetRequiredService<DangerPenaltyCalculator>());
-                    services.AddSingleton<ImpliedOddsCalculator>();
-                    services.AddSingleton<IImpliedOddsCalculator>(sp => sp.GetRequiredService<ImpliedOddsCalculator>());
-                    services.AddSingleton<PreflopAnalyzer>();
-                    services.AddSingleton<IPreflopAnalyzer>(sp => sp.GetRequiredService<PreflopAnalyzer>());
-                    services.AddSingleton<EquityCalculatorService>();
-                    services.AddSingleton<IEquityCalculatorService>(sp => sp.GetRequiredService<EquityCalculatorService>());
                     services.AddSingleton(sp =>
                     {
                         var store = sp.GetRequiredService<IDocumentStore>();
@@ -131,73 +96,11 @@ namespace OpenScrape.App
                     });
                     services.AddSingleton<IBankrollTrackerService>(sp => sp.GetRequiredService<BankrollTrackerService>());
 
-                    // Register unified calculator
-                    services.AddSingleton<IPokerCalculator, UnifiedPokerCalculator>();
-
-                    // Coordinator del game loop (refactor-frmmain-coordinators Fase 3)
-                    // Fase 4: factory condicional — HandProcessor si flag=true, EmptyGameLoopTickProcessor si flag=false
-                    services.AddScoped<HandProcessor>();
-                    services.AddScoped<IGameLoopTickProcessor>(sp =>
-                    {
-                        var flags = sp.GetRequiredService<IOptions<FeatureFlags>>().Value;
-                        return flags.UseGameLoopCoordinator
-                            ? sp.GetRequiredService<HandProcessor>()
-                            : EmptyGameLoopTickProcessor.Instance;
-                    });
-                    services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
-
-                    // UI sync (refactor-frmmain-coordinators Fase 5)
-                    services.AddScoped<IUiSyncService, UiSyncService>();
-
-                    // UiUpdateService (Fase 5: extraído de FrmMain.UpdateUIWithResults y relacionados)
-                    services.AddScoped<IUiUpdateService, UiUpdateService>();
-
-                    // Helpers extraídos de FrmMain (extract-frmmain-testable-logic)
-                    services.AddSingleton<IActionFormatter, ActionFormatter>();
-                    services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
-
-                    // Fase 4: CoordinateScaler como servicio inyectable
-                    services.AddSingleton<CoordinateScaler>();
-                    services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
-
-                    // Telemetría de rendimiento (singleton: snapshot compartido entre scopes y UI)
-                    services.AddSingleton<IMetricsCollector, MetricsCollector>();
-
-                    // Fase 3: Servicios antes creados con new
-                    services.AddSingleton<OcrService>();
-                    services.AddSingleton<ColorDetectionService>();
-                    services.AddSingleton<ImageCropperService>();
-                    services.AddSingleton<DetectionLoggerService>();
-                    services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
-                    services.AddScoped<GetActionScenario>();
-                    services.AddScoped<ActionScenarioUseCases>();
-                    services.AddScoped<ISetPreflopActionUseCase, SetPreflopActionUseCase>();
-                    services.AddScoped<SetPreflopActionUseCase>(sp => (SetPreflopActionUseCase)sp.GetRequiredService<ISetPreflopActionUseCase>());
-                    services.AddScoped<PreflopRequestFactory>();
-                    services.AddScoped<PostflopRequestFactory>();
-                    services.AddScoped<PostflopDecisionEngine>();
-                    var remoteEngineEnabled = context.Configuration.GetValue<bool>("RemoteEngine:Enabled");
-                    if (remoteEngineEnabled)
-                    {
-                        var apiBaseUrl = context.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
-                        // El timeout por decisión lo impone HttpDecisionEngine.DecisionTimeout.
-                        services.AddSingleton(new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
-                        services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
-                    }
-                    else
-                    {
-                        services.AddScoped<IDecisionEngine, LocalDecisionEngine>();
-                    }
-                    services.AddScoped<IGetActionHeroCallOpenRaiseAndGetSqueezeUseCase, GetActionHeroCallOpenRaiseAndGetSqueezeUseCase>();
-                    services.AddScoped<IGetActionHero3BetAndOpenRaiser4BetUseCase, GetActionHero3BetAndOpenRaiser4BetUseCase>();
-                    services.AddScoped<IGetActionVs3BetUseCaseUseCase, GetActionVs3BetUseCaseUseCase>();
-                    services.AddScoped<IGetActionVs3BetAndCallUseCase, GetActionVs3BetAndCallUseCase>();
-                    services.AddScoped<IGetActionSqueezeUseCase, GetActionSqueezeUseCase>();
-                    services.AddScoped<IGetActionOpenRaiseUseCase, GetActionOpenRaiseUseCase>();
-                    services.AddScoped<IGetActionRaiseOverLimperUseCase, GetActionRaiseOverLimperUseCase>();
-                    services.AddScoped<IGetAction3BetUseCase, GetAction3BetUseCase>();
-                    services.AddScoped<IGetActionRaiseVsSBLimpUseCase, GetActionRaiseVsSBLimpUseCase>();
-                    services.AddScoped<IGetActionCold4BetUseCase, GetActionCold4BetUseCase>();
+                    // Cliente del motor: siempre por HTTP. El timeout por decisión lo
+                    // impone HttpDecisionEngine.DecisionTimeout.
+                    var apiBaseUrl = context.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
+                    services.AddSingleton(new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+                    services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
                     services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
                     services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
                     services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();

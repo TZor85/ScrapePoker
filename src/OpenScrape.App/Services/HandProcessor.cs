@@ -5,9 +5,7 @@ using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
 using OpenScrape.App.Services.Tracking;
-using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;
-using OpenScrape.DecisionMaker;
 
 namespace OpenScrape.App.Services;
 
@@ -32,8 +30,6 @@ public sealed class HandProcessor : IGameLoopTickProcessor
     private readonly ITableLayoutService _tableLayout;
     private readonly GameLoggerService _gameLogger;
     private readonly IOpponentTracker _opponentTracker;
-    private readonly IPokerCalculator _pokerCalculator;
-    private readonly IBetSizingService _betSizingService;
     private readonly IOptions<GameLoopOptions> _options;
     private readonly ILogger<HandProcessor> _logger;
 
@@ -52,8 +48,6 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         ITableLayoutService? tableLayout = null,
         GameLoggerService? gameLogger = null,
         IOpponentTracker? opponentTracker = null,
-        IPokerCalculator? pokerCalculator = null,
-        IBetSizingService? betSizingService = null,
         IOptions<GameLoopOptions>? options = null,
         ILogger<HandProcessor>? logger = null)
     {
@@ -66,8 +60,6 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         _tableLayout = tableLayout!;
         _gameLogger = gameLogger!;
         _opponentTracker = opponentTracker!;
-        _pokerCalculator = pokerCalculator!;
-        _betSizingService = betSizingService!;
         _options = options!;
         _logger = logger!;
     }

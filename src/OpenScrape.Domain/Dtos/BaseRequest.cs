@@ -1,6 +1,6 @@
 using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.DecisionMaker.Preflop
+namespace OpenScrape.Domain.Dtos
 {
     public class BaseRequest
     {

@@ -19,10 +19,6 @@ using OpenScrape.App.Services.Exploitability;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Services.Tracking;
 using OpenScrape.App.Telemetry;
-using OpenScrape.DecisionMaker;
-using OpenScrape.DecisionMaker.Algorithms;
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
@@ -129,7 +125,6 @@ namespace OpenScrape.App
 
         #region [Services and UseCases]
         private readonly GetWindowsScreenUseCase _useCase;
-        private readonly ActionScenarioUseCases _actionScenarioUseCases;
         private readonly RegionTableMapUseCases _regionTableMapUseCases;
         private readonly IDecisionEngine _decisionEngine;
         private readonly ImageCropperService _imageCropperService;
@@ -142,7 +137,6 @@ namespace OpenScrape.App
         private readonly IGetCardsTurnUseCase _getCardsTurnUseCase;
         private readonly IGetCardsRiverUseCase _getCardsRiverUseCase;
         private readonly IOutsCalculatorUseCase _outsCalculatorUseCase;
-        private readonly IBetSizingService _betSizingService;
         private readonly ColorDetectionService _colorDetectionService;
         private readonly OcrService _ocrService;
         private readonly CardUseCases _cardUseCases;
@@ -150,11 +144,9 @@ namespace OpenScrape.App
         private readonly DetectionLoggerService _detectionLoggerService;
         private readonly GameLoopStateMachine _gameLoopStateMachine;
         private readonly StrategyProfileService _strategyProfileService;
-        private readonly IPostflopDecisionService _postflopDecisionService;
         private readonly IExploitabilityCalculator _exploitabilityCalculator;
         private readonly IAutoCalibrationService _autoCalibrationService;
         private readonly IBankrollTrackerService _bankrollTrackerService;
-        private readonly BoardTextureAnalyzer _boardTextureAnalyzer;
         private readonly IOpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
         private readonly IGameCoordinator _coordinator;
@@ -195,18 +187,14 @@ namespace OpenScrape.App
         /// Constructor del formulario principal
         /// </summary>
         public FrmMain(IDocumentStore dataBase,
-                        ActionScenarioUseCases actionScenarioUseCases,
                         CardUseCases cardUseCases,
                         RegionTableMapUseCases regionTableMapUseCases,
-                        IBetSizingService betSizingService,
                         GameLoggerService gameLoggerService,
                         GameLoopStateMachine gameLoopStateMachine,
                         StrategyProfileService strategyProfileService,
-                        IPostflopDecisionService postflopDecisionService,
                         IExploitabilityCalculator exploitabilityCalculator,
                         IAutoCalibrationService autoCalibrationService,
                         IBankrollTrackerService bankrollTrackerService,
-                        BoardTextureAnalyzer boardTextureAnalyzer,
                         IOpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
@@ -261,19 +249,15 @@ namespace OpenScrape.App
             //InitializeVisualStyles();
 
             _dataBase = dataBase ?? throw new ArgumentNullException(nameof(dataBase));
-            _actionScenarioUseCases = actionScenarioUseCases ?? throw new ArgumentNullException(nameof(actionScenarioUseCases));
             _regionTableMapUseCases = regionTableMapUseCases ?? throw new ArgumentNullException(nameof(regionTableMapUseCases));
             _cardUseCases = cardUseCases ?? throw new ArgumentNullException(nameof(cardUseCases));
-            _betSizingService = betSizingService ?? throw new ArgumentNullException(nameof(betSizingService));
             _gameLoggerService = gameLoggerService ?? throw new ArgumentNullException(nameof(gameLoggerService));
             _detectionLoggerService = detectionLoggerService ?? throw new ArgumentNullException(nameof(detectionLoggerService));
             _gameLoopStateMachine = gameLoopStateMachine ?? throw new ArgumentNullException(nameof(gameLoopStateMachine));
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
-            _postflopDecisionService = postflopDecisionService ?? throw new ArgumentNullException(nameof(postflopDecisionService));
             _exploitabilityCalculator = exploitabilityCalculator ?? throw new ArgumentNullException(nameof(exploitabilityCalculator));
             _autoCalibrationService = autoCalibrationService ?? throw new ArgumentNullException(nameof(autoCalibrationService));
             _bankrollTrackerService = bankrollTrackerService ?? throw new ArgumentNullException(nameof(bankrollTrackerService));
-            _boardTextureAnalyzer = boardTextureAnalyzer ?? throw new ArgumentNullException(nameof(boardTextureAnalyzer));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
             _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));

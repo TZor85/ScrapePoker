@@ -1,3 +1,4 @@
+using IDecisionEngine = OpenScrape.App.Services.IDecisionEngine;
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;

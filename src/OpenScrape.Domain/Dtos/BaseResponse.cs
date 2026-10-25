@@ -1,4 +1,4 @@
-namespace OpenScrape.DecisionMaker.Preflop
+namespace OpenScrape.Domain.Dtos
 {
     public class BaseResponse
     {

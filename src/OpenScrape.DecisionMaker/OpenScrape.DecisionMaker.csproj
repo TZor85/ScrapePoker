@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="OpenScrape.Contracts" />
+    <Using Include="OpenScrape.Contracts" /><Using Include="OpenScrape.Domain.Dtos" />
   </ItemGroup>
 
 </Project>
