@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.AspNetCore.Hosting;
@@ -20,6 +21,7 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
     private readonly TableDTO _table;
     private readonly int _randomNumber;
     private readonly int _monteCarloSeed;
+    private bool _checkRevocation;
 
     public ApiFactory(TableDTO? table = null, int randomNumber = 30, int monteCarloSeed = 1)
     {
@@ -30,6 +32,21 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
     }
 
     public InMemoryLicenseStore LicenseStore { get; }
+
+    public void EnableRevocationCheck() => _checkRevocation = true;
+
+    /// <summary>Cliente con un Bearer real emitido por el servicio de la API.</summary>
+    public HttpClient CreateLicensedClient(string plan = "pro")
+    {
+        var client = CreateClient();
+        var id = plan == "pro" ? LicenseTestData.ProLicenseId : LicenseTestData.FreeLicenseId;
+        var license = LicenseStore.GetAsync(id).GetAwaiter().GetResult()!;
+        var tokens = Services.GetRequiredService<OpenScrape.Api.Licensing.ILicenseTokenService>();
+        var (token, _) = tokens.Issue(license);
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -58,6 +75,7 @@ internal sealed class ApiFactory : WebApplicationFactory<ApiMarker>
             services.Configure<OpenScrape.Api.Licensing.LicenseOptions>(options =>
             {
                 options.Pepper = LicenseTestData.Pepper;
+                options.CheckRevocationPerRequest = _checkRevocation;
             });
 
             services.RemoveAll<MonteCarloSimulator>();

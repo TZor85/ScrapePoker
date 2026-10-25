@@ -23,7 +23,7 @@ public class ParidadHttpTests
         foreach (var fixture in fixtures)
         {
             using var factory = new ApiFactory(fixture.Table, fixture.RandomNumber);
-            using var client = factory.CreateClient();
+            using var client = factory.CreateLicensedClient();
             var engine = new HttpDecisionEngine(client, NullLogger<HttpDecisionEngine>.Instance);
 
             var request = PlayerStateMapper.MapPreflop(
@@ -50,7 +50,7 @@ public class ParidadHttpTests
                 FixtureTables.Empty(),
                 randomNumber: 0,
                 monteCarloSeed: fixture.MonteCarloSeed);
-            using var client = factory.CreateClient();
+            using var client = factory.CreateLicensedClient();
             var engine = new HttpDecisionEngine(client, NullLogger<HttpDecisionEngine>.Instance);
             var street = Enum.Parse<BoardPosition>(fixture.Street, ignoreCase: true);
 

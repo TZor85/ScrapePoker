@@ -3,7 +3,11 @@ using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.Options;
 
+using System.Text;
 using Marten;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using OpenScrape.Contracts;
 using OpenScrape.Api.Endpoints;
 using OpenScrape.Api.Licensing;
 using OpenScrape.DecisionMaker;
@@ -29,6 +33,21 @@ builder.Services.AddSingleton<ILicenseKeyHasher, LicenseKeyHasher>();
 builder.Services.AddSingleton<ILicenseTokenService, JwtLicenseTokenService>();
 builder.Services.AddScoped<ILicenseStore, MartenLicenseStore>();
 builder.Services.AddPlanRateLimiting(builder.Configuration);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((options, jwt) =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Value.SigningKey))
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -41,6 +60,22 @@ var app = builder.Build();
 // Fallar rápido si el perfil quedó incompleto: sin él ninguna decisión es confiable.
 StrategyProfileValidator.Validate(app.Services.GetRequiredService<IOptions<StrategyProfile>>().Value);
 
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    if (response.StatusCode is StatusCodes.Status401Unauthorized or StatusCodes.Status403Forbidden)
+    {
+        response.ContentType = "application/json";
+        var code = response.StatusCode == StatusCodes.Status401Unauthorized
+            ? "unauthorized"
+            : "license_revoked";
+        await response.WriteAsJsonAsync(new EngineError(code, "Se requiere una licencia válida."));
+    }
+});
+
+app.UseAuthentication();
+app.UseMiddleware<LicenseRevocationMiddleware>();
+app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

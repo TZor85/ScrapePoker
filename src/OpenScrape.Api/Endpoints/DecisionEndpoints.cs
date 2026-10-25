@@ -28,7 +28,9 @@ public static class DecisionEndpoints
             {
                 return Results.UnprocessableEntity(new EngineError("situation_not_found", ex.Message));
             }
-        });
+        })
+            .RequireAuthorization()
+            .RequireRateLimiting(PlanRateLimiting.DecisionsPolicy);
 
         return app;
     }

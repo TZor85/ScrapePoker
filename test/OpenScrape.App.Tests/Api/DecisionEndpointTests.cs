@@ -19,7 +19,7 @@ public class DecisionEndpointTests
     public void SetUp()
     {
         _factory = new ApiFactory();
-        _client = _factory.CreateClient();
+        _client = _factory.CreateLicensedClient();
     }
 
     [TearDown]
