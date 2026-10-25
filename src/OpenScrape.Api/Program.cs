@@ -17,7 +17,7 @@ builder.Services.Configure<StrategyProfile>(builder.Configuration.GetSection("St
 
 builder.Services.AddDecisionMaker();
 builder.Services.AddUseCases();
-builder.Services.AddDataBase(builder.Configuration, isDevelopment: true);
+builder.Services.AddDataBase(builder.Configuration, builder.Environment.IsDevelopment());
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {

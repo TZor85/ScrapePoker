@@ -97,7 +97,7 @@ public sealed class PostflopRequestFactory
             Street = street,
             Situation = request.HandSituation,
             BoardTexture = texture.SimplifiedTexture,
-            VillainBetSize = _preflopAnalyzer.CategorizeOpponentBet(request.BetToCall, request.PotSize),
+            VillainBetSize = CategorizeBet(request.BetToCall, request.PotSize),
             VillainShowedAggression = request.BetToCall > 0,
             BoardChange = boardChange,
             IsDonkBet = request.Context.IsDonkBet,
@@ -195,4 +195,13 @@ public sealed class PostflopRequestFactory
             TimesPreflopRaised = villain.TimesPreflopRaised,
             TimesThreeBet = villain.TimesThreeBet
         };
+    // El cliente distingue underbet (hasta 15% del pozo) antes de delegar en el
+    // categorizador general, que trata todo lo chico como Small.
+    private BetSizeCategory CategorizeBet(decimal betToCall, decimal potSize)
+    {
+        if (betToCall > 0 && potSize > 0 && betToCall / potSize <= 0.15m)
+            return BetSizeCategory.Underbet;
+
+        return _preflopAnalyzer.CategorizeOpponentBet(betToCall, potSize);
+    }
 }
