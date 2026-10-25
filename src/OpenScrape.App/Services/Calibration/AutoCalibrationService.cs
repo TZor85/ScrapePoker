@@ -1,9 +1,8 @@
-using OpenScrape.DecisionMaker.Interfaces;
-using OpenScrape.DecisionMaker.Services;
+using OpenScrape.App.Services.Exploitability;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 
-namespace OpenScrape.DecisionMaker;
+namespace OpenScrape.App.Services.Calibration;
 
 public class CalibrationResult
 {
@@ -33,7 +32,7 @@ public class CalibrationPreview
     public double EstimatedNewExploitability { get; set; }
 }
 
-public class AutoCalibrationService : Interfaces.IAutoCalibrationService
+public class AutoCalibrationService : IAutoCalibrationService
 {
     private const int MinDecisionsForCalibration = 20;
     private const int RecalibrateThreshold = 50;

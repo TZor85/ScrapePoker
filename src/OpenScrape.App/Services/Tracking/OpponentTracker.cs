@@ -1,18 +1,17 @@
 using System.Collections.Concurrent;
 
-using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
 // Alias explícito para resolver ambigüedad con PositionStats si aparece en otro namespace
 
-namespace OpenScrape.DecisionMaker.Services;
+namespace OpenScrape.App.Services.Tracking;
 
 /// <summary>
 /// Servicio que acumula estadísticas de oponentes durante la sesión.
 /// Mantiene un perfil por jugador (identificado por nombre/seat).
 /// </summary>
-public class OpponentTracker : Interfaces.IOpponentTracker
+public class OpponentTracker : IOpponentTracker
 {
     private readonly ConcurrentDictionary<string, OpponentProfile> _profiles = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, object> _profileLocks = new(StringComparer.OrdinalIgnoreCase);

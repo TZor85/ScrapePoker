@@ -1,6 +1,6 @@
 using OpenScrape.Domain.Entities;
 
-namespace OpenScrape.DecisionMaker.Interfaces;
+namespace OpenScrape.App.Services.Tracking;
 
 public interface IOpponentProfileStore
 {

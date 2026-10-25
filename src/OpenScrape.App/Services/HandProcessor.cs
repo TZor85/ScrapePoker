@@ -4,6 +4,7 @@ using OpenScrape.App.Aplication;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Entities;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;
 using OpenScrape.DecisionMaker;

@@ -1,7 +1,7 @@
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 
-namespace OpenScrape.DecisionMaker.Interfaces;
+namespace OpenScrape.App.Services.Bankroll;
 
 /// <summary>
 /// Contrato para el servicio de seguimiento de bankroll.

@@ -2,6 +2,7 @@ using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Bankroll;
 using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;

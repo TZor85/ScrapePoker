@@ -1,6 +1,7 @@
+using OpenScrape.App.Services.Exploitability;
 using OpenScrape.Domain.Entities;
 
-namespace OpenScrape.DecisionMaker.Interfaces;
+namespace OpenScrape.App.Services.Calibration;
 
 /// <summary>
 /// Contrato para el servicio de auto-calibración de estrategia.

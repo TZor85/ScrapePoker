@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 using OpenScrape.App.Entities;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.App.Telemetry;
 using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Enums;

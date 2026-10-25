@@ -1,5 +1,7 @@
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Entities;
+using OpenScrape.App.Services.Exploitability;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;

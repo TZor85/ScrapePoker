@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using OpenScrape.App.Aplication.UseCases;
 using OpenScrape.App.Services;
+using OpenScrape.App.Services.Exploitability;
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Interfaces;

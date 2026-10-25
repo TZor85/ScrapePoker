@@ -1,8 +1,7 @@
 using Marten;
-using OpenScrape.DecisionMaker.Interfaces;
 using OpenScrape.Domain.Entities;
 
-namespace OpenScrape.DecisionMaker.Services;
+namespace OpenScrape.App.Services.Tracking;
 
 public sealed class MartenOpponentProfileStore : IOpponentProfileStore
 {

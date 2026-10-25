@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Helpers;
+using OpenScrape.App.Services.Bankroll;
 using OpenScrape.DecisionMaker.Interfaces;
 
 namespace OpenScrape.App.Forms.Controls;

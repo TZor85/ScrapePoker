@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 
+using OpenScrape.App.Services.Tracking;
 using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.DTOs;
 using OpenScrape.DecisionMaker.Interfaces;
@@ -6065,7 +6066,7 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_3_RecordHandPlayed_IncrementaContadoresPosicionales()
     {
-        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        var tracker = new OpenScrape.App.Services.Tracking.OpponentTracker();
         tracker.RecordHandPlayed("villain1", TablePosition.Button);
 
         var profile = tracker.GetProfile("villain1");
@@ -6077,7 +6078,7 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_3_RecordVPIP_IncrementaContadorPosicional()
     {
-        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        var tracker = new OpenScrape.App.Services.Tracking.OpponentTracker();
         tracker.RecordHandPlayed("villain1", TablePosition.Button);
         tracker.RecordVPIP("villain1", TablePosition.Button);
 
@@ -6089,7 +6090,7 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_3_RecordPFR_IncrementaContadorPosicional()
     {
-        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        var tracker = new OpenScrape.App.Services.Tracking.OpponentTracker();
         tracker.RecordHandPlayed("villain1", TablePosition.Button);
         tracker.RecordPFR("villain1", TablePosition.Button);
 
@@ -6158,7 +6159,7 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_3_RecordHandPlayed_SinPosicion_NoCreaPerfil()
     {
-        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        var tracker = new OpenScrape.App.Services.Tracking.OpponentTracker();
         tracker.RecordHandPlayed("villain1");  // sin posición
 
         var profile = tracker.GetProfile("villain1");
@@ -6169,7 +6170,7 @@ public class PostflopDecisionServiceTests
     [Test]
     public void S22_3_VPIP_Posicional_NoAfecta_SiPosicionNoRegistrada()
     {
-        var tracker = new OpenScrape.DecisionMaker.Services.OpponentTracker();
+        var tracker = new OpenScrape.App.Services.Tracking.OpponentTracker();
         tracker.RecordHandPlayed("villain1", TablePosition.Button);
         // RecordVPIP sin posición previa registrada para EP
         tracker.RecordVPIP("villain1", TablePosition.Early);

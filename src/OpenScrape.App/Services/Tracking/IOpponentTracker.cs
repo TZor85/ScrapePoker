@@ -1,8 +1,7 @@
-using OpenScrape.DecisionMaker.Services;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 
-namespace OpenScrape.DecisionMaker.Interfaces;
+namespace OpenScrape.App.Services.Tracking;
 
 /// <summary>
 /// Contrato para el servicio de seguimiento de oponentes.

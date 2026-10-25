@@ -2,9 +2,9 @@ using Marten;
 using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.ValueObjects;
 
-namespace OpenScrape.DecisionMaker.Services;
+namespace OpenScrape.App.Services.Bankroll;
 
-public class BankrollTrackerService : Interfaces.IBankrollTrackerService
+public class BankrollTrackerService : IBankrollTrackerService
 {
     private readonly IDocumentStore _store;
     private readonly StrategyProfile _profile;
