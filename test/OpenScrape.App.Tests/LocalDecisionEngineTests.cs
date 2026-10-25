@@ -44,7 +44,21 @@ public class LocalDecisionEngineTests
         var result = await engine.DecideAsync(CreatePreflopRequest());
 
         // Assert
-        Assert.That(result.Equity, Is.InRange(50d, 85d));
+        Assert.That(result.Equity, Is.InRange(20d, 95d));
+    }
+
+    [Test]
+    public async Task DecideAsync_Preflop_UsaLaEquityDelCalculadorDelMotor()
+    {
+        // Arrange: la equity del resume tiene que salir del mismo calculador que
+        // usa el motor (Monte Carlo contra el rango), no de una tabla paralela.
+        var engine = CreateEngine(new FixedEquityCalculator(12.5));
+
+        // Act
+        var result = await engine.DecideAsync(CreatePreflopRequest());
+
+        // Assert
+        Assert.That(result.Equity, Is.EqualTo(12.5).Within(0.001));
     }
 
     private static DecisionRequest CreatePreflopRequest() => new()
@@ -61,7 +75,7 @@ public class LocalDecisionEngineTests
         HandSituation = HandSituation.None
     };
 
-    private static LocalDecisionEngine CreateEngine()
+    private static LocalDecisionEngine CreateEngine(IPokerCalculator? calculator = null)
     {
         var table = new TableDTO
         {
@@ -103,6 +117,25 @@ public class LocalDecisionEngineTests
                 options),
             preflop,
             GameCoordinatorFixtureBuilder.CreateEngine(profile),
-            new PreflopEquityCalculator());
+            calculator ?? GameCoordinatorFixtureBuilder.CreateCalculator(profile, monteCarloSeed: 1));
     }
+}
+
+/// <summary>Calculador con equity fija, para aislar el mapeo del contrato.</summary>
+internal sealed class FixedEquityCalculator(double equity) : IPokerCalculator
+{
+    public PokerCalculationResult Calculate(
+        List<CardDataOuts> playerHand,
+        List<CardDataOuts> communityCards,
+        decimal currentPotSize,
+        decimal betToCall,
+        int numOpponents = 1,
+        int? monteCarloIterations = null,
+        bool isInPosition = false,
+        decimal heroStack = 0,
+        decimal villainStack = 0,
+        string? handSituation = null,
+        TablePosition villainPosition = TablePosition.None,
+        OpponentProfile? opponentProfile = null) =>
+        new() { EquityPercentage = equity, DrawTypes = [] };
 }

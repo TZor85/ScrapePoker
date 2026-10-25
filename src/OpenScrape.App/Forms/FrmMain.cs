@@ -16,6 +16,7 @@ using OpenScrape.App.Services;
 using OpenScrape.App.Services.Bankroll;
 using OpenScrape.App.Services.Calibration;
 using OpenScrape.App.Services.Exploitability;
+using OpenScrape.App.Services.License;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.App.Services.Tracking;
 using OpenScrape.App.Telemetry;
@@ -705,6 +706,15 @@ namespace OpenScrape.App
                     _gameLoggerService.SetTelemetry(telemetry);
                 }
             }
+            catch (LicenseRequiredException ex)
+            {
+                _logger.LogError(ex, "El motor rechazó la licencia");
+                MessageBox.Show(
+                    ex.Message,
+                    "OpenScrape",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error durante la captura");
@@ -1383,8 +1393,8 @@ namespace OpenScrape.App
         /// <summary>
         /// Determina si hero fue el agresor preflop basado en la HandSituation.
         /// </summary>
-        // IsPreflopAggressor, HasRangeAdvantageOnBoard, CalculateCbetAdjustment
-        // extraídos a PreflopAnalyzer en DecisionMaker
+        // La situación preflop se resuelve en App (PreflopSituation); range
+        // advantage y ajuste de c-bet viven sólo del lado del servidor.
 
         /// <summary>
         /// Determina la acción del turn delegando a GameCoordinator.

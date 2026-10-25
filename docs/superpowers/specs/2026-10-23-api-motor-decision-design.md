@@ -443,7 +443,7 @@ y queda sólo `HttpDecisionEngine`. Se verifica el publish.
 Salida: el artefacto publicado no contiene `OpenScrape.DecisionMaker.dll`.
 
 Estado: **fase 4a completada** (rama local `feature/api-engine-fase-4a`,
-commits `06e6eb6`→`2106490`). `OpenScrape.App` ya no referencia
+commits `06e6eb6`→`3005c9d`). `OpenScrape.App` ya no referencia
 `OpenScrape.DecisionMaker`, no instancia el motor local y decide siempre por
 HTTP; el overlay, el resume y los logs se alimentan de `Contracts.DecisionResult`.
 El gate `verify-pre-merge.ps1` publica el cliente y falla si aparece

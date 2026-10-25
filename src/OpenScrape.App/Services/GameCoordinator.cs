@@ -186,16 +186,20 @@ public class GameCoordinator : IGameCoordinator
     #region Board Analysis
 
     /// <summary>
-    /// True si la última carta del board completa un flush draw (tres del mismo palo).
-    /// Es sólo contexto de log: la decisión llega del servidor.
+    /// True si la última carta transformó dos palos en tres: la transición que
+    /// abre un flush draw. Un board que ya tenía tres (monotone) no cuenta.
     /// </summary>
-    private static bool FlushDrawAppeared(List<BoardData> boardCards)
+    internal static bool FlushDrawAppeared(List<BoardData> boardCards, int previousCardCount)
     {
-        var suits = boardCards
-            .Where(b => b.Position != BoardPosition.Hand)
-            .Select(b => b.Suit);
+        var community = boardCards.Where(b => b.Position != BoardPosition.Hand).ToList();
 
-        return suits.GroupBy(suit => suit).Any(group => group.Count() >= 3);
+        if (community.Count <= previousCardCount)
+            return false;
+
+        static bool HasThree(IEnumerable<BoardData> cards) =>
+            cards.GroupBy(card => card.Suit).Any(group => group.Count() >= 3);
+
+        return !HasThree(community.Take(previousCardCount)) && HasThree(community);
     }
 
     #endregion
@@ -403,7 +407,7 @@ public class GameCoordinator : IGameCoordinator
         string action = doorResult.Action;
         bool heroBetTurn = action.StartsWith("Bet") || action.StartsWith("Raise");
         bool villainBetTurn = maxBet > 0;
-        bool newFlushDanger = maxBet > 0 && action.StartsWith("Call") && FlushDrawAppeared(state.BoardCards);
+        bool newFlushDanger = maxBet > 0 && action.StartsWith("Call") && FlushDrawAppeared(state.BoardCards, previousCardCount: 3);
         _contextHolder.Update(c => c with
         {
             PreviousStreetWasBet = villainBetTurn,

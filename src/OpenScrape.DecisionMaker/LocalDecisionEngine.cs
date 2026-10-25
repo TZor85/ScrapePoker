@@ -1,7 +1,7 @@
 using OpenScrape.Contracts;
-using OpenScrape.DecisionMaker.Algorithms;
 using OpenScrape.DecisionMaker.Postflop;
 using OpenScrape.DecisionMaker.Preflop;
+using OpenScrape.Domain.Entities;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 
@@ -16,7 +16,7 @@ public sealed class LocalDecisionEngine(
     PostflopRequestFactory postflopFactory,
     SetPreflopActionUseCase preflop,
     PostflopDecisionEngine postflop,
-    PreflopEquityCalculator preflopEquity) : IDecisionEngine
+    IPokerCalculator calculator) : IDecisionEngine
 {
     private readonly PreflopRequestFactory _preflopFactory =
         preflopFactory ?? throw new ArgumentNullException(nameof(preflopFactory));
@@ -30,8 +30,8 @@ public sealed class LocalDecisionEngine(
     private readonly PostflopDecisionEngine _postflop =
         postflop ?? throw new ArgumentNullException(nameof(postflop));
 
-    private readonly PreflopEquityCalculator _preflopEquity =
-        preflopEquity ?? throw new ArgumentNullException(nameof(preflopEquity));
+    private readonly IPokerCalculator _calculator =
+        calculator ?? throw new ArgumentNullException(nameof(calculator));
 
     public async Task<DecisionResult> DecideAsync(
         DecisionRequest request,
@@ -91,7 +91,32 @@ public sealed class LocalDecisionEngine(
             new CardDataOuts((Suit)request.HeroCard2.Suit, (Rank)request.HeroCard2.Rank)
         ];
 
-        // El motor ajusta por número de rivales; el 0 del cliente significa "sin dato".
-        return _preflopEquity.GetEquity(holeCards, Math.Max(0, request.NumOpponents)) * 100d;
+        // Mismo cálculo que el motor: Monte Carlo contra el rango del villano.
+        // Las cartas comunitarias vacías son lo que marca la calle preflop.
+        var result = _calculator.Calculate(
+            holeCards,
+            [],
+            request.PotSize,
+            request.BetToCall,
+            numOpponents: Math.Max(1, request.NumOpponents),
+            isInPosition: request.IsInPosition,
+            heroStack: request.HeroStack,
+            villainStack: request.VillainStack,
+            handSituation: request.HandSituation.ToString(),
+            villainPosition: request.VillainPosition,
+            opponentProfile: ToOpponentProfile(request.VillainProfile));
+
+        return result.Failed ? 0d : result.EquityPercentage;
     }
+
+    private static OpponentProfile? ToOpponentProfile(VillainProfile? villain) => villain is null
+        ? null
+        : new OpponentProfile
+        {
+            PlayerId = villain.VillainId,
+            HandsPlayed = villain.HandsPlayed,
+            TimesVoluntarilyPutMoneyIn = villain.TimesVoluntarilyPutMoneyIn,
+            TimesPreflopRaised = villain.TimesPreflopRaised,
+            TimesThreeBet = villain.TimesThreeBet
+        };
 }

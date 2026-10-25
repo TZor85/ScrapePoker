@@ -23,6 +23,37 @@ public class AppEngineIsolationTests
         Assert.That(files.Select(File.ReadAllText).Any(text => text.Contains("LocalDecisionEngine")), Is.False);
     }
 
+    /// <summary>
+    /// El cliente ya no tiene camino local: el flag RemoteEngine no puede seguir
+    /// decidiendo si se pide licencia o si se arranca el motor.
+    /// </summary>
+    [Test]
+    public void App_NoLeeElFlagRemoteEngine()
+    {
+        var sources = Directory.GetFiles(FindDir(), "*.cs", SearchOption.AllDirectories)
+            .Concat(Directory.GetFiles(FindDir(), "appsettings*.json", SearchOption.AllDirectories));
+
+        Assert.That(
+            sources.Select(File.ReadAllText).Any(text => text.Contains("RemoteEngine")),
+            Is.False);
+    }
+
+    /// <summary>
+    /// El csproj no alcanza: una referencia transitiva (por ejemplo, si Features
+    /// referenciara el motor) metería DecisionMaker.dll en el publish. El grafo
+    /// restaurado es la fuente de verdad de lo que viaja al artefacto.
+    /// </summary>
+    [Test]
+    public void App_NoArrastraDecisionMakerEnSusDependencias()
+    {
+        var assets = Path.Combine(FindDir(), "obj", "project.assets.json");
+
+        if (!File.Exists(assets))
+            Assert.Ignore("Falta obj/project.assets.json: restaurá el proyecto antes de correr este test.");
+
+        Assert.That(File.ReadAllText(assets), Does.Not.Contain("OpenScrape.DecisionMaker"));
+    }
+
     private static string FindProject() =>
         Path.Combine(FindDir(), "OpenScrape.App.csproj");
 

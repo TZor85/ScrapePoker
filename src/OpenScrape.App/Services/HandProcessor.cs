@@ -247,8 +247,8 @@ public sealed class HandProcessor : IGameLoopTickProcessor
         return new GameLoopResult
         {
             Empty = false,
-            PotOdds = null,  // Postflop: proviene de PokerCalculationResult (futura fase)
-            Equity = null,   // Postflop: proviene de PokerCalculationResult (futura fase)
+            PotOdds = null,  // Postflop: lo resuelve el motor remoto (Contracts.DecisionResult)
+            Equity = null,   // Postflop: lo resuelve el motor remoto (Contracts.DecisionResult)
             HoleCards = !string.IsNullOrEmpty(state.HoleCard1Face) &&
                         !string.IsNullOrEmpty(state.HoleCard2Face)
                 ? (state.HoleCard1Face, state.HoleCard2Face)

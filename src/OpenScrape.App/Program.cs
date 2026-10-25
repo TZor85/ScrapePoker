@@ -98,8 +98,7 @@ namespace OpenScrape.App
 
                     // Cliente del motor: siempre por HTTP. El timeout por decisión lo
                     // impone HttpDecisionEngine.DecisionTimeout.
-                    var apiBaseUrl = context.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
-                    services.AddSingleton(new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+                    services.AddLicense(context.Configuration);
                     services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
                     services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
                     services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
@@ -203,30 +202,25 @@ namespace OpenScrape.App
             var scope = host.Services.CreateAsyncScope();
             try
             {
-                // Compuerta de licencia: con el motor remoto activo no se arranca sin token.
-                var remoteEngineOn = host.Services.GetRequiredService<IConfiguration>()
-                    .GetValue<bool>("RemoteEngine:Enabled");
+                // Compuerta de licencia: el motor es remoto, así que no se arranca
+                // sin un token vigente.
+                var licenseStore = host.Services.GetRequiredService<LicenseTokenStore>();
 
-                if (remoteEngineOn)
+                if (LicenseGate.NeedsActivation(licenseStore, DateTimeOffset.UtcNow))
                 {
-                    var licenseStore = host.Services.GetRequiredService<LicenseTokenStore>();
+                    using var licenseForm = new FormLicense(
+                        host.Services.GetRequiredService<LicenseClient>(),
+                        licenseStore);
 
-                    if (LicenseGate.NeedsActivation(licenseStore, DateTimeOffset.UtcNow))
+                    if (licenseForm.ShowDialog() != DialogResult.OK)
                     {
-                        using var licenseForm = new FormLicense(
-                            host.Services.GetRequiredService<LicenseClient>(),
-                            licenseStore);
+                        MessageBox.Show(
+                            "Se necesita una licencia vigente para iniciar el motor.",
+                            "OpenScrape",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
 
-                        if (licenseForm.ShowDialog() != DialogResult.OK)
-                        {
-                            MessageBox.Show(
-                                "Se necesita una licencia vigente para iniciar el motor.",
-                                "OpenScrape",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
-
-                            return;
-                        }
+                        return;
                     }
                 }
 

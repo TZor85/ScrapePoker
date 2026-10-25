@@ -84,7 +84,7 @@ internal static class GameCoordinatorFixtureBuilder
                 options),
             preflop,
             CreateEngine(profile),
-            new PreflopEquityCalculator());
+            CreateCalculator(profile, monteCarloSeed));
     }
 }
 
