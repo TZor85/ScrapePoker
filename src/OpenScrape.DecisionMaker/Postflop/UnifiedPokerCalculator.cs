@@ -58,8 +58,11 @@ namespace OpenScrape.DecisionMaker.Postflop
         private readonly StrategyProfile _profile;
         private readonly ILogger<UnifiedPokerCalculator> _logger;
 
-        // Cache de equity postflop: evita re-ejecutar Monte Carlo cuando las cartas no cambian.
-        // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion"
+        // Cache de equity: evita re-ejecutar Monte Carlo cuando nada del cálculo cambió.
+        // Clave: "carta1,carta2|comm1,comm2,comm3|numOpp|situacion|villano"
+        // El villano (posición + VPIP/3bet) entra en la clave porque cambia el rango
+        // contra el que corre Monte Carlo: sin él, un pedido devolvía la equity cacheada
+        // del villano anterior.
         // Valor: equity en porcentaje (0-100)
         private readonly ConcurrentDictionary<string, double> _equityCache = new();
         private const int EquityCacheMaxSize = 2048;
@@ -215,7 +218,7 @@ namespace OpenScrape.DecisionMaker.Postflop
 
                 if (preflopRange != null)
                 {
-                    string preflopCacheKey = $"preflop|{BuildHandKey(playerHand)}|{handSituation ?? "default"}|{numOpponents}";
+                    string preflopCacheKey = $"preflop|{BuildHandKey(playerHand)}|{handSituation ?? "default"}|{numOpponents}|{BuildVillainKey(villainPosition, opponentProfile)}";
                     if (_equityCache.TryGetValue(preflopCacheKey, out double cachedPreflop))
                         return cachedPreflop;
 
@@ -234,7 +237,8 @@ namespace OpenScrape.DecisionMaker.Postflop
             }
             else // Postflop — usar cache para evitar re-ejecutar Monte Carlo
             {
-                string cacheKey = BuildEquityCacheKey(playerHand, communityCards, numOpponents, handSituation);
+                string cacheKey = BuildEquityCacheKey(playerHand, communityCards, numOpponents, handSituation,
+                    villainPosition, opponentProfile);
                 if (_equityCache.TryGetValue(cacheKey, out double cached))
                     return cached;
 
@@ -259,12 +263,25 @@ namespace OpenScrape.DecisionMaker.Postflop
         }
 
         private static string BuildEquityCacheKey(List<CardDataOuts> playerHand, List<CardDataOuts> communityCards,
-            int numOpponents, string? handSituation)
+            int numOpponents, string? handSituation, TablePosition villainPosition,
+            OpponentProfile? opponentProfile)
         {
             // Ordenar cartas para que el orden no afecte la clave
             var hand = string.Join(",", playerHand.Select(c => c.Id).OrderBy(x => x));
             var comm = string.Join(",", communityCards.Select(c => c.Id).OrderBy(x => x));
-            return $"{hand}|{comm}|{numOpponents}|{handSituation ?? ""}";
+            return $"{hand}|{comm}|{numOpponents}|{handSituation ?? ""}|{BuildVillainKey(villainPosition, opponentProfile)}";
+        }
+
+        /// <summary>
+        /// Identidad del villano para el caché: posición y los contadores que definen
+        /// su rango (VPIP, 3bet y volumen de manos para saber si el ajuste aplica).
+        /// </summary>
+        private static string BuildVillainKey(TablePosition villainPosition, OpponentProfile? opponentProfile)
+        {
+            if (opponentProfile is null)
+                return villainPosition.ToString();
+
+            return $"{villainPosition}|{opponentProfile.HandsPlayed}|{opponentProfile.TimesVoluntarilyPutMoneyIn}|{opponentProfile.TimesThreeBet}";
         }
 
         /// <summary>
