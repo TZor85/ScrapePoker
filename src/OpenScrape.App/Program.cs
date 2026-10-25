@@ -7,6 +7,7 @@ using Marten;
 using OpenScrape.App.Aplication;
 using OpenScrape.App.Configuration;
 using OpenScrape.App.Forms.Controls;
+using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Http;
@@ -297,6 +298,33 @@ namespace OpenScrape.App
             var scope = host.Services.CreateAsyncScope();
             try
             {
+                // Compuerta de licencia: con el motor remoto activo no se arranca sin token.
+                var remoteEngineOn = host.Services.GetRequiredService<IConfiguration>()
+                    .GetValue<bool>("RemoteEngine:Enabled");
+
+                if (remoteEngineOn)
+                {
+                    var licenseStore = host.Services.GetRequiredService<LicenseTokenStore>();
+
+                    if (LicenseGate.NeedsActivation(licenseStore, DateTimeOffset.UtcNow))
+                    {
+                        using var licenseForm = new FormLicense(
+                            host.Services.GetRequiredService<LicenseClient>(),
+                            licenseStore);
+
+                        if (licenseForm.ShowDialog() != DialogResult.OK)
+                        {
+                            MessageBox.Show(
+                                "Se necesita una licencia vigente para iniciar el motor.",
+                                "OpenScrape",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+
+                            return;
+                        }
+                    }
+                }
+
                 var form = scope.ServiceProvider.GetRequiredService<FrmMain>();
                 Application.Run(form);
             }
