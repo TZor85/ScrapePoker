@@ -24,6 +24,12 @@ public class GetActionScenario
             if (table == null)
                 throw new PreflopSituationNotFoundException(situation.GetDescription());
 
+            // Una fila ausente es un error de configuración del rango, no un fold:
+            // si ambas cosas terminan en "Fold", el motor no puede distinguirlas.
+            if (!SelectMatchingScenarios(table.Positions, request).Any())
+                throw new PreflopSituationNotFoundException(
+                    $"{situation.GetDescription()} / {request.HeroPosition?.GetDescription() ?? "sin posición"}");
+
             var matches = SelectMatchingHands(table.Positions, request).ToList();
 
             if (matches.Count == 0)
@@ -42,24 +48,28 @@ public class GetActionScenario
         }
     }
 
+    public static IEnumerable<PlayerActionSequence> SelectMatchingScenarios(
+        IEnumerable<PlayerActionSequence>? positions,
+        ActionScenarioRequest request) =>
+        positions?
+            .Where(w => w.HeroPosition == request.HeroPosition?.GetDescription()
+                    && (request.OpenRaiser == null || w.OpenRaiser == request.OpenRaiser.GetDescription())
+                    && (request.ThreeBetPosition == null || w.ThreeBetPosition == request.ThreeBetPosition.GetDescription())
+                    && (request.Limper == null || w.Limper == request.Limper.GetDescription())
+                    && (request.Caller == null || w.Caller == request.Caller.GetDescription())
+                    && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
+                    && (request.BetSize == null || w.BetSize == request.BetSize)
+                    && (request.IsGreater == null || w.IsGreater == request.IsGreater)
+                    && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
+        ?? Enumerable.Empty<PlayerActionSequence>();
+
     public static IEnumerable<Hand> SelectMatchingHands(
         IEnumerable<PlayerActionSequence>? positions,
-        ActionScenarioRequest request)
-    {
-        return positions?
-                   .Where(w => w.HeroPosition == request.HeroPosition?.GetDescription()
-                           && (request.OpenRaiser == null || w.OpenRaiser == request.OpenRaiser.GetDescription())
-                           && (request.ThreeBetPosition == null || w.ThreeBetPosition == request.ThreeBetPosition.GetDescription())
-                           && (request.Limper == null || w.Limper == request.Limper.GetDescription())
-                           && (request.Caller == null || w.Caller == request.Caller.GetDescription())
-                           && (request.Squeezer == null || w.Squeezer == request.Squeezer.GetDescription())
-                           && (request.BetSize == null || w.BetSize == request.BetSize)
-                           && (request.IsGreater == null || w.IsGreater == request.IsGreater)
-                           && (request.RaiserFolds == null || w.RaiserFolds == request.RaiserFolds))
-                   .FirstOrDefault()?.Hands
-                   .Where(f => f.Name == request.HandName && f.Suited == request.Suited)
-               ?? Enumerable.Empty<Hand>();
-    }
+        ActionScenarioRequest request) =>
+        SelectMatchingScenarios(positions, request)
+            .FirstOrDefault()?.Hands
+            .Where(f => f.Name == request.HandName && f.Suited == request.Suited)
+        ?? Enumerable.Empty<Hand>();
 
     private string GetRandomAction(List<Hand> actions)
     {

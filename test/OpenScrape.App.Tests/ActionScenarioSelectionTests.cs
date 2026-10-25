@@ -1,5 +1,8 @@
+using OpenScrape.DecisionMaker.Preflop;
 using OpenScrape.DecisionMaker.Services;
+using OpenScrape.App.Tests.Fixtures;
 using OpenScrape.Domain.Interfaces;
+using OpenScrape.Domain.Dtos;
 using OpenScrape.Domain.Enums;
 using OpenScrape.Domain.ValueObjects;
 using OpenScrape.Features.ActionScenario;
@@ -86,4 +89,56 @@ public class ActionScenarioSelectionTests
 
         public int Next(int minValue, int maxValue) => _next;
     }
+
+    [Test]
+    public void ExecuteAsync_SituacionSinFila_LanzaPreflopSituationNotFound()
+    {
+        var scenario = new GetActionScenario(
+            new FixedRangeStore(TableFor(TablePosition.Button)),
+            new FixedRandomProvider(30));
+
+        var request = new ActionScenarioRequest { HeroPosition = TablePosition.CutOff };
+
+        Assert.ThrowsAsync<PreflopSituationNotFoundException>(
+            async () => await scenario.ExecuteAsync(GameSituation.OpenRaise, request));
+    }
+
+    [Test]
+    public async Task ExecuteAsync_FilaExistePeroManoNo_DevuelveFold()
+    {
+        var scenario = new GetActionScenario(
+            new FixedRangeStore(TableFor(TablePosition.Button)),
+            new FixedRandomProvider(30));
+
+        var request = new ActionScenarioRequest
+        {
+            HeroPosition = TablePosition.Button,
+            HandName = "72",
+            Suited = false
+        };
+
+        var action = await scenario.ExecuteAsync(GameSituation.OpenRaise, request);
+
+        Assert.That(action, Is.EqualTo("Fold"));
+    }
+
+    private static TableDTO TableFor(TablePosition position) => new()
+    {
+        Name = "sin-fila-para-la-posicion",
+        Positions =
+        [
+            new PlayerActionSequence(
+                Name: "OpenRaise",
+                HeroPosition: position.GetDescription(),
+                OpenRaiser: null,
+                ThreeBetPosition: null,
+                Limper: null,
+                Caller: null,
+                Squeezer: null,
+                BetSize: null,
+                IsGreater: null,
+                RaiserFolds: null,
+                Hands: new List<Hand> { new("AK", true, "Raise", 100) })
+        ]
+    };
 }
