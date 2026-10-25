@@ -17,7 +17,7 @@ public class HttpDecisionEngineTests
     public async Task DecideAsync_ApiEnProceso_DevuelveLaDecisionDelServidor()
     {
         using var factory = new ApiFactory();
-        using var client = factory.CreateClient();
+        using var client = factory.CreateLicensedClient();
         var engine = new HttpDecisionEngine(client, NullLogger<HttpDecisionEngine>.Instance);
 
         var result = await engine.DecideAsync(PreflopRequest());
