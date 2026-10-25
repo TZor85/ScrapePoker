@@ -457,6 +457,19 @@ En 4b los use cases del editor de regiones se mudaron a
 a `OpenScrape.Api.Persistence`; y el proyecto `OpenScrape.Features` se eliminó
 junto con los use cases que nadie consumía (Cards, tablas y game rounds).
 
+### Deudas conocidas
+
+- **Tipo de villano en el multiplicador de fold equity.** El cliente envía
+  `VillainProfile.Type` con el tipo *posicional* (el del asiento desde el que
+  actúa), y `PostflopRequestFactory` lo usa para aplicar el multiplicador de
+  fold equity (LP 1.25 / TP 1.10 / TAG 0.85 / LAG 0.70). El tracker del cliente
+  calculaba ese multiplicador con el tipo *global* del villano, así que cuando
+  un villano cambia de tipo según la posición el número puede diferir del que
+  mostraba el camino local. Resolverlo pide un campo nuevo en el contrato (tipo
+  global explícito) o cambiar la semántica de `VillainProfile.Type`, que el
+  servidor usa en otras ramas de decisión: no es limpieza y queda fuera de esta
+  fase.
+
 ## Pruebas
 
 ### Unitarias del motor
