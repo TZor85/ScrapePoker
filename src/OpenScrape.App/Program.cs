@@ -10,6 +10,7 @@ using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
 using OpenScrape.App.Services.Http;
+using OpenScrape.App.Services.License;
 using OpenScrape.App.Services.Logging;
 using OpenScrape.DecisionMaker;
 using OpenScrape.DecisionMaker.Algorithms;

@@ -1,5 +1,7 @@
+using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenScrape.App.Services.Http;
+using OpenScrape.App.Services.License;
 using OpenScrape.App.Tests.Api;
 using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
@@ -92,4 +94,101 @@ public class HttpDecisionEngineTests
         IsInPosition = true,
         HandSituation = HandSituation.None
     };
+
+    [Test]
+    public void DecideAsync_SinLicencia_LanzaLicenseRequiredYSinRequest()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.OK, "{}");
+        var path = TempLicensePath();
+        var store = new LicenseTokenStore(path, "secreto");
+        var engine = new HttpDecisionEngine(
+            new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:5099") },
+            NullLogger<HttpDecisionEngine>.Instance,
+            store);
+
+        try
+        {
+            Assert.ThrowsAsync<LicenseRequiredException>(
+                async () => await engine.DecideAsync(PreflopRequest()));
+
+            Assert.That(handler.Count, Is.Zero, "Sin licencia no se debe llamar al motor.");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DecideAsync_TokenVencido_NoLlamaAlMotorYLimpiaElStore()
+    {
+        var handler = new CapturingHandler(HttpStatusCode.OK, "{}");
+        var path = TempLicensePath();
+        var store = new LicenseTokenStore(path, "secreto");
+        store.Save(new StoredLicense("k", "t", DateTimeOffset.UtcNow.AddMinutes(-1), "pro"));
+        var engine = new HttpDecisionEngine(
+            new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:5099") },
+            NullLogger<HttpDecisionEngine>.Instance,
+            store);
+
+        try
+        {
+            Assert.ThrowsAsync<LicenseRequiredException>(
+                async () => await engine.DecideAsync(PreflopRequest()));
+
+            Assert.That(handler.Count, Is.Zero);
+            Assert.That(store.Load(), Is.Null);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public void DecideAsync_LicenciaRechazada_LimpiaElStore()
+    {
+        var handler = new CapturingHandler(
+            HttpStatusCode.Unauthorized,
+            """{"code":"unauthorized","message":"Token vencido"}""");
+        var path = TempLicensePath();
+        var store = new LicenseTokenStore(path, "secreto");
+        store.Save(new StoredLicense("k", "t", DateTimeOffset.UtcNow.AddHours(1), "pro"));
+        var engine = new HttpDecisionEngine(
+            new HttpClient(handler) { BaseAddress = new Uri("http://127.0.0.1:5099") },
+            NullLogger<HttpDecisionEngine>.Instance,
+            store);
+
+        try
+        {
+            Assert.ThrowsAsync<LicenseRequiredException>(
+                async () => await engine.DecideAsync(PreflopRequest()));
+
+            Assert.That(handler.Count, Is.EqualTo(1));
+            Assert.That(store.Load(), Is.Null);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static string TempLicensePath() =>
+        Path.Combine(Path.GetTempPath(), $"lic-http-{Guid.NewGuid():N}.dat");
+
+    private sealed class CapturingHandler(HttpStatusCode status, string body) : HttpMessageHandler
+    {
+        public int Count { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Count++;
+            return Task.FromResult(new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json")
+            });
+        }
+    }
 }
