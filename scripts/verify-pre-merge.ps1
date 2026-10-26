@@ -55,8 +55,24 @@ Test-Checkpoint "Tests" {
     # --no-incremental y reescribe archivos de obj/ que el test con --no-build
     # lee a la vez, lo que produjo un fallo intermitente. Un build incremental
     # aca cuesta segundos y garantiza que el binario probado sea el actual.
-    dotnet test OpenScrape.sln --verbosity quiet 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "Tests failed (exit $LASTEXITCODE)" }
+    $testLog = Join-Path ([System.IO.Path]::GetTempPath()) ("openscrape-tests-" + [Guid]::NewGuid().ToString("N") + ".log")
+    try {
+        dotnet test OpenScrape.sln --verbosity quiet 2>&1 | Tee-Object -FilePath $testLog | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            # Sin esto, un rojo en Tests obliga a repetir la corrida entera para
+            # saber que test fallo: el gate tarda casi un minuto por diagnostico.
+            Write-Host "--- tests fallidos ---" -ForegroundColor Red
+            Select-String -Path $testLog -Pattern 'Con error|Failed|error (MSB|CS)' -Context 0,6 |
+                Select-Object -First 6 |
+                ForEach-Object { Write-Host $_.ToString() -ForegroundColor DarkYellow }
+            Write-Host "--- ultimas lineas ---" -ForegroundColor Red
+            Get-Content $testLog -Tail 20 | ForEach-Object { Write-Host $_ -ForegroundColor DarkYellow }
+            throw "Tests failed (exit $LASTEXITCODE)"
+        }
+    }
+    finally {
+        Remove-Item $testLog -Force -ErrorAction SilentlyContinue
+    }
 }
 
 # Checkpoint 5: Warnings
