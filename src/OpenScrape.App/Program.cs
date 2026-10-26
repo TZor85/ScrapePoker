@@ -57,134 +57,7 @@ namespace OpenScrape.App
                 {
                     lb.AddTextBoxLogger();
                 })
-                .ConfigureServices((context, services) =>
-                {
-                    // Agregar configuración de base de datos
-                    services.AddDataBase(context.Configuration, context.HostingEnvironment.IsDevelopment());
-
-                    // Use cases del editor de regiones (viven en el cliente, no en la API).
-                    services.AddScoped<UpdateRegionTableMap>();
-                    services.AddScoped<RegionTableMapUseCases>();
-                    //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
-
-                    //services.AddScoped<OcrService>();
-
-                    // Configuración del overlay
-                    services.Configure<OverlayConfig>(context.Configuration.GetSection("OverlayConfig"));
-
-                    // Strategy profile (antes de servicios que lo usan)
-                    services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
-                    services.AddSingleton<StrategyProfileService>();
-                    services.AddSingleton<
-                        OpenScrape.Domain.Interfaces.IRandomProvider,
-                        OpenScrape.Domain.Services.SystemRandomProvider>();
-
-                    // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
-                    services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
-                    services.Configure<FeatureFlags>(context.Configuration.GetSection(FeatureFlags.SectionName));
-
-                    // Estado del cliente: tracking, exploitability, calibración y bankroll
-                    services.AddSingleton<IOpponentProfileStore, MartenOpponentProfileStore>();
-                    services.AddSingleton<IDecisionTraceStore, MartenDecisionTraceStore>();
-                    services.AddSingleton<OpponentTracker>();
-                    services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
-                    services.AddSingleton<ExploitabilityCalculator>();
-                    services.AddSingleton<IExploitabilityCalculator>(sp => sp.GetRequiredService<ExploitabilityCalculator>());
-                    services.AddSingleton<AutoCalibrationService>();
-                    services.AddSingleton<IAutoCalibrationService>(sp => sp.GetRequiredService<AutoCalibrationService>());
-                    services.AddSingleton(sp =>
-                    {
-                        var store = sp.GetRequiredService<IDocumentStore>();
-                        var profile = sp.GetRequiredService<IOptions<StrategyProfile>>().Value;
-                        return new BankrollTrackerService(store, profile);
-                    });
-                    services.AddSingleton<IBankrollTrackerService>(sp => sp.GetRequiredService<BankrollTrackerService>());
-
-                    // Cliente del motor: siempre por HTTP. El timeout por decisión lo
-                    // impone HttpDecisionEngine.DecisionTimeout.
-                    services.AddLicense(context.Configuration);
-                    services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
-                    services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
-                    services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
-                    services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
-                    services.AddSingleton<GetWindowsScreenUseCase>();
-
-                    // Screen reader (OCR + preprocesamiento + normalización)
-                    services.AddSingleton<ScreenReaderService>();
-                    services.AddSingleton<IScreenReaderService>(sp => sp.GetRequiredService<ScreenReaderService>());
-
-                    // Game logger y state machine
-                    services.AddScoped<GameLoggerService>();
-                    services.AddScoped<IGameLoggerService>(sp => sp.GetRequiredService<GameLoggerService>());
-                    services.AddSingleton<GameLoopStateMachine>();
-                    services.AddSingleton<RegionLookupCache>();
-                    services.AddSingleton<CardCacheService>();
-
-                    // Detection loop service (Fase 1: extraído de FrmMain.BackgroundWorker1_DoWork)
-                    services.AddSingleton<ITurnGate, TurnGate>();
-                    services.AddSingleton<IDetectionLoopService, DetectionLoopService>();
-
-                    // Capture service (Fase 2: extraído de FrmMain.GetImageWhilePlaying)
-                    services.AddSingleton<IGetWindowsScreenUseCase>(sp => sp.GetRequiredService<GetWindowsScreenUseCase>());
-                    services.AddScoped<ICaptureService, CaptureService>();
-
-                    // Table reader service (Fase 3: extraído de FrmMain.SetBetPlayer/SetHeroStack/etc.)
-                    // Interfaces para testeabilidad: forwarding desde las implementaciones concretas existentes
-                    services.AddSingleton<IRegionLookupCache>(sp => sp.GetRequiredService<RegionLookupCache>());
-                    services.AddSingleton<IImageCropperService>(sp => sp.GetRequiredService<ImageCropperService>());
-                    services.AddSingleton<ICardCacheService>(sp => sp.GetRequiredService<CardCacheService>());
-                    // Reconocimiento de cartas centralizado (plantillas precomputadas + dHash shortlist)
-                    services.AddSingleton<CardTemplateIndex>();
-                    services.AddSingleton<ICardRecognizer, CardRecognitionEngine>();
-                    services.AddSingleton<IOcrService>(sp => sp.GetRequiredService<OcrService>());
-                    services.AddScoped<ITableReaderService, TableReaderService>();
-
-                    // Table layout (detección jugadores, dealer, posiciones)
-                    services.AddScoped<TableLayoutService>();
-                    services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
-
-                    // Postflop context holder (scoped: una instancia por sesión de juego)
-                    services.AddScoped<PostflopContextHolder>();
-                    services.AddScoped<IPostflopContextHolder>(sp => sp.GetRequiredService<PostflopContextHolder>());
-
-                    // Game coordinator
-                    services.AddScoped<GameCoordinator>();
-                    services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());
-
-                    // CoordinateScaler y telemetría: los usan las capturas, los
-                    // use cases de cartas y los servicios de logging.
-                    services.AddSingleton<CoordinateScaler>();
-                    services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
-                    services.AddSingleton<IMetricsCollector, MetricsCollector>();
-                    services.AddSingleton<DetectionLoggerService>();
-                    services.AddSingleton<OcrService>();
-                    services.AddSingleton<ColorDetectionService>();
-                    services.AddSingleton<ImageCropperService>();
-                    services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
-
-                    // Servicios de UI y orquestación del game loop.
-                    services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
-                    services.AddScoped<IUiSyncService, UiSyncService>();
-                    services.AddScoped<IUiUpdateService, UiUpdateService>();
-                    services.AddSingleton<IActionFormatter, ActionFormatter>();
-                    services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
-
-                    // UseCases de cartas (necesitan CardCacheService + ICoordinateScaler)
-                    services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
-                    services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
-                    services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
-
-                    // Fase 7: UserControls de TabPageContributions
-                    services.AddTransient<HistorialTabControl>();
-                    services.AddTransient<BankrollTabControl>();
-                    services.AddTransient<MetricsTabControl>();
-
-                    // Fase 8: RegionEditorControl extraído de FrmMain
-                    services.AddTransient<RegionEditorControl>();
-
-                    //// Registrar tu formulario principal
-                    services.AddTransient<FrmMain>();
-                });
+                .ConfigureServices(Program.ConfigureClientServices);
 
             var host = builder.Build();
 
@@ -253,6 +126,141 @@ namespace OpenScrape.App
             {
                 scope.DisposeAsync().AsTask().GetAwaiter().GetResult();
             }
+        }
+
+        /// <summary>
+        /// Registro completo de servicios del cliente. Vive fuera de <see cref="Main"/>
+        /// para que un test pueda construir el contenedor: si un registro del cliente
+        /// desaparece, la app muere al arrancar y este método es lo único que permite
+        /// detectarlo antes de publicar.
+        /// </summary>
+        internal static void ConfigureClientServices(HostBuilderContext context, IServiceCollection services)
+        {
+            // Agregar configuración de base de datos
+            services.AddDataBase(context.Configuration, context.HostingEnvironment.IsDevelopment());
+
+            // Use cases del editor de regiones (viven en el cliente, no en la API).
+            services.AddScoped<UpdateRegionTableMap>();
+            services.AddScoped<RegionTableMapUseCases>();
+            //services.AddScoped<IFileDialogService, WindowsFileDialogService>();
+
+            //services.AddScoped<OcrService>();
+
+            // Configuración del overlay
+            services.Configure<OverlayConfig>(context.Configuration.GetSection("OverlayConfig"));
+
+            // Strategy profile (antes de servicios que lo usan)
+            services.Configure<StrategyProfile>(context.Configuration.GetSection("StrategyProfile"));
+            services.AddSingleton<StrategyProfileService>();
+            services.AddSingleton<
+                OpenScrape.Domain.Interfaces.IRandomProvider,
+                OpenScrape.Domain.Services.SystemRandomProvider>();
+
+            // Opciones del game loop y feature flags (refactor-frmmain-coordinators)
+            services.Configure<GameLoopOptions>(context.Configuration.GetSection(GameLoopOptions.SectionName));
+            services.Configure<FeatureFlags>(context.Configuration.GetSection(FeatureFlags.SectionName));
+
+            // Estado del cliente: tracking, exploitability, calibración y bankroll
+            services.AddSingleton<IOpponentProfileStore, MartenOpponentProfileStore>();
+            services.AddSingleton<IDecisionTraceStore, MartenDecisionTraceStore>();
+            services.AddSingleton<OpponentTracker>();
+            services.AddSingleton<IOpponentTracker>(sp => sp.GetRequiredService<OpponentTracker>());
+            services.AddSingleton<ExploitabilityCalculator>();
+            services.AddSingleton<IExploitabilityCalculator>(sp => sp.GetRequiredService<ExploitabilityCalculator>());
+            services.AddSingleton<AutoCalibrationService>();
+            services.AddSingleton<IAutoCalibrationService>(sp => sp.GetRequiredService<AutoCalibrationService>());
+            services.AddSingleton(sp =>
+            {
+                var store = sp.GetRequiredService<IDocumentStore>();
+                var profile = sp.GetRequiredService<IOptions<StrategyProfile>>().Value;
+                return new BankrollTrackerService(store, profile);
+            });
+            services.AddSingleton<IBankrollTrackerService>(sp => sp.GetRequiredService<BankrollTrackerService>());
+
+            // Cliente del motor: siempre por HTTP. El timeout por decisión lo
+            // impone HttpDecisionEngine.DecisionTimeout.
+            services.AddLicense(context.Configuration);
+            services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
+            services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
+            services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
+            services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
+            services.AddSingleton<GetWindowsScreenUseCase>();
+
+            // Screen reader (OCR + preprocesamiento + normalización)
+            services.AddSingleton<ScreenReaderService>();
+            services.AddSingleton<IScreenReaderService>(sp => sp.GetRequiredService<ScreenReaderService>());
+
+            // Game logger y state machine
+            services.AddScoped<GameLoggerService>();
+            services.AddScoped<IGameLoggerService>(sp => sp.GetRequiredService<GameLoggerService>());
+            services.AddSingleton<GameLoopStateMachine>();
+            services.AddSingleton<RegionLookupCache>();
+            services.AddSingleton<CardCacheService>();
+
+            // Detection loop service (Fase 1: extraído de FrmMain.BackgroundWorker1_DoWork)
+            services.AddSingleton<ITurnGate, TurnGate>();
+            services.AddSingleton<IDetectionLoopService, DetectionLoopService>();
+
+            // Capture service (Fase 2: extraído de FrmMain.GetImageWhilePlaying)
+            services.AddSingleton<IGetWindowsScreenUseCase>(sp => sp.GetRequiredService<GetWindowsScreenUseCase>());
+            services.AddScoped<ICaptureService, CaptureService>();
+
+            // Table reader service (Fase 3: extraído de FrmMain.SetBetPlayer/SetHeroStack/etc.)
+            // Interfaces para testeabilidad: forwarding desde las implementaciones concretas existentes
+            services.AddSingleton<IRegionLookupCache>(sp => sp.GetRequiredService<RegionLookupCache>());
+            services.AddSingleton<IImageCropperService>(sp => sp.GetRequiredService<ImageCropperService>());
+            services.AddSingleton<ICardCacheService>(sp => sp.GetRequiredService<CardCacheService>());
+            // Reconocimiento de cartas centralizado (plantillas precomputadas + dHash shortlist)
+            services.AddSingleton<CardTemplateIndex>();
+            services.AddSingleton<ICardRecognizer, CardRecognitionEngine>();
+            services.AddSingleton<IOcrService>(sp => sp.GetRequiredService<OcrService>());
+            services.AddScoped<ITableReaderService, TableReaderService>();
+
+            // Table layout (detección jugadores, dealer, posiciones)
+            services.AddScoped<TableLayoutService>();
+            services.AddScoped<ITableLayoutService>(sp => sp.GetRequiredService<TableLayoutService>());
+
+            // Postflop context holder (scoped: una instancia por sesión de juego)
+            services.AddScoped<PostflopContextHolder>();
+            services.AddScoped<IPostflopContextHolder>(sp => sp.GetRequiredService<PostflopContextHolder>());
+
+            // Game coordinator
+            services.AddScoped<GameCoordinator>();
+            services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());
+
+            // CoordinateScaler y telemetría: los usan las capturas, los
+            // use cases de cartas y los servicios de logging.
+            services.AddSingleton<CoordinateScaler>();
+            services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
+            services.AddSingleton<IMetricsCollector, MetricsCollector>();
+            services.AddSingleton<DetectionLoggerService>();
+            services.AddSingleton<OcrService>();
+            services.AddSingleton<ColorDetectionService>();
+            services.AddSingleton<ImageCropperService>();
+            services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
+
+            // Servicios de UI y orquestación del game loop.
+            services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
+            services.AddScoped<IUiSyncService, UiSyncService>();
+            services.AddScoped<IUiUpdateService, UiUpdateService>();
+            services.AddSingleton<IActionFormatter, ActionFormatter>();
+            services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
+
+            // UseCases de cartas (necesitan CardCacheService + ICoordinateScaler)
+            services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
+            services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
+            services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
+
+            // Fase 7: UserControls de TabPageContributions
+            services.AddTransient<HistorialTabControl>();
+            services.AddTransient<BankrollTabControl>();
+            services.AddTransient<MetricsTabControl>();
+
+            // Fase 8: RegionEditorControl extraído de FrmMain
+            services.AddTransient<RegionEditorControl>();
+
+            //// Registrar tu formulario principal
+            services.AddTransient<FrmMain>();
         }
     }
 }
