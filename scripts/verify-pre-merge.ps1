@@ -57,7 +57,9 @@ Test-Checkpoint "Tests" {
     # aca cuesta segundos y garantiza que el binario probado sea el actual.
     $testLog = Join-Path ([System.IO.Path]::GetTempPath()) ("openscrape-tests-" + [Guid]::NewGuid().ToString("N") + ".log")
     try {
-        dotnet test OpenScrape.sln --verbosity quiet 2>&1 | Tee-Object -FilePath $testLog | Out-Null
+        # En Release, como CI. Probar solo Debug dejaba pasar fallos que el
+        # runner encontraba: nos paso con eb90cb8, que paso el gate y fallo alla.
+        dotnet test OpenScrape.sln --configuration Release --verbosity quiet 2>&1 | Tee-Object -FilePath $testLog | Out-Null
         if ($LASTEXITCODE -ne 0) {
             # Sin esto, un rojo en Tests obliga a repetir la corrida entera para
             # saber que test fallo: el gate tarda casi un minuto por diagnostico.
