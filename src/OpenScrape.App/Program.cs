@@ -151,6 +151,24 @@ namespace OpenScrape.App
                     services.AddScoped<GameCoordinator>();
                     services.AddScoped<IGameCoordinator>(sp => sp.GetRequiredService<GameCoordinator>());
 
+                    // CoordinateScaler y telemetría: los usan las capturas, los
+                    // use cases de cartas y los servicios de logging.
+                    services.AddSingleton<CoordinateScaler>();
+                    services.AddSingleton<ICoordinateScaler>(sp => sp.GetRequiredService<CoordinateScaler>());
+                    services.AddSingleton<IMetricsCollector, MetricsCollector>();
+                    services.AddSingleton<DetectionLoggerService>();
+                    services.AddSingleton<OcrService>();
+                    services.AddSingleton<ColorDetectionService>();
+                    services.AddSingleton<ImageCropperService>();
+                    services.AddSingleton<ISetFlopForceBoardUseCase, SetFlopForceBoardUseCase>();
+
+                    // Servicios de UI y orquestación del game loop.
+                    services.AddScoped<IGameLoopCoordinator, GameLoopCoordinator>();
+                    services.AddScoped<IUiSyncService, UiSyncService>();
+                    services.AddScoped<IUiUpdateService, UiUpdateService>();
+                    services.AddSingleton<IActionFormatter, ActionFormatter>();
+                    services.AddSingleton<IOverlayPositioner, OverlayPositioner>();
+
                     // UseCases de cartas (necesitan CardCacheService + ICoordinateScaler)
                     services.AddSingleton<IGetCardsFlopUseCase, GetCardsFlopUseCase>();
                     services.AddSingleton<IGetCardsTurnUseCase, GetCardsTurnUseCase>();
