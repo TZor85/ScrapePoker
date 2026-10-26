@@ -677,6 +677,19 @@ public class PostflopDecisionServiceTests
         public int Next(int minValue, int maxValue) => minValue;
     }
 
+    /// <summary>
+    /// Recorre 0.00, 0.01, ... 0.99 en orden: muestreo estratificado determinista.
+    /// Permite comparar frecuencias sin que el azar decida el resultado del test.
+    /// </summary>
+    private sealed class SweepRandomProvider : IRandomProvider
+    {
+        private int _index;
+
+        public double NextDouble() => (_index++ % 100) / 100.0;
+
+        public int Next(int minValue, int maxValue) => minValue;
+    }
+
     private static StrategyProfile CreateDefaultProfile()
     {
         return new StrategyProfile
@@ -5665,27 +5678,28 @@ public class PostflopDecisionServiceTests
     {
         // Broadway wet → c-bet freq ×0.8
         var profile = CreateDefaultProfile();
-        var service = CreateService(profile);
+        var normal = CreateService(profile, new SweepRandomProvider());
+        var broadway = CreateService(profile, new SweepRandomProvider());
 
         int cbetNormal = 0, cbetBroadway = 0;
         for (int i = 0; i < 200; i++)
         {
-            var rn = service.DetermineAction(MakeInput(
+            var rn = normal.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
                 heroIsAggressor: true));
             if (rn.Action.Contains("C-Bet")) cbetNormal++;
 
-            var rb = service.DetermineAction(MakeInput(
+            var rb = broadway.DetermineAction(MakeInput(
                 equity: 35, BoardPosition.Turn, HandSituation.OpenRaise,
                 boardTexture: "Dry", isInPosition: true,
                 villainBetSize: BetSizeCategory.NoBet,
                 heroIsAggressor: true, isBroadwayWet: true));
             if (rb.Action.Contains("C-Bet")) cbetBroadway++;
         }
-        Assert.That(cbetBroadway, Is.LessThanOrEqualTo(cbetNormal),
-            $"Broadway wet reduce c-bet: {cbetBroadway} <= {cbetNormal}");
+        Assert.That(cbetBroadway, Is.LessThan(cbetNormal),
+            $"Broadway wet reduce c-bet: {cbetBroadway} < {cbetNormal}");
     }
 
     #endregion
