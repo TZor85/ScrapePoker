@@ -13,5 +13,6 @@ public interface IMonteCarloSimulator
         int numOpponents,
         int? iterations = null,
         VillainRange? villainRange = null,
-        int? randomSeed = null);
+        int? randomSeed = null,
+        int rangedOpponents = int.MaxValue);
 }

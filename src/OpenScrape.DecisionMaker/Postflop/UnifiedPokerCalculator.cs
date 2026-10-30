@@ -222,9 +222,12 @@ namespace OpenScrape.DecisionMaker.Postflop
                         return cachedPreflop;
 
                     int adaptiveIters = GetAdaptiveIterations(playerHand, numOpponents);
+                    // Sólo el raiser tiene rango de subida; callers y ciegas
+                    // juegan manos aleatorias. Aplicar su rango a todos hundía
+                    // la equity en mesas multijugador.
                     var mcResult = _monteCarloSimulator.CalculateEquity(
                         playerHand, new List<CardDataOuts>(), numOpponents,
-                        adaptiveIters, preflopRange);
+                        adaptiveIters, preflopRange, rangedOpponents: 1);
                     double preflopEquity = mcResult.Equity * 100;
 
                     _equityCache.Set(preflopCacheKey, preflopEquity);

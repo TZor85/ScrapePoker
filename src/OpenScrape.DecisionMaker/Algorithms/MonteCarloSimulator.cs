@@ -56,7 +56,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
         public const double UnreliableThreshold = 0.20; // 20% de combos bloqueados
 
         public EquityResult CalculateEquity(List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
-            int numOpponents, int? iterations = null, VillainRange? villainRange = null, int? randomSeed = null)
+            int numOpponents, int? iterations = null, VillainRange? villainRange = null, int? randomSeed = null,
+            int rangedOpponents = int.MaxValue)
         {
             int? effectiveSeed = randomSeed ?? _sessionSeed;
 
@@ -100,7 +101,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             int simulationCount = iterations ?? GetAdaptiveIterations(communityCount);
 
             var mcResult = RunMonteCarloSimulation(myCards, communityCards, numOpponents,
-                simulationCount, villainCombos, precomputedTotalWeight, effectiveSeed);
+                simulationCount, villainCombos, precomputedTotalWeight, effectiveSeed, rangedOpponents);
             mcResult.BlockedComboPercentage = blockedPercentage;
             mcResult.IsReliable = mcResult.IsReliable && blockedPercentage <= UnreliableThreshold;
             mcResult.RandomSeed = effectiveSeed;
@@ -382,7 +383,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
         private EquityResult RunMonteCarloSimulation(
             List<CardDataOuts> myCards, List<CardDataOuts> communityCards,
             int numOpponents, int simulationCount,
-            List<VillainCombo>? villainCombos, double precomputedTotalWeight, int? randomSeed)
+            List<VillainCombo>? villainCombos, double precomputedTotalWeight, int? randomSeed,
+            int rangedOpponents = int.MaxValue)
         {
             int totalWins = 0;
             int totalTies = 0;
@@ -398,7 +400,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
                         : Random.Shared;
 
                     var result = RunSingleSimulation(myCards, communityCards, numOpponents,
-                        villainCombos, precomputedTotalWeight, random);
+                        villainCombos, precomputedTotalWeight, random, rangedOpponents);
 
                     if (result.skipped)
                     {
@@ -442,7 +444,8 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
         private (int wins, int ties, HandRank bestRank, bool skipped) RunSingleSimulation(
             List<CardDataOuts> myCards, List<CardDataOuts> communityCards, int numOpponents,
-            List<VillainCombo>? villainCombos, double precomputedTotalWeight, Random random)
+            List<VillainCombo>? villainCombos, double precomputedTotalWeight, Random random,
+            int rangedOpponents = int.MaxValue)
         {
             var deck = ThreadDeck.Value!;
             Array.Copy(DeckTemplate, deck, DeckSize);
@@ -474,7 +477,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             {
                 CardDataOuts card1, card2;
 
-                if (villainCombos != null && villainCombos.Count > 0)
+                if (villainCombos != null && villainCombos.Count > 0 && i < rangedOpponents)
                 {
                     if (!TryDrawFromRange(villainCombos, deck, available, precomputedTotalWeight, random, out card1, out card2))
                     {

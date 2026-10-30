@@ -34,6 +34,32 @@ public class MonteCarloSimulatorTests
     }
 
     [Test]
+    public void CalculateEquity_PreflopVariosOponentes_SoloUnoUsaElRangoDelRaiser()
+    {
+        // AQo contra un open raise: sólo el raiser tiene ese rango; los demás
+        // (callers, ciegas) juegan manos aleatorias. Aplicar el mismo rango a los
+        // tres oponentes hunde la equity y contradice la decisión de la tabla.
+        var myCards = new List<CardDataOuts>
+        {
+            C(Rank.Ace, Suit.Diamonds),
+            C(Rank.Queen, Suit.Clubs)
+        };
+        var communityCards = new List<CardDataOuts>();
+        var range = VillainRange.GetForSituation(HandSituation.OpenRaise);
+        Assert.That(range, Is.Not.Null);
+
+        var vsUnSoloRango = _simulator.CalculateEquity(
+            myCards, communityCards, numOpponents: 3, iterations: 20000,
+            range, randomSeed: 12345, rangedOpponents: 1);
+        var vsTodosConRango = _simulator.CalculateEquity(
+            myCards, communityCards, numOpponents: 3, iterations: 20000,
+            range, randomSeed: 12345, rangedOpponents: 3);
+
+        Assert.That(vsUnSoloRango.Equity, Is.InRange(0.30, 0.55));
+        Assert.That(vsUnSoloRango.Equity, Is.GreaterThan(vsTodosConRango.Equity + 0.05));
+    }
+
+    [Test]
     public void CalculateEquity_FlushDrawEnFlop_DeberiaSerRazonable()
     {
         // Hero: Ah 5h, Flop: 2h 7h Kc (flush draw + Ace high)
