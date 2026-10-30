@@ -1056,6 +1056,8 @@ namespace OpenScrape.App
                         : null));
 
             _responseAction.Action = decision.Action;
+            // El motor es quien sabe si el héroe puede volver a hablar en preflop.
+            _responseAction.IsSecondAction = decision.IsSecondAction;
             if (Enum.TryParse<HandSituation>(decision.Situation, out var nextSituation))
                 _responseAction.HandSituation = nextSituation;
 

@@ -72,7 +72,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
         if (responseAction.IsSecondAction)
         {
-            if (responseAction.Action is not null && playerState.HandSituation == HandSituation.Call)
+            if (playerState.HandSituation == HandSituation.Call)
             {
                 var raiser = playerState.Players
                     .FirstOrDefault(f => f.Bet == playerState.CurrentBet && f.Position < playerState.Position);
@@ -96,9 +96,8 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 }
             }
 
-            if (responseAction.Action is not null &&
-                (playerState.HandSituation == HandSituation.ThreeBet ||
-                 playerState.HandSituation == HandSituation.Squeeze))
+            if (playerState.HandSituation == HandSituation.ThreeBet ||
+                 playerState.HandSituation == HandSituation.Squeeze)
             {
                 var raiser = playerState.Players.FirstOrDefault(w => w.Bet > playerState.CurrentBet);
                 if (raiser != null)
@@ -113,7 +112,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
                 }
             }
 
-            if (responseAction.Action is not null && (playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper))
+            if (playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper)
             {
                 var action = await GetOpenRaiseVs3BetAction(heroBets, playerState.Players.FirstOrDefault(w => w.Bet >= 1 && w.Position != TablePosition.BigBlind)?.Position ?? TablePosition.None, playerState);
                 if (!string.IsNullOrEmpty(action))
@@ -125,7 +124,7 @@ public class SetPreflopActionUseCase : ISetPreflopActionUseCase
 
             }
 
-            if (responseAction.Action is not null && (playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(playerState))
+            if ((playerState.HandSituation == HandSituation.OpenRaise || playerState.HandSituation == HandSituation.RaiseOverLimper) && UserHandHelper.Exist4Bet(playerState))
             {
                 var action = await GetOpenRaiseVs3BetAndCallAction(heroBets, playerState);
                 if (!string.IsNullOrEmpty(action))

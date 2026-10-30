@@ -48,6 +48,23 @@ public class LocalDecisionEngineTests
     }
 
     [Test]
+    public async Task DecideAsync_Preflop_DevuelveLaSituacionParaLaCalleSiguiente()
+    {
+        // El cliente usa Situation para arrastrar la situación preflop (OpenRaise,
+        // ThreeBet, Call...) a las calles siguientes. Si no viaja, el postflop
+        // recibe HandSituation.None y no puede resolver sus thresholds.
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.DecideAsync(CreatePreflopRequest());
+
+        // Assert
+        Assert.That(Enum.TryParse<HandSituation>(result.Situation, out var situation), Is.True,
+            $"Situation '{result.Situation}' no es un HandSituation válido.");
+        Assert.That(situation, Is.Not.EqualTo(HandSituation.None));
+    }
+
+    [Test]
     public async Task DecideAsync_Preflop_UsaLaEquityDelCalculadorDelMotor()
     {
         // Arrange: la equity del resume tiene que salir del mismo calculador que
@@ -59,6 +76,47 @@ public class LocalDecisionEngineTests
 
         // Assert
         Assert.That(result.Equity, Is.EqualTo(12.5).Within(0.001));
+    }
+
+    [Test]
+    public async Task DecideAsync_PreflopOpenRaise_MarcaSegundaAccionDisponible()
+    {
+        // Tras el open raise el héroe puede volver a hablar (si lo resuben).
+        // El cliente necesita ese flag para pedir la segunda acción en la captura siguiente.
+        var engine = CreateEngine();
+
+        // Act
+        var result = await engine.DecideAsync(CreatePreflopRequest());
+
+        // Assert
+        Assert.That(result.Action, Is.EqualTo("Raise"));
+        Assert.That(result.IsSecondAction, Is.True);
+    }
+
+    [Test]
+    public async Task DecideAsync_SegundaAccionTrasOpenRaise_UsaLaSituacionPrevia()
+    {
+        // Escenario real: el héroe abrió (OpenRaise), un villano lo resubió a 9
+        // y ahora vuelve a hablar. Antes el motor repetía la cascada y devolvía
+        // ThreeBet; ahora debe resolver OpenRaise vs 3Bet y cerrar la segunda acción.
+        var engine = CreateEngine(table: CreateSecondActionTable());
+        var request = CreatePreflopRequest() with
+        {
+            HandSituation = HandSituation.OpenRaise,
+            IsSecondAction = true,
+            PreflopBets = new Dictionary<TablePosition, decimal>
+            {
+                [TablePosition.Middle] = 9m
+            }
+        };
+
+        // Act
+        var result = await engine.DecideAsync(request);
+
+        // Assert
+        Assert.That(result.Action, Is.Not.Empty);
+        Assert.That(result.Situation, Is.EqualTo(nameof(HandSituation.OpenRaiseVs3Bet)));
+        Assert.That(result.IsSecondAction, Is.False);
     }
 
     private static DecisionRequest CreatePreflopRequest() => new()
@@ -75,9 +133,32 @@ public class LocalDecisionEngineTests
         HandSituation = HandSituation.None
     };
 
-    private static LocalDecisionEngine CreateEngine(IPokerCalculator? calculator = null)
+    private static TableDTO CreateSecondActionTable() => new()
     {
-        var table = new TableDTO
+        Name = "fx-second-action",
+        Positions =
+        [
+            new PlayerActionSequence(
+                Name: "fx-second-action",
+                HeroPosition: "Button",
+                OpenRaiser: "Button",
+                ThreeBetPosition: "Middle",
+                Limper: null,
+                Caller: null,
+                Squeezer: null,
+                BetSize: null,
+                IsGreater: null,
+                RaiserFolds: null,
+                Hands:
+                [
+                    new Hand("AK", true, "Raise", 100)
+                ])
+        ]
+    };
+
+    private static LocalDecisionEngine CreateEngine(IPokerCalculator? calculator = null, TableDTO? table = null)
+    {
+        table ??= new TableDTO
         {
             Name = "fx-local-engine",
             Positions =

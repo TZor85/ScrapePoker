@@ -47,6 +47,12 @@ public sealed class LocalDecisionEngine(
             return new DecisionResult
             {
                 Action = response.ResponseAction.Action ?? string.Empty,
+                // La situación preflop viaja al cliente para que la mande en las
+                // calles siguientes: el postflop la necesita para resolver thresholds.
+                Situation = response.ResponseAction.HandSituation.ToString(),
+                // Si el héroe ya actuó y puede volver a hablar, el cliente lo reenvía
+                // en la captura siguiente para que el motor resuelva la segunda acción.
+                IsSecondAction = response.ResponseAction.IsSecondAction,
                 // La equity preflop viaja para el resumen de la mesa: el cliente ya
                 // no calcula nada por su cuenta.
                 Equity = CalculatePreflopEquity(request)

@@ -29,6 +29,13 @@ public sealed record DecisionResult
     /// <summary>Situación preflop resultante (Call, ThreeBet, ...), para la calle siguiente.</summary>
     public string? Situation { get; init; }
 
+    /// <summary>
+    /// True si el héroe ya actuó en preflop y puede volver a hablar (por ejemplo,
+    /// tras su open raise si un villano lo resube). El cliente lo reenvía en la
+    /// siguiente captura para que el motor evalúe la segunda acción.
+    /// </summary>
+    public bool IsSecondAction { get; init; }
+
     public bool IsBluff { get; init; }
     public bool IsBarrel { get; init; }
     public bool IsCheckRaise { get; init; }

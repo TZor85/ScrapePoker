@@ -54,7 +54,9 @@ public class DecisionContractSerializationTests
             EffectiveOuts = 9,
             HeroHandRank = "OnePair",
             KickerStrength = "Strong",
-            PairClassification = "TopPair"
+            PairClassification = "TopPair",
+            Situation = nameof(HandSituation.OpenRaise),
+            IsSecondAction = true
         };
 
         var json = JsonSerializer.Serialize(original, Options);
@@ -68,6 +70,8 @@ public class DecisionContractSerializationTests
         Assert.That(restored.EVWithFoldEquity, Is.EqualTo(original.EVWithFoldEquity));
         Assert.That(restored.DrawTypes, Is.EquivalentTo(original.DrawTypes));
         Assert.That(restored.HeroHandRank, Is.EqualTo(original.HeroHandRank));
+        Assert.That(restored.Situation, Is.EqualTo(original.Situation));
+        Assert.That(restored.IsSecondAction, Is.EqualTo(original.IsSecondAction));
     }
 
     [Test]
