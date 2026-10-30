@@ -2086,9 +2086,17 @@ namespace OpenScrape.App
                     User32.GetWindowRect(_handle, ref windowRect);
                     _locWindowRect = windowRect;
 
-                    // Inicialización de overlay: crear y mostrar primero para que AutoSize
-                    // calcule el tamaño real, luego posicionar con offset proporcional
-                    _frmOverlay = new FrmOverlay(_overlayConfig);
+                    // Inicialización de overlay: reutilizar la instancia única para que
+                    // UiUpdateService y las actualizaciones directas apunten al overlay visible.
+                    // Crear una segunda instancia dejaba al overlay mostrado sin datos.
+                    if (_frmOverlay is null || _frmOverlay.IsDisposed)
+                    {
+                        _frmOverlay = new FrmOverlay(_overlayConfig);
+                        _uiUpdateService.SetOverlay(_frmOverlay);
+                    }
+
+                    // Mostrar primero para que AutoSize calcule el tamaño real,
+                    // luego posicionar con offset proporcional
                     _frmOverlay.Show();
 
                     _frmOverlay.Location = _overlayPositioner.Calculate(windowRect.left, windowRect.right, windowRect.bottom, _frmOverlay.Size.Width);
