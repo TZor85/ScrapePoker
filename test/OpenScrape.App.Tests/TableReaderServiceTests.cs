@@ -504,6 +504,8 @@ public class TableReaderServiceTests
 
         public Bitmap? CaptureWindow() => _captureResult;
 
+        public string? SaveFrame(Bitmap bitmap, string folderPath) => null;
+
         public DomainRegion GetScaledRegion(DomainRegion region)
         {
             // Retorna la misma región sin escalar (coordenadas idénticas)

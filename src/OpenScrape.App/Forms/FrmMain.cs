@@ -1921,6 +1921,13 @@ namespace OpenScrape.App
                 if (capturedBitmap == null)
                     return;
 
+                // Persistir el frame de la partida para poder reconstruir tests
+                var savedPath = _captureService.SaveFrame(capturedBitmap, _folderPath);
+                if (savedPath is null)
+                {
+                    _logger.LogWarning("No se pudo guardar el frame de la sesión {Session}", _session);
+                }
+
                 // Ajuste de tamaño de formulario
                 _formImage.Width = capturedBitmap.Width + _formImage.Width / 11;
                 _formImage.Height = capturedBitmap.Height + _formImage.Height / 4;

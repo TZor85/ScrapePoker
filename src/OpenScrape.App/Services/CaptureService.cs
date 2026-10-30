@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Imaging;
 using Microsoft.Extensions.Logging;
 using OpenScrape.App.Helpers;
 using DomainRegion = OpenScrape.Domain.ValueObjects.Region;
@@ -73,6 +74,29 @@ public sealed class CaptureService : ICaptureService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al capturar ventana");
+            return null;
+        }
+    }
+
+    /// <inheritdoc />
+    public string? SaveFrame(Bitmap bitmap, string folderPath)
+    {
+        ArgumentNullException.ThrowIfNull(bitmap);
+        ArgumentException.ThrowIfNullOrWhiteSpace(folderPath);
+
+        try
+        {
+            Directory.CreateDirectory(folderPath);
+
+            var path = BuildFramePath(folderPath);
+            bitmap.Save(path, ImageFormat.Png);
+
+            _logger.LogInformation("Frame guardado en {Path}", path);
+            return path;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al guardar frame en {FolderPath}", folderPath);
             return null;
         }
     }
@@ -197,6 +221,23 @@ public sealed class CaptureService : ICaptureService
             _logger.LogError(ex, "Error al leer valor JSON: [{Section}].{Key}", section, key);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Construye una ruta única para el frame dentro de la carpeta indicada.
+    /// </summary>
+    private static string BuildFramePath(string folderPath)
+    {
+        var stamp = DateTime.Now.Ticks;
+        var path = Path.Combine(folderPath, $"game_{stamp}.png");
+        var suffix = 1;
+
+        while (File.Exists(path))
+        {
+            path = Path.Combine(folderPath, $"game_{stamp}_{suffix++}.png");
+        }
+
+        return path;
     }
 
     /// <summary>

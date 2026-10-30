@@ -244,6 +244,7 @@ internal sealed class FakeCaptureServiceRegionEditor : ICaptureService
     public IntPtr WindowHandle { get; set; }
     public Bitmap? CaptureWindow(IntPtr handle) => null;
     public Bitmap? CaptureWindow() => null;
+    public string? SaveFrame(Bitmap bitmap, string folderPath) => null;
     public DomainRegion GetScaledRegion(DomainRegion region) => region;
     public void SaveReferenceDimensions(int width, int height) { }
     public string? GetJsonValue(string key, string section) => null;

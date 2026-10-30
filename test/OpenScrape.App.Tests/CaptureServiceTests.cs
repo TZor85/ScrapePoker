@@ -208,7 +208,112 @@ public class CaptureServiceTests
 
     #endregion
 
+    #region SaveFrame Tests
+
+    [Test]
+    public void SaveFrame_Guarda_Png_En_La_Carpeta_Indicada()
+    {
+        using var bitmap = new Bitmap(20, 10, PixelFormat.Format32bppArgb);
+        var service = CreateService(bitmap);
+        var folder = CreateTemporaryFolder();
+
+        try
+        {
+            var path = service.SaveFrame(bitmap, folder);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(path, Is.Not.Null);
+                Assert.That(File.Exists(path), Is.True, "El archivo debe existir en disco");
+                Assert.That(Path.GetExtension(path), Is.EqualTo(".png"));
+                Assert.That(Path.GetDirectoryName(path), Is.EqualTo(folder));
+            });
+
+            using var saved = Image.FromFile(path!);
+            Assert.Multiple(() =>
+            {
+                Assert.That(saved.Width, Is.EqualTo(20));
+                Assert.That(saved.Height, Is.EqualTo(10));
+            });
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Test]
+    public void SaveFrame_Crea_La_Carpeta_Si_No_Existe()
+    {
+        using var bitmap = new Bitmap(5, 5, PixelFormat.Format32bppArgb);
+        var service = CreateService(bitmap);
+        var root = CreateTemporaryFolder();
+        var folder = Path.Combine(root, "sub", "sesion");
+
+        try
+        {
+            var path = service.SaveFrame(bitmap, folder);
+
+            Assert.That(File.Exists(path), Is.True);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Test]
+    public void SaveFrame_Genera_Nombres_Unicos_En_Guardados_Consecutivos()
+    {
+        using var bitmap = new Bitmap(5, 5, PixelFormat.Format32bppArgb);
+        var service = CreateService(bitmap);
+        var folder = CreateTemporaryFolder();
+
+        try
+        {
+            var first = service.SaveFrame(bitmap, folder);
+            var second = service.SaveFrame(bitmap, folder);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(first, Is.Not.EqualTo(second));
+                Assert.That(File.Exists(first), Is.True);
+                Assert.That(File.Exists(second), Is.True);
+            });
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Test]
+    public void SaveFrame_Con_Bitmap_Nulo_Lanza_ArgumentNullException()
+    {
+        using var unusedBitmap = new Bitmap(1, 1, PixelFormat.Format32bppArgb);
+        var service = CreateService(unusedBitmap);
+
+        Assert.Throws<ArgumentNullException>(
+            () => service.SaveFrame(null!, CreateTemporaryFolder()));
+    }
+
+    #endregion
+
     #region Helpers
+
+    private static CaptureService CreateService(Bitmap bitmap)
+    {
+        var fakeUseCase = new FakeGetWindowsScreenUseCase(bitmap);
+        var loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.None));
+        return new CaptureService(fakeUseCase, new CoordinateScaler(), loggerFactory.CreateLogger<CaptureService>());
+    }
+
+    private static string CreateTemporaryFolder()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), $"capture-service-tests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(folder);
+        return folder;
+    }
 
     /// <summary>
     /// Fake para IGetWindowsScreenUseCase que retorna un bitmap sintético.

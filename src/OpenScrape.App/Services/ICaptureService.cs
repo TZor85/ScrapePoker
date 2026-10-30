@@ -29,6 +29,13 @@ public interface ICaptureService
     Bitmap? CaptureWindow();
 
     /// <summary>
+    /// Persiste un frame capturado como PNG dentro de <paramref name="folderPath"/>.
+    /// Crea la carpeta si no existe y garantiza un nombre de archivo único.
+    /// </summary>
+    /// <returns>Ruta completa del archivo guardado, o null si no se pudo guardar.</returns>
+    string? SaveFrame(Bitmap bitmap, string folderPath);
+
+    /// <summary>
     /// Escala las coordenadas de una región según las dimensiones de referencia.
     /// </summary>
     DomainRegion GetScaledRegion(DomainRegion region);

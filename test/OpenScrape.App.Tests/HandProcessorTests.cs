@@ -309,6 +309,7 @@ internal sealed class FakeCaptureService : ICaptureService
 
     public Bitmap? CaptureWindow(IntPtr handle) => _captureResult;
     public Bitmap? CaptureWindow() => _captureResult;
+    public string? SaveFrame(Bitmap bitmap, string folderPath) => null;
 
     public DomainRegion GetScaledRegion(DomainRegion region)
     {
