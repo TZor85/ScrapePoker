@@ -371,3 +371,5 @@ TestResults/
 # Secretos locales de desarrollo (ver .env.dev.example)
 .env.dev
 .env.*.local
+*.env
+.tmp-artifacts/

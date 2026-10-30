@@ -1,4 +1,5 @@
 using OpenScrape.Contracts;
+using OpenScrape.Domain.Enums;
 
 namespace OpenScrape.Api.Endpoints;
 
@@ -24,6 +25,11 @@ public static class RequestValidator
 
         if (request.Board.Count != expectedBoard)
             return $"La calle {request.Street} espera {expectedBoard} cartas de board y llegaron {request.Board.Count}.";
+
+        // Postflop los thresholds se eligen por situación preflop. Sin ella el motor
+        // no puede decidir: mejor un 422 explícito que un 500 por clave inválida.
+        if (request.Street != DecisionStreet.Preflop && request.HandSituation == HandSituation.None)
+            return $"La calle {request.Street} requiere una situación preflop válida (HandSituation).";
 
         if (request.PotSize < 0)
             return "El pozo no puede ser negativo.";

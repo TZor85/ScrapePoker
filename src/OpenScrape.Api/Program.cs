@@ -19,6 +19,11 @@ using OpenScrape.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cuando corre como servicio de Windows, el content root pasa a ser la carpeta
+// del ejecutable (no System32), así que appsettings.json se encuentra igual.
+// En consola es un no-op.
+builder.Host.UseWindowsService();
+
 // El perfil de estrategia es la única configuración que el motor necesita en el servidor.
 builder.Services.Configure<StrategyProfile>(builder.Configuration.GetSection("StrategyProfile"));
 
