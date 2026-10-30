@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -56,6 +57,7 @@ namespace OpenScrape.App
                 .ConfigureLogging((context, lb) =>
                 {
                     lb.AddTextBoxLogger();
+                    lb.AddMartenLogger();
                 })
                 .ConfigureServices(Program.ConfigureClientServices);
 
@@ -125,6 +127,20 @@ namespace OpenScrape.App
             finally
             {
                 scope.DisposeAsync().AsTask().GetAwaiter().GetResult();
+
+                // El proveedor escribe por lotes: volcar la cola antes de salir
+                // para no perder los últimos eventos de la sesión.
+                try
+                {
+                    host.Services.GetRequiredService<MartenLoggerProvider>()
+                        .FlushAsync()
+                        .GetAwaiter()
+                        .GetResult();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[MartenLogger] No se pudo vaciar la cola al cerrar: {ex}");
+                }
             }
         }
 
