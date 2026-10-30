@@ -477,35 +477,7 @@ public class TableLayoutService : ITableLayoutService
 
     public void SetIsInPosition(PlayerGameState state)
     {
-        var activePlayers = state.Players.Where(w => w.Active &&
-                                                     w.ValuePosition != 5 &&
-                                                     w.ValuePosition != 6);
-
-        state.IsInPosition = true;
-
-        if (activePlayers.Any(item => (int)state.Position > item.ValuePosition) ||
-            activePlayers.Any(item => item.Position == TablePosition.Button && item.Active))
-        {
-            state.IsInPosition = false;
-        }
-
-        if (state.Position == TablePosition.BigBlind &&
-            state.Players.Any(a => a.Active && a.Position != TablePosition.SmallBlind))
-        {
-            state.IsInPosition = false;
-        }
-
-        if (state.Position == TablePosition.SmallBlind)
-        {
-            state.IsInPosition = false;
-        }
-
-        if (state.Position == TablePosition.BigBlind &&
-            state.Players.Count(w => w.Active) == 1 &&
-            state.Players.FirstOrDefault(w => w.Active)?.Position == TablePosition.SmallBlind)
-        {
-            state.IsInPosition = true;
-        }
+        state.IsInPosition = PositionCalculator.IsHeroInPosition(state.Position, state.Players);
     }
 
     #endregion

@@ -439,4 +439,151 @@ public class PositionCalculatorTests
     }
 
     #endregion
+
+    #region IsHeroInPosition Tests
+
+    [Test]
+    public void IsHeroInPosition_HeroButton_ConTodosActivos_DebeSerTrue()
+    {
+        // Regresión del log: el héroe es el Button (actúa último postflop) y el
+        // resumen mostraba "Posición: OOP".
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.Button, true),
+            (1, TablePosition.SmallBlind, true),
+            (2, TablePosition.BigBlind, true),
+            (3, TablePosition.Early, true),
+            (4, TablePosition.Middle, true),
+            (5, TablePosition.CutOff, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.Button, players);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeroCutOff_ConButtonActivo_DebeSerFalse()
+    {
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.CutOff, true),
+            (1, TablePosition.SmallBlind, true),
+            (2, TablePosition.BigBlind, true),
+            (3, TablePosition.Early, true),
+            (4, TablePosition.Button, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.CutOff, players);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeroCutOff_ConButtonFoldeado_DebeSerTrue()
+    {
+        // El Button foldeó: el CutOff pasa a actuar último.
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.CutOff, true),
+            (1, TablePosition.SmallBlind, true),
+            (2, TablePosition.BigBlind, true),
+            (3, TablePosition.Early, false),
+            (4, TablePosition.Button, false));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.CutOff, players);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeroEarly_ConButtonActivo_DebeSerFalse()
+    {
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.Early, true),
+            (1, TablePosition.Middle, true),
+            (2, TablePosition.CutOff, true),
+            (3, TablePosition.Button, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.Early, players);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeadsUp_HeroBigBlind_DebeSerTrue()
+    {
+        // Postflop actúa primero la SB: la BB está en posición.
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.BigBlind, true),
+            (1, TablePosition.SmallBlind, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.BigBlind, players);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeadsUp_HeroSmallBlind_DebeSerFalse()
+    {
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.SmallBlind, true),
+            (1, TablePosition.BigBlind, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.SmallBlind, players);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeroButton_ConAsientoSinEtiquetaActivo_DebeSerTrue()
+    {
+        // En mesas de 7+ asientos algunos quedan sin etiqueta, pero el Button
+        // siempre actúa último.
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.Button, true),
+            (1, TablePosition.SmallBlind, true),
+            (2, TablePosition.BigBlind, true),
+            (3, TablePosition.Early, true),
+            (4, TablePosition.CutOff, true),
+            (5, TablePosition.None, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.Button, players);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsHeroInPosition_HeroCutOff_ConAsientoSinEtiquetaActivo_DebeSerFalse()
+    {
+        // Un asiento sin etiqueta se ubica entre el CutOff y el Button: actúa después.
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.CutOff, true),
+            (1, TablePosition.SmallBlind, true),
+            (2, TablePosition.BigBlind, true),
+            (3, TablePosition.None, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.CutOff, players);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsHeroInPosition_SinPosicionConocida_DebeSerFalse()
+    {
+        var players = CreatePositionedPlayers(
+            (0, TablePosition.None, true),
+            (1, TablePosition.Button, true));
+
+        var result = PositionCalculator.IsHeroInPosition(TablePosition.None, players);
+
+        Assert.That(result, Is.False);
+    }
+
+    private static List<Player> CreatePositionedPlayers(
+        params (int ValuePosition, TablePosition Position, bool Active)[] seats) =>
+        seats.Select(seat => new Player
+        {
+            Name = $"P{seat.ValuePosition}",
+            ValuePosition = seat.ValuePosition,
+            Position = seat.Position,
+            Active = seat.Active
+        }).ToList();
+
+    #endregion
 }

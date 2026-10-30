@@ -111,4 +111,47 @@ public static class PositionCalculator
             5 => new List<TablePosition> { TablePosition.Middle, TablePosition.CutOff },
             _ => new List<TablePosition> { TablePosition.Early, TablePosition.Middle, TablePosition.CutOff }
         };
+
+    /// <summary>
+    /// True si el héroe actúa último postflop entre los jugadores que siguen en la mano.
+    /// El orden de acción postflop es SB, BB, Early, Middle, CutOff, Button: el Button
+    /// actúa último, no el asiento de índice más alto.
+    /// </summary>
+    public static bool IsHeroInPosition(TablePosition heroPosition, IEnumerable<Player> players)
+    {
+        ArgumentNullException.ThrowIfNull(players);
+
+        if (heroPosition == TablePosition.None)
+            return false;
+
+        var heroOrder = GetPostflopOrder(heroPosition);
+        if (heroOrder < 0)
+            return false;
+
+        var maxOpponentOrder = players
+            .Where(p => p is not null && p.Active && p.ValuePosition != 0)
+            .Select(p => GetPostflopOrder(p.Position))
+            .DefaultIfEmpty(-1)
+            .Max();
+
+        return heroOrder > maxOpponentOrder;
+    }
+
+    /// <summary>
+    /// Orden de acción postflop. Los asientos sin etiqueta (mesas de 7+ jugadores)
+    /// quedan entre el CutOff y el Button, que es donde los ubica el reparto de
+    /// etiquetas de <see cref="AssignAllPositions"/>.
+    /// </summary>
+    private static int GetPostflopOrder(TablePosition position) =>
+        position switch
+        {
+            TablePosition.SmallBlind => 0,
+            TablePosition.BigBlind => 1,
+            TablePosition.Early => 2,
+            TablePosition.Middle => 3,
+            TablePosition.CutOff => 4,
+            TablePosition.None => 5,
+            TablePosition.Button => 6,
+            _ => -1
+        };
 }
