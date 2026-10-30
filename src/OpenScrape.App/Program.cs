@@ -93,6 +93,23 @@ namespace OpenScrape.App
             // Precomputar plantillas de cartas antes de arrancar la UI (evita latencia en la primera mano)
             host.Services.GetRequiredService<CardTemplateIndex>().InitializeAsync().GetAwaiter().GetResult();
 
+            // El motor es remoto: si la API no escucha, decirlo al arrancar con la causa
+            // y el comando que la instala. Sin esto el sintoma aparece recien jugando.
+            var healthProbe = host.Services.GetRequiredService<IEngineHealthProbe>();
+            if (!healthProbe.IsHealthyAsync().GetAwaiter().GetResult())
+            {
+                var apiBaseUrl = Configuration["Api:BaseUrl"] ?? "http://localhost:5015";
+
+                MessageBox.Show(
+                    $"La API del motor no responde en {apiBaseUrl}." + Environment.NewLine +
+                    Environment.NewLine +
+                    "Instalala como servicio de Windows con scripts\\install-api-service.ps1 " +
+                    "desde una consola elevada.",
+                    "Motor no disponible",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+
             // Obtener el formulario principal desde un scope async para resolver dependencias scoped.
             // CreateAsyncScope es necesario porque algunos servicios (p. ej. GameLoopCoordinator) sólo
             // implementan IAsyncDisposable; usar un scope síncrono los rompería al cerrar la app.
@@ -197,6 +214,7 @@ namespace OpenScrape.App
             // impone HttpDecisionEngine.DecisionTimeout.
             services.AddLicense(context.Configuration);
             services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
+            services.AddSingleton<IEngineHealthProbe, EngineHealthProbe>();
             services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
             services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
             services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();
