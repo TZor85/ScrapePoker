@@ -64,6 +64,11 @@ namespace OpenScrape.App
 
             Configuration = host.Services.GetRequiredService<IConfiguration>();
 
+            // La mano en curso se estampa también en el panel de logs: el provider nace
+            // antes que el contenedor, así que el estado se le pasa cuando ya existe.
+            host.Services.GetRequiredService<TextBoxLoggerProvider>()
+                .SetHandContext(host.Services.GetRequiredService<HandContext>());
+
             // Validación fail-fast del StrategyProfile: abortar antes de mostrar FrmMain
             // si faltan claves, hay claves inválidas, o tiers incoherentes.
             try
@@ -208,6 +213,7 @@ namespace OpenScrape.App
             services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
             services.AddSingleton<IEngineHealthProbe, EngineHealthProbe>();
             services.AddSingleton<AppModeState>();
+            services.AddSingleton<HandContext>();
             services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
             services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
             services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();

@@ -24,6 +24,7 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
     private readonly Func<ILogEntryWriter> _writerAccessor;
     private readonly MartenLoggerOptions _options;
     private readonly AppModeState? _modeState;
+    private readonly HandContext? _handContext;
     private readonly Channel<LogEntry>? _channel;
     private readonly SemaphoreSlim _drainLock = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
@@ -34,12 +35,14 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
     public MartenLoggerProvider(
         Func<ILogEntryWriter> writerAccessor,
         IOptions<MartenLoggerOptions> options,
-        AppModeState? modeState = null)
+        AppModeState? modeState = null,
+        HandContext? handContext = null)
     {
         _writerAccessor = writerAccessor ?? throw new ArgumentNullException(nameof(writerAccessor));
         ArgumentNullException.ThrowIfNull(options);
         _options = options.Value;
         _modeState = modeState;
+        _handContext = handContext;
 
         if (!_options.Enabled)
             return;
@@ -57,6 +60,9 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
     }
 
     public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
+
+    /// <summary>Mano en curso, para estamparla en cada evento.</summary>
+    internal long? CurrentHandNumber => _handContext?.Current;
 
     public ILogger CreateLogger(string categoryName) =>
         _channel is null

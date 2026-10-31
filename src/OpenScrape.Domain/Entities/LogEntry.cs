@@ -17,6 +17,12 @@ public class LogEntry
 
     public int ThreadId { get; set; }
 
+    /// <summary>
+    /// Mano en curso al momento del evento. Se estampa desde el estado compartido,
+    /// no desde el scope: así todos los eventos de la mano quedan agrupables.
+    /// </summary>
+    public long? HandNumber { get; set; }
+
     public string Message { get; set; } = string.Empty;
 
     public string? ExceptionType { get; set; }

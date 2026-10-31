@@ -63,6 +63,7 @@ internal sealed class MartenLogger : ILogger
                 ExceptionType = exception?.GetType().FullName,
                 ExceptionMessage = exception?.Message,
                 ExceptionStackTrace = exception?.StackTrace,
+                HandNumber = _provider.CurrentHandNumber,
                 Scopes = scopes
             });
         }

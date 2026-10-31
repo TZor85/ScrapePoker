@@ -18,6 +18,7 @@ public class GameLoggerService : IGameLoggerService
 
     private readonly ILogger<GameLoggerService> _logger;
     private readonly IMetricsCollector _metrics;
+    private readonly HandContext? _handContext;
     private GameSession? _currentSession;
     private HandRecord? _currentHand;
     private IDisposable? _sessionScope;
@@ -30,10 +31,14 @@ public class GameLoggerService : IGameLoggerService
     /// <summary>Big blind de la sesión activa (para calcular ciegas pagadas).</summary>
     public decimal CurrentBigBlind => _currentSession?.BigBlind ?? 0.50m;
 
-    public GameLoggerService(ILogger<GameLoggerService> logger, IMetricsCollector metrics)
+    public GameLoggerService(
+        ILogger<GameLoggerService> logger,
+        IMetricsCollector metrics,
+        HandContext? handContext = null)
     {
         _logger = logger;
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
+        _handContext = handContext;
     }
 
     /// <summary>
@@ -115,6 +120,11 @@ public class GameLoggerService : IGameLoggerService
         {
             ["HandNumber"] = handNumber
         });
+
+        // El scope no sobrevive al retorno de este método: la mano se comparte aparte
+        // para que los eventos posteriores (OCR, mesa, UI) también queden etiquetados.
+        if (_handContext is not null)
+            _handContext.Current = handNumber;
 
         _logger.LogInformation(
             "Nueva mano iniciada: Hand #{HandNumber}",
@@ -223,6 +233,9 @@ public class GameLoggerService : IGameLoggerService
         _currentHand = null;
         _handScope?.Dispose();
         _handScope = null;
+
+        if (_handContext is not null)
+            _handContext.Current = null;
     }
 
     /// <summary>

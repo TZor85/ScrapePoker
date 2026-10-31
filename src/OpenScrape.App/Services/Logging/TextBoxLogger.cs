@@ -61,6 +61,9 @@ public sealed class TextBoxLogger : ILogger
 
         AppendScopes(sb);
 
+        if (_provider.CurrentHandNumber is { } handNumber)
+            sb.Append(" {Mano=").Append(handNumber).Append('}');
+
         sb.Append(' ').Append(message);
 
         if (exception is not null)

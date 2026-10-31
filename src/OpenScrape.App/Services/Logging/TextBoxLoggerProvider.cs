@@ -18,6 +18,7 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     private readonly ConcurrentQueue<string> _pendingLines = new();
     private readonly object _targetGate = new();
     private TextBox? _target;
+    private HandContext? _handContext;
     private bool _disposed;
 
     public TextBoxLoggerProvider(IOptions<TextBoxLoggerOptions> options)
@@ -28,6 +29,18 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     internal TextBoxLoggerOptions Options { get; }
 
     internal IExternalScopeProvider? ScopeProvider { get; private set; }
+
+    /// <summary>
+    /// Mano en curso para etiquetar la línea. Se registra tardíamente, igual que el
+    /// <see cref="TextBox"/> destino, porque el provider nace antes que el contenedor.
+    /// </summary>
+    internal long? CurrentHandNumber => _handContext?.Current;
+
+    public void SetHandContext(HandContext handContext)
+    {
+        ArgumentNullException.ThrowIfNull(handContext);
+        _handContext = handContext;
+    }
 
     public void SetScopeProvider(IExternalScopeProvider scopeProvider)
         => ScopeProvider = scopeProvider;
