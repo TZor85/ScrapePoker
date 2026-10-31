@@ -146,29 +146,6 @@
             lblCycleCount = new Label();
             lblLastUpdate = new Label();
             dgvMetrics = new DataGridView();
-            tpHistorial = new TabPage();
-            splitHistorialLeft = new SplitContainer();
-            dgvSessions = new DataGridView();
-            lblSesionesTitle = new Label();
-            dgvSessionHands = new DataGridView();
-            lblManosTitle = new Label();
-            btnBacktest = new Button();
-            lblSessionStats = new Label();
-            tpBankroll = new TabPage();
-            pnlBankrollInfo = new Panel();
-            lblBankrollCurrent = new Label();
-            lblBankrollPeak = new Label();
-            lblBankrollMaxDD = new Label();
-            pnlRiskInfo = new Panel();
-            lblRiskOfRuin = new Label();
-            lblRecommendation = new Label();
-            pnlPerformance = new Panel();
-            lblWinRate = new Label();
-            lblStdDev = new Label();
-            lblTotalSessions = new Label();
-            lblTotalHands = new Label();
-            lblAvgSessionProfit = new Label();
-            dgvBankrollHistory = new DataGridView();
             lbNamePlayerOne = new Label();
             tbControl.SuspendLayout();
             tbJuego.SuspendLayout();
@@ -213,18 +190,6 @@
             tbLogs.SuspendLayout();
             tabMetrics.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvMetrics).BeginInit();
-            tpHistorial.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).BeginInit();
-            splitHistorialLeft.Panel1.SuspendLayout();
-            splitHistorialLeft.Panel2.SuspendLayout();
-            splitHistorialLeft.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvSessions).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)dgvSessionHands).BeginInit();
-            tpBankroll.SuspendLayout();
-            pnlBankrollInfo.SuspendLayout();
-            pnlRiskInfo.SuspendLayout();
-            pnlPerformance.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvBankrollHistory).BeginInit();
             SuspendLayout();
             // 
             // tbControl
@@ -234,8 +199,6 @@
             tbControl.Controls.Add(tbTables);
             tbControl.Controls.Add(tbLogs);
             tbControl.Controls.Add(tabMetrics);
-            tbControl.Controls.Add(tpHistorial);
-            tbControl.Controls.Add(tpBankroll);
             tbControl.Dock = DockStyle.Fill;
             tbControl.Location = new Point(0, 0);
             tbControl.Name = "tbControl";
@@ -1466,268 +1429,6 @@
             dgvMetrics.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvMetrics.Size = new Size(563, 344);
             dgvMetrics.TabIndex = 1;
-            // 
-            // tpHistorial
-            // 
-            tpHistorial.Controls.Add(splitHistorialLeft);
-            tpHistorial.Controls.Add(btnBacktest);
-            tpHistorial.Controls.Add(lblSessionStats);
-            tpHistorial.Location = new Point(4, 24);
-            tpHistorial.Name = "tpHistorial";
-            tpHistorial.Size = new Size(569, 391);
-            tpHistorial.TabIndex = 4;
-            tpHistorial.Text = "Historial";
-            tpHistorial.UseVisualStyleBackColor = true;
-            // 
-            // splitHistorialLeft
-            // 
-            splitHistorialLeft.Dock = DockStyle.Fill;
-            splitHistorialLeft.Location = new Point(0, 0);
-            splitHistorialLeft.Name = "splitHistorialLeft";
-            splitHistorialLeft.Orientation = Orientation.Horizontal;
-            // 
-            // splitHistorialLeft.Panel1
-            // 
-            splitHistorialLeft.Panel1.Controls.Add(dgvSessions);
-            splitHistorialLeft.Panel1.Controls.Add(lblSesionesTitle);
-            // 
-            // splitHistorialLeft.Panel2
-            // 
-            splitHistorialLeft.Panel2.Controls.Add(dgvSessionHands);
-            splitHistorialLeft.Panel2.Controls.Add(lblManosTitle);
-            splitHistorialLeft.Size = new Size(569, 331);
-            splitHistorialLeft.SplitterDistance = 164;
-            splitHistorialLeft.TabIndex = 0;
-            // 
-            // dgvSessions
-            // 
-            dgvSessions.AllowUserToAddRows = false;
-            dgvSessions.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvSessions.Dock = DockStyle.Fill;
-            dgvSessions.Location = new Point(0, 30);
-            dgvSessions.MultiSelect = false;
-            dgvSessions.Name = "dgvSessions";
-            dgvSessions.ReadOnly = true;
-            dgvSessions.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessions.Size = new Size(569, 134);
-            dgvSessions.TabIndex = 1;
-            // 
-            // lblSesionesTitle
-            // 
-            lblSesionesTitle.Dock = DockStyle.Top;
-            lblSesionesTitle.Location = new Point(0, 0);
-            lblSesionesTitle.Name = "lblSesionesTitle";
-            lblSesionesTitle.Size = new Size(569, 30);
-            lblSesionesTitle.TabIndex = 0;
-            lblSesionesTitle.Text = "Sesiones";
-            lblSesionesTitle.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // dgvSessionHands
-            // 
-            dgvSessionHands.AllowUserToAddRows = false;
-            dgvSessionHands.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvSessionHands.Dock = DockStyle.Fill;
-            dgvSessionHands.Location = new Point(0, 30);
-            dgvSessionHands.MultiSelect = false;
-            dgvSessionHands.Name = "dgvSessionHands";
-            dgvSessionHands.ReadOnly = true;
-            dgvSessionHands.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvSessionHands.Size = new Size(569, 133);
-            dgvSessionHands.TabIndex = 1;
-            // 
-            // lblManosTitle
-            // 
-            lblManosTitle.Dock = DockStyle.Top;
-            lblManosTitle.Location = new Point(0, 0);
-            lblManosTitle.Name = "lblManosTitle";
-            lblManosTitle.Size = new Size(569, 30);
-            lblManosTitle.TabIndex = 0;
-            lblManosTitle.Text = "Manos";
-            lblManosTitle.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // btnBacktest
-            // 
-            btnBacktest.Dock = DockStyle.Bottom;
-            btnBacktest.Location = new Point(0, 331);
-            btnBacktest.Name = "btnBacktest";
-            btnBacktest.Size = new Size(569, 30);
-            btnBacktest.TabIndex = 2;
-            btnBacktest.Text = "Backtest A/B";
-            btnBacktest.UseVisualStyleBackColor = true;
-            // 
-            // lblSessionStats
-            // 
-            lblSessionStats.Dock = DockStyle.Bottom;
-            lblSessionStats.Location = new Point(0, 361);
-            lblSessionStats.Name = "lblSessionStats";
-            lblSessionStats.Size = new Size(569, 30);
-            lblSessionStats.TabIndex = 1;
-            lblSessionStats.TextAlign = ContentAlignment.MiddleLeft;
-            // 
-            // tpBankroll
-            // 
-            tpBankroll.Controls.Add(pnlBankrollInfo);
-            tpBankroll.Controls.Add(pnlRiskInfo);
-            tpBankroll.Controls.Add(pnlPerformance);
-            tpBankroll.Controls.Add(dgvBankrollHistory);
-            tpBankroll.Location = new Point(4, 24);
-            tpBankroll.Name = "tpBankroll";
-            tpBankroll.Padding = new Padding(10);
-            tpBankroll.Size = new Size(569, 391);
-            tpBankroll.TabIndex = 5;
-            tpBankroll.Text = "Bankroll";
-            tpBankroll.UseVisualStyleBackColor = true;
-            // 
-            // pnlBankrollInfo
-            // 
-            pnlBankrollInfo.BorderStyle = BorderStyle.FixedSingle;
-            pnlBankrollInfo.Controls.Add(lblBankrollCurrent);
-            pnlBankrollInfo.Controls.Add(lblBankrollPeak);
-            pnlBankrollInfo.Controls.Add(lblBankrollMaxDD);
-            pnlBankrollInfo.Location = new Point(10, 10);
-            pnlBankrollInfo.Name = "pnlBankrollInfo";
-            pnlBankrollInfo.Padding = new Padding(10);
-            pnlBankrollInfo.Size = new Size(260, 105);
-            pnlBankrollInfo.TabIndex = 0;
-            // 
-            // lblBankrollCurrent
-            // 
-            lblBankrollCurrent.AutoSize = true;
-            lblBankrollCurrent.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            lblBankrollCurrent.ForeColor = Color.FromArgb(0, 200, 0);
-            lblBankrollCurrent.Location = new Point(10, 8);
-            lblBankrollCurrent.Name = "lblBankrollCurrent";
-            lblBankrollCurrent.Size = new Size(146, 25);
-            lblBankrollCurrent.TabIndex = 0;
-            lblBankrollCurrent.Text = "Bankroll: €0.00";
-            // 
-            // lblBankrollPeak
-            // 
-            lblBankrollPeak.AutoSize = true;
-            lblBankrollPeak.Font = new Font("Segoe UI", 10F);
-            lblBankrollPeak.Location = new Point(10, 40);
-            lblBankrollPeak.Name = "lblBankrollPeak";
-            lblBankrollPeak.Size = new Size(79, 19);
-            lblBankrollPeak.TabIndex = 1;
-            lblBankrollPeak.Text = "Peak: €0.00";
-            // 
-            // lblBankrollMaxDD
-            // 
-            lblBankrollMaxDD.AutoSize = true;
-            lblBankrollMaxDD.Font = new Font("Segoe UI", 10F);
-            lblBankrollMaxDD.Location = new Point(10, 65);
-            lblBankrollMaxDD.Name = "lblBankrollMaxDD";
-            lblBankrollMaxDD.Size = new Size(142, 19);
-            lblBankrollMaxDD.TabIndex = 2;
-            lblBankrollMaxDD.Text = "Max Drawdown: 0.0%";
-            // 
-            // pnlRiskInfo
-            // 
-            pnlRiskInfo.BorderStyle = BorderStyle.FixedSingle;
-            pnlRiskInfo.Controls.Add(lblRiskOfRuin);
-            pnlRiskInfo.Controls.Add(lblRecommendation);
-            pnlRiskInfo.Location = new Point(280, 10);
-            pnlRiskInfo.Name = "pnlRiskInfo";
-            pnlRiskInfo.Padding = new Padding(10);
-            pnlRiskInfo.Size = new Size(275, 105);
-            pnlRiskInfo.TabIndex = 1;
-            // 
-            // lblRiskOfRuin
-            // 
-            lblRiskOfRuin.AutoSize = true;
-            lblRiskOfRuin.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lblRiskOfRuin.Location = new Point(10, 8);
-            lblRiskOfRuin.Name = "lblRiskOfRuin";
-            lblRiskOfRuin.Size = new Size(144, 21);
-            lblRiskOfRuin.TabIndex = 0;
-            lblRiskOfRuin.Text = "Risk of Ruin: 0.0%";
-            // 
-            // lblRecommendation
-            // 
-            lblRecommendation.AutoSize = true;
-            lblRecommendation.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            lblRecommendation.Location = new Point(10, 45);
-            lblRecommendation.Name = "lblRecommendation";
-            lblRecommendation.Size = new Size(116, 25);
-            lblRecommendation.TabIndex = 1;
-            lblRecommendation.Text = "MANTENER";
-            // 
-            // pnlPerformance
-            // 
-            pnlPerformance.BorderStyle = BorderStyle.FixedSingle;
-            pnlPerformance.Controls.Add(lblWinRate);
-            pnlPerformance.Controls.Add(lblStdDev);
-            pnlPerformance.Controls.Add(lblTotalSessions);
-            pnlPerformance.Controls.Add(lblTotalHands);
-            pnlPerformance.Controls.Add(lblAvgSessionProfit);
-            pnlPerformance.Location = new Point(10, 125);
-            pnlPerformance.Name = "pnlPerformance";
-            pnlPerformance.Padding = new Padding(10);
-            pnlPerformance.Size = new Size(545, 60);
-            pnlPerformance.TabIndex = 2;
-            // 
-            // lblWinRate
-            // 
-            lblWinRate.AutoSize = true;
-            lblWinRate.Font = new Font("Segoe UI", 9.5F);
-            lblWinRate.Location = new Point(10, 8);
-            lblWinRate.Name = "lblWinRate";
-            lblWinRate.Size = new Size(128, 17);
-            lblWinRate.TabIndex = 0;
-            lblWinRate.Text = "Win Rate: 0.0 BB/100";
-            // 
-            // lblStdDev
-            // 
-            lblStdDev.AutoSize = true;
-            lblStdDev.Font = new Font("Segoe UI", 9.5F);
-            lblStdDev.Location = new Point(180, 8);
-            lblStdDev.Name = "lblStdDev";
-            lblStdDev.Size = new Size(121, 17);
-            lblStdDev.TabIndex = 1;
-            lblStdDev.Text = "Std Dev: 0.0 BB/100";
-            // 
-            // lblTotalSessions
-            // 
-            lblTotalSessions.AutoSize = true;
-            lblTotalSessions.Font = new Font("Segoe UI", 9.5F);
-            lblTotalSessions.Location = new Point(10, 32);
-            lblTotalSessions.Name = "lblTotalSessions";
-            lblTotalSessions.Size = new Size(171, 17);
-            lblTotalSessions.TabIndex = 2;
-            lblTotalSessions.Text = "Sesiones: 0 (0 ganadas, 0%)";
-            // 
-            // lblTotalHands
-            // 
-            lblTotalHands.AutoSize = true;
-            lblTotalHands.Font = new Font("Segoe UI", 9.5F);
-            lblTotalHands.Location = new Point(280, 32);
-            lblTotalHands.Name = "lblTotalHands";
-            lblTotalHands.Size = new Size(62, 17);
-            lblTotalHands.TabIndex = 3;
-            lblTotalHands.Text = "Manos: 0";
-            // 
-            // lblAvgSessionProfit
-            // 
-            lblAvgSessionProfit.AutoSize = true;
-            lblAvgSessionProfit.Font = new Font("Segoe UI", 9.5F);
-            lblAvgSessionProfit.Location = new Point(380, 8);
-            lblAvgSessionProfit.Name = "lblAvgSessionProfit";
-            lblAvgSessionProfit.Size = new Size(133, 17);
-            lblAvgSessionProfit.TabIndex = 4;
-            lblAvgSessionProfit.Text = "Media: €0.00 / sesión";
-            // 
-            // dgvBankrollHistory
-            // 
-            dgvBankrollHistory.AllowUserToAddRows = false;
-            dgvBankrollHistory.AllowUserToDeleteRows = false;
-            dgvBankrollHistory.Location = new Point(10, 195);
-            dgvBankrollHistory.MultiSelect = false;
-            dgvBankrollHistory.Name = "dgvBankrollHistory";
-            dgvBankrollHistory.ReadOnly = true;
-            dgvBankrollHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvBankrollHistory.Size = new Size(545, 185);
-            dgvBankrollHistory.TabIndex = 3;
-            // 
             // lbNamePlayerOne
             // 
             lbNamePlayerOne.AutoSize = true;
@@ -1811,21 +1512,6 @@
             tbLogs.PerformLayout();
             tabMetrics.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)dgvMetrics).EndInit();
-            tpHistorial.ResumeLayout(false);
-            splitHistorialLeft.Panel1.ResumeLayout(false);
-            splitHistorialLeft.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)splitHistorialLeft).EndInit();
-            splitHistorialLeft.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvSessions).EndInit();
-            ((System.ComponentModel.ISupportInitialize)dgvSessionHands).EndInit();
-            tpBankroll.ResumeLayout(false);
-            pnlBankrollInfo.ResumeLayout(false);
-            pnlBankrollInfo.PerformLayout();
-            pnlRiskInfo.ResumeLayout(false);
-            pnlRiskInfo.PerformLayout();
-            pnlPerformance.ResumeLayout(false);
-            pnlPerformance.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvBankrollHistory).EndInit();
             ResumeLayout(false);
         }
 
@@ -1942,29 +1628,6 @@
         private Label lbPositionAction;
         private Panel pnlUserStack;
         private Label lbUserStack;
-        private TabPage tpHistorial;
-        private TabPage tpBankroll;
-        private SplitContainer splitHistorialLeft;
-        private Label lblSesionesTitle;
-        private DataGridView dgvSessions;
-        private Label lblManosTitle;
-        private DataGridView dgvSessionHands;
-        private Label lblSessionStats;
-        private Button btnBacktest;
-        private Panel pnlBankrollInfo;
-        private Panel pnlRiskInfo;
-        private Panel pnlPerformance;
-        private Label lblBankrollCurrent;
-        private Label lblBankrollPeak;
-        private Label lblBankrollMaxDD;
-        private Label lblWinRate;
-        private Label lblStdDev;
-        private Label lblRiskOfRuin;
-        private Label lblRecommendation;
-        private Label lblTotalSessions;
-        private Label lblTotalHands;
-        private Label lblAvgSessionProfit;
-        private DataGridView dgvBankrollHistory;
         private TabPage tabMetrics;
         private DataGridView dgvMetrics;
         private Button btnResetMetrics;

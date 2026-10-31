@@ -24,19 +24,8 @@ public static class Services
             // Specify that we want to use STJ as our serializer
             options.UseSystemTextJsonForSerialization();
 
-            // Índices para GameSession — acelera consultas por fecha, sesión y mesa
-            options.Schema.For<GameSession>().Index(x => x.EndTime);
-            options.Schema.For<GameSession>().Index(x => x.SessionId);
-            options.Schema.For<GameSession>().Index(x => x.TableName);
-
-            // Índices para HandRecord — acelera consultas por sesión y por fecha
-            options.Schema.For<HandRecord>().Index(x => x.GameSessionId);
-            options.Schema.For<HandRecord>().Index(x => x.Timestamp);
-            // Índice compuesto para query "manos de sesión X ordenadas por fecha"
-            options.Schema.For<HandRecord>().Index(x => new { x.GameSessionId, x.Timestamp });
-            // Índice por posición para análisis estadístico
-            options.Schema.For<HandRecord>().Index(x => x.HeroPosition);
-
+            // El historial de sesiones y manos dejó de persistirse: sólo queda el rastro
+            // de decisiones, que es diagnóstico del motor.
             options.Schema.For<DecisionTrace>().Index(x => x.Timestamp);
             options.Schema.For<DecisionTrace>().Index(x => x.VillainId);
             options.Schema.For<DecisionTrace>().Index(x => x.Street);

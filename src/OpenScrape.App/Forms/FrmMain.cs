@@ -13,7 +13,6 @@ using OpenScrape.App.Helpers.FlopHelper.RaiseOverLimper;
 using OpenScrape.App.Models;
 using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Services;
-using OpenScrape.App.Services.Bankroll;
 using OpenScrape.App.Services.Calibration;
 using OpenScrape.App.Services.Exploitability;
 using OpenScrape.App.Services.License;
@@ -141,7 +140,6 @@ namespace OpenScrape.App
         private readonly StrategyProfileService _strategyProfileService;
         private readonly IExploitabilityCalculator _exploitabilityCalculator;
         private readonly IAutoCalibrationService _autoCalibrationService;
-        private readonly IBankrollTrackerService _bankrollTrackerService;
         private readonly IOpponentTracker _opponentTracker;
         private readonly OverlayConfig _overlayConfig;
         private readonly IGameCoordinator _coordinator;
@@ -170,9 +168,7 @@ namespace OpenScrape.App
         private readonly ITableReaderService _tableReaderService;
         // refactor-frmmain Fase 5: UiUpdateService extraído de UpdateUIWithResults y relacionados
         private readonly IUiUpdateService _uiUpdateService;
-        // refactor-frmmain Fase 7: UserControls de TabPageContributions
-        private readonly HistorialTabControl _historialTab;
-        private readonly BankrollTabControl _bankrollTab;
+        // refactor-frmmain Fase 7: UserControl de TabPageContributions
         private readonly MetricsTabControl _metricsTab;
         // refactor-frmmain Fase 8: RegionEditorControl extraído de FrmMain
         private readonly RegionEditorControl _regionEditor;
@@ -187,7 +183,6 @@ namespace OpenScrape.App
                         StrategyProfileService strategyProfileService,
                         IExploitabilityCalculator exploitabilityCalculator,
                         IAutoCalibrationService autoCalibrationService,
-                        IBankrollTrackerService bankrollTrackerService,
                         IOpponentTracker opponentTracker,
                         IOptions<OverlayConfig> overlayConfigOptions,
                         RegionLookupCache regionLookupCache,
@@ -220,8 +215,6 @@ namespace OpenScrape.App
                         ICaptureService captureService,
                         ITableReaderService tableReaderService,
                          IUiUpdateService uiUpdateService,
-                         HistorialTabControl historialTab,
-                         BankrollTabControl bankrollTab,
                          MetricsTabControl metricsTab,
                          RegionEditorControl regionEditor)
         {
@@ -247,7 +240,6 @@ namespace OpenScrape.App
             _strategyProfileService = strategyProfileService ?? throw new ArgumentNullException(nameof(strategyProfileService));
             _exploitabilityCalculator = exploitabilityCalculator ?? throw new ArgumentNullException(nameof(exploitabilityCalculator));
             _autoCalibrationService = autoCalibrationService ?? throw new ArgumentNullException(nameof(autoCalibrationService));
-            _bankrollTrackerService = bankrollTrackerService ?? throw new ArgumentNullException(nameof(bankrollTrackerService));
             _opponentTracker = opponentTracker ?? throw new ArgumentNullException(nameof(opponentTracker));
             _overlayConfig = overlayConfigOptions?.Value ?? new OverlayConfig();
             _regionLookupCache = regionLookupCache ?? throw new ArgumentNullException(nameof(regionLookupCache));
@@ -270,8 +262,6 @@ namespace OpenScrape.App
             _captureService = captureService ?? throw new ArgumentNullException(nameof(captureService));
             _tableReaderService = tableReaderService ?? throw new ArgumentNullException(nameof(tableReaderService));
             _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
-            _historialTab = historialTab ?? throw new ArgumentNullException(nameof(historialTab));
-            _bankrollTab = bankrollTab ?? throw new ArgumentNullException(nameof(bankrollTab));
             _metricsTab = metricsTab ?? throw new ArgumentNullException(nameof(metricsTab));
             _regionEditor = regionEditor ?? throw new ArgumentNullException(nameof(regionEditor));
 
@@ -288,12 +278,6 @@ namespace OpenScrape.App
             FormClosing += FrmMain_FormClosing;
 
             // Fase 7: Inicializar UserControls en lugar de llamadas directas
-            _historialTab.Initialize(dgvSessions, dgvSessionHands, btnBacktest, lblSessionStats);
-            tpHistorial.Enter += async (s, e) => await _historialTab.OnTabEnterAsync();
-            _bankrollTab.Initialize(dgvBankrollHistory, tpBankroll,
-                lblBankrollCurrent, lblBankrollPeak, lblBankrollMaxDD,
-                lblWinRate, lblStdDev, lblTotalSessions, lblTotalHands,
-                lblAvgSessionProfit, lblRiskOfRuin, lblRecommendation);
             _metricsTab.Initialize(dgvMetrics, btnResetMetrics, lblCurrentHand,
                 lblCycleCount, lblLastUpdate, tbControl, tabMetrics, () => _cycleCounter);
 
@@ -419,8 +403,6 @@ namespace OpenScrape.App
                     pbColorDebug, tbTestColor, tbTestTexto, pbTestCarta,
                     pictureBox1, pbRegionColor,
                     _regionsTableMap);
-
-                UpdateBankrollDashboard();
             }
             catch (Exception ex)
             {
@@ -872,83 +854,6 @@ namespace OpenScrape.App
             }
         }
 
-        /// <summary>
-        /// Actualiza el dashboard de bankroll con las métricas actuales
-        /// </summary>
-        private void UpdateBankrollDashboard()
-        {
-            try
-            {
-                var stats = _bankrollTrackerService.GetBankrollStats();
-
-                // Panel Bankroll
-                lblBankrollCurrent.Text = $"Bankroll: €{stats.CurrentBankroll:N2}";
-                lblBankrollPeak.Text = $"Peak: €{stats.PeakBankroll:N2}";
-                lblBankrollMaxDD.Text = $"Max Drawdown: -{stats.MaxDrawdownPercent:F1}%";
-
-                // Color MaxDD según spec
-                lblBankrollMaxDD.ForeColor = stats.MaxDrawdownPercent switch
-                {
-                    < 10 => AppThemeHelper.Success,
-                    < 20 => AppThemeHelper.Warning,
-                    _ => AppThemeHelper.Danger
-                };
-
-                // Panel Rendimiento
-                lblWinRate.Text = $"Win Rate: {stats.WinRateBB100:F1} BB/100";
-                lblWinRate.ForeColor = stats.WinRateBB100 switch
-                {
-                    > 5 => AppThemeHelper.Success,
-                    >= 0 => AppThemeHelper.Warning,
-                    _ => AppThemeHelper.Danger
-                };
-
-                lblStdDev.Text = $"Std Dev: {stats.StdDeviation:F1} BB/100";
-
-                var winPct = stats.TotalSessions > 0
-                    ? (double)stats.WinningSessions / stats.TotalSessions * 100
-                    : 0;
-                lblTotalSessions.Text = $"Sesiones: {stats.TotalSessions} ({stats.WinningSessions} ganadas, {winPct:F0}%)";
-                lblTotalHands.Text = $"Manos: {stats.TotalHands}";
-                lblAvgSessionProfit.Text = $"Media: €{stats.AverageSessionProfit:N2} / sesión";
-
-                // Panel Riesgo
-                var rorPercent = stats.RiskOfRuin * 100;
-                lblRiskOfRuin.Text = $"Risk of Ruin: {rorPercent:F1}%";
-                lblRiskOfRuin.ForeColor = stats.RiskLevel switch
-                {
-                    "Green" => AppThemeHelper.Success,
-                    "Yellow" => AppThemeHelper.Warning,
-                    _ => AppThemeHelper.Danger
-                };
-
-                lblRecommendation.Text = stats.LimitRecommendation;
-                lblRecommendation.ForeColor = stats.LimitRecommendation switch
-                {
-                    var r when r.StartsWith("SUBIR") => AppThemeHelper.Success,
-                    var r when r.StartsWith("BAJAR") => AppThemeHelper.Danger,
-                    _ => AppThemeHelper.Warning
-                };
-
-                // Historial en DataGridView
-                var history = _bankrollTrackerService.GetHistory(50);
-                var displayData = history.Select(h => new
-                {
-                    Date = h.Date.ToString("dd/MM/yyyy"),
-                    h.Hands,
-                    Profit = h.Profit.ToString("+0.00;-0.00"),
-                    BBPer100 = h.BBPer100.ToString("+0.0;-0.0"),
-                    BankrollAfter = h.BankrollAfter.ToString("N2")
-                }).ToList();
-
-                dgvBankrollHistory.DataSource = displayData;
-            }
-            catch
-            {
-                lblBankrollCurrent.Text = "Bankroll: €0.00";
-                lblRecommendation.Text = "Error al cargar stats";
-            }
-        }
 
         /// <summary>
         /// Procesa la información de la mesa
@@ -2394,12 +2299,6 @@ namespace OpenScrape.App
                     case "tbLogs":
                         ApplyLogsTabStyle(tab);
                         break;
-                    case "tpHistorial":
-                        ApplyHistorialTabStyle(tab);
-                        break;
-                    case "tpBankroll":
-                        ApplyBankrollTabStyle(tab);
-                        break;
                 }
             }
 
@@ -2610,96 +2509,12 @@ namespace OpenScrape.App
 
         #endregion
 
-        /// <summary>
-        /// Aplica estilo moderno a la pestaña de historial
-        /// </summary>
-        private void ApplyHistorialTabStyle(TabPage historialTab)
-        {
-            historialTab.SuspendLayout();
-
-            // Labels título
-            foreach (var lbl in new[] { lblSesionesTitle, lblManosTitle })
-            {
-                lbl.BackColor = AppThemeHelper.PrimaryDark;
-                lbl.ForeColor = Color.White;
-                lbl.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-                lbl.Padding = new Padding(6, 0, 0, 0);
-            }
-
-            // Estilizar ambas grillas
-            foreach (var dgv in new[] { dgvSessions, dgvSessionHands })
-            {
-                dgv.EnableHeadersVisualStyles = false;
-                dgv.BackgroundColor = AppThemeHelper.BackgroundMain;
-                dgv.BorderStyle = BorderStyle.None;
-                dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-                dgv.GridColor = AppThemeHelper.BorderLight;
-                dgv.Font = new Font("Segoe UI", 9F);
-                dgv.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
-                dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-                dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
-                dgv.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
-                dgv.ColumnHeadersHeight = 35;
-                dgv.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
-                dgv.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
-                dgv.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
-                dgv.DefaultCellStyle.SelectionForeColor = Color.White;
-                dgv.RowTemplate.Height = 28;
-                dgv.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
-            }
-
-            // Label de stats
-            lblSessionStats.BackColor = AppThemeHelper.BackgroundMain;
-            lblSessionStats.ForeColor = AppThemeHelper.PrimaryDark;
-            lblSessionStats.Font = new Font("Segoe UI", 9F);
-
-            historialTab.ResumeLayout(true);
-        }
-
-        private void ApplyBankrollTabStyle(TabPage bankrollTab)
-        {
-            bankrollTab.SuspendLayout();
-
-            // Paneles con fondo blanco y borde sutil
-            foreach (var panel in new[] { pnlBankrollInfo, pnlRiskInfo, pnlPerformance })
-            {
-                panel.BackColor = AppThemeHelper.BackgroundCard;
-                panel.BorderStyle = BorderStyle.None;
-                panel.Paint += (s, e) =>
-                {
-                    using var pen = new Pen(AppThemeHelper.BorderLight, 1f);
-                    e.Graphics.DrawRectangle(pen, 0, 0, ((Panel)s!).Width - 1, ((Panel)s!).Height - 1);
-                };
-            }
-
-            // DataGridView con mismo estilo que historial
-            dgvBankrollHistory.EnableHeadersVisualStyles = false;
-            dgvBankrollHistory.BackgroundColor = AppThemeHelper.BackgroundMain;
-            dgvBankrollHistory.BorderStyle = BorderStyle.None;
-            dgvBankrollHistory.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-            dgvBankrollHistory.GridColor = AppThemeHelper.BorderLight;
-            dgvBankrollHistory.Font = new Font("Segoe UI", 9F);
-            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.BackColor = AppThemeHelper.PrimaryDark;
-            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
-            dgvBankrollHistory.ColumnHeadersDefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryDark;
-            dgvBankrollHistory.ColumnHeadersHeight = 32;
-            dgvBankrollHistory.DefaultCellStyle.BackColor = AppThemeHelper.BackgroundCard;
-            dgvBankrollHistory.DefaultCellStyle.ForeColor = AppThemeHelper.PrimaryDark;
-            dgvBankrollHistory.DefaultCellStyle.SelectionBackColor = AppThemeHelper.PrimaryLight;
-            dgvBankrollHistory.DefaultCellStyle.SelectionForeColor = Color.White;
-            dgvBankrollHistory.RowTemplate.Height = 26;
-            dgvBankrollHistory.AlternatingRowsDefaultCellStyle.BackColor = AppThemeHelper.BackgroundMain;
-
-            bankrollTab.ResumeLayout(true);
-        }
-
         private void tbJuego_Click(object sender, EventArgs e)
         {
 
         }
 
-        // Pestañas Bankroll/Métricas delegadas a UserControls (Fase 7)
+        // Pestaña Métricas delegada a UserControl (Fase 7)
 
         // ============================================================================
         // INVENTARIO DE ESTADO MUTABLE — refactor-frmmain-coordinators (Fase 1.4)

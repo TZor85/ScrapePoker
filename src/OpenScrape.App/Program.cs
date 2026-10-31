@@ -11,7 +11,6 @@ using OpenScrape.App.Forms.Controls;
 using OpenScrape.App.Forms;
 using OpenScrape.App.Helpers;
 using OpenScrape.App.Services;
-using OpenScrape.App.Services.Bankroll;
 using OpenScrape.App.Services.Calibration;
 using OpenScrape.App.Services.Exploitability;
 using OpenScrape.App.Services.Http;
@@ -202,13 +201,6 @@ namespace OpenScrape.App
             services.AddSingleton<IExploitabilityCalculator>(sp => sp.GetRequiredService<ExploitabilityCalculator>());
             services.AddSingleton<AutoCalibrationService>();
             services.AddSingleton<IAutoCalibrationService>(sp => sp.GetRequiredService<AutoCalibrationService>());
-            services.AddSingleton(sp =>
-            {
-                var store = sp.GetRequiredService<IDocumentStore>();
-                var profile = sp.GetRequiredService<IOptions<StrategyProfile>>().Value;
-                return new BankrollTrackerService(store, profile);
-            });
-            services.AddSingleton<IBankrollTrackerService>(sp => sp.GetRequiredService<BankrollTrackerService>());
 
             // Cliente del motor: siempre por HTTP. El timeout por decisión lo
             // impone HttpDecisionEngine.DecisionTimeout.
@@ -286,8 +278,6 @@ namespace OpenScrape.App
             services.AddSingleton<IGetCardsRiverUseCase, GetCardsRiverUseCase>();
 
             // Fase 7: UserControls de TabPageContributions
-            services.AddTransient<HistorialTabControl>();
-            services.AddTransient<BankrollTabControl>();
             services.AddTransient<MetricsTabControl>();
 
             // Fase 8: RegionEditorControl extraído de FrmMain
