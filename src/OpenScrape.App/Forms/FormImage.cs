@@ -31,7 +31,7 @@ namespace OpenScrape.App
             pbImage.Width = img.Width;
             pbImage.Height = img.Height;
 
-            pbImage.Image = img;
+            ImageSwapper.Set(pbImage, img);
 
         }
 
@@ -49,7 +49,7 @@ namespace OpenScrape.App
                 }
                 else
                 {
-                    folderPath = lbPath.Text.Split("game_")[0];
+                    folderPath = Path.GetDirectoryName(lbPath.Text) ?? folderPath;
                 }
 
                 dlg.InitialDirectory = folderPath;
@@ -60,9 +60,9 @@ namespace OpenScrape.App
                 {
                     lbPath.Text = dlg.FileName;
 
-                    var bitmap = new Bitmap(dlg.FileName);
+                    using var bitmap = new Bitmap(dlg.FileName);
 
-                    _listaImagenes = new List<string>(Directory.GetFiles(lbPath.Text.Split("game")[0], "*.png"));
+                    _listaImagenes = new List<string>(ImageFolderList.Resolve(dlg.FileName));
 
                     // El índice es estado del formulario: sin reubicarlo, se mostraba
                     // la imagen que había quedado seleccionada en la carga anterior.
@@ -87,7 +87,7 @@ namespace OpenScrape.App
             if (_listaImagenes.Count > 0 && _index >= 0 && _index < _listaImagenes.Count)
             {
                 // Cargar y mostrar la imagen actual
-                pbImage.Image = Image.FromFile(_listaImagenes[_index]);
+                ImageSwapper.Set(pbImage, Image.FromFile(_listaImagenes[_index]));
                 lbPath.Text = _listaImagenes[_index];
                 lbTotal.Location = new Point(lbPath.Size.Width + 410, lbPath.Location.Y);
                 lbTotal.Text = $"{_index}/{_listaImagenes.Count - 1}";
@@ -96,12 +96,18 @@ namespace OpenScrape.App
 
         private void btnMinus_Click(object sender, EventArgs e)
         {
+            if (_listaImagenes.Count == 0)
+                return;
+
             _index = (_index - 1 + _listaImagenes.Count) % _listaImagenes.Count;
             MostrarImagenActual();
         }
 
         private void btnPlus_Click(object sender, EventArgs e)
         {
+            if (_listaImagenes.Count == 0)
+                return;
+
             _index = (_index + 1) % _listaImagenes.Count;
             MostrarImagenActual();
         }
