@@ -172,6 +172,9 @@ namespace OpenScrape.App
         private readonly MetricsTabControl _metricsTab;
         // refactor-frmmain Fase 8: RegionEditorControl extraído de FrmMain
         private readonly RegionEditorControl _regionEditor;
+
+        /// <summary>Estado compartido con el proveedor de logs: en modo test no se persiste nada.</summary>
+        private readonly AppModeState _appModeState;
         #endregion
 
         /// <summary>
@@ -216,7 +219,8 @@ namespace OpenScrape.App
                         ITableReaderService tableReaderService,
                          IUiUpdateService uiUpdateService,
                          MetricsTabControl metricsTab,
-                         RegionEditorControl regionEditor)
+                         RegionEditorControl regionEditor,
+                         AppModeState appModeState)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -264,6 +268,8 @@ namespace OpenScrape.App
             _uiUpdateService = uiUpdateService ?? throw new ArgumentNullException(nameof(uiUpdateService));
             _metricsTab = metricsTab ?? throw new ArgumentNullException(nameof(metricsTab));
             _regionEditor = regionEditor ?? throw new ArgumentNullException(nameof(regionEditor));
+            _appModeState = appModeState ?? throw new ArgumentNullException(nameof(appModeState));
+            _appModeState.IsTestMode = cbTest.Checked;
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
             SubscribeDetectionEvents();
@@ -2130,6 +2136,9 @@ namespace OpenScrape.App
         {
             gbTest.Enabled = cbTest.Checked;
             gbTest.Visible = cbTest.Checked;
+
+            // En modo test no se persisten logs: son capturas grabadas y la base tiene tope.
+            _appModeState.IsTestMode = cbTest.Checked;
 
             if (!gbTest.Enabled)
             {

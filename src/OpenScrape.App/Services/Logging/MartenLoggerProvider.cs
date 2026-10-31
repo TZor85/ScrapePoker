@@ -23,6 +23,7 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
 
     private readonly Func<ILogEntryWriter> _writerAccessor;
     private readonly MartenLoggerOptions _options;
+    private readonly AppModeState? _modeState;
     private readonly Channel<LogEntry>? _channel;
     private readonly SemaphoreSlim _drainLock = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
@@ -32,11 +33,13 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
 
     public MartenLoggerProvider(
         Func<ILogEntryWriter> writerAccessor,
-        IOptions<MartenLoggerOptions> options)
+        IOptions<MartenLoggerOptions> options,
+        AppModeState? modeState = null)
     {
         _writerAccessor = writerAccessor ?? throw new ArgumentNullException(nameof(writerAccessor));
         ArgumentNullException.ThrowIfNull(options);
         _options = options.Value;
+        _modeState = modeState;
 
         if (!_options.Enabled)
             return;
@@ -119,6 +122,11 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
     internal bool IsEnabled(string category, LogLevel level)
     {
         if (level == LogLevel.None || Volatile.Read(ref _disposed) != 0)
+            return false;
+
+        // En modo test se juega con capturas grabadas: nada de esa sesión se
+        // guarda, para no gastar el límite de la base con corridas de prueba.
+        if (_modeState?.IsTestMode == true)
             return false;
 
         // Avisos y errores viajan siempre: son pocos y son los que explican fallos.

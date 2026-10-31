@@ -207,6 +207,7 @@ namespace OpenScrape.App
             services.AddLicense(context.Configuration);
             services.AddScoped<IDecisionEngine, HttpDecisionEngine>();
             services.AddSingleton<IEngineHealthProbe, EngineHealthProbe>();
+            services.AddSingleton<AppModeState>();
             services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
             services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
             services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();

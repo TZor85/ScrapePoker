@@ -32,10 +32,13 @@ public static class MartenLoggerExtensions
         // El writer se resuelve recién dentro del worker: resolver el
         // IDocumentStore en el constructor del proveedor provocaría un ciclo
         // DocumentStore -> ILoggerFactory -> ILoggerProvider -> DocumentStore.
+        // El estado del modo test lo registra el contenedor del cliente; en escenarios
+        // sin UI (tests, herramientas) no está y se comporta como modo normal.
         builder.Services.TryAddSingleton<MartenLoggerProvider>(sp =>
             new MartenLoggerProvider(
                 () => sp.GetRequiredService<ILogEntryWriter>(),
-                sp.GetRequiredService<IOptions<MartenLoggerOptions>>()));
+                sp.GetRequiredService<IOptions<MartenLoggerOptions>>(),
+                sp.GetService<AppModeState>()));
 
         builder.Services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<MartenLoggerProvider>());
 
