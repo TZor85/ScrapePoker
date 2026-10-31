@@ -175,6 +175,14 @@ namespace OpenScrape.App
 
         /// <summary>Estado compartido con el proveedor de logs: en modo test no se persiste nada.</summary>
         private readonly AppModeState _appModeState;
+
+        private readonly ILogQueryService _logQueryService;
+
+        private ComboBox? _logDayCombo;
+
+        private ComboBox? _logHandCombo;
+
+        private Button? _btnLogLive;
         #endregion
 
         /// <summary>
@@ -220,7 +228,8 @@ namespace OpenScrape.App
                          IUiUpdateService uiUpdateService,
                          MetricsTabControl metricsTab,
                          RegionEditorControl regionEditor,
-                         AppModeState appModeState)
+                         AppModeState appModeState,
+                         ILogQueryService logQueryService)
         {
             InitializeComponent();
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
@@ -233,6 +242,7 @@ namespace OpenScrape.App
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _textBoxLoggerProvider = textBoxLoggerProvider ?? throw new ArgumentNullException(nameof(textBoxLoggerProvider));
             _textBoxLoggerProvider.SetTextBoxTarget(tbResume);
+            BuildLogHistoryBar();
 
             // NUEVO: Aplicar estilos visuales ANTES de la inicialización
             //InitializeVisualStyles();
@@ -269,6 +279,7 @@ namespace OpenScrape.App
             _metricsTab = metricsTab ?? throw new ArgumentNullException(nameof(metricsTab));
             _regionEditor = regionEditor ?? throw new ArgumentNullException(nameof(regionEditor));
             _appModeState = appModeState ?? throw new ArgumentNullException(nameof(appModeState));
+            _logQueryService = logQueryService ?? throw new ArgumentNullException(nameof(logQueryService));
             _appModeState.IsTestMode = cbTest.Checked;
 
             // Suscribirse a eventos del DetectionLoopService (Fase 1)
@@ -2578,5 +2589,160 @@ namespace OpenScrape.App
         //   Resto (*UseCase, *Service de infraestructura) → permanecen o se reasignan
         //     a coordinator según uso real, evaluado en Fase 6.
         // ============================================================================
+
+        /// <summary>
+        /// Barra de consulta sobre el panel de logs: fecha, mano y vuelta al vivo.
+        /// Se arma en codigo para no tocar el Designer (el TextBox ya esta en Fill).
+        /// </summary>
+        private void BuildLogHistoryBar()
+        {
+            var bar = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 32,
+                Padding = new Padding(4)
+            };
+
+            var dayLabel = new Label { Text = "Fecha:", AutoSize = true, Location = new Point(6, 9) };
+
+            _logDayCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 120,
+                Location = new Point(58, 6)
+            };
+            _logDayCombo.SelectedIndexChanged += async (_, _) => await RefreshLogHandsAsync();
+
+            var handLabel = new Label { Text = "Mano:", AutoSize = true, Location = new Point(192, 9) };
+
+            _logHandCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 110,
+                Location = new Point(240, 6)
+            };
+            _logHandCombo.SelectedIndexChanged += async (_, _) => await ShowSelectedHandAsync();
+
+            _btnLogLive = new Button
+            {
+                Text = "Volver al vivo",
+                Location = new Point(362, 5),
+                Size = new Size(110, 23)
+            };
+            _btnLogLive.Click += (_, _) => ReturnToLiveLog();
+
+            bar.Controls.Add(dayLabel);
+            bar.Controls.Add(_logDayCombo);
+            bar.Controls.Add(handLabel);
+            bar.Controls.Add(_logHandCombo);
+            bar.Controls.Add(_btnLogLive);
+
+            tbLogs.Controls.Add(bar);
+            bar.BringToFront();
+
+            tbLogs.Enter += async (_, _) => await RefreshLogDaysAsync();
+        }
+
+        private async Task RefreshLogDaysAsync()
+        {
+            if (_logDayCombo is null)
+                return;
+
+            try
+            {
+                var days = await _logQueryService.GetDaysAsync();
+
+                _logDayCombo.BeginUpdate();
+                _logDayCombo.Items.Clear();
+                foreach (var day in days)
+                    _logDayCombo.Items.Add(new LogDayItem(day));
+                _logDayCombo.EndUpdate();
+
+                if (_logDayCombo.Items.Count > 0 && _logDayCombo.SelectedIndex < 0)
+                    _logDayCombo.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudieron cargar los dias de logs");
+            }
+        }
+
+        private async Task RefreshLogHandsAsync()
+        {
+            if (_logHandCombo is null)
+                return;
+
+            try
+            {
+                _logHandCombo.BeginUpdate();
+                _logHandCombo.Items.Clear();
+
+                // "Todas" primero: es la vista por defecto del dia completo, y el combo
+                // de manos queda disponible para acotar a una mano concreta.
+                _logHandCombo.Items.Add(LogHandItem.All);
+
+                if (_logDayCombo?.SelectedItem is LogDayItem day)
+                {
+                    var hands = await _logQueryService.GetHandsAsync(day.Day.Id);
+                    foreach (var hand in hands)
+                        _logHandCombo.Items.Add(new LogHandItem(hand));
+                }
+
+                _logHandCombo.EndUpdate();
+
+                if (_logHandCombo.Items.Count > 0 && _logHandCombo.SelectedIndex < 0)
+                    _logHandCombo.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudieron cargar las manos del dia de logs");
+            }
+        }
+
+        private async Task ShowSelectedHandAsync()
+        {
+            if (_logDayCombo?.SelectedItem is not LogDayItem day)
+                return;
+
+            if (_logHandCombo?.SelectedItem is not LogHandItem hand)
+                return;
+
+            try
+            {
+                var entries = hand.HandNumber is { } handNumber
+                    ? await _logQueryService.GetEntriesAsync(day.Day.Id, handNumber)
+                    : await _logQueryService.GetEntriesAsync(day.Day.Id);
+
+                // Mientras se navega el historico el panel deja de seguir el vivo: los
+                // eventos siguen yendo a la base y al archivo, pero no pisan esta vista.
+                _textBoxLoggerProvider.PauseLive();
+                tbResume.Text = string.Join(Environment.NewLine, entries.Select(LogLineFormatter.Format));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudieron cargar los logs de la mano {HandNumber}", hand.HandNumber);
+            }
+        }
+
+        private void ReturnToLiveLog()
+        {
+            _textBoxLoggerProvider.ResumeLive();
+            tbResume.Clear();
+
+            if (_logHandCombo is not null)
+                _logHandCombo.SelectedIndex = -1;
+        }
+
+        private sealed record LogDayItem(LogDaySummary Day)
+        {
+            public override string ToString() => Day.Date.ToString("yyyy-MM-dd");
+        }
+
+        private sealed record LogHandItem(long? HandNumber)
+        {
+            public static readonly LogHandItem All = new((long?)null);
+
+            public override string ToString() => HandNumber?.ToString() ?? "Todas";
+        }
     }
 }

@@ -214,6 +214,8 @@ namespace OpenScrape.App
             services.AddSingleton<IEngineHealthProbe, EngineHealthProbe>();
             services.AddSingleton<AppModeState>();
             services.AddSingleton<HandContext>();
+            services.AddSingleton<ILogQueryService>(sp =>
+                new LogQueryService(sp.GetService<ILogDayStore>()));
             services.AddSingleton<IGetHashImageUseCase, GetHashImageUseCase>();
             services.AddSingleton<IGetCropImageUseCase, GetCropImageUseCase>();
             services.AddSingleton<IOutsCalculatorUseCase, OutsCalculatorUseCase>();

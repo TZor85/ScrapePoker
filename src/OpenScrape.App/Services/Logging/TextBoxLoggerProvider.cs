@@ -20,6 +20,7 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     private TextBox? _target;
     private HandContext? _handContext;
     private bool _disposed;
+    private volatile bool _paused;
 
     public TextBoxLoggerProvider(IOptions<TextBoxLoggerOptions> options)
     {
@@ -79,9 +80,19 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     }
 
     /// <summary>Emite una línea pre-formateada al TextBox (o la bufferiza / descarta).</summary>
+    /// <summary>
+    /// Deja de escribir en el panel para que el usuario pueda leer un histórico.
+    /// Las líneas que llegan mientras tanto se descartan (no se bufferizan): el
+    /// evento igual queda persistido en la base y en el archivo.
+    /// </summary>
+    public void PauseLive() => _paused = true;
+
+    /// <summary>Vuelve a escribir el stream en vivo en el panel.</summary>
+    public void ResumeLive() => _paused = false;
+
     internal void Emit(string line)
     {
-        if (_disposed)
+        if (_disposed || _paused)
             return;
 
         var target = _target;
