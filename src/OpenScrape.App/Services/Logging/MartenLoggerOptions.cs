@@ -23,4 +23,31 @@ public sealed class MartenLoggerOptions
 
     /// <summary>Recorte de mensajes largos para no inflar el documento.</summary>
     public int MaxMessageLength { get; set; } = 8_000;
+
+    /// <summary>
+    /// Categorías que registran lo que pasa en la mano: sus eventos
+    /// <c>Debug</c>/<c>Information</c> se persisten. Avisos, errores y críticos se
+    /// guardan siempre, vengan de la categoría que vengan.
+    /// </summary>
+    public string[] HandCategories { get; set; } =
+    [
+        "OpenScrape.App.Services.GameLoggerService",
+        "OpenScrape.App.Services.HandProcessor",
+        "OpenScrape.App.Services.GameLoopStateMachine",
+        "OpenScrape.App.Services.GameLoopCoordinator",
+        "OpenScrape.App.Services.UiSyncService",
+        "OpenScrape.App.Services.TableLayoutService"
+    ];
+
+    /// <summary>
+    /// Tope de eventos por día: al pasarse se descartan los más viejos. Con ~400
+    /// bytes por evento, 20.000 equivalen a unos 8 MB diarios.
+    /// </summary>
+    public int MaxEntriesPerDay { get; set; } = 20_000;
+
+    /// <summary>
+    /// Presupuesto total de la base de logs en bytes. Si se supera, se borran días
+    /// completos empezando por el más viejo. La base del usuario tiene 1 GB.
+    /// </summary>
+    public long MaxTotalBytes { get; set; } = 800L * 1024 * 1024;
 }

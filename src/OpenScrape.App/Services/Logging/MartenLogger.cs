@@ -23,7 +23,7 @@ internal sealed class MartenLogger : ILogger
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
 
-    public bool IsEnabled(LogLevel logLevel) => _provider.IsEnabled(logLevel);
+    public bool IsEnabled(LogLevel logLevel) => _provider.IsEnabled(_category, logLevel);
 
     public void Log<TState>(
         LogLevel logLevel,

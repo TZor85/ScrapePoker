@@ -112,8 +112,46 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
         _drainLock.Dispose();
     }
 
-    internal bool IsEnabled(LogLevel level) =>
-        level != LogLevel.None && Volatile.Read(ref _disposed) == 0;
+    /// <summary>
+    /// Sólo se persiste lo que pasa en la mano y los problemas: un <c>Information</c>
+    /// de OCR o de DI infla la base sin aportar al diagnóstico de una mano.
+    /// </summary>
+    internal bool IsEnabled(string category, LogLevel level)
+    {
+        if (level == LogLevel.None || Volatile.Read(ref _disposed) != 0)
+            return false;
+
+        // Avisos y errores viajan siempre: son pocos y son los que explican fallos.
+        if (level >= LogLevel.Warning)
+            return true;
+
+        // Trace queda afuera aunque la categoría sea de juego: es ruido fino.
+        if (level < LogLevel.Debug)
+            return false;
+
+        return IsHandCategory(category);
+    }
+
+    private bool IsHandCategory(string category)
+    {
+        var handCategories = _options.HandCategories;
+        if (handCategories is null)
+            return false;
+
+        foreach (var handCategory in handCategories)
+        {
+            if (string.IsNullOrWhiteSpace(handCategory))
+                continue;
+
+            if (category.Equals(handCategory, StringComparison.OrdinalIgnoreCase) ||
+                category.StartsWith(handCategory + ".", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     internal void Enqueue(LogEntry entry)
     {
@@ -247,6 +285,7 @@ public sealed class MartenLoggerProvider : ILoggerProvider, ISupportExternalScop
         {
             var writer = _writerAccessor();
             await writer.DeleteOlderThanAsync(cutoffUtc, cancellationToken).ConfigureAwait(false);
+            await writer.EnforceBudgetAsync(cancellationToken).ConfigureAwait(false);
             return RetentionInterval;
         }
         catch (OperationCanceledException)

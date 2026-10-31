@@ -17,7 +17,7 @@ public class MartenLoggerProviderTests
     {
         var writer = new RecordingLogEntryWriter();
         await using var provider = CreateProvider(writer);
-        var logger = provider.CreateLogger("OpenScrape.App.Tests");
+        var logger = provider.CreateLogger("OpenScrape.App.Services.GameLoggerService");
 
         logger.LogInformation("primero");
         logger.LogWarning("segundo");
@@ -34,15 +34,15 @@ public class MartenLoggerProviderTests
     [Test]
     public async Task Log_AlmacenaTraceSinNivelMinimo()
     {
-        // El usuario pidió guardar todo: el proveedor no filtra por nivel.
+        // El filtro por categoría vive en MartenLogFilterTests: acá sólo se fija
+        // que el nivel Trace no llega desde una categoría de juego.
         var writer = new RecordingLogEntryWriter();
         await using var provider = CreateProvider(writer);
 
-        provider.CreateLogger("OpenScrape.App.Tests").LogTrace("detalle fino");
+        provider.CreateLogger("OpenScrape.App.Services.HandProcessor").LogTrace("detalle fino");
         await provider.FlushAsync();
 
-        Assert.That(writer.Entries, Has.Count.EqualTo(1));
-        Assert.That(writer.Entries[0].Level, Is.EqualTo("Trace"));
+        Assert.That(writer.Entries, Is.Empty);
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class MartenLoggerProviderTests
 
         var scopeProvider = new LoggerExternalScopeProvider();
         provider.SetScopeProvider(scopeProvider);
-        var logger = provider.CreateLogger("OpenScrape.App.Tests");
+        var logger = provider.CreateLogger("OpenScrape.App.Services.GameLoggerService");
 
         // La excepción se lanza para que tenga stack trace real.
         Exception captured;
@@ -81,7 +81,7 @@ public class MartenLoggerProviderTests
         Assert.That(entry.Scopes["SessionId"], Is.EqualTo("ses-1"));
         Assert.That(entry.Scopes["HandNumber"], Is.EqualTo("7"));
         Assert.That(entry.Scopes["Street"], Is.EqualTo("Flop"));
-        Assert.That(entry.Category, Is.EqualTo("OpenScrape.App.Tests"));
+        Assert.That(entry.Category, Is.EqualTo("OpenScrape.App.Services.GameLoggerService"));
         Assert.That(entry.ExceptionType, Is.EqualTo("System.InvalidOperationException"));
         Assert.That(entry.ExceptionMessage, Is.EqualTo("boom"));
         Assert.That(entry.ExceptionStackTrace, Is.Not.Null.And.Not.Empty);
@@ -93,7 +93,7 @@ public class MartenLoggerProviderTests
         var writer = new RecordingLogEntryWriter { ThrowOnWrite = true };
         await using var provider = CreateProvider(writer);
 
-        provider.CreateLogger("OpenScrape.App.Tests").LogInformation("se pierde");
+        provider.CreateLogger("OpenScrape.App.Services.GameLoggerService").LogInformation("se pierde");
         await provider.FlushAsync();
 
         Assert.That(writer.Entries, Is.Empty);
@@ -105,7 +105,7 @@ public class MartenLoggerProviderTests
         var writer = new RecordingLogEntryWriter { ThrowOnWrite = true };
         var provider = CreateProvider(writer);
 
-        provider.CreateLogger("OpenScrape.App.Tests").LogInformation("se pierde");
+        provider.CreateLogger("OpenScrape.App.Services.GameLoggerService").LogInformation("se pierde");
 
         Assert.DoesNotThrowAsync(async () => await provider.DisposeAsync());
     }
@@ -133,7 +133,7 @@ public class MartenLoggerProviderTests
         var writer = new RecordingLogEntryWriter();
         await using var provider = CreateProvider(writer, options => options.Enabled = false);
 
-        provider.CreateLogger("OpenScrape.App.Tests").LogInformation("no viaja");
+        provider.CreateLogger("OpenScrape.App.Services.GameLoggerService").LogInformation("no viaja");
         await provider.FlushAsync();
 
         Assert.That(writer.Entries, Is.Empty);
@@ -145,7 +145,7 @@ public class MartenLoggerProviderTests
         var writer = new RecordingLogEntryWriter();
         await using var provider = CreateProvider(writer, options => options.MaxMessageLength = 10);
 
-        provider.CreateLogger("OpenScrape.App.Tests").LogInformation(new string('x', 50));
+        provider.CreateLogger("OpenScrape.App.Services.GameLoggerService").LogInformation(new string('x', 50));
         await provider.FlushAsync();
 
         Assert.That(writer.Entries.Single().Message, Is.EqualTo("xxxxxxxxxx…"));
@@ -185,9 +185,17 @@ internal sealed class RecordingLogEntryWriter : ILogEntryWriter
         return Task.CompletedTask;
     }
 
-    public Task DeleteOlderThanAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
+    public Task<int> DeleteOlderThanAsync(DateTime cutoffUtc, CancellationToken cancellationToken = default)
     {
         Cutoffs.Add(cutoffUtc);
-        return Task.CompletedTask;
+        return Task.FromResult(0);
     }
+
+    public Task<int> EnforceBudgetAsync(CancellationToken cancellationToken = default)
+    {
+        BudgetChecks++;
+        return Task.FromResult(0);
+    }
+
+    public int BudgetChecks { get; private set; }
 }

@@ -1,14 +1,12 @@
 namespace OpenScrape.Domain.Entities;
 
 /// <summary>
-/// Evento de log persistido en Marten. Guarda los campos estructurados del
-/// evento (categoría, nivel, excepción y scopes) en lugar del texto ya
-/// formateado, para poder filtrar y correlacionar sesiones y manos por SQL.
+/// Evento de log embebido en un <see cref="LogDay"/>. Guarda los campos
+/// estructurados del evento (categoría, nivel, excepción y scopes) en lugar del
+/// texto ya formateado, para poder filtrar y correlacionar sesiones y manos por SQL.
 /// </summary>
 public class LogEntry
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString();
-
     public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
 
     public string Level { get; set; } = string.Empty;

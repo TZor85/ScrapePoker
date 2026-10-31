@@ -20,7 +20,14 @@ public static class MartenLoggerExtensions
 
         builder.AddConfiguration();
 
-        builder.Services.TryAddSingleton<ILogEntryWriter, MartenLogEntryWriter>();
+        builder.Services.TryAddSingleton<ILogDayStore, MartenLogDayStore>();
+
+        // El writer necesita las opciones (topes por día y presupuesto global), así
+        // que se registra con factory; ActivatorUtilities no siempre honra el
+        // parámetro opcional del constructor.
+        builder.Services.TryAddSingleton<ILogEntryWriter>(sp => new MartenLogDayWriter(
+            sp.GetRequiredService<ILogDayStore>(),
+            sp.GetRequiredService<IOptions<MartenLoggerOptions>>().Value));
 
         // El writer se resuelve recién dentro del worker: resolver el
         // IDocumentStore en el constructor del proveedor provocaría un ciclo
