@@ -50,4 +50,16 @@ public sealed class MartenLoggerOptions
     /// completos empezando por el más viejo. La base del usuario tiene 1 GB.
     /// </summary>
     public long MaxTotalBytes { get; set; } = 800L * 1024 * 1024;
+
+    /// <summary>
+    /// Si es <c>true</c>, cada día se archiva en disco antes de borrarse de la base.
+    /// Con <c>false</c> el día se borra sin copia, como antes.
+    /// </summary>
+    public bool ArchiveEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Carpeta de archivo de los días. Es una ruta fija a propósito: si dependiera
+    /// del directorio del ejecutable, mover la app dejaría los archivos huérfanos.
+    /// </summary>
+    public string ArchiveFolder { get; set; } = @"C:\Services\OpenScrapeLogs";
 }

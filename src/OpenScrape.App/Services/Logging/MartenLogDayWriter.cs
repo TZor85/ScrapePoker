@@ -18,13 +18,18 @@ public sealed class MartenLogDayWriter : ILogEntryWriter
 
     private readonly ILogDayStore _store;
     private readonly MartenLoggerOptions _options;
+    private readonly ILogArchiveWriter? _archive;
 
     private LogDay? _current;
 
-    public MartenLogDayWriter(ILogDayStore store, MartenLoggerOptions? options = null)
+    public MartenLogDayWriter(
+        ILogDayStore store,
+        MartenLoggerOptions? options = null,
+        ILogArchiveWriter? archive = null)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _options = options ?? new MartenLoggerOptions();
+        _archive = archive;
     }
 
     public async Task WriteAsync(
@@ -54,7 +59,16 @@ public sealed class MartenLogDayWriter : ILogEntryWriter
         CancellationToken cancellationToken = default)
     {
         var cutoffLocalDate = cutoffUtc.ToLocalTime().Date;
-        var deleted = await _store.DeleteBeforeAsync(cutoffLocalDate, cancellationToken).ConfigureAwait(false);
+
+        // Se archiva día por día antes de borrar: si un archivo falla, ese día y los
+        // más nuevos se quedan en la base y se reintentan en el próximo ciclo.
+        var expired = await _store.LoadSummariesAsync(cancellationToken).ConfigureAwait(false);
+        var days = expired
+            .Where(day => day.Date < cutoffLocalDate)
+            .OrderBy(day => day.Date)
+            .ToList();
+
+        var deleted = await ArchiveAndDeleteAsync(days, cancellationToken).ConfigureAwait(false);
 
         // La retención nunca alcanza al día en curso, pero si el reloj salta o se
         // configuran 0 días, la caché deja de ser válida.
@@ -93,12 +107,62 @@ public sealed class MartenLogDayWriter : ILogEntryWriter
         if (cutoff is null)
             return 0;
 
-        var deleted = await _store.DeleteBeforeAsync(cutoff.Value, cancellationToken).ConfigureAwait(false);
+        var dropped = summaries
+            .Where(day => day.Date < cutoff.Value)
+            .OrderBy(day => day.Date)
+            .ToList();
+
+        var deleted = await ArchiveAndDeleteAsync(dropped, cancellationToken).ConfigureAwait(false);
 
         if (_current is not null && _current.Date < cutoff.Value)
             _current = null;
 
         return deleted;
+    }
+
+    /// <summary>
+    /// Archiva los días indicados y borra sólo los que se archivaron. Si el archivado
+    /// falla, se corta ahí: es preferible que sobre en la base antes que perderlo.
+    /// </summary>
+    private async Task<int> ArchiveAndDeleteAsync(
+        IReadOnlyList<LogDaySummary> days,
+        CancellationToken cancellationToken)
+    {
+        DateTime? cutoff = null;
+
+        foreach (var summary in days)
+        {
+            if (!await TryArchiveAsync(summary.Id, cancellationToken).ConfigureAwait(false))
+                break;
+
+            cutoff = summary.Date.AddDays(1);
+        }
+
+        if (cutoff is null)
+            return 0;
+
+        return await _store.DeleteBeforeAsync(cutoff.Value, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<bool> TryArchiveAsync(string dayId, CancellationToken cancellationToken)
+    {
+        if (_archive is null)
+            return true;
+
+        var day = await _store.LoadAsync(dayId, cancellationToken).ConfigureAwait(false);
+        if (day is null)
+            return true;
+
+        try
+        {
+            await _archive.WriteAsync(day, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Sin logger a propósito: escribir acá realimentaría el pipeline de logs.
+            return false;
+        }
     }
 
     /// <summary>

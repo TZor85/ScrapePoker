@@ -22,12 +22,23 @@ public static class MartenLoggerExtensions
 
         builder.Services.TryAddSingleton<ILogDayStore, MartenLogDayStore>();
 
+        // El archivo físico es la copia que queda cuando el día sale de la base.
+        builder.Services.TryAddSingleton<ILogArchiveWriter>(sp =>
+            new GzipJsonlLogArchiveWriter(
+                sp.GetRequiredService<IOptions<MartenLoggerOptions>>().Value.ArchiveFolder));
+
         // El writer necesita las opciones (topes por día y presupuesto global), así
         // que se registra con factory; ActivatorUtilities no siempre honra el
         // parámetro opcional del constructor.
-        builder.Services.TryAddSingleton<ILogEntryWriter>(sp => new MartenLogDayWriter(
-            sp.GetRequiredService<ILogDayStore>(),
-            sp.GetRequiredService<IOptions<MartenLoggerOptions>>().Value));
+        builder.Services.TryAddSingleton<ILogEntryWriter>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<MartenLoggerOptions>>().Value;
+
+            return new MartenLogDayWriter(
+                sp.GetRequiredService<ILogDayStore>(),
+                options,
+                options.ArchiveEnabled ? sp.GetRequiredService<ILogArchiveWriter>() : null);
+        });
 
         // El writer se resuelve recién dentro del worker: resolver el
         // IDocumentStore en el constructor del proveedor provocaría un ciclo
@@ -38,7 +49,8 @@ public static class MartenLoggerExtensions
             new MartenLoggerProvider(
                 () => sp.GetRequiredService<ILogEntryWriter>(),
                 sp.GetRequiredService<IOptions<MartenLoggerOptions>>(),
-                sp.GetService<AppModeState>()));
+                sp.GetService<AppModeState>(),
+                sp.GetService<HandContext>()));
 
         builder.Services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<MartenLoggerProvider>());
 
