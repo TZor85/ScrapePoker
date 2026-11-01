@@ -15,6 +15,9 @@ public class PostflopFixtureReplayTests
         Assert.That(fixtures, Is.Not.Empty, "Faltan fixtures postflop; correr el generador [Explicit].");
 
         // Act / Assert
+        // Se acumulan las comprobaciones para que un fixture roto no esconda a los demás.
+        var checks = new List<Action>();
+
         foreach (var fixture in fixtures)
         {
             var street = Enum.Parse<BoardPosition>(fixture.Street, ignoreCase: true);
@@ -25,13 +28,22 @@ public class PostflopFixtureReplayTests
                 fixture.MonteCarloSeed,
                 street);
 
-            Assert.That(snapshot.Action, Is.EqualTo(fixture.ExpectedAction), fixture.Id);
-            Assert.That(snapshot.Equity, Is.EqualTo(fixture.ExpectedEquity).Within(0.1), fixture.Id);
-            Assert.That(snapshot.Reason, Is.EqualTo(fixture.ExpectedReason), fixture.Id);
-            Assert.That(snapshot.BoardTexture, Is.EqualTo(fixture.ExpectedBoardTexture), fixture.Id);
-            Assert.That(snapshot.IsBluff, Is.EqualTo(fixture.ExpectedIsBluff), fixture.Id);
-            Assert.That(snapshot.IsBarrel, Is.EqualTo(fixture.ExpectedIsBarrel), fixture.Id);
-            Assert.That(snapshot.IsCheckRaise, Is.EqualTo(fixture.ExpectedIsCheckRaise), fixture.Id);
+            checks.Add(() =>
+            {
+                Assert.That(snapshot.Action, Is.EqualTo(fixture.ExpectedAction), fixture.Id);
+                Assert.That(snapshot.Equity, Is.EqualTo(fixture.ExpectedEquity).Within(0.1), fixture.Id);
+                Assert.That(snapshot.Reason, Is.EqualTo(fixture.ExpectedReason), fixture.Id);
+                Assert.That(snapshot.BoardTexture, Is.EqualTo(fixture.ExpectedBoardTexture), fixture.Id);
+                Assert.That(snapshot.IsBluff, Is.EqualTo(fixture.ExpectedIsBluff), fixture.Id);
+                Assert.That(snapshot.IsBarrel, Is.EqualTo(fixture.ExpectedIsBarrel), fixture.Id);
+                Assert.That(snapshot.IsCheckRaise, Is.EqualTo(fixture.ExpectedIsCheckRaise), fixture.Id);
+            });
         }
+
+        Assert.Multiple(() =>
+        {
+            foreach (var check in checks)
+                check();
+        });
     }
 }

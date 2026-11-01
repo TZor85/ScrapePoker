@@ -175,9 +175,40 @@ public class PostflopRequestFactoryTests
         VillainProfile = profile
     };
 
+    [Test]
+    public void Create_PropagaElConteoRealDeRivalesAlCalculador()
+    {
+        var calculator = new RecordingCalculator();
+        var factory = CreateFactory(calculator);
+
+        var request = CreateFlopRequest(new VillainProfile()) with { NumOpponents = 3 };
+
+        factory.Create(request);
+
+        Assert.That(calculator.OpponentsReceived, Is.EqualTo(3),
+            "La equity postflop tiene que calcularse contra los rivales que hay en la mesa, " +
+            "no contra uno fijo.");
+    }
+
+    [Test]
+    public void Create_SinRivalesDeclarados_CalculaContraUno()
+    {
+        var calculator = new RecordingCalculator();
+        var factory = CreateFactory(calculator);
+
+        var request = CreateFlopRequest(new VillainProfile()) with { NumOpponents = 0 };
+
+        factory.Create(request);
+
+        Assert.That(calculator.OpponentsReceived, Is.EqualTo(1),
+            "Un pedido sin rivales no puede dejar la equity sin nadie contra quien calcular.");
+    }
+
     private sealed class RecordingCalculator : IPokerCalculator
     {
         public OpponentProfile? Received { get; private set; }
+
+        public int OpponentsReceived { get; private set; }
 
         public double FoldEquity { get; init; }
 
@@ -196,6 +227,7 @@ public class PostflopRequestFactoryTests
             OpponentProfile? opponentProfile = null)
         {
             Received = opponentProfile;
+            OpponentsReceived = numOpponents;
             return new PokerCalculationResult { DrawTypes = [], FoldEquity = FoldEquity };
         }
     }

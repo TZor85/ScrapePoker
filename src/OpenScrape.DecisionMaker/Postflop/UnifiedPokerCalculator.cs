@@ -49,7 +49,7 @@ namespace OpenScrape.DecisionMaker.Postflop
 
     public class UnifiedPokerCalculator : IPokerCalculator
     {
-        private readonly MonteCarloSimulator _monteCarloSimulator;
+        private readonly IMonteCarloSimulator _monteCarloSimulator;
         private readonly OutsCalculator _outsCalculator;
         private readonly PreflopEquityCalculator _preflopEquityCalculator;
         private readonly IHandEvaluator _handEvaluator;
@@ -67,7 +67,7 @@ namespace OpenScrape.DecisionMaker.Postflop
         private const int EquityCacheMaxSize = 2048;
 
         public UnifiedPokerCalculator(
-            MonteCarloSimulator monteCarloSimulator,
+            IMonteCarloSimulator monteCarloSimulator,
             OutsCalculator outsCalculator,
             PreflopEquityCalculator preflopEquityCalculator,
             IHandEvaluator handEvaluator,
@@ -255,8 +255,12 @@ namespace OpenScrape.DecisionMaker.Postflop
                             : VillainRange.GetForSituation(situation);
                 }
 
+                // Un solo rival tiene rango conocido (el agresor); el resto juega
+                // aleatorio. Darle el mismo rango a todos supone que todos llegaron
+                // con la misma fuerza y hunde la equity sin fundamento.
                 var monteCarloResult = _monteCarloSimulator.CalculateEquity(
-                    playerHand, communityCards, numOpponents, monteCarloIterations, villainRange);
+                    playerHand, communityCards, numOpponents, monteCarloIterations, villainRange,
+                    rangedOpponents: 1);
                 double equity = monteCarloResult.Equity * 100;
 
                 _equityCache.Set(cacheKey, equity);

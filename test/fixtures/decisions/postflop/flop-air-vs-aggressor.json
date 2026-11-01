@@ -94,7 +94,7 @@
   },
   "MaxBet": 10,
   "ExpectedAction": "Check",
-  "ExpectedEquity": 16.509999999999998,
+  "ExpectedEquity": 10.97,
   "MonteCarloSeed": 20261023,
   "ExpectedReason": "Equity baja OOP",
   "ExpectedBoardTexture": "Dry",

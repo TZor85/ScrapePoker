@@ -77,8 +77,13 @@ namespace OpenScrape.DecisionMaker.Algorithms
 
             int communityCount = communityCards.Count;
 
+            // La enumeración exacta sólo sabe comparar contra un rival: en una mesa
+            // multiway hay que simular, o la equity de tres jugadores sale calculada
+            // como si fuera heads-up.
+            bool exactEnumeration = numOpponents <= 1;
+
             // River (5 community cards) → enumeración exacta
-            if (communityCount == 5)
+            if (communityCount == 5 && exactEnumeration)
             {
                 var result = ExactEnumerationRiver(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
                 result.BlockedComboPercentage = blockedPercentage;
@@ -88,7 +93,7 @@ namespace OpenScrape.DecisionMaker.Algorithms
             }
 
             // Turn (4 community cards) → enumeración exacta
-            if (communityCount == 4)
+            if (communityCount == 4 && exactEnumeration)
             {
                 var result = ExactEnumerationTurn(myCards, communityCards, numOpponents, villainCombos, precomputedTotalWeight);
                 result.BlockedComboPercentage = blockedPercentage;

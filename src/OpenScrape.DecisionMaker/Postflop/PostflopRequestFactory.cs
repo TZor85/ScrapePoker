@@ -40,15 +40,14 @@ public sealed class PostflopRequestFactory
         var playerHand = ToCards(request.HeroCard1, request.HeroCard2);
         var communityCards = request.Board.Select(card => new CardDataOuts((Suit)card.Suit, (Rank)card.Rank)).ToList();
 
-        // El cliente históricamente calculó la equity con un solo rival por defecto
-        // y usó el conteo real solo para el sizing. Se replica tal cual para no
-        // cambiar ninguna decisión congelada en los fixtures.
+        // La equity se calcula contra los rivales que hay realmente en la mesa: con
+        // uno fijo, un bote de tres jugadores se decidía con la fuerza de un heads-up.
         var result = _calculator.Calculate(
             playerHand,
             communityCards,
             request.PotSize,
             request.BetToCall,
-            numOpponents: 1,
+            numOpponents: Math.Max(1, request.NumOpponents),
             request.MonteCarloIterations,
             request.IsInPosition,
             request.HeroStack,
