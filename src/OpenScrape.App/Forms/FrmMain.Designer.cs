@@ -1365,8 +1365,10 @@
             tbResume.Location = new Point(3, 3);
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
+            tbResume.ScrollBars = ScrollBars.Both;
             tbResume.Size = new Size(563, 385);
             tbResume.TabIndex = 1;
+            tbResume.WordWrap = false;
             // 
             // tabMetrics
             // 

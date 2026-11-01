@@ -134,6 +134,11 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
         {
             if (target.IsDisposed) return;
 
+            // Si el usuario scrolleó para leer hacia arriba, el evento nuevo no debe
+            // arrastrarlo al final: sólo se sigue el stream cuando ya estaba abajo.
+            var caretBefore = target.SelectionStart;
+            var followingStream = caretBefore >= target.TextLength;
+
             var maxLines = Options.MaxLines;
             if (maxLines > 0)
             {
@@ -146,8 +151,17 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
             }
 
             target.AppendText(line + Environment.NewLine);
-            target.SelectionStart = target.TextLength;
-            target.ScrollToCaret();
+
+            if (followingStream)
+            {
+                target.SelectionStart = target.TextLength;
+                target.ScrollToCaret();
+            }
+            else
+            {
+                target.SelectionStart = Math.Min(caretBefore, target.TextLength);
+                target.SelectionLength = 0;
+            }
         }
         catch (ObjectDisposedException) { }
         catch (InvalidOperationException) { }
