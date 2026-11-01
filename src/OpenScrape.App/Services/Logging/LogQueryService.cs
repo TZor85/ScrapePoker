@@ -71,7 +71,7 @@ public sealed class LogQueryService(ILogDayStore? store) : ILogQueryService
 
     private async Task<LogDay?> LoadDayAsync(string dayId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dayId))
+        if (_store is null || string.IsNullOrWhiteSpace(dayId))
             return null;
 
         return await _store.LoadAsync(dayId, cancellationToken).ConfigureAwait(false);

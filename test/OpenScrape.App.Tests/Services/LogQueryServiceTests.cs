@@ -112,6 +112,16 @@ public class LogQueryServiceTests
             Is.EqualTo(new long?[] { 120, 118, 120, 118 }));
     }
 
+    [Test]
+    public async Task GetEntriesAsync_SinStore_DevuelveVacio()
+    {
+        var service = new LogQueryService(null);
+
+        var entries = await service.GetEntriesAsync("2026-10-31");
+
+        Assert.That(entries, Is.Empty);
+    }
+
     private sealed class FakeLogDayStore : ILogDayStore
     {
         public List<LogDay> Days { get; } = new();
