@@ -25,7 +25,7 @@ public sealed class TextBoxLogger : ILogger
         => _provider.ScopeProvider?.Push(state);
 
     public bool IsEnabled(LogLevel logLevel)
-        => logLevel != LogLevel.None && logLevel >= _provider.Options.MinimumLevel;
+        => _provider.IsEnabled(logLevel);
 
     public void Log<TState>(
         LogLevel logLevel,

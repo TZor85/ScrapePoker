@@ -22,6 +22,9 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     private bool _disposed;
     private volatile bool _paused;
 
+    /// <summary>-1 significa "sin nivel elegido": se muestra lo que permita la configuración.</summary>
+    private int _exactLevel = -1;
+
     public TextBoxLoggerProvider(IOptions<TextBoxLoggerOptions> options)
     {
         Options = options?.Value ?? throw new ArgumentNullException(nameof(options));
@@ -89,6 +92,25 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
 
     /// <summary>Vuelve a escribir el stream en vivo en el panel.</summary>
     public void ResumeLive() => _paused = false;
+
+    /// <summary>
+    /// Nivel concreto que se muestra en el panel, o <c>null</c> para mostrar todos los
+    /// que permita la configuración. La UI lo cambia en caliente y el filtro se aplica
+    /// al stream en vivo.
+    /// </summary>
+    public LogLevel? ExactLevel
+    {
+        get => _exactLevel < 0 ? null : (LogLevel)_exactLevel;
+        set => Volatile.Write(ref _exactLevel, value is { } level ? (int)level : -1);
+    }
+
+    /// <summary>
+    /// Decide si un evento llega al panel. Se evalúa antes de formatear la línea,
+    /// así un nivel filtrado no cuesta trabajo de renderizado.
+    /// </summary>
+    internal bool IsEnabled(LogLevel level)
+        => level != LogLevel.None
+           && (ExactLevel is { } exact ? level == exact : level >= Options.MinimumLevel);
 
     internal void Emit(string line)
     {

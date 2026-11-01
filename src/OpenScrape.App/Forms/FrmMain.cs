@@ -181,6 +181,7 @@ namespace OpenScrape.App
         private ComboBox? _logDayCombo;
 
         private ComboBox? _logHandCombo;
+        private ComboBox? _logLevelCombo;
 
         private Button? _btnLogLive;
         #endregion
@@ -2608,26 +2609,39 @@ namespace OpenScrape.App
             _logDayCombo = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Width = 120,
+                Width = 110,
                 Location = new Point(58, 6)
             };
             _logDayCombo.SelectedIndexChanged += async (_, _) => await RefreshLogHandsAsync();
 
-            var handLabel = new Label { Text = "Mano:", AutoSize = true, Location = new Point(192, 9) };
+            var handLabel = new Label { Text = "Mano:", AutoSize = true, Location = new Point(174, 9) };
 
             _logHandCombo = new ComboBox
             {
                 DropDownStyle = ComboBoxStyle.DropDownList,
-                Width = 110,
-                Location = new Point(240, 6)
+                Width = 90,
+                Location = new Point(218, 6)
             };
             _logHandCombo.SelectedIndexChanged += async (_, _) => await ShowSelectedHandAsync();
+
+            var levelLabel = new Label { Text = "Nivel:", AutoSize = true, Location = new Point(314, 9) };
+
+            _logLevelCombo = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Width = 96,
+                Location = new Point(358, 6)
+            };
+            foreach (var level in LogLevelItem.All)
+                _logLevelCombo.Items.Add(level);
+            _logLevelCombo.SelectedIndex = 0;
+            _logLevelCombo.SelectedIndexChanged += async (_, _) => await ApplyLogLevelFilterAsync();
 
             _btnLogLive = new Button
             {
                 Text = "Volver al vivo",
-                Location = new Point(362, 5),
-                Size = new Size(110, 23)
+                Location = new Point(458, 5),
+                Size = new Size(100, 23)
             };
             _btnLogLive.Click += (_, _) => ReturnToLiveLog();
 
@@ -2635,6 +2649,8 @@ namespace OpenScrape.App
             bar.Controls.Add(_logDayCombo);
             bar.Controls.Add(handLabel);
             bar.Controls.Add(_logHandCombo);
+            bar.Controls.Add(levelLabel);
+            bar.Controls.Add(_logLevelCombo);
             bar.Controls.Add(_btnLogLive);
 
             tbLogs.Controls.Add(bar);
@@ -2713,10 +2729,14 @@ namespace OpenScrape.App
                     ? await _logQueryService.GetEntriesAsync(day.Day.Id, handNumber)
                     : await _logQueryService.GetEntriesAsync(day.Day.Id);
 
+                // El historico se filtra con el mismo criterio que el stream en vivo:
+                // el combo de nivel es la unica fuente de verdad.
+                var visibles = LogEntryFilter.ByLevel(entries, _textBoxLoggerProvider.ExactLevel);
+
                 // Mientras se navega el historico el panel deja de seguir el vivo: los
                 // eventos siguen yendo a la base y al archivo, pero no pisan esta vista.
                 _textBoxLoggerProvider.PauseLive();
-                tbResume.Text = string.Join(Environment.NewLine, entries.Select(LogLineFormatter.Format));
+                tbResume.Text = string.Join(Environment.NewLine, visibles.Select(LogLineFormatter.Format));
             }
             catch (Exception ex)
             {
@@ -2733,6 +2753,21 @@ namespace OpenScrape.App
                 _logHandCombo.SelectedIndex = -1;
         }
 
+        /// <summary>
+        /// Aplica el nivel elegido al stream en vivo y, si se esta mirando un historico,
+        /// vuelve a pintarlo para que el filtro se vea en el acto.
+        /// </summary>
+        private async Task ApplyLogLevelFilterAsync()
+        {
+            if (_logLevelCombo?.SelectedItem is not LogLevelItem level)
+                return;
+
+            _textBoxLoggerProvider.ExactLevel = level.Level;
+
+            if (_logHandCombo?.SelectedItem is LogHandItem)
+                await ShowSelectedHandAsync();
+        }
+
         private sealed record LogDayItem(LogDaySummary Day)
         {
             public override string ToString() => Day.Date.ToString("yyyy-MM-dd");
@@ -2743,6 +2778,25 @@ namespace OpenScrape.App
             public static readonly LogHandItem All = new((long?)null);
 
             public override string ToString() => HandNumber?.ToString() ?? "Todas";
+        }
+
+        /// <summary>
+        /// Opcion del combo de nivel. Sin nivel elegido ("Todos") no se filtra; con un
+        /// nivel elegido el panel muestra unicamente ese nivel.
+        /// </summary>
+        private sealed record LogLevelItem(LogLevel? Level, string Label)
+        {
+            public static readonly IReadOnlyList<LogLevelItem> All = new[]
+            {
+                new LogLevelItem(null, "Todos"),
+                new LogLevelItem(LogLevel.Trace, "Trace"),
+                new LogLevelItem(LogLevel.Debug, "Debug"),
+                new LogLevelItem(LogLevel.Information, "Info"),
+                new LogLevelItem(LogLevel.Warning, "Warning"),
+                new LogLevelItem(LogLevel.Error, "Error")
+            };
+
+            public override string ToString() => Label;
         }
     }
 }
