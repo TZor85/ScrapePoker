@@ -139,7 +139,7 @@
             dgvHands = new DataGridView();
             twTables = new TreeView();
             tbLogs = new TabPage();
-            tbResume = new TextBox();
+            tbResume = new RichTextBox();
             tabMetrics = new TabPage();
             btnResetMetrics = new Button();
             lblCurrentHand = new Label();
@@ -1365,7 +1365,7 @@
             tbResume.Location = new Point(3, 3);
             tbResume.Multiline = true;
             tbResume.Name = "tbResume";
-            tbResume.ScrollBars = ScrollBars.Both;
+            tbResume.ScrollBars = RichTextBoxScrollBars.Both;
             tbResume.Size = new Size(563, 385);
             tbResume.TabIndex = 1;
             tbResume.WordWrap = false;
@@ -1526,7 +1526,7 @@
         private Button btnCapture3bet;
         private TreeView twRegionsConfig;
         private Button btnUpdateMap;
-        private TextBox tbResume;
+        private RichTextBox tbResume;
         private PictureBox pictureBox1;
         private TabPage tbJuego;
         private TabPage tbTables;

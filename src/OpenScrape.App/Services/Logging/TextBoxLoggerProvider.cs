@@ -8,7 +8,7 @@ namespace OpenScrape.App.Services.Logging;
 /// <summary>
 /// <see cref="ILoggerProvider"/> que entrega <see cref="TextBoxLogger"/> por categoría.
 /// El <see cref="TextBox"/> destino se registra <b>tardíamente</b> vía
-/// <see cref="SetTextBoxTarget(TextBox)"/> porque se construye antes de que
+/// <see cref="SetTextBoxTarget(TextBoxBase)"/> porque se construye antes de que
 /// <see cref="Forms.FrmMain"/> exista.
 /// </summary>
 [ProviderAlias("TextBox")]
@@ -17,10 +17,11 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     private readonly ConcurrentDictionary<string, TextBoxLogger> _loggers = new();
     private readonly ConcurrentQueue<string> _pendingLines = new();
     private readonly object _targetGate = new();
-    private TextBox? _target;
+    private TextBoxBase? _target;
     private HandContext? _handContext;
     private bool _disposed;
     private volatile bool _paused;
+    private readonly LogRichTextRenderer _renderer = new();
 
     /// <summary>-1 significa "sin nivel elegido": se muestra lo que permita la configuración.</summary>
     private int _exactLevel = -1;
@@ -58,7 +59,7 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     /// Si <see cref="TextBoxLoggerOptions.BufferUntilTargetReady"/> está activo,
     /// vuelca los eventos pendientes al registrar.
     /// </summary>
-    public void SetTextBoxTarget(TextBox target)
+    public void SetTextBoxTarget(TextBoxBase target)
     {
         ArgumentNullException.ThrowIfNull(target);
 
@@ -73,7 +74,7 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
         if (Options.BufferUntilTargetReady)
         {
             while (_pendingLines.TryDequeue(out var line))
-                WriteToTarget(target, line);
+                WritePlain(target, line);
         }
         else
         {
@@ -90,8 +91,15 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
     /// </summary>
     public void PauseLive() => _paused = true;
 
-    /// <summary>Vuelve a escribir el stream en vivo en el panel.</summary>
-    public void ResumeLive() => _paused = false;
+    /// <summary>
+    /// Vuelve a escribir el stream en vivo en el panel. El renderer olvida la mano
+    /// anterior para que el próximo bloque vuelva a abrir con su separador.
+    /// </summary>
+    public void ResumeLive()
+    {
+        _renderer.Reset();
+        _paused = false;
+    }
 
     /// <summary>
     /// Nivel concreto que se muestra en el panel, o <c>null</c> para mostrar todos los
@@ -112,7 +120,7 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
         => level != LogLevel.None
            && (ExactLevel is { } exact ? level == exact : level >= Options.MinimumLevel);
 
-    internal void Emit(string line)
+    internal void Emit(LogLevel level, string prefix, string message, long? handNumber)
     {
         if (_disposed || _paused)
             return;
@@ -122,16 +130,16 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
         {
             if (Options.BufferUntilTargetReady)
             {
-                _pendingLines.Enqueue(line);
+                _pendingLines.Enqueue(prefix + ' ' + message);
                 while (_pendingLines.Count > Options.BufferCapacity && _pendingLines.TryDequeue(out _)) { }
             }
             return;
         }
 
-        WriteToTarget(target, line);
+        WriteToTarget(target, level, prefix, message, handNumber);
     }
 
-    private void WriteToTarget(TextBox target, string line)
+    private void WritePlain(TextBoxBase target, string line)
     {
         try
         {
@@ -150,7 +158,65 @@ public sealed class TextBoxLoggerProvider : ILoggerProvider, ISupportExternalSco
         catch (InvalidOperationException) { }
     }
 
-    private void AppendWithRotation(TextBox target, string line)
+    private void WriteToTarget(TextBoxBase target, LogLevel level, string prefix, string message, long? handNumber)
+    {
+        try
+        {
+            if (target.IsDisposed) return;
+
+            if (target.InvokeRequired)
+            {
+                target.BeginInvoke(() => AppendEntry(target, level, prefix, message, handNumber));
+            }
+            else
+            {
+                AppendEntry(target, level, prefix, message, handNumber);
+            }
+        }
+        catch (ObjectDisposedException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    /// <summary>
+    /// Con un <see cref="RichTextBox"/> se pinta por nivel; con un <see cref="TextBox"/>
+    /// plano (tests, herramientas) se conserva el texto sin color.
+    /// </summary>
+    private void AppendEntry(TextBoxBase target, LogLevel level, string prefix, string message, long? handNumber)
+    {
+        if (target is RichTextBox rich)
+        {
+            try
+            {
+                if (rich.IsDisposed) return;
+
+                // Igual que en el panel plano: si el usuario scrolleó hacia arriba para
+                // leer, el evento nuevo no debe arrastrarlo al final.
+                var caretBefore = rich.SelectionStart;
+                var followingStream = caretBefore >= rich.TextLength;
+
+                _renderer.Append(rich, prefix, message, level, handNumber, Options.MaxLines);
+
+                if (followingStream)
+                {
+                    rich.SelectionStart = rich.TextLength;
+                    rich.ScrollToCaret();
+                }
+                else
+                {
+                    rich.SelectionStart = Math.Min(caretBefore, rich.TextLength);
+                    rich.SelectionLength = 0;
+                }
+            }
+            catch (ObjectDisposedException) { }
+            catch (InvalidOperationException) { }
+
+            return;
+        }
+
+        AppendWithRotation(target, prefix + ' ' + message);
+    }
+
+    private void AppendWithRotation(TextBoxBase target, string line)
     {
         try
         {

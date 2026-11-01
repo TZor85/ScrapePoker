@@ -2519,10 +2519,10 @@ namespace OpenScrape.App
         {
             logsTab.SuspendLayout();
 
-            // Mejorar TextBox de logs
-            tbResume.BackColor = AppThemeHelper.PrimaryDark;
-            tbResume.ForeColor = Color.FromArgb(220, 220, 220);
-            tbResume.Font = new Font("Consolas", 9F);
+            // Panel sobre fondo claro: el texto va en negro para que se lea
+            tbResume.BackColor = Color.FromArgb(245, 246, 248);
+            tbResume.ForeColor = LogLineColors.Message;
+            tbResume.Font = new Font("Consolas", 10F);
             tbResume.BorderStyle = BorderStyle.None;
 
             logsTab.ResumeLayout(true);
@@ -2736,7 +2736,11 @@ namespace OpenScrape.App
                 // Mientras se navega el historico el panel deja de seguir el vivo: los
                 // eventos siguen yendo a la base y al archivo, pero no pisan esta vista.
                 _textBoxLoggerProvider.PauseLive();
-                tbResume.Text = string.Join(Environment.NewLine, visibles.Select(LogLineFormatter.Format));
+                tbResume.Clear();
+
+                var renderer = new LogRichTextRenderer();
+                foreach (var entry in visibles)
+                    renderer.Render(tbResume, entry);
             }
             catch (Exception ex)
             {

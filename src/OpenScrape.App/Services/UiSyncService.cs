@@ -19,7 +19,7 @@ public sealed class UiSyncService : IUiSyncService
     private IGameLoopCoordinator? _coordinator;
     private ISynchronizeInvoke? _syncTarget;
     private IFrmOverlay? _overlay;
-    private TextBox? _logsBox;
+    private TextBoxBase? _logsBox;
     private bool _disposed;
 
     public UiSyncService(ILogger<UiSyncService> logger)
@@ -38,7 +38,7 @@ public sealed class UiSyncService : IUiSyncService
             _coordinator = coordinator;
             _syncTarget = syncTarget;
             _overlay = overlay;
-            _logsBox = logsBox as TextBox;
+            _logsBox = logsBox as TextBoxBase;
             _coordinator.ResultReady += OnResultReady;
         }
     }

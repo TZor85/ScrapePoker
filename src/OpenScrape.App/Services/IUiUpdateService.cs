@@ -6,7 +6,7 @@ using OpenScrape.Domain.Entities;
 namespace OpenScrape.App.Services;
 
 public sealed record UiUpdateControls(
-    TextBox TbResume,
+    TextBoxBase TbResume,
     PictureBox PbHeroCard0,
     PictureBox PbHeroCard1,
     PictureBox PbBoard1,

@@ -44,14 +44,15 @@ public sealed class TextBoxLogger : ILogger
         if (string.IsNullOrEmpty(message) && exception is null)
             return;
 
-        var line = RenderLine(logLevel, message, exception);
-        _provider.Emit(line);
+        var (prefix, body) = RenderParts(logLevel, message, exception);
+        _provider.Emit(logLevel, prefix, body, _provider.CurrentHandNumber);
     }
 
-    private string RenderLine(LogLevel logLevel, string message, Exception? exception)
+    private (string Prefix, string Message) RenderParts(LogLevel logLevel, string message, Exception? exception)
     {
         var sb = new StringBuilder(128);
-        sb.Append('[')
+        sb.Append(logLevel == LogLevel.Information ? LogLineFormatter.NoMarker : LogLineFormatter.Marker)
+          .Append('[')
           .Append(DateTime.Now.ToString("HH:mm:ss"))
           .Append(' ')
           .Append(LevelToken(logLevel))
@@ -64,14 +65,14 @@ public sealed class TextBoxLogger : ILogger
         if (_provider.CurrentHandNumber is { } handNumber)
             sb.Append(" {Mano=").Append(handNumber).Append('}');
 
-        sb.Append(' ').Append(message);
+        var body = message;
 
         if (exception is not null)
         {
-            sb.Append(" | ").Append(exception.GetType().Name).Append(": ").Append(exception.Message);
+            body += " | " + exception.GetType().Name + ": " + exception.Message;
         }
 
-        return sb.ToString();
+        return (sb.ToString(), body);
     }
 
     private void AppendScopes(StringBuilder sb)

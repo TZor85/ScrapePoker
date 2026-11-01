@@ -26,10 +26,48 @@ public class LogLineFormatterTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(line, Does.StartWith("["));
+            Assert.That(line, Does.StartWith("● ["));
             Assert.That(line, Does.Contain(" WRN GameLoggerService]"));
             Assert.That(line, Does.Contain("{Mano=42}"));
             Assert.That(line, Does.EndWith(" sin sesión activa"));
+        });
+    }
+
+    [Test]
+    public void Format_EntradaInformacion_NoLlevaMarcaPeroMantieneLaAlineacion()
+    {
+        var entry = new LogEntry
+        {
+            TimestampUtc = DateTime.UtcNow,
+            Level = "Information",
+            Category = "OpenScrape.App.Services.GameLoggerService",
+            Message = "arrancó la sesión"
+        };
+
+        var line = LogLineFormatter.Format(entry);
+
+        Assert.That(line, Does.StartWith("  ["));
+    }
+
+    [Test]
+    public void Split_SeparaElPrefijoDelMensaje()
+    {
+        var entry = new LogEntry
+        {
+            TimestampUtc = DateTime.UtcNow,
+            Level = "Error",
+            Category = "OpenScrape.App.Services.CaptureService",
+            Message = "no hay ventana",
+            HandNumber = 7
+        };
+
+        var (prefix, message) = LogLineFormatter.Split(entry);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(prefix, Does.StartWith("● ["));
+            Assert.That(prefix, Does.EndWith(" {Mano=7}"));
+            Assert.That(message, Is.EqualTo("no hay ventana"));
         });
     }
 
