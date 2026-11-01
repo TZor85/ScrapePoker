@@ -24,19 +24,11 @@ public static class TelemetryCategories
     public const string LayoutDealer = "Layout.Dealer";
     public const string LayoutPositions = "Layout.Positions";
 
-    // Pipeline de decisión
+    // Pipeline de decisión (la latencia de la llamada al motor por HTTP)
     public const string DecisionTotal = "Decision.Total";
-    public const string DecisionEquity = "Decision.Equity";
-    public const string DecisionTexture = "Decision.Texture";
-    public const string DecisionProfile = "Decision.Profile";
-    public const string DecisionDecisionService = "Decision.DecisionService";
-    public const string DecisionSizing = "Decision.Sizing";
 
     // Render overlay
     public const string OverlayRender = "Overlay.Render";
-
-    // Persistencia (solo acumula en sesión, no en última mano)
-    public const string PersistenceSaveHand = "Persistence.SaveHand";
 
     /// <summary>
     /// Orden de presentación en la pestaña "Métricas" de <c>FrmMain</c>.
@@ -48,18 +40,7 @@ public static class TelemetryCategories
         CaptureScreenshot,
         OcrCards, OcrBets, OcrStacks, OcrHandNumber, OcrPlayerNames,
         LayoutDealer, LayoutPositions,
-        DecisionTotal, DecisionEquity, DecisionTexture, DecisionProfile, DecisionDecisionService, DecisionSizing,
+        DecisionTotal,
         OverlayRender,
-        PersistenceSaveHand,
-    };
-
-    /// <summary>
-    /// Categorías que <b>no</b> se persisten en <c>HandRecord.Telemetry</c>.
-    /// <c>Persistence.SaveHand</c> se mide después del snapshot de la mano,
-    /// así que solo tiene sentido en el acumulado de sesión.
-    /// </summary>
-    public static readonly IReadOnlySet<string> SessionOnly = new HashSet<string>
-    {
-        PersistenceSaveHand,
     };
 }

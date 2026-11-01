@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using OpenScrape.Contracts;
 using OpenScrape.App.Services.License;
+using OpenScrape.App.Telemetry;
 
 namespace OpenScrape.App.Services.Http;
 
@@ -16,7 +17,8 @@ namespace OpenScrape.App.Services.Http;
 public sealed class HttpDecisionEngine(
     HttpClient client,
     ILogger<HttpDecisionEngine> logger,
-    LicenseTokenStore? licenseStore = null) : IDecisionEngine
+    LicenseTokenStore? licenseStore = null,
+    IMetricsCollector? metrics = null) : IDecisionEngine
 {
     /// <summary>Tiempo máximo por decisión, impuesto acá y no en el HttpClient.</summary>
     public static readonly TimeSpan DecisionTimeout = TimeSpan.FromSeconds(1.5);
@@ -30,6 +32,8 @@ public sealed class HttpDecisionEngine(
 
     private readonly ILogger<HttpDecisionEngine> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
+
+    private readonly IMetricsCollector? _metrics = metrics;
 
     public async Task<DecisionResult> DecideAsync(
         DecisionRequest request,
@@ -50,6 +54,9 @@ public sealed class HttpDecisionEngine(
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutSource.CancelAfter(DecisionTimeout);
         var token = timeoutSource.Token;
+
+        // La latencia que importa es la del viaje al motor, no la del gate de licencia.
+        using var measurement = _metrics?.Measure(TelemetryCategories.DecisionTotal);
 
         try
         {

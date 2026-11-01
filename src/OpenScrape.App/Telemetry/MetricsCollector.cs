@@ -17,6 +17,9 @@ public sealed class MetricsCollector : IMetricsCollector
     private readonly object _handLock = new();
     private string? _currentHandId;
 
+    /// <summary>Última mano cerrada, para que la grilla muestre números reales.</summary>
+    private TelemetryAggregate? _lastCompleted;
+
     public MetricsCollector(ILogger<MetricsCollector> logger)
     {
         _logger = logger;
@@ -24,23 +27,12 @@ public sealed class MetricsCollector : IMetricsCollector
 
     public ScopedMeasurement Measure(string category) => new(this, category);
 
-    public ScopedMeasurement MeasureSessionOnly(string category) => new(this, category, sessionOnly: true);
-
     public void Record(string category, TimeSpan elapsed)
     {
         var state = _categories.GetOrAdd(category, _ => new CategoryState());
         lock (state.Lock)
         {
             state.LastHand.Add(elapsed);
-            state.Session.Add(elapsed);
-        }
-    }
-
-    public void RecordSessionOnly(string category, TimeSpan elapsed)
-    {
-        var state = _categories.GetOrAdd(category, _ => new CategoryState());
-        lock (state.Lock)
-        {
             state.Session.Add(elapsed);
         }
     }
@@ -80,8 +72,6 @@ public sealed class MetricsCollector : IMetricsCollector
             var phases = new Dictionary<string, CategoryStats>();
             foreach (var (category, state) in _categories)
             {
-                if (TelemetryCategories.SessionOnly.Contains(category)) continue;
-
                 lock (state.Lock)
                 {
                     if (state.LastHand.Count == 0) continue;
@@ -95,6 +85,7 @@ public sealed class MetricsCollector : IMetricsCollector
                 DateTime.UtcNow,
                 phases);
 
+            _lastCompleted = agg;
             _currentHandId = null;
             return agg;
         }
@@ -106,14 +97,23 @@ public sealed class MetricsCollector : IMetricsCollector
         var session = new Dictionary<string, CategoryStats>();
         string? handId;
 
-        lock (_handLock) { handId = _currentHandId; }
+        lock (_handLock)
+        {
+            handId = _currentHandId;
+
+            // "Últ." es la última mano cerrada: mientras se juega la siguiente, los
+            // números siguen siendo los de la anterior.
+            if (_lastCompleted is not null)
+            {
+                foreach (var (category, stats) in _lastCompleted.Phases)
+                    lastHand[category] = stats;
+            }
+        }
 
         foreach (var (category, state) in _categories)
         {
             lock (state.Lock)
             {
-                if (state.LastHand.Count > 0)
-                    lastHand[category] = ToStats(state.LastHand);
                 if (state.Session.Count > 0)
                     session[category] = ToStats(state.Session);
             }
@@ -124,6 +124,11 @@ public sealed class MetricsCollector : IMetricsCollector
 
     public void ResetSession()
     {
+        lock (_handLock)
+        {
+            _lastCompleted = null;
+        }
+
         foreach (var state in _categories.Values)
         {
             lock (state.Lock)

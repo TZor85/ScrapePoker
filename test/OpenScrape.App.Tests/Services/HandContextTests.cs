@@ -115,10 +115,6 @@ public class HandContextTests
 
         public void Record(string category, TimeSpan elapsed) { }
 
-        public ScopedMeasurement MeasureSessionOnly(string category) => default;
-
-        public void RecordSessionOnly(string category, TimeSpan elapsed) { }
-
         public void StartHand(string handId) { }
 
         public TelemetryAggregate? EndHand() => null;

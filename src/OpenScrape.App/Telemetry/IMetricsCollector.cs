@@ -20,19 +20,6 @@ public interface IMetricsCollector
     void Record(string category, TimeSpan elapsed);
 
     /// <summary>
-    /// Como <see cref="Measure"/> pero solo acumula en sesión, no en última mano.
-    /// Útil para persistencia (fuera del bucket de mano).
-    /// </summary>
-    ScopedMeasurement MeasureSessionOnly(string category);
-
-    /// <summary>
-    /// Como <see cref="Record"/> pero solo acumula en el agregado de sesión, no en el de
-    /// la última mano. Útil para <c>Persistence.SaveHand</c>, que se mide después del
-    /// snapshot de mano y por tanto no cabe en <c>HandRecord.Telemetry</c>.
-    /// </summary>
-    void RecordSessionOnly(string category, TimeSpan elapsed);
-
-    /// <summary>
     /// Marca el inicio de una nueva mano. Descarta el bucket de "última mano" previo
     /// (con log si tenía muestras) y reinicia los contadores de mano.
     /// </summary>

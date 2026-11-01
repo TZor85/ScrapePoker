@@ -532,12 +532,6 @@ public class CardRecognitionEngineTests
         }
 
         public void Record(string category, TimeSpan elapsed) { }
-        public ScopedMeasurement MeasureSessionOnly(string category)
-        {
-            MeasuredCategories.Add(category);
-            return default;
-        }
-        public void RecordSessionOnly(string category, TimeSpan elapsed) { }
         public void StartHand(string handId) { }
         public OpenScrape.Domain.ValueObjects.TelemetryAggregate? EndHand() => null;
         public MetricsSnapshot SnapshotSession() =>

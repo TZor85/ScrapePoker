@@ -49,17 +49,19 @@ public class MetricsCollectorTests
     }
 
     [Test]
-    public void StartHand_YRecord_SeAcumulaEnLastHand()
+    public void StartHand_YRecord_SoloSeVeEnLaSesion()
     {
         _sut.StartHand("hand-1");
         _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(10));
         var snap = _sut.SnapshotSession();
         Assert.That(snap.CurrentHandId, Is.EqualTo("hand-1"));
-        Assert.That(snap.LastHand["OCR.Cards"].Count, Is.EqualTo(1));
+        Assert.That(snap.Session["OCR.Cards"].Count, Is.EqualTo(1));
+        Assert.That(snap.LastHand.ContainsKey("OCR.Cards"), Is.False,
+            "la mano en curso todavía no terminó: no debe aparecer como última mano");
     }
 
     [Test]
-    public void EndHand_DevuelveAgregadoYLimpiaLastHand()
+    public void EndHand_DejaLaManoComoUltimaCompletada()
     {
         _sut.StartHand("hand-1");
         _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(10));
@@ -72,8 +74,8 @@ public class MetricsCollectorTests
         Assert.That(agg.Phases["OCR.Cards"].Count, Is.EqualTo(2));
 
         var snap = _sut.SnapshotSession();
-        Assert.That(snap.LastHand.ContainsKey("OCR.Cards"), Is.False,
-            "last-hand debe haberse reseteado tras EndHand");
+        Assert.That(snap.LastHand["OCR.Cards"].Count, Is.EqualTo(2),
+            "la última mano cerrada debe seguir visible en la grilla");
         Assert.That(snap.Session["OCR.Cards"].Count, Is.EqualTo(2),
             "sesión debe acumular las dos muestras");
     }
@@ -89,21 +91,6 @@ public class MetricsCollectorTests
         var snap = _sut.SnapshotSession();
         Assert.That(snap.CurrentHandId, Is.EqualTo("hand-2"));
         Assert.That(snap.LastHand.ContainsKey("OCR.Cards"), Is.False);
-    }
-
-    [Test]
-    public void RecordSessionOnly_NoApareceEnLastHand()
-    {
-        _sut.StartHand("hand-1");
-        _sut.RecordSessionOnly("Persistence.SaveHand", TimeSpan.FromMilliseconds(50));
-
-        var snap = _sut.SnapshotSession();
-        Assert.That(snap.LastHand.ContainsKey("Persistence.SaveHand"), Is.False);
-        Assert.That(snap.Session["Persistence.SaveHand"].Count, Is.EqualTo(1));
-
-        var agg = _sut.EndHand();
-        Assert.That(agg!.Phases.ContainsKey("Persistence.SaveHand"), Is.False,
-            "RecordSessionOnly no debe persistirse en TelemetryAggregate");
     }
 
     [Test]
@@ -124,5 +111,58 @@ public class MetricsCollectorTests
     {
         var agg = _sut.EndHand();
         Assert.That(agg, Is.Null);
+    }
+
+    [Test]
+    public void SnapshotSession_TrasEndHand_MuestraLaUltimaManoCompletada()
+    {
+        _sut.StartHand("hand-1");
+        _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(10));
+        _sut.EndHand();
+
+        var snap = _sut.SnapshotSession();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(snap.LastHand.ContainsKey("OCR.Cards"), Is.True,
+                "La mano recién cerrada tiene que seguir visible en la columna Últ.");
+            Assert.That(snap.LastHand["OCR.Cards"].Count, Is.EqualTo(1));
+            Assert.That(snap.CurrentHandId, Is.Null, "Ya no hay mano en curso");
+        });
+    }
+
+    [Test]
+    public void SnapshotSession_ConManoEnCurso_NoPisaLaUltimaCompletada()
+    {
+        _sut.StartHand("hand-1");
+        _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(10));
+        _sut.EndHand();
+
+        _sut.StartHand("hand-2");
+        _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(500));
+
+        var snap = _sut.SnapshotSession();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(snap.CurrentHandId, Is.EqualTo("hand-2"));
+            Assert.That(snap.LastHand["OCR.Cards"].Count, Is.EqualTo(1),
+                "Las muestras de la mano en curso no cuentan como última mano");
+            Assert.That(snap.LastHand["OCR.Cards"].MaxMs, Is.LessThan(500),
+                "La columna Últ. debe seguir mostrando la mano anterior, no la que se está jugando");
+        });
+    }
+
+    [Test]
+    public void ResetSession_LimpiaLaUltimaManoCompletada()
+    {
+        _sut.StartHand("hand-1");
+        _sut.Record("OCR.Cards", TimeSpan.FromMilliseconds(10));
+        _sut.EndHand();
+
+        _sut.ResetSession();
+
+        var snap = _sut.SnapshotSession();
+        Assert.That(snap.LastHand.Count, Is.EqualTo(0));
     }
 }

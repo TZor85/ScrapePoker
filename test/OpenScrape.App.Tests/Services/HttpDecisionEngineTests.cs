@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
 using OpenScrape.App.Services.Http;
 using OpenScrape.App.Services.License;
+using OpenScrape.App.Telemetry;
 using OpenScrape.App.Tests.Api;
 using OpenScrape.Contracts;
 using OpenScrape.Domain.Enums;
@@ -25,6 +26,21 @@ public class HttpDecisionEngineTests
         var result = await engine.DecideAsync(PreflopRequest());
 
         Assert.That(result.Action, Is.EqualTo("Raise"));
+    }
+
+    [Test]
+    public async Task DecideAsync_RegistraLaLatenciaDeLaLlamada()
+    {
+        using var factory = new ApiFactory();
+        using var client = factory.CreateLicensedClient();
+        var metrics = new MetricsCollector(NullLogger<MetricsCollector>.Instance);
+        var engine = new HttpDecisionEngine(
+            client, NullLogger<HttpDecisionEngine>.Instance, metrics: metrics);
+
+        await engine.DecideAsync(PreflopRequest());
+
+        Assert.That(metrics.SnapshotSession().Session[TelemetryCategories.DecisionTotal].Count,
+            Is.EqualTo(1));
     }
 
     [Test]
