@@ -1010,7 +1010,7 @@ namespace OpenScrape.App
 
             if (playersWhoRaised.Count > 0)
             {
-                _logger.LogError("[PREFLOP] Aggressors set: {Aggressors}", string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}")));
+                _logger.LogInformation("[PREFLOP] Aggressors set: {Aggressors}", string.Join(", ", playersWhoRaised.Select(p => $"{p.Name}({p.Position}):{p.Bet}")));
             }
         }
 
@@ -1145,7 +1145,7 @@ namespace OpenScrape.App
             var result = await _coordinator.DetermineRiverAction(_playerGameState);
             _responseAction.Action = result.Action;
             UpdateOverlayWithDecision(result.Decision);
-            _logger.LogError("{LogText}", result.LogText);
+            _logger.LogInformation("{LogText}", result.LogText);
         }
 
         /// <summary>
@@ -1299,7 +1299,7 @@ namespace OpenScrape.App
             var result = await _coordinator.DetermineFlopAction(_playerGameState);
             _responseAction.Action = result.Action;
             UpdateOverlayWithDecision(result.Decision);
-            _logger.LogError("{LogText}", result.LogText);
+            _logger.LogInformation("{LogText}", result.LogText);
             return result;
         }
 
@@ -1317,7 +1317,7 @@ namespace OpenScrape.App
             var result = await _coordinator.DetermineTurnAction(_playerGameState);
             _responseAction.Action = result.Action;
             UpdateOverlayWithDecision(result.Decision);
-            _logger.LogError("{LogText}", result.LogText);
+            _logger.LogInformation("{LogText}", result.LogText);
         }
 
         /// <summary>
