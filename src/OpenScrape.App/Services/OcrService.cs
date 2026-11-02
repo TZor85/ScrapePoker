@@ -15,7 +15,7 @@ public class OcrService : IOcrService, IDisposable
 
     private TesseractEngine _engine;
     private readonly LruCache<string, SKBitmap> _bitmapCache = new(MaxBitmapCacheSize);
-    private readonly LruCache<ulong, string> _ocrCache = new(MaxOcrCacheSize);
+    private readonly LruCache<OcrCacheKey, string> _ocrCache = new(MaxOcrCacheSize);
     private static readonly object _lock = new object();
 
     [MemberNotNull(nameof(_engine))]
@@ -155,7 +155,11 @@ public class OcrService : IOcrService, IDisposable
                 using (var croppedBitmap = GetCroppedBitmap(sourceImage, x, y, width, height))
                 {
                     ulong hash = ComputeDHash(croppedBitmap);
-                    if (_ocrCache.TryGet(hash, out var cachedText))
+                    // La clave incluye el umbral: sin él, la segunda lectura de una región
+                    // (la del umbral bajo, pensada para jugadores retirados) devolvía el
+                    // resultado cacheado de la primera y los nombres en gris nunca se leían.
+                    var cacheKey = OcrCacheKey.From(hash, umbral, onlyNumber);
+                    if (_ocrCache.TryGet(cacheKey, out var cachedText))
                     {
                         using var msCache = new MemoryStream();
                         using var skImage = SKImage.FromBitmap(croppedBitmap);
@@ -206,7 +210,7 @@ public class OcrService : IOcrService, IDisposable
 
                     var finalText = string.IsNullOrEmpty(bestResult.Text) ? "" : ProcessText(bestResult.Text);
 
-                    _ocrCache.Set(hash, finalText);
+                    _ocrCache.Set(cacheKey, finalText);
 
                     using var debugMs = new MemoryStream();
                     using (var debugImage = SKImage.FromBitmap(croppedBitmap))

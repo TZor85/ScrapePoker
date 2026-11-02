@@ -51,16 +51,10 @@ public class ScreenReaderService : IScreenReaderService
             read2 = CleanOcrPlayerName(ocrResult2.Text);
         }
 
-        // Consenso: ambas iguales → seguro
-        if (!string.IsNullOrEmpty(read1) && read1 == read2)
-            return read1;
-
-        // Si solo una tiene resultado → usarla
-        if (string.IsNullOrEmpty(read1)) return read2;
-        if (string.IsNullOrEmpty(read2)) return read1;
-
-        // Ambas diferentes → la más larga (más probable correcta)
-        return read1.Length >= read2.Length ? read1 : read2;
+        // La elección vive en PlayerNamePicker: medido con Tesseract sobre este
+        // skin, el umbral bajo lee los cinco asientos y el alto deja cuatro en
+        // un punto, así que ante dos lecturas distintas gana la del umbral bajo.
+        return PlayerNamePicker.Choose(read1, read2);
     }
 
     public decimal ReadBetValue(Image screenshot, int x, int y, int w, int h,
