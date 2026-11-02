@@ -229,9 +229,9 @@ public class ScreenReaderService : IScreenReaderService
             screenshot, x, y, w, h,
             umbral ?? 0, isOnlyNumber ?? false);
 
-        var clean1 = CleanOcrHandNumber(firstOcr.Text);
-        var clean2 = CleanOcrHandNumber(secondOcr.Text);
-        var clean3 = CleanOcrHandNumber(thirdOcr.Text);
+        var clean1 = HandNumberText.Clean(firstOcr.Text);
+        var clean2 = HandNumberText.Clean(secondOcr.Text);
+        var clean3 = HandNumberText.Clean(thirdOcr.Text);
 
         // Consenso: si 2+ lecturas coinciden, usar ese valor
         string best;
@@ -502,15 +502,6 @@ public class ScreenReaderService : IScreenReaderService
             cleaned = cleaned[..6];
 
         return string.IsNullOrEmpty(cleaned) ? "0" : cleaned;
-    }
-
-    private static string CleanOcrHandNumber(string? ocrText)
-    {
-        if (string.IsNullOrWhiteSpace(ocrText))
-            return string.Empty;
-
-        var cleaned = new string(ocrText.Where(char.IsDigit).ToArray());
-        return cleaned;
     }
 
     #endregion
