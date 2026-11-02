@@ -106,6 +106,32 @@ public class UiUpdateServiceTests
     }
 
     [Test]
+    public void UpdateResults_Preflop_ReportaLosNumerosDelMotor()
+    {
+        var loop = new GameLoopStateMachine(new UiTestLogger<GameLoopStateMachine>());
+        loop.TryTransition(GameState.HandDetected);
+        loop.TryTransition(GameState.PreflopAction);
+        var svc = new UiUpdateService(
+            new FakeActionFormatter(), () => 0.50m, loop,
+            new ImageCropperService(), new FakeGameCoordinator());
+        var ctrl = CreateControls();
+        svc.Attach(ctrl);
+        var decision = new DecisionResult { Action = "Fold", Equity = 40d, PotOdds = 45d };
+
+        svc.UpdateResults(CreateState(), decision, CreateResponseAction(), "1", "T");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(ctrl.TbResume.Text, Does.Contain($"PotOdds: {45d.ToString("F1")}%"),
+                "el pot odds se muestra con un decimal y es el del motor");
+            Assert.That(ctrl.TbResume.Text, Does.Contain($"Equity: {40d.ToString("F1")}%"),
+                "la equity es la del motor: el resumen no le suma ajustes por posición");
+            Assert.That(ctrl.TbResume.Text, Does.Contain("Should Call: False"),
+                "con equity 40 y pot odds 45 la respuesta es fold, igual que la tabla");
+        });
+    }
+
+    [Test]
     public void UpdateResults_SetsLbAction()
     {
         var svc = CreateService();

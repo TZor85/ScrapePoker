@@ -84,27 +84,11 @@ public sealed class UiUpdateService : IUiUpdateService
     private void UpdateResumeTextForPreflop(UiUpdateControls controls, PlayerGameState state,
         DecisionResult? decision, ResponseAction responseAction, string tableHand)
     {
-        // La equity viene del motor; el cliente sólo aplica el ajuste posicional
-        // que ya mostraba en el resumen.
-        double preflopEquity = decision?.Equity ?? 0d;
-        if (state.HoleCard1Rank > 0 && state.HoleCard2Rank > 0)
-        {
-            double positionAdjust = state.Position switch
-            {
-                TablePosition.Button => 3.0,
-                TablePosition.CutOff => 1.0,
-                TablePosition.Middle => 0.0,
-                TablePosition.Early => -2.0,
-                TablePosition.SmallBlind => -3.0,
-                TablePosition.BigBlind => -1.0,
-                _ => 0.0
-            };
-            preflopEquity = Math.Max(0, Math.Min(100, preflopEquity + positionAdjust));
-        }
-
+        // El resumen reporta lo que decidió el motor. El ajuste por posición que se
+        // aplicaba acá lo desconocía el motor: el resumen mostraba una equity inflada
+        // y podía decir "call" mientras la tabla decía fold.
         decimal maxBet = state.Players.Select(p => p.Bet).DefaultIfEmpty(0).Max();
-        decimal potOdds = CalculatePotOddsPercentage(state.PotSize, maxBet);
-        bool shouldCall = preflopEquity >= (double)potOdds;
+        var stats = PreflopStatsCalculator.Resolve(decision, state.PotSize, maxBet);
 
         var sb = new StringBuilder();
         sb.AppendLine($"Hand #{tableHand}: Hold'em No Limit");
@@ -113,9 +97,9 @@ public sealed class UiUpdateService : IUiUpdateService
         sb.AppendLine($"{state.Players.FirstOrDefault(f => f.Position == TablePosition.BigBlind)?.Name ?? "Hero"}: posts big blind");
         sb.AppendLine($"Pot: {state.PotSize}");
         sb.AppendLine($"*** STATISTICS ***");
-        sb.AppendLine($"PotOdds: {potOdds}%");
-        sb.AppendLine($"Equity: {preflopEquity:F1}%");
-        sb.AppendLine($"Should Call: {shouldCall}");
+        sb.AppendLine($"PotOdds: {stats.PotOdds:F1}%");
+        sb.AppendLine($"Equity: {stats.Equity:F1}%");
+        sb.AppendLine($"Should Call: {stats.ShouldCall}");
         sb.AppendLine("*** HOLE CARDS ***");
         sb.AppendLine($"Dealt to Hero [{state.HoleCard1Face} {state.HoleCard2Face}]");
 
@@ -147,7 +131,7 @@ public sealed class UiUpdateService : IUiUpdateService
         var heroSituation = state.HandSituation;
         sb.AppendLine($"*** HERO ACTION ***");
         sb.AppendLine($"Position: {state.Position}  |  Situation: {heroSituation}");
-        sb.AppendLine($"Equity preflop: {preflopEquity:F1}%");
+        sb.AppendLine($"Equity preflop: {stats.Equity:F1}%");
 
         var villainsSnapshot = state.Players.Where(p => p.Name != "P0").ToList();
         var displayAction = _actionFormatter.EnrichActionWithBBAmount(heroAction, villainsSnapshot, _bigBlindProvider());
@@ -231,17 +215,5 @@ public sealed class UiUpdateService : IUiUpdateService
 
         var card = _cards.FirstOrDefault(x => x.Id.Contains(cardName));
         return card != null ? _imageCropper.Base64ToImage(card.ImageBase64) : null;
-    }
-
-    /// <summary>
-    /// Misma fórmula que usa el motor: la apuesta a pagar sobre el pozo final.
-    /// </summary>
-    private static decimal CalculatePotOddsPercentage(decimal potSize, decimal betToCall)
-    {
-        if (betToCall <= 0)
-            return 0m;
-
-        var total = potSize + betToCall;
-        return total <= 0 ? 0m : betToCall / total * 100m;
     }
 }
