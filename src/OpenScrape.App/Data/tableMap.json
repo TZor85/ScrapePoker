@@ -394,10 +394,10 @@
       },
       {
         "Name": "tablehand",
-        "PosX": 163,
+        "PosX": 146,
         "PosY": 45,
         "Color": null,
-        "Width": 120,
+        "Width": 138,
         "Height": 19,
         "IsHash": false,
         "IsBoard": false,

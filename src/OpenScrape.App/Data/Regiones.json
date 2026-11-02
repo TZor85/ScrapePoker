@@ -571,7 +571,7 @@
 			},
 			{
 				"Name": "tablehand",
-				"PosX": 117,
+				"PosX": 146,
 				"PosY": 45,
 				"Color": null,
 				"Width": 138,
@@ -579,7 +579,7 @@
 				"IsHash": false,
 				"IsBoard": false,
 				"IsColor": false,
-				"IsOnlyNumber": true,
+				"IsOnlyNumber": false,
 				"InactiveUmbral": null,
 				"Umbral": 0.91
 			},
