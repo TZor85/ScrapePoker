@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace OpenScrape.App.Tests.Architecture;
 
@@ -47,8 +48,21 @@ public class HandSummaryLoggingTests
             .Select(item => item.GetString())
             .ToArray();
 
-        Assert.That(categorias, Does.Contain("OpenScrape.App.Forms.FrmMain"),
-            "FrmMain debe estar en HandCategories o sus resúmenes de mano no se guardan.");
+        // La categoría real es el namespace de FrmMain, no una ruta de carpetas: ya nos
+        // pasó de listar "OpenScrape.App.Forms.FrmMain" y no persistir ningún Information.
+        var categoriaEsperada = $"{NamespaceOf(FrmMainPath())}.FrmMain";
+
+        Assert.That(categorias, Does.Contain(categoriaEsperada),
+            $"FrmMain debe estar en HandCategories como '{categoriaEsperada}' o sus " +
+            "resúmenes de mano no se guardan.");
+    }
+
+    private static string NamespaceOf(string path)
+    {
+        var match = Regex.Match(File.ReadAllText(path), @"^namespace\s+([\w.]+)", RegexOptions.Multiline);
+        Assert.That(match.Success, Is.True, "No se encontró el namespace de FrmMain.cs");
+
+        return match.Groups[1].Value;
     }
 
     private static int CountOf(string source, string value)
