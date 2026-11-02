@@ -8,6 +8,7 @@ using Marten;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using OpenScrape.Contracts;
+using OpenScrape.Api;
 using OpenScrape.Api.Endpoints;
 using OpenScrape.Api.Licensing;
 using OpenScrape.Api.Persistence;
@@ -40,6 +41,7 @@ builder.Services.AddSingleton<ILicenseTokenService, JwtLicenseTokenService>();
 builder.Services.AddScoped<ILicenseStore, MartenLicenseStore>();
 builder.Services.AddPlanRateLimiting(builder.Configuration);
 builder.Services.AddHostedService<LicenseStartupValidation>();
+builder.Services.AddHostedService<EngineWarmupService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
     .Configure<IOptions<JwtOptions>>((options, jwt) =>
