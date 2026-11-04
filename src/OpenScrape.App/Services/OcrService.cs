@@ -184,11 +184,13 @@ public class OcrService : IOcrService, IDisposable
 
                     if (umbral > 0)
                     {
-                        var attempt2 = TryOcrAttempt(croppedBitmap, width, height, Math.Max(0, umbral - 20), onlyNumber, "lower");
+                        var (lowerThreshold, higherThreshold) = OcrThresholdWindow.Around(umbral);
+
+                        var attempt2 = TryOcrAttempt(croppedBitmap, width, height, lowerThreshold, onlyNumber, "lower");
                         if (!string.IsNullOrEmpty(attempt2.Text))
                             ocrResults.Add(attempt2);
 
-                        var attempt3 = TryOcrAttempt(croppedBitmap, width, height, Math.Min(255, umbral + 20), onlyNumber, "higher");
+                        var attempt3 = TryOcrAttempt(croppedBitmap, width, height, higherThreshold, onlyNumber, "higher");
                         if (!string.IsNullOrEmpty(attempt3.Text))
                             ocrResults.Add(attempt3);
                     }
