@@ -511,6 +511,7 @@ public class TableLayoutService : ITableLayoutService
                 }
 
                 player.Alias = cleanName;
+                _logger.LogInformation("[ALIAS] {Player} = {Name}", player.Name, cleanName);
 
                 if (!string.IsNullOrEmpty(cleanName) && !string.IsNullOrEmpty(player.Name))
                     _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
@@ -538,6 +539,8 @@ public class TableLayoutService : ITableLayoutService
             if (!string.IsNullOrEmpty(cleanName))
             {
                 player.Alias = cleanName;
+                _logger.LogInformation("[ALIAS] {Player} = {Name} (reintento)", player.Name, cleanName);
+
                 if (!string.IsNullOrEmpty(player.Name))
                     _opponentTracker.RegisterSeatAlias(player.Name, cleanName);
             }
