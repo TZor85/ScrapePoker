@@ -33,6 +33,21 @@ public class EngineWarmupServiceTests
     }
 
     [Test]
+    public async Task RunAsync_CuandoUnEjemploFalla_CalientaLosDemas()
+    {
+        // En produccion el precalentamiento moria en la primera peticion y no
+        // calentaba nada: un fallo suelto no puede cancelar el resto.
+        var engine = new PartialFailingEngine(DecisionStreet.Preflop);
+        var service = CreateService(engine);
+
+        await service.RunAsync(CancellationToken.None);
+
+        Assert.That(engine.AskedStreets, Has.Count.EqualTo(2),
+            "Debe intentar todas las calles aunque una falle.");
+        Assert.That(engine.AskedStreets, Does.Contain(DecisionStreet.Flop));
+    }
+
+    [Test]
     public async Task RunAsync_CuandoElMotorFalla_NoPropagaLaExcepcion()
     {
         var service = CreateService(new ThrowingEngine());
@@ -95,6 +110,25 @@ public class EngineWarmupServiceTests
         public Task<DecisionResult> DecideAsync(DecisionRequest request, CancellationToken cancellationToken = default)
         {
             Requests.Add(request);
+
+            return Task.FromResult(new DecisionResult { Action = "Check" });
+        }
+    }
+
+    private sealed class PartialFailingEngine : IDecisionEngine
+    {
+        private readonly DecisionStreet _failing;
+
+        public PartialFailingEngine(DecisionStreet failing) => _failing = failing;
+
+        public List<DecisionStreet> AskedStreets { get; } = [];
+
+        public Task<DecisionResult> DecideAsync(DecisionRequest request, CancellationToken cancellationToken = default)
+        {
+            AskedStreets.Add(request.Street);
+
+            if (request.Street == _failing)
+                throw new InvalidOperationException($"motor roto en {request.Street}");
 
             return Task.FromResult(new DecisionResult { Action = "Check" });
         }

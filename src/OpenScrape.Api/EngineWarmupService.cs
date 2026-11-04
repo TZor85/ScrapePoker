@@ -37,25 +37,48 @@ public sealed class EngineWarmupService(
     /// <summary>
     /// Ejercita preflop y flop: son los dos caminos que el cliente puede pedir
     /// primero y los que tienen costos de inicialización distintos.
+    ///
+    /// Cada petición se intenta por separado: en producción un fallo suelto
+    /// abortaba el bucle y el motor quedaba frío igual.
     /// </summary>
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        try
-        {
-            using var scope = scopeFactory.CreateScope();
-            var engine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
+        using var scope = scopeFactory.CreateScope();
+        var engine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
 
-            foreach (var request in SampleRequests())
+        var samples = SampleRequests();
+        var fallos = new List<string>();
+
+        foreach (var request in samples)
+        {
+            try
+            {
                 await engine.DecideAsync(request, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Un fallo acá no puede tumbar la API ni cancelar el resto:
+                // sin precalentamiento el motor funciona, sólo que lento.
+                fallos.Add(request.Street.ToString());
+                logger.LogWarning(ex, "No se pudo precalentar el motor con la calle {Street}", request.Street);
+            }
+        }
 
+        if (fallos.Count == 0)
             logger.LogInformation("Motor precalentado: preflop y flop responden sin arranque en frio");
-        }
-        catch (Exception ex)
-        {
-            // Un fallo acá no puede tumbar la API: sin precalentamiento el motor
-            // sigue funcionando, sólo que la primera decisión vuelve a ser lenta.
-            logger.LogWarning(ex, "No se pudo precalentar el motor");
-        }
+        else if (fallos.Count < samples.Count)
+            logger.LogInformation(
+                "Motor precalentado parcialmente: fallaron {Failures} de {Total}",
+                string.Join(", ", fallos),
+                samples.Count);
+        else
+            logger.LogWarning(
+                "No se pudo precalentar el motor: fallaron {Failures}",
+                string.Join(", ", fallos));
     }
 
     public static IReadOnlyList<DecisionRequest> SampleRequests() =>
